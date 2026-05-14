@@ -189,6 +189,9 @@ func GetSidecarInjectionMode() SidecarInjectionMode {
 		return SidecarInjectionMode_Legacy
 	case "native-sidecar":
 		return SidecarInjectionMode_NativeSidecar
+	case "":
+		// Backward compatibility: old behavior
+		return SidecarInjectionMode_Default
 	default:
 		return SidecarInjectionMode_Default
 	}

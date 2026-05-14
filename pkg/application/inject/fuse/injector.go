@@ -24,6 +24,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/discovery"
 
 	"github.com/fluid-cloudnative/fluid/pkg/utils/applications/defaultapp"
 	podapp "github.com/fluid-cloudnative/fluid/pkg/utils/applications/pod"
@@ -44,10 +45,24 @@ type Injector struct {
 }
 
 func NewInjector(client client.Client) *Injector {
+	configured := common.GetSidecarInjectionMode()
+
+	if configured == common.SidecarInjectionMode_Default {
+		cfg, err := ctrl.GetConfig()
+		if err != nil {
+			// Fall back to legacy if we can't get config
+			ctrl.Log.WithName("fuse-injector").Error(err, "Failed to get k8s config, falling back to legacy sidecar mode")
+			configured = common.SidecarInjectionMode_Legacy
+		} else if discovery.SupportsNativeSidecar(cfg) {
+			configured = common.SidecarInjectionMode_NativeSidecar
+		} else {
+			configured = common.SidecarInjectionMode_Legacy
+		}
+	}
 	return &Injector{
 		client:               client,
 		log:                  ctrl.Log.WithName("fuse-injector"),
-		sidecarInjectionMode: common.GetSidecarInjectionMode(),
+		sidecarInjectionMode: configured,
 	}
 }
 
