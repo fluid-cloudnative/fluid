@@ -37,6 +37,7 @@
 + Advanced   
   - [Accelerate Data Access by MEM or SSD](samples/accelerate_data_by_mem_or_ssd.md)
   - [Alluxio Tieredstore Configuration](samples/tieredstore_config.md)
+  - [Alluxio S3 High-Concurrency Read Tuning](samples/alluxio_s3_high_concurrency.md)
   - [Pod Scheduling Optimization](operation/pod_schedule_optimization.md)
   - [Pod Scheduling Base on Runtime Tiered Locality](operation/tiered_locality_schedule.md)
   - [Set FUSE clean policy](samples/fuse_clean_policy.md)
