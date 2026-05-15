@@ -159,7 +159,7 @@ func (f *DataOpJobReconciler) injectPodNodeLabelsToJob(ctx context.Context, job 
 		}
 	}
 
-	if err = kubeclient.UpdateJobWithContext(ctx, f.Client, job); err != nil {
+	if err = f.Client.Update(ctx, job); err != nil {
 		return err
 	}
 

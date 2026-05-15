@@ -27,29 +27,29 @@ import (
 )
 
 // GetJob gets the job given its name and namespace
-func GetJob(client client.Client, name, namespace string) (*v1.Job, error) {
-	return GetJobWithContext(context.TODO(), client, name, namespace)
+func GetJob(c client.Client, name, namespace string) (*v1.Job, error) {
+	return GetJobWithContext(context.TODO(), c, name, namespace)
 }
 
 // GetJobWithContext gets the job given its name and namespace.
-func GetJobWithContext(ctx context.Context, client client.Client, name, namespace string) (*v1.Job, error) {
+func GetJobWithContext(ctx context.Context, c client.Client, name, namespace string) (*v1.Job, error) {
 	key := types.NamespacedName{
 		Namespace: namespace,
 		Name:      name,
 	}
 	var job v1.Job
-	if err := client.Get(ctx, key, &job); err != nil {
+	if err := c.Get(ctx, key, &job); err != nil {
 		return nil, err
 	}
 	return &job, nil
 }
 
-func UpdateJob(client client.Client, job *v1.Job) error {
-	return UpdateJobWithContext(context.TODO(), client, job)
+func UpdateJob(c client.Client, job *v1.Job) error {
+	return UpdateJobWithContext(context.TODO(), c, job)
 }
 
-func UpdateJobWithContext(ctx context.Context, client client.Client, job *v1.Job) error {
-	return client.Update(ctx, job)
+func UpdateJobWithContext(ctx context.Context, c client.Client, job *v1.Job) error {
+	return c.Update(ctx, job)
 }
 
 // GetSucceedPodForJob get the first finished pod for the job, if no succeed pod, return nil with no error.

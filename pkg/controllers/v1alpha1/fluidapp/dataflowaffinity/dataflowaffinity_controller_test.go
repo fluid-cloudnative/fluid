@@ -30,34 +30,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
-
-type contextAwareClient struct {
-	client.Client
-}
-
-func (c contextAwareClient) Get(ctx context.Context, key client.ObjectKey, obj client.Object, opts ...client.GetOption) error {
-	if err := ctx.Err(); err != nil {
-		return err
-	}
-	return c.Client.Get(ctx, key, obj, opts...)
-}
-
-func (c contextAwareClient) List(ctx context.Context, list client.ObjectList, opts ...client.ListOption) error {
-	if err := ctx.Err(); err != nil {
-		return err
-	}
-	return c.Client.List(ctx, list, opts...)
-}
-
-func (c contextAwareClient) Update(ctx context.Context, obj client.Object, opts ...client.UpdateOption) error {
-	if err := ctx.Err(); err != nil {
-		return err
-	}
-	return c.Client.Update(ctx, obj, opts...)
-}
 
 var _ = Describe("DataOpJobReconciler", func() {
 	const controllerUIDKey = "controller-uid"
@@ -376,7 +350,7 @@ var _ = Describe("DataOpJobReconciler", func() {
 
 				c := fake.NewFakeClientWithScheme(testScheme, job)
 				f := &DataOpJobReconciler{
-					Client: contextAwareClient{Client: c},
+					Client: fake.ContextAwareClient{Client: c},
 					Log:    fake.NullLogger(),
 				}
 
