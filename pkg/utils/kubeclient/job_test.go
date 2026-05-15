@@ -104,6 +104,21 @@ var _ = Describe("Job related unit tests", Label("pkg.utils.kubeclient.job_test.
 				Expect(gotPod).To(BeNil())
 			})
 		})
+
+		When("caller context is canceled", func() {
+			BeforeEach(func() {
+				resources = []runtime.Object{job, jobPod}
+			})
+
+			It("should return the context error", func() {
+				ctx, cancel := context.WithCancel(context.Background())
+				cancel()
+
+				gotPod, err := GetSucceedPodForJobWithContext(ctx, contextAwareClient{Client: client}, job)
+				Expect(err).To(MatchError(ContainSubstring(context.Canceled.Error())))
+				Expect(gotPod).To(BeNil())
+			})
+		})
 	})
 
 	Describe("Test UpdateJob()", func() {
@@ -152,6 +167,20 @@ var _ = Describe("Job related unit tests", Label("pkg.utils.kubeclient.job_test.
 				Expect(apierrs.IsNotFound(err)).To(BeTrue())
 			})
 		})
+
+		When("caller context is canceled", func() {
+			BeforeEach(func() {
+				resources = []runtime.Object{job}
+			})
+
+			It("should return the context error", func() {
+				ctx, cancel := context.WithCancel(context.Background())
+				cancel()
+
+				err := UpdateJobWithContext(ctx, contextAwareClient{Client: client}, job)
+				Expect(err).To(MatchError(context.Canceled))
+			})
+		})
 	})
 
 	Describe("Test GetJob()", func() {
@@ -191,6 +220,21 @@ var _ = Describe("Job related unit tests", Label("pkg.utils.kubeclient.job_test.
 				Expect(err).NotTo(BeNil())
 				Expect(gotJob).To(BeNil())
 				Expect(apierrs.IsNotFound(err)).To(BeTrue())
+			})
+		})
+
+		When("caller context is canceled", func() {
+			BeforeEach(func() {
+				resources = []runtime.Object{job}
+			})
+
+			It("should return the context error", func() {
+				ctx, cancel := context.WithCancel(context.Background())
+				cancel()
+
+				gotJob, err := GetJobWithContext(ctx, contextAwareClient{Client: client}, job.Name, job.Namespace)
+				Expect(err).To(MatchError(context.Canceled))
+				Expect(gotJob).To(BeNil())
 			})
 		})
 	})

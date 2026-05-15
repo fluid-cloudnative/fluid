@@ -27,13 +27,18 @@ import (
 
 // GetNode gets the latest node info
 func GetNode(client client.Reader, name string) (node *corev1.Node, err error) {
+	return GetNodeWithContext(context.TODO(), client, name)
+}
+
+// GetNodeWithContext gets the latest node info.
+func GetNodeWithContext(ctx context.Context, client client.Reader, name string) (node *corev1.Node, err error) {
 	key := types.NamespacedName{
 		Name: name,
 	}
 
 	node = &corev1.Node{}
 
-	if err = client.Get(context.TODO(), key, node); err != nil {
+	if err = client.Get(ctx, key, node); err != nil {
 		return nil, err
 	}
 	return node, err

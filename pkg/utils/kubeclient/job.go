@@ -28,29 +28,43 @@ import (
 
 // GetJob gets the job given its name and namespace
 func GetJob(client client.Client, name, namespace string) (*v1.Job, error) {
+	return GetJobWithContext(context.TODO(), client, name, namespace)
+}
+
+// GetJobWithContext gets the job given its name and namespace.
+func GetJobWithContext(ctx context.Context, client client.Client, name, namespace string) (*v1.Job, error) {
 	key := types.NamespacedName{
 		Namespace: namespace,
 		Name:      name,
 	}
 	var job v1.Job
-	if err := client.Get(context.TODO(), key, &job); err != nil {
+	if err := client.Get(ctx, key, &job); err != nil {
 		return nil, err
 	}
 	return &job, nil
 }
 
 func UpdateJob(client client.Client, job *v1.Job) error {
-	return client.Update(context.TODO(), job)
+	return UpdateJobWithContext(context.TODO(), client, job)
+}
+
+func UpdateJobWithContext(ctx context.Context, client client.Client, job *v1.Job) error {
+	return client.Update(ctx, job)
 }
 
 // GetSucceedPodForJob get the first finished pod for the job, if no succeed pod, return nil with no error.
 func GetSucceedPodForJob(c client.Client, job *v1.Job) (*corev1.Pod, error) {
+	return GetSucceedPodForJobWithContext(context.TODO(), c, job)
+}
+
+// GetSucceedPodForJobWithContext gets the first finished pod for the job, if no succeed pod, return nil with no error.
+func GetSucceedPodForJobWithContext(ctx context.Context, c client.Client, job *v1.Job) (*corev1.Pod, error) {
 	var podList corev1.PodList
 	selector, err := metav1.LabelSelectorAsSelector(job.Spec.Selector)
 	if err != nil {
 		return nil, fmt.Errorf("error converting Job %s in namespace %s selector: %v", job.Name, job.Namespace, err)
 	}
-	err = c.List(context.TODO(), &podList, &client.ListOptions{
+	err = c.List(ctx, &podList, &client.ListOptions{
 		Namespace:     job.Namespace,
 		LabelSelector: selector,
 	})

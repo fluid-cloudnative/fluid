@@ -30,8 +30,34 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
+
+type contextAwareClient struct {
+	client.Client
+}
+
+func (c contextAwareClient) Get(ctx context.Context, key client.ObjectKey, obj client.Object, opts ...client.GetOption) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	return c.Client.Get(ctx, key, obj, opts...)
+}
+
+func (c contextAwareClient) List(ctx context.Context, list client.ObjectList, opts ...client.ListOption) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	return c.Client.List(ctx, list, opts...)
+}
+
+func (c contextAwareClient) Update(ctx context.Context, obj client.Object, opts ...client.UpdateOption) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	return c.Client.Update(ctx, obj, opts...)
+}
 
 var _ = Describe("DataOpJobReconciler", func() {
 	const controllerUIDKey = "controller-uid"
@@ -275,7 +301,7 @@ var _ = Describe("DataOpJobReconciler", func() {
 					Log:    fake.NullLogger(),
 				}
 
-				err := f.injectPodNodeLabelsToJob(job)
+				err := f.injectPodNodeLabelsToJob(context.Background(), job)
 				Expect(err).NotTo(HaveOccurred())
 
 				wantAnnotations := map[string]string{
@@ -328,8 +354,37 @@ var _ = Describe("DataOpJobReconciler", func() {
 					Log:    fake.NullLogger(),
 				}
 
-				err := f.injectPodNodeLabelsToJob(job)
+				err := f.injectPodNodeLabelsToJob(context.Background(), job)
 				Expect(err).To(HaveOccurred())
+			})
+		})
+
+		Context("when caller context is canceled", func() {
+			It("should return the context error", func() {
+				job := &batchv1.Job{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "test-job-canceled",
+					},
+					Spec: batchv1.JobSpec{
+						Selector: &metav1.LabelSelector{
+							MatchLabels: map[string]string{
+								controllerUIDKey: jobControllerUIDValue,
+							},
+						},
+					},
+				}
+
+				c := fake.NewFakeClientWithScheme(testScheme, job)
+				f := &DataOpJobReconciler{
+					Client: contextAwareClient{Client: c},
+					Log:    fake.NullLogger(),
+				}
+
+				ctx, cancel := context.WithCancel(context.Background())
+				cancel()
+
+				err := f.injectPodNodeLabelsToJob(ctx, job)
+				Expect(err).To(MatchError(ContainSubstring(context.Canceled.Error())))
 			})
 		})
 	})

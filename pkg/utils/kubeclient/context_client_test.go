@@ -17,6 +17,13 @@ func (c contextAwareClient) Get(ctx context.Context, key client.ObjectKey, obj c
 	return c.Client.Get(ctx, key, obj, opts...)
 }
 
+func (c contextAwareClient) List(ctx context.Context, list client.ObjectList, opts ...client.ListOption) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	return c.Client.List(ctx, list, opts...)
+}
+
 func (c contextAwareClient) Create(ctx context.Context, obj client.Object, opts ...client.CreateOption) error {
 	if err := ctx.Err(); err != nil {
 		return err
