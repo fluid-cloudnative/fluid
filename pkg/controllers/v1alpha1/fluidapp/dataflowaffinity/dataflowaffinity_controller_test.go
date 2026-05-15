@@ -18,6 +18,7 @@ package dataflowaffinity
 
 import (
 	"context"
+	"errors"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -358,7 +359,7 @@ var _ = Describe("DataOpJobReconciler", func() {
 				cancel()
 
 				err := f.injectPodNodeLabelsToJob(ctx, job)
-				Expect(err).To(MatchError(ContainSubstring(context.Canceled.Error())))
+				Expect(errors.Is(err, context.Canceled)).To(BeTrue())
 			})
 		})
 	})

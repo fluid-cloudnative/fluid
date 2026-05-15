@@ -18,6 +18,7 @@ package kubeclient
 
 import (
 	"context"
+	"errors"
 
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	batchv1 "k8s.io/api/batch/v1"
@@ -115,7 +116,7 @@ var _ = Describe("Job related unit tests", Label("pkg.utils.kubeclient.job_test.
 				cancel()
 
 				gotPod, err := GetSucceedPodForJobWithContext(ctx, contextAwareClient{Client: client}, job)
-				Expect(err).To(MatchError(ContainSubstring(context.Canceled.Error())))
+				Expect(errors.Is(err, context.Canceled)).To(BeTrue())
 				Expect(gotPod).To(BeNil())
 			})
 		})

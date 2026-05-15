@@ -69,7 +69,7 @@ func GetSucceedPodForJobWithContext(ctx context.Context, c client.Client, job *v
 		LabelSelector: selector,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("error listing pods for Job %s in namespace %s: %v", job.Name, job.Namespace, err)
+		return nil, fmt.Errorf("error listing pods for Job %s in namespace %s: %w", job.Name, job.Namespace, err)
 	}
 
 	for _, pod := range podList.Items {

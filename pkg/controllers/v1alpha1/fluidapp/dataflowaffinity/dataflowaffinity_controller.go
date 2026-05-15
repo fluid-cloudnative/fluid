@@ -136,7 +136,7 @@ func (f *DataOpJobReconciler) injectPodNodeLabelsToJob(ctx context.Context, job 
 
 	node, err := kubeclient.GetNodeWithContext(ctx, f.Client, nodeName)
 	if err != nil {
-		return fmt.Errorf("error to get node %s: %v", nodeName, err)
+		return fmt.Errorf("error to get node %s: %w", nodeName, err)
 	}
 
 	annotationsToInject := map[string]string{}
