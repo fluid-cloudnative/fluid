@@ -178,12 +178,12 @@ func (e *ReferenceDatasetEngine) Setup(ctx cruntime.ReconcileRequestContext) (re
 		return false, err
 	}
 
-	err = copyFuseDaemonSetForRefDataset(e.Client, dataset, runtimeInfo)
+	err = copyFuseDaemonSetForRefDataset(ctx, e.Client, dataset, runtimeInfo)
 	if err != nil {
 		return false, err
 	}
 
-	err = e.createConfigMapForRefDataset(e.Client, dataset, runtimeInfo)
+	err = e.createConfigMapForRefDataset(ctx, e.Client, dataset, runtimeInfo)
 	if err != nil {
 		return false, err
 	}
