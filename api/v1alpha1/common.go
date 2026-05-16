@@ -198,7 +198,7 @@ type MetadataSyncPolicy struct {
 }
 
 func (msb *MetadataSyncPolicy) AutoSyncEnabled() bool {
-	return msb.AutoSync == nil || *msb.AutoSync
+	return msb == nil || msb.AutoSync == nil || *msb.AutoSync
 }
 
 // VersionSpec represents the settings for the  version that fluid is orchestrating.
