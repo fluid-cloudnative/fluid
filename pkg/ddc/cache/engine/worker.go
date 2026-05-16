@@ -80,11 +80,9 @@ func (e *CacheEngine) SetupWorkerInternal(workerValue *common.CacheRuntimeCompon
 		// from RuntimePhaseNone to RuntimePhaseNotReady, not reconcile the worker component the next time.
 		workerStatus.Phase = datav1alpha1.RuntimePhaseNotReady
 
-		// TODO: support builds workers affinity ? do it in transformer ?
 		runtimeToUpdate := runtime.DeepCopy()
 		runtimeToUpdate.Status.Worker = workerStatus
 
-		// TODO(cache runtime): why need this line judgement ?
 		if runtime.Status.Worker.Phase == datav1alpha1.RuntimePhaseNone {
 			if len(runtimeToUpdate.Status.Conditions) == 0 {
 				runtimeToUpdate.Status.Conditions = []datav1alpha1.RuntimeCondition{}
