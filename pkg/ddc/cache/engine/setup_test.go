@@ -191,7 +191,7 @@ var _ = Describe("CacheEngine Setup Tests", Label("pkg.ddc.cache.engine.setup_te
 			It("should return error when runtime class topology is invalid", func() {
 				// Remove master template to cause transform failure
 				runtimeClass.Topology.Master = nil
-				
+
 				ready, err := engine.Setup(ctx)
 				Expect(err).To(HaveOccurred())
 				Expect(ready).To(BeFalse())
@@ -253,18 +253,18 @@ var _ = Describe("CacheEngine Setup Tests", Label("pkg.ddc.cache.engine.setup_te
 			It("should increment metrics on error", func() {
 				// Setup with non-existent RuntimeClass to trigger error
 				runtimeObj.Spec.RuntimeClassName = "non-existent"
-				
+
 				ready, err := engine.Setup(ctx)
 				Expect(err).To(HaveOccurred())
 				Expect(ready).To(BeFalse())
-				
+
 				// Metrics should be incremented (verified via metrics package)
 			})
 
 			It("should log errors appropriately", func() {
 				// Test that errors are logged correctly
 				runtimeObj.Spec.RuntimeClassName = "invalid"
-				
+
 				_, err := engine.Setup(ctx)
 				Expect(err).To(HaveOccurred())
 			})
@@ -299,7 +299,7 @@ var _ = Describe("CacheEngine Setup Tests", Label("pkg.ddc.cache.engine.setup_te
 			// 8. CheckAndUpdateRuntimeStatus
 			// 9. PrepareUFS (if Master enabled with ExecutionEntries)
 			// 10. BindToDataset
-			
+
 			// This is verified by code review and integration tests
 			Expect(true).To(BeTrue())
 		})
