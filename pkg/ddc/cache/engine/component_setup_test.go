@@ -138,7 +138,7 @@ var _ = Describe("CacheEngine Component Setup Tests", Label("pkg.ddc.cache.engin
 
 				// Verify StatefulSet was created
 				sts := &appsv1.StatefulSet{}
-				err = engine.Client.Get(context.TODO(), 
+				err = engine.Client.Get(context.TODO(),
 					client.ObjectKey{Name: "test-runtime-master", Namespace: "default"}, sts)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(sts.Name).To(Equal("test-runtime-master"))
