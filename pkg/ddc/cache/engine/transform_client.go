@@ -48,7 +48,8 @@ func (e *CacheEngine) transformClient(dataset *datav1alpha1.Dataset, runtime *da
 	e.transformComponentPodTemplate(runtimeClient.RuntimeComponentCommonSpec, dataset, value.Client)
 
 	// transform all volume-related configurations
-	err = e.transformVolumes(runtime.Spec.Volumes, runtime.Spec.Client.VolumeMounts, dataset, componentDefinition, commonConfig, true, &value.Client.PodTemplateSpec.Spec)
+	// Client default does NOT mount secrets (defaultMountSecrets=false)
+	err = e.transformVolumes(runtime.Spec.Volumes, runtime.Spec.Client.VolumeMounts, dataset, componentDefinition, commonConfig, false, &value.Client.PodTemplateSpec.Spec)
 
 	if err != nil {
 		return err
