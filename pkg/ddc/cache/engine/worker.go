@@ -69,7 +69,11 @@ func (e *CacheEngine) SetupWorkerInternal(workerValue *common.CacheRuntimeCompon
 			return err
 		}
 
-		workerStatus, err := manager.ConstructComponentStatus(context.TODO(), workerValue)
+		identity := &common.ComponentIdentity{
+			Name:      workerValue.Name,
+			Namespace: workerValue.Namespace,
+		}
+		workerStatus, err := manager.ConstructComponentStatus(context.TODO(), identity)
 		if err != nil {
 			return err
 		}

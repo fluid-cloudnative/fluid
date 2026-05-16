@@ -30,10 +30,10 @@ import (
 	"k8s.io/client-go/util/retry"
 )
 
-func (e *CacheEngine) setMasterComponentStatus(componentValue *common.CacheRuntimeComponentValue, status *fluidapi.CacheRuntimeStatus) (ready bool, err error) {
-	manager := component.NewComponentHelper(componentValue.WorkloadType, e.Client)
+func (e *CacheEngine) setMasterComponentStatus(componentInfo *common.ComponentStatusInfo, status *fluidapi.CacheRuntimeStatus) (ready bool, err error) {
+	manager := component.NewComponentHelper(componentInfo.WorkloadType, e.Client)
 
-	masterStatus, err := manager.ConstructComponentStatus(context.TODO(), componentValue)
+	masterStatus, err := manager.ConstructComponentStatus(context.TODO(), &componentInfo.ComponentIdentity)
 	if err != nil {
 		return false, err
 	}
@@ -47,10 +47,10 @@ func (e *CacheEngine) setMasterComponentStatus(componentValue *common.CacheRunti
 
 	return ready, err
 }
-func (e *CacheEngine) setWorkerComponentStatus(componentValue *common.CacheRuntimeComponentValue, status *fluidapi.CacheRuntimeStatus) (ready bool, err error) {
-	manager := component.NewComponentHelper(componentValue.WorkloadType, e.Client)
+func (e *CacheEngine) setWorkerComponentStatus(componentInfo *common.ComponentStatusInfo, status *fluidapi.CacheRuntimeStatus) (ready bool, err error) {
+	manager := component.NewComponentHelper(componentInfo.WorkloadType, e.Client)
 
-	workerStatus, err := manager.ConstructComponentStatus(context.TODO(), componentValue)
+	workerStatus, err := manager.ConstructComponentStatus(context.TODO(), &componentInfo.ComponentIdentity)
 	if err != nil {
 		return false, err
 	}
@@ -72,17 +72,17 @@ func (e *CacheEngine) setWorkerComponentStatus(componentValue *common.CacheRunti
 	status.Worker = workerStatus
 
 	// Worker Affinity
-	affinity, err := manager.GetNodeAffinity(componentValue)
+	affinity, err := manager.GetNodeAffinity(&componentInfo.ComponentIdentity)
 	if err != nil {
 		return false, err
 	}
 	status.CacheAffinity = affinity
 	return ready, err
 }
-func (e *CacheEngine) setClientComponentStatus(componentValue *common.CacheRuntimeComponentValue, status *fluidapi.CacheRuntimeStatus) (fullyReady bool, err error) {
-	manager := component.NewComponentHelper(componentValue.WorkloadType, e.Client)
+func (e *CacheEngine) setClientComponentStatus(componentInfo *common.ComponentStatusInfo, status *fluidapi.CacheRuntimeStatus) (fullyReady bool, err error) {
+	manager := component.NewComponentHelper(componentInfo.WorkloadType, e.Client)
 
-	clientStatus, err := manager.ConstructComponentStatus(context.TODO(), componentValue)
+	clientStatus, err := manager.ConstructComponentStatus(context.TODO(), &componentInfo.ComponentIdentity)
 	if err != nil {
 		return false, err
 	}
@@ -98,7 +98,7 @@ func (e *CacheEngine) setClientComponentStatus(componentValue *common.CacheRunti
 
 	return fullyReady, nil
 }
-func (e *CacheEngine) CheckAndUpdateRuntimeStatus(value *common.CacheRuntimeValue) (bool, error) {
+func (e *CacheEngine) CheckAndUpdateRuntimeStatus(value *common.CacheRuntimeStatusValue) (bool, error) {
 	runtimeReady := false
 
 	err := retry.RetryOnConflict(retry.DefaultBackoff, func() error {

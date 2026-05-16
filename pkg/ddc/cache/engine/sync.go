@@ -34,7 +34,6 @@ func (e *CacheEngine) Sync(ctx cruntime.ReconcileRequestContext) (err error) {
 	if err != nil {
 		return err
 	}
-	dataset := ctx.Dataset
 	runtimeClass, err := e.getRuntimeClass(runtime.Spec.RuntimeClassName)
 	if err != nil {
 		return err
@@ -50,12 +49,12 @@ func (e *CacheEngine) Sync(ctx cruntime.ReconcileRequestContext) (err error) {
 	// handle ufs change
 
 	// sync runtime status
-	runtimeValue, err := e.transform(dataset, runtime, runtimeClass)
+	// Use lightweight getRuntimeStatusValue instead of full transform for status update
+	statusValue, err := e.getRuntimeStatusValue(runtime, runtimeClass)
 	if err != nil {
 		return err
 	}
-	// TODO: use different struct for input parameter to avoid fully transform
-	_, err = e.CheckAndUpdateRuntimeStatus(runtimeValue)
+	_, err = e.CheckAndUpdateRuntimeStatus(statusValue)
 	if err != nil {
 		return err
 	}
