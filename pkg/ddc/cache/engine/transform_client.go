@@ -23,43 +23,36 @@ import (
 )
 
 func (e *CacheEngine) transformClient(dataset *datav1alpha1.Dataset, runtime *datav1alpha1.CacheRuntime, runtimeClass *datav1alpha1.CacheRuntimeClass,
-	config *CacheRuntimeComponentCommonConfig, value *common.CacheRuntimeValue) error {
+	commonConfig *CacheRuntimeComponentCommonConfig, value *common.CacheRuntimeValue) error {
+	runtimeClient := runtime.Spec.Client
 
-	if runtimeClass.Topology == nil || runtimeClass.Topology.Client == nil || runtime.Spec.Client.Disabled {
+	if runtimeClass.Topology == nil || runtimeClass.Topology.Client == nil || runtimeClient.Disabled {
 		value.Client = &common.CacheRuntimeComponentValue{Enabled: false}
 		return nil
 	}
 
-	component := runtimeClass.Topology.Client
-	value.Client = &common.CacheRuntimeComponentValue{
-		Name:            GetComponentName(e.name, common.ComponentTypeClient),
-		Namespace:       e.namespace,
-		Enabled:         true,
-		ComponentType:   common.ComponentTypeClient,
-		WorkloadType:    component.WorkloadType,
-		PodTemplateSpec: component.Template,
-		Owner:           config.Owner,
-		Replicas:        1,
-	}
-	if runtimeClass.Topology.Client.Service.Headless != nil {
-		value.Client.Service = &common.CacheRuntimeComponentServiceConfig{
-			Name: GetComponentServiceName(e.name, common.ComponentTypeClient),
-		}
-	}
+	componentDefinition := runtimeClass.Topology.Client
 
-	err := e.addCommonConfigForComponent(config, value.Client, component)
+	// Initialize component value with common fields (Client always has 1 replica)
+	var err error
+	value.Client, err = e.initComponentValue(common.ComponentTypeClient, componentDefinition, commonConfig.Owner, 1)
 	if err != nil {
 		return err
 	}
 
-	// transform encrypt options to client volumes (default disabled for Client)
-	if shouldMountSecrets(component.Dependencies.SecretMount, false) {
-		e.transformEncryptOptionsToComponentVolumes(dataset, value.Client)
-	}
-
 	podTemplateSpec := &value.Client.PodTemplateSpec
 
-	// TODO: transform runtime.Spec.Client, runtimeClass.Topology.Client, dataset.Spec into PodTemplateSpec
+	// TODO: TieredStore handling
+
+	// transform container related config, currently only modify the first container
+	e.transformComponentPodTemplate(runtimeClient.RuntimeComponentCommonSpec, dataset, value.Client)
+
+	// transform all volume-related configurations
+	err = e.transformVolumes(runtime.Spec.Volumes, runtime.Spec.Client.VolumeMounts, dataset, componentDefinition, commonConfig, true, &value.Client.PodTemplateSpec.Spec)
+
+	if err != nil {
+		return err
+	}
 
 	runtimeInfo, err := e.getRuntimeInfo()
 	if err != nil {

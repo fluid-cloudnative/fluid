@@ -49,8 +49,8 @@ func (s *StatefulSetManager) Reconciler(ctx context.Context, component *common.C
 	return reconcileService(ctx, s.client, component)
 }
 
-func (s *StatefulSetManager) GetNodeAffinity(component *common.CacheRuntimeComponentValue) (*corev1.NodeAffinity, error) {
-	sts, err := kubeclient.GetStatefulSet(s.client, component.Name, component.Namespace)
+func (s *StatefulSetManager) GetNodeAffinity(identity *common.ComponentIdentity) (*corev1.NodeAffinity, error) {
+	sts, err := kubeclient.GetStatefulSet(s.client, identity.Name, identity.Namespace)
 	if err != nil {
 		return nil, err
 	}
@@ -121,13 +121,13 @@ func (s *StatefulSetManager) constructStatefulSet(component *common.CacheRuntime
 	return sts
 }
 
-func (s *StatefulSetManager) ConstructComponentStatus(ctx context.Context, component *common.CacheRuntimeComponentValue) (datav1alpha1.RuntimeComponentStatus, error) {
+func (s *StatefulSetManager) ConstructComponentStatus(ctx context.Context, identity *common.ComponentIdentity) (datav1alpha1.RuntimeComponentStatus, error) {
 	logger := log.FromContext(ctx)
 	logger.Info("start to ConstructComponentStatus")
 
-	sts, err := kubeclient.GetStatefulSet(s.client, component.Name, component.Namespace)
+	sts, err := kubeclient.GetStatefulSet(s.client, identity.Name, identity.Namespace)
 	if err != nil {
-		logger.Error(err, fmt.Sprintf("failed to get component: %s/%s", component.Namespace, component.Name))
+		logger.Error(err, fmt.Sprintf("failed to get component: %s/%s", identity.Namespace, identity.Name))
 		return datav1alpha1.RuntimeComponentStatus{}, err
 	}
 

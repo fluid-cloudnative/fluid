@@ -49,8 +49,8 @@ func (s *DaemonSetManager) Reconciler(ctx context.Context, component *common.Cac
 	return reconcileService(ctx, s.client, component)
 }
 
-func (s *DaemonSetManager) GetNodeAffinity(component *common.CacheRuntimeComponentValue) (*corev1.NodeAffinity, error) {
-	ds, err := kubeclient.GetDaemonset(s.client, component.Name, component.Namespace)
+func (s *DaemonSetManager) GetNodeAffinity(identity *common.ComponentIdentity) (*corev1.NodeAffinity, error) {
+	ds, err := kubeclient.GetDaemonset(s.client, identity.Name, identity.Namespace)
 	if err != nil {
 		return nil, err
 	}
@@ -84,6 +84,10 @@ func (s *DaemonSetManager) reconcileDaemonSet(ctx context.Context, component *co
 func (s *DaemonSetManager) constructDaemonSet(component *common.CacheRuntimeComponentValue) *appsv1.DaemonSet {
 	matchLabels := getCommonLabelsFromComponent(component)
 
+	if len(component.MatchLabels) != 0 {
+		matchLabels = utils.UnionMapsWithOverride(matchLabels, component.MatchLabels)
+	}
+
 	podTemplateSpec := component.PodTemplateSpec
 	podTemplateSpec.Labels = utils.UnionMapsWithOverride(podTemplateSpec.Labels, matchLabels)
 
@@ -114,14 +118,14 @@ func (s *DaemonSetManager) constructDaemonSet(component *common.CacheRuntimeComp
 	return ds
 }
 
-func (s *DaemonSetManager) ConstructComponentStatus(ctx context.Context, component *common.CacheRuntimeComponentValue) (datav1alpha1.RuntimeComponentStatus, error) {
+func (s *DaemonSetManager) ConstructComponentStatus(ctx context.Context, identity *common.ComponentIdentity) (datav1alpha1.RuntimeComponentStatus, error) {
 	logger := log.FromContext(ctx)
 	logger.Info("start to ConstructComponentStatus")
 
 	ds := &appsv1.DaemonSet{}
-	err := s.client.Get(ctx, types.NamespacedName{Name: component.Name, Namespace: component.Namespace}, ds)
+	err := s.client.Get(ctx, types.NamespacedName{Name: identity.Name, Namespace: identity.Namespace}, ds)
 	if err != nil {
-		logger.Error(err, fmt.Sprintf("failed to get component: %s/%s", component.Namespace, component.Name))
+		logger.Error(err, fmt.Sprintf("failed to get component: %s/%s", identity.Namespace, identity.Name))
 		return datav1alpha1.RuntimeComponentStatus{}, err
 	}
 

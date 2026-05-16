@@ -71,7 +71,11 @@ func (e *CacheEngine) setupMasterInternal(masterValue *common.CacheRuntimeCompon
 			return err
 		}
 
-		masterStatus, err := manager.ConstructComponentStatus(context.TODO(), masterValue)
+		identity := &common.ComponentIdentity{
+			Name:      masterValue.Name,
+			Namespace: masterValue.Namespace,
+		}
+		masterStatus, err := manager.ConstructComponentStatus(context.TODO(), identity)
 		if err != nil {
 			return err
 		}
