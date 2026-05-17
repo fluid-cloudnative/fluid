@@ -17,171 +17,71 @@
 package v1alpha1
 
 import (
-	"testing"
-
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 )
 
-func TestDataset_RemoveDataOperationInProgress(t *testing.T) {
-	type fields struct {
-		TypeMeta   v1.TypeMeta
-		ObjectMeta v1.ObjectMeta
-		Spec       DatasetSpec
-		Status     DatasetStatus
-	}
-	type args struct {
-		operationType string
-		name          string
-	}
-	tests := []struct {
-		name   string
-		fields fields
-		args   args
-		want   string
-	}{
-		{
-			name: "test1",
-			fields: fields{
-				Status: DatasetStatus{
-					OperationRef: map[string]string{
-						"DataLoad": "test1",
-					},
-				},
-			},
-			args: args{
-				operationType: "DataLoad",
-				name:          "test1",
-			},
-			want: "",
-		},
-		{
-			name: "test2",
-			fields: fields{
-				Status: DatasetStatus{
-					OperationRef: map[string]string{
-						"DataLoad": "test1,test2",
-					},
-				},
-			},
-			args: args{
-				operationType: "DataLoad",
-				name:          "test1",
-			},
-			want: "test2",
-		},
-		{
-			name: "test3",
-			fields: fields{
-				Status: DatasetStatus{},
-			},
-			args: args{
-				operationType: "DataLoad",
-				name:          "test1",
-			},
-			want: "",
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			dataset := &Dataset{
-				TypeMeta:   tt.fields.TypeMeta,
-				ObjectMeta: tt.fields.ObjectMeta,
-				Spec:       tt.fields.Spec,
-				Status:     tt.fields.Status,
-			}
-			if got := dataset.RemoveDataOperationInProgress(tt.args.operationType, tt.args.name); got != tt.want {
-				t.Errorf("RemoveDataOperationInProgress() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
+const dataLoadOperation = "DataLoad"
 
-func TestDataset_SetDataOperationInProgress(t *testing.T) {
-	type fields struct {
-		TypeMeta   v1.TypeMeta
-		ObjectMeta v1.ObjectMeta
-		Spec       DatasetSpec
-		Status     DatasetStatus
-	}
-	type args struct {
-		operationType string
-		name          string
-	}
-	tests := []struct {
-		name   string
-		fields fields
-		args   args
-		want   string
-	}{
-		{
-			name: "test1",
-			fields: fields{
-				Status: DatasetStatus{},
+var _ = Describe("Dataset operation references", func() {
+	Describe("RemoveDataOperationInProgress", func() {
+		DescribeTable("removes the target operation reference",
+			func(dataset *Dataset, operationType string, name string, expected string) {
+				Expect(dataset.RemoveDataOperationInProgress(operationType, name)).To(Equal(expected))
+				Expect(dataset.GetDataOperationInProgress(operationType)).To(Equal(expected))
 			},
-			args: args{
-				operationType: "DataLoad",
-				name:          "test1",
+			Entry("removes the only in-progress operation",
+				&Dataset{Status: DatasetStatus{OperationRef: map[string]string{dataLoadOperation: "test1"}}},
+				dataLoadOperation,
+				"test1",
+				"",
+			),
+			Entry("removes one operation from a list",
+				&Dataset{Status: DatasetStatus{OperationRef: map[string]string{dataLoadOperation: "test1,test2"}}},
+				dataLoadOperation,
+				"test1",
+				"test2",
+			),
+			Entry("returns empty when no operation refs are recorded",
+				&Dataset{Status: DatasetStatus{}},
+				dataLoadOperation,
+				"test1",
+				"",
+			),
+		)
+	})
+
+	Describe("SetDataOperationInProgress", func() {
+		DescribeTable("tracks the operation reference for the requested operation type",
+			func(dataset *Dataset, operationType string, name string, expected string) {
+				dataset.SetDataOperationInProgress(operationType, name)
+
+				Expect(dataset.GetDataOperationInProgress(operationType)).To(Equal(expected))
 			},
-			want: "test1",
-		},
-		{
-			name: "test2",
-			fields: fields{
-				Status: DatasetStatus{
-					OperationRef: map[string]string{
-						"DataLoad": "test1",
-					},
-				},
-			},
-			args: args{
-				operationType: "DataLoad",
-				name:          "test2",
-			},
-			want: "test1,test2",
-		},
-		{
-			name: "test3",
-			fields: fields{
-				Status: DatasetStatus{
-					OperationRef: map[string]string{
-						"DataLoad": "test1",
-					},
-				},
-			},
-			args: args{
-				operationType: "DataMigrate",
-				name:          "test",
-			},
-			want: "test",
-		},
-		{
-			name: "test4",
-			fields: fields{
-				Status: DatasetStatus{
-					OperationRef: map[string]string{
-						"DataLoad": "test",
-					},
-				},
-			},
-			args: args{
-				operationType: "DataLoad",
-				name:          "test",
-			},
-			want: "test",
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			dataset := &Dataset{
-				TypeMeta:   tt.fields.TypeMeta,
-				ObjectMeta: tt.fields.ObjectMeta,
-				Spec:       tt.fields.Spec,
-				Status:     tt.fields.Status,
-			}
-			dataset.SetDataOperationInProgress(tt.args.operationType, tt.args.name)
-			if got := dataset.GetDataOperationInProgress(tt.args.operationType); got != tt.want {
-				t.Errorf("SetDataOperationInProgress() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
+			Entry("creates the first operation ref",
+				&Dataset{Status: DatasetStatus{}},
+				dataLoadOperation,
+				"test1",
+				"test1",
+			),
+			Entry("appends a new operation ref for the same type",
+				&Dataset{Status: DatasetStatus{OperationRef: map[string]string{dataLoadOperation: "test1"}}},
+				dataLoadOperation,
+				"test2",
+				"test1,test2",
+			),
+			Entry("records a different operation type independently",
+				&Dataset{Status: DatasetStatus{OperationRef: map[string]string{dataLoadOperation: "test1"}}},
+				"DataMigrate",
+				"test",
+				"test",
+			),
+			Entry("keeps an existing operation ref without duplication",
+				&Dataset{Status: DatasetStatus{OperationRef: map[string]string{dataLoadOperation: "test"}}},
+				dataLoadOperation,
+				"test",
+				"test",
+			),
+		)
+	})
+})
