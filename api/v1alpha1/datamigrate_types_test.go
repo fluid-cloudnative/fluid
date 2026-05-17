@@ -58,6 +58,7 @@ var _ = Describe("DataMigrate types", func() {
 			Expect(ok).To(BeTrue())
 			Expect(copiedDataMigrate).NotTo(BeIdenticalTo(dataMigrate))
 			Expect(copiedDataMigrate.Spec.From).To(Equal(dataMigrate.Spec.From))
+			// Verify deep copy of nested pointers.
 			Expect(copiedDataMigrate.Spec.From.DataSet).NotTo(BeIdenticalTo(dataMigrate.Spec.From.DataSet))
 			Expect(copiedDataMigrate.Spec.To).To(Equal(dataMigrate.Spec.To))
 			Expect(copiedDataMigrate.Spec.To.ExternalStorage).NotTo(BeIdenticalTo(dataMigrate.Spec.To.ExternalStorage))
