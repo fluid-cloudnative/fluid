@@ -32,11 +32,12 @@ var _ = Describe("runtime API helpers", func() {
 		},
 		Entry("AlluxioRuntime", &AlluxioRuntime{Spec: AlluxioRuntimeSpec{Replicas: 1}}, int32(1)),
 		Entry("EFCRuntime", &EFCRuntime{Spec: EFCRuntimeSpec{Replicas: 2}}, int32(2)),
+		Entry("EFCRuntime disabled worker", &EFCRuntime{Spec: EFCRuntimeSpec{Replicas: 2, Worker: EFCCompTemplateSpec{Disabled: true}}}, int32(0)),
 		Entry("GooseFSRuntime", &GooseFSRuntime{Spec: GooseFSRuntimeSpec{Replicas: 2}}, int32(2)),
-		Entry("JindoRuntime", &JindoRuntime{Spec: JindoRuntimeSpec{Replicas: 3}}, int32(3)),
-		Entry("JuiceFSRuntime", &JuiceFSRuntime{Spec: JuiceFSRuntimeSpec{Replicas: 4}}, int32(4)),
-		Entry("ThinRuntime", &ThinRuntime{Spec: ThinRuntimeSpec{Replicas: 5}}, int32(5)),
-		Entry("VineyardRuntime", &VineyardRuntime{Spec: VineyardRuntimeSpec{Replicas: 6}}, int32(6)),
+		Entry(JindoRuntimeKind, &JindoRuntime{Spec: JindoRuntimeSpec{Replicas: 3}}, int32(3)),
+		Entry(JuiceFSRuntimeKind, &JuiceFSRuntime{Spec: JuiceFSRuntimeSpec{Replicas: 4}}, int32(4)),
+		Entry(ThinRuntimeKind, &ThinRuntime{Spec: ThinRuntimeSpec{Replicas: 5}}, int32(5)),
+		Entry(VineyardRuntimeKind, &VineyardRuntime{Spec: VineyardRuntimeSpec{Replicas: 6}}, int32(6)),
 	)
 
 	Describe("GetStatus", func() {
@@ -113,9 +114,9 @@ var _ = Describe("runtime API helpers", func() {
 		Entry("AlluxioRuntime", &AlluxioRuntime{TypeMeta: metav1.TypeMeta{APIVersion: GroupVersion.String(), Kind: "AlluxioRuntime"}}, &AlluxioRuntimeList{TypeMeta: metav1.TypeMeta{APIVersion: GroupVersion.String(), Kind: "AlluxioRuntimeList"}}, "AlluxioRuntime", "AlluxioRuntimeList"),
 		Entry("EFCRuntime", &EFCRuntime{TypeMeta: metav1.TypeMeta{APIVersion: GroupVersion.String(), Kind: EFCRuntimeKind}}, &EFCRuntimeList{TypeMeta: metav1.TypeMeta{APIVersion: GroupVersion.String(), Kind: "EFCRuntimeList"}}, EFCRuntimeKind, "EFCRuntimeList"),
 		Entry("GooseFSRuntime", &GooseFSRuntime{TypeMeta: metav1.TypeMeta{APIVersion: GroupVersion.String(), Kind: "GooseFSRuntime"}}, &GooseFSRuntimeList{TypeMeta: metav1.TypeMeta{APIVersion: GroupVersion.String(), Kind: "GooseFSRuntimeList"}}, "GooseFSRuntime", "GooseFSRuntimeList"),
-		Entry("JindoRuntime", &JindoRuntime{TypeMeta: metav1.TypeMeta{APIVersion: GroupVersion.String(), Kind: JindoRuntimeKind}}, &JindoRuntimeList{TypeMeta: metav1.TypeMeta{APIVersion: GroupVersion.String(), Kind: "JindoRuntimeList"}}, JindoRuntimeKind, "JindoRuntimeList"),
-		Entry("JuiceFSRuntime", &JuiceFSRuntime{TypeMeta: metav1.TypeMeta{APIVersion: GroupVersion.String(), Kind: JuiceFSRuntimeKind}}, &JuiceFSRuntimeList{TypeMeta: metav1.TypeMeta{APIVersion: GroupVersion.String(), Kind: "JuiceFSRuntimeList"}}, JuiceFSRuntimeKind, "JuiceFSRuntimeList"),
-		Entry("ThinRuntime", &ThinRuntime{TypeMeta: metav1.TypeMeta{APIVersion: GroupVersion.String(), Kind: ThinRuntimeKind}}, &ThinRuntimeList{TypeMeta: metav1.TypeMeta{APIVersion: GroupVersion.String(), Kind: "ThinRuntimeList"}}, ThinRuntimeKind, "ThinRuntimeList"),
-		Entry("VineyardRuntime", &VineyardRuntime{TypeMeta: metav1.TypeMeta{APIVersion: GroupVersion.String(), Kind: VineyardRuntimeKind}}, &VineyardRuntimeList{TypeMeta: metav1.TypeMeta{APIVersion: GroupVersion.String(), Kind: "VineyardRuntimeList"}}, VineyardRuntimeKind, "VineyardRuntimeList"),
+		Entry(JindoRuntimeKind, &JindoRuntime{TypeMeta: metav1.TypeMeta{APIVersion: GroupVersion.String(), Kind: JindoRuntimeKind}}, &JindoRuntimeList{TypeMeta: metav1.TypeMeta{APIVersion: GroupVersion.String(), Kind: "JindoRuntimeList"}}, JindoRuntimeKind, "JindoRuntimeList"),
+		Entry(JuiceFSRuntimeKind, &JuiceFSRuntime{TypeMeta: metav1.TypeMeta{APIVersion: GroupVersion.String(), Kind: JuiceFSRuntimeKind}}, &JuiceFSRuntimeList{TypeMeta: metav1.TypeMeta{APIVersion: GroupVersion.String(), Kind: "JuiceFSRuntimeList"}}, JuiceFSRuntimeKind, "JuiceFSRuntimeList"),
+		Entry(ThinRuntimeKind, &ThinRuntime{TypeMeta: metav1.TypeMeta{APIVersion: GroupVersion.String(), Kind: ThinRuntimeKind}}, &ThinRuntimeList{TypeMeta: metav1.TypeMeta{APIVersion: GroupVersion.String(), Kind: "ThinRuntimeList"}}, ThinRuntimeKind, "ThinRuntimeList"),
+		Entry(VineyardRuntimeKind, &VineyardRuntime{TypeMeta: metav1.TypeMeta{APIVersion: GroupVersion.String(), Kind: VineyardRuntimeKind}}, &VineyardRuntimeList{TypeMeta: metav1.TypeMeta{APIVersion: GroupVersion.String(), Kind: "VineyardRuntimeList"}}, VineyardRuntimeKind, "VineyardRuntimeList"),
 	)
 })

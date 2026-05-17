@@ -57,6 +57,7 @@ var _ = Describe("status deep copy helpers", func() {
 			Expect(copied.MountTime).NotTo(BeNil())
 			Expect(copied.MountTime).NotTo(BeIdenticalTo(status.MountTime))
 			Expect(copied.MountTime.Time).To(Equal(status.MountTime.Time))
+			Expect(copied.CacheAffinity).NotTo(BeIdenticalTo(status.CacheAffinity))
 			Expect(copied.Mounts).To(HaveLen(1))
 			Expect(copied.Mounts[0].MountPoint).To(Equal("s3://bucket/data"))
 
@@ -91,6 +92,7 @@ var _ = Describe("status deep copy helpers", func() {
 			Expect(copied.MountPoints).To(HaveLen(1))
 			Expect(copied.MountPoints[0].Mount.MountPoint).To(Equal("/data/cache"))
 			Expect(copied.MountPoints[0].MountTime).NotTo(BeIdenticalTo(status.MountPoints[0].MountTime))
+			Expect(copied.MountPoints[0].MountTime.Time).To(Equal(status.MountPoints[0].MountTime.Time))
 
 			copied.MountPoints[0].Mount.MountPoint = "/mutated"
 			Expect(status.MountPoints[0].Mount.MountPoint).To(Equal("/data/cache"))
@@ -126,7 +128,9 @@ var _ = Describe("status deep copy helpers", func() {
 			Expect(copied.Infos).To(Equal(map[string]string{"path": "/tmp/data"}))
 			Expect(copied.LastScheduleTime).NotTo(BeIdenticalTo(status.LastScheduleTime))
 			Expect(copied.WaitingFor.OperationComplete).NotTo(BeNil())
+			Expect(copied.WaitingFor.OperationComplete).NotTo(BeIdenticalTo(status.WaitingFor.OperationComplete))
 			Expect(*copied.WaitingFor.OperationComplete).To(BeTrue())
+			Expect(copied.NodeAffinity).NotTo(BeIdenticalTo(status.NodeAffinity))
 
 			copied.Infos["path"] = "/tmp/other"
 			Expect(status.Infos["path"]).To(Equal("/tmp/data"))
