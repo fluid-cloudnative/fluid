@@ -236,6 +236,9 @@ func TestAlluxioFileUtils_QueryMetaDataInfoIntoFile(t *testing.T) {
 	}
 }
 
+// TestAlluxioFIleUtils_MKdir verifies AlluxioFileUtils.Mkdir by stubbing the private exec method with gomonkey:
+// when exec returns an error, Mkdir should return a non-nil error; when exec succeeds, Mkdir should return nil.
+// patches.Reset in defer restores the original behavior after the test.
 func TestAlluxioFIleUtils_MKdir(t *testing.T) {
 	ExecCommon := func(a AlluxioFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
 		return "alluxio mkdir success", "", nil
