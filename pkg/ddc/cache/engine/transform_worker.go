@@ -165,9 +165,7 @@ func (e *CacheEngine) buildWorkerAffinity(affinity *corev1.Affinity, dataset *da
 
 	// Ensure NodeAffinity exists in result
 	if affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution == nil {
-		affinity.NodeAffinity = &corev1.NodeAffinity{
-			RequiredDuringSchedulingIgnoredDuringExecution: datasetNodeAffinity.Required,
-		}
+		affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution = datasetNodeAffinity.Required
 		return
 	}
 
