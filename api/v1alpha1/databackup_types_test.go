@@ -60,6 +60,10 @@ var _ = Describe("DataBackup types", func() {
 			Expect(ok).To(BeTrue())
 			Expect(copiedDataBackup).NotTo(BeIdenticalTo(dataBackup))
 			Expect(copiedDataBackup.Spec).To(Equal(dataBackup.Spec))
+			Expect(copiedDataBackup.Spec.RunAs).NotTo(BeIdenticalTo(dataBackup.Spec.RunAs))
+			Expect(copiedDataBackup.Spec.RunAs.UID).NotTo(BeIdenticalTo(dataBackup.Spec.RunAs.UID))
+			Expect(copiedDataBackup.Spec.RunAs.GID).NotTo(BeIdenticalTo(dataBackup.Spec.RunAs.GID))
+			Expect(copiedDataBackup.Spec.RunAfter).NotTo(BeIdenticalTo(dataBackup.Spec.RunAfter))
 			Expect(copiedDataBackup.Status).To(Equal(dataBackup.Status))
 
 			dataBackupList := &DataBackupList{Items: []DataBackup{*dataBackup}}

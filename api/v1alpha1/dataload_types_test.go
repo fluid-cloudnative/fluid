@@ -47,7 +47,11 @@ var _ = Describe("DataLoad types", func() {
 					Dataset: TargetDataset{Name: "dataset", Namespace: "fluid"},
 					Target:  []TargetPath{{Path: "/training", Replicas: 2}},
 					Options: map[string]string{"threads": "8"},
-					Policy:  Once,
+					RunAfter: &OperationRef{ObjectRef: ObjectRef{
+						Kind: "DataLoad",
+						Name: "prepare",
+					}},
+					Policy: Once,
 				},
 				Status: OperationStatus{Phase: common.PhaseComplete, Duration: "1m"},
 			}
@@ -57,6 +61,7 @@ var _ = Describe("DataLoad types", func() {
 			Expect(ok).To(BeTrue())
 			Expect(copiedDataLoad).NotTo(BeIdenticalTo(dataLoad))
 			Expect(copiedDataLoad.Spec).To(Equal(dataLoad.Spec))
+			Expect(copiedDataLoad.Spec.RunAfter).NotTo(BeIdenticalTo(dataLoad.Spec.RunAfter))
 			Expect(copiedDataLoad.Status).To(Equal(dataLoad.Status))
 
 			dataLoadList := &DataLoadList{Items: []DataLoad{*dataLoad}}
