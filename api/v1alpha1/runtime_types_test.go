@@ -30,7 +30,7 @@ var _ = Describe("runtime API helpers", func() {
 			Expect(runtimeObj.Replicas()).To(Equal(expected))
 		},
 		Entry("AlluxioRuntime", &AlluxioRuntime{Spec: AlluxioRuntimeSpec{Replicas: 1}}, int32(1)),
-		Entry("EFCRuntime", &EFCRuntime{Spec: EFCRuntimeSpec{Replicas: 2}}, int32(2)),
+		Entry(EFCRuntimeKind, &EFCRuntime{Spec: EFCRuntimeSpec{Replicas: 2}}, int32(2)),
 		Entry("GooseFSRuntime", &GooseFSRuntime{Spec: GooseFSRuntimeSpec{Replicas: 2}}, int32(2)),
 		Entry("JindoRuntime", &JindoRuntime{Spec: JindoRuntimeSpec{Replicas: 3}}, int32(3)),
 		Entry("JuiceFSRuntime", &JuiceFSRuntime{Spec: JuiceFSRuntimeSpec{Replicas: 4}}, int32(4)),
@@ -47,7 +47,7 @@ var _ = Describe("runtime API helpers", func() {
 			Expect(runtimeObj.GetStatus().WorkerPhase).To(Equal(RuntimePhaseReady))
 		})
 
-		It("returns the EFC runtime status pointer", func() {
+		It("returns the EFCRuntime status pointer", func() {
 			runtimeObj := &EFCRuntime{}
 			runtimeObj.Status.WorkerPhase = RuntimePhaseReady
 
