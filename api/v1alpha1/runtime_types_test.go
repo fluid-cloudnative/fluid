@@ -25,6 +25,7 @@ import (
 )
 
 var _ = Describe("runtime API helpers", func() {
+	// EFCRuntime stays in parity with the other built-in runtime helper checks below.
 	DescribeTable("Replicas returns the runtime spec replicas",
 		func(runtimeObj interface{ Replicas() int32 }, expected int32) {
 			Expect(runtimeObj.Replicas()).To(Equal(expected))
