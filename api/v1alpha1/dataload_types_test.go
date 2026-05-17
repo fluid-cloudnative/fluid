@@ -59,6 +59,7 @@ var _ = Describe("DataLoad types", func() {
 			Expect(ok).To(BeTrue())
 			Expect(copiedDataLoad).NotTo(BeIdenticalTo(dataLoad))
 			Expect(copiedDataLoad.Spec).To(Equal(dataLoad.Spec))
+			// Verify deep copy of nested pointers.
 			if dataLoad.Spec.RunAfter != nil {
 				Expect(copiedDataLoad.Spec.RunAfter).NotTo(BeIdenticalTo(dataLoad.Spec.RunAfter))
 			}
