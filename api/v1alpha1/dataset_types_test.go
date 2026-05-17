@@ -17,6 +17,7 @@
 package v1alpha1
 
 import (
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
@@ -84,4 +85,41 @@ var _ = Describe("Dataset operation references", func() {
 			),
 		)
 	})
+
+	Describe("CanbeBound", func() {
+		It("returns true when no runtime is recorded", func() {
+			dataset := &Dataset{}
+
+			Expect(dataset.CanbeBound("runtime", "fluid", common.AccelerateCategory)).To(BeTrue())
+		})
+
+		DescribeTable("matches the runtime identity",
+			func(name, namespace string, category common.Category, expected bool) {
+				dataset := &Dataset{
+					Status: DatasetStatus{
+						Runtimes: []Runtime{
+							{Name: "target", Namespace: "fluid", Category: common.AccelerateCategory},
+						},
+					},
+				}
+
+				Expect(dataset.CanbeBound(name, namespace, category)).To(Equal(expected))
+			},
+			Entry("matching identity", "target", "fluid", common.AccelerateCategory, true),
+			Entry("name mismatch", "other", "fluid", common.AccelerateCategory, false),
+			Entry("namespace mismatch", "target", "other", common.AccelerateCategory, false),
+			Entry("category mismatch", "target", "fluid", common.Category("other"), false),
+		)
+	})
+
+	DescribeTable("IsExclusiveMode",
+		func(mode PlacementMode, expected bool) {
+			dataset := &Dataset{Spec: DatasetSpec{PlacementMode: mode}}
+
+			Expect(dataset.IsExclusiveMode()).To(Equal(expected))
+		},
+		Entry("default placement mode", DefaultMode, true),
+		Entry("exclusive placement mode", ExclusiveMode, true),
+		Entry("shared placement mode", ShareMode, false),
+	)
 })
