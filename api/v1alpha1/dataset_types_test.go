@@ -24,17 +24,18 @@ import (
 
 const dataLoadOperation = "DataLoad"
 
-var _ = Describe("Dataset operation references", func() {
+var _ = Describe("Dataset methods", func() {
 	Describe("RemoveDataOperationInProgress", func() {
 		DescribeTable("removes the target operation reference",
-			func(dataset *Dataset, operationType string, name string, expected string) {
-				Expect(dataset.RemoveDataOperationInProgress(operationType, name)).To(Equal(expected))
-				Expect(dataset.GetDataOperationInProgress(operationType)).To(Equal(expected))
+			func(dataset *Dataset, operationType string, name string, expectedRemoved string, expectedCurrent string) {
+				Expect(dataset.RemoveDataOperationInProgress(operationType, name)).To(Equal(expectedRemoved))
+				Expect(dataset.GetDataOperationInProgress(operationType)).To(Equal(expectedCurrent))
 			},
 			Entry("removes the only in-progress operation",
 				&Dataset{Status: DatasetStatus{OperationRef: map[string]string{dataLoadOperation: "test1"}}},
 				dataLoadOperation,
 				"test1",
+				"",
 				"",
 			),
 			Entry("removes one operation from a list",
@@ -42,11 +43,13 @@ var _ = Describe("Dataset operation references", func() {
 				dataLoadOperation,
 				"test1",
 				"test2",
+				"test2",
 			),
 			Entry("returns empty when no operation refs are recorded",
 				&Dataset{Status: DatasetStatus{}},
 				dataLoadOperation,
 				"test1",
+				"",
 				"",
 			),
 		)
@@ -112,14 +115,16 @@ var _ = Describe("Dataset operation references", func() {
 		)
 	})
 
-	DescribeTable("IsExclusiveMode",
-		func(mode PlacementMode, expected bool) {
-			dataset := &Dataset{Spec: DatasetSpec{PlacementMode: mode}}
+	Describe("IsExclusiveMode", func() {
+		DescribeTable("reports whether the placement mode is exclusive",
+			func(mode PlacementMode, expected bool) {
+				dataset := &Dataset{Spec: DatasetSpec{PlacementMode: mode}}
 
-			Expect(dataset.IsExclusiveMode()).To(Equal(expected))
-		},
-		Entry("default placement mode", DefaultMode, true),
-		Entry("exclusive placement mode", ExclusiveMode, true),
-		Entry("shared placement mode", ShareMode, false),
-	)
+				Expect(dataset.IsExclusiveMode()).To(Equal(expected))
+			},
+			Entry("default placement mode", DefaultMode, true),
+			Entry("exclusive placement mode", ExclusiveMode, true),
+			Entry("shared placement mode", ShareMode, false),
+		)
+	})
 })
