@@ -189,29 +189,38 @@ func shouldMountSecrets(config *datav1alpha1.SecretMountComponentDependency, def
 // transformRuntimeSpecVolumes transforms volumes and volumeMounts from CacheRuntimeSpec to PodTemplateSpec
 func (e *CacheEngine) transformRuntimeSpecVolumes(volumes []corev1.Volume, volumeMounts []corev1.VolumeMount, podSpec *corev1.PodSpec) error {
 	// podTemplateSpec will not be nil
+	if len(podSpec.Containers) == 0 {
+		return fmt.Errorf("podTemplateSpec does not have any containers")
+	}
+
+	// First pass: identify which volumes are referenced by volumeMounts and add volumeMounts to container
+	referencedVolumeMap := make(map[string]bool)
+	for _, volumeMount := range volumeMounts {
+		referencedVolumeMap[volumeMount.Name] = true
+		podSpec.Containers[0].VolumeMounts = append(
+			podSpec.Containers[0].VolumeMounts, volumeMount,
+		)
+	}
 
 	// Create a map to track existing volumes in PodTemplateSpec
+	// Initialize with volumes already present in podSpec (e.g., runtime config volume, extra config map volumes)
 	existingVolumeMap := make(map[string]bool)
-	// First pass: add volumes that don't already exist
+	for _, vol := range podSpec.Volumes {
+		existingVolumeMap[vol.Name] = true
+	}
+
+	// Second pass: add only referenced volumes that don't already exist
 	for _, volume := range volumes {
-		if !existingVolumeMap[volume.Name] {
+		if referencedVolumeMap[volume.Name] && !existingVolumeMap[volume.Name] {
 			existingVolumeMap[volume.Name] = true
 			podSpec.Volumes = append(podSpec.Volumes, volume)
 		}
 	}
 
-	// Second pass: process volumeMounts
-	for _, volumeMount := range volumeMounts {
-		// Check if corresponding volume exists
-		if !existingVolumeMap[volumeMount.Name] {
-			return fmt.Errorf("volume not found for volumeMount %s, check the CacheRuntime Spec", volumeMount.Name)
-		}
-
-		// Add volumeMount to the first container
-		if len(podSpec.Containers) > 0 {
-			podSpec.Containers[0].VolumeMounts = append(
-				podSpec.Containers[0].VolumeMounts, volumeMount,
-			)
+	// Third pass: validate all referenced volumes exist
+	for volumeName := range referencedVolumeMap {
+		if !existingVolumeMap[volumeName] {
+			return fmt.Errorf("volume not found for volumeMount %s, check the CacheRuntime Spec", volumeName)
 		}
 	}
 
