@@ -22,7 +22,10 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-const dataLoadOperation = "DataLoad"
+const (
+	dataLoadOperation    = "DataLoad"
+	dataMigrateOperation = "DataMigrate"
+)
 
 var _ = Describe("Dataset methods", func() {
 	Describe("RemoveDataOperationInProgress", func() {
@@ -52,6 +55,13 @@ var _ = Describe("Dataset methods", func() {
 				"",
 				"",
 			),
+			Entry("keeps the current refs when the target operation is not found",
+				&Dataset{Status: DatasetStatus{OperationRef: map[string]string{dataLoadOperation: "test1,test2"}}},
+				dataLoadOperation,
+				"missing",
+				"test1,test2",
+				"test1,test2",
+			),
 		)
 	})
 
@@ -76,7 +86,7 @@ var _ = Describe("Dataset methods", func() {
 			),
 			Entry("records a different operation type independently",
 				&Dataset{Status: DatasetStatus{OperationRef: map[string]string{dataLoadOperation: "test1"}}},
-				"DataMigrate",
+				dataMigrateOperation,
 				"test",
 				"test",
 			),
