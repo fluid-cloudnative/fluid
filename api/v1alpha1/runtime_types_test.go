@@ -26,10 +26,11 @@ import (
 
 var _ = Describe("runtime API helpers", func() {
 	DescribeTable("Replicas returns the runtime spec replicas",
-		func(runtime interface{ Replicas() int32 }, expected int32) {
-			Expect(runtime.Replicas()).To(Equal(expected))
+		func(runtimeObj interface{ Replicas() int32 }, expected int32) {
+			Expect(runtimeObj.Replicas()).To(Equal(expected))
 		},
 		Entry("AlluxioRuntime", &AlluxioRuntime{Spec: AlluxioRuntimeSpec{Replicas: 1}}, int32(1)),
+		Entry("EFCRuntime", &EFCRuntime{Spec: EFCRuntimeSpec{Replicas: 2}}, int32(2)),
 		Entry("GooseFSRuntime", &GooseFSRuntime{Spec: GooseFSRuntimeSpec{Replicas: 2}}, int32(2)),
 		Entry("JindoRuntime", &JindoRuntime{Spec: JindoRuntimeSpec{Replicas: 3}}, int32(3)),
 		Entry("JuiceFSRuntime", &JuiceFSRuntime{Spec: JuiceFSRuntimeSpec{Replicas: 4}}, int32(4)),
@@ -39,51 +40,59 @@ var _ = Describe("runtime API helpers", func() {
 
 	Describe("GetStatus", func() {
 		It("returns the Alluxio runtime status pointer", func() {
-			runtime := &AlluxioRuntime{}
-			runtime.Status.WorkerPhase = RuntimePhaseReady
+			runtimeObj := &AlluxioRuntime{}
+			runtimeObj.Status.WorkerPhase = RuntimePhaseReady
 
-			Expect(runtime.GetStatus()).To(BeIdenticalTo(&runtime.Status))
-			Expect(runtime.GetStatus().WorkerPhase).To(Equal(RuntimePhaseReady))
+			Expect(runtimeObj.GetStatus()).To(BeIdenticalTo(&runtimeObj.Status))
+			Expect(runtimeObj.GetStatus().WorkerPhase).To(Equal(RuntimePhaseReady))
+		})
+
+		It("returns the EFC runtime status pointer", func() {
+			runtimeObj := &EFCRuntime{}
+			runtimeObj.Status.WorkerPhase = RuntimePhaseReady
+
+			Expect(runtimeObj.GetStatus()).To(BeIdenticalTo(&runtimeObj.Status))
+			Expect(runtimeObj.GetStatus().WorkerPhase).To(Equal(RuntimePhaseReady))
 		})
 
 		It("returns the GooseFS runtime status pointer", func() {
-			runtime := &GooseFSRuntime{}
-			runtime.Status.MasterPhase = RuntimePhaseReady
+			runtimeObj := &GooseFSRuntime{}
+			runtimeObj.Status.MasterPhase = RuntimePhaseReady
 
-			Expect(runtime.GetStatus()).To(BeIdenticalTo(&runtime.Status))
-			Expect(runtime.GetStatus().MasterPhase).To(Equal(RuntimePhaseReady))
+			Expect(runtimeObj.GetStatus()).To(BeIdenticalTo(&runtimeObj.Status))
+			Expect(runtimeObj.GetStatus().MasterPhase).To(Equal(RuntimePhaseReady))
 		})
 
 		It("returns the Jindo runtime status pointer", func() {
-			runtime := &JindoRuntime{}
-			runtime.Status.FusePhase = RuntimePhaseReady
+			runtimeObj := &JindoRuntime{}
+			runtimeObj.Status.FusePhase = RuntimePhaseReady
 
-			Expect(runtime.GetStatus()).To(BeIdenticalTo(&runtime.Status))
-			Expect(runtime.GetStatus().FusePhase).To(Equal(RuntimePhaseReady))
+			Expect(runtimeObj.GetStatus()).To(BeIdenticalTo(&runtimeObj.Status))
+			Expect(runtimeObj.GetStatus().FusePhase).To(Equal(RuntimePhaseReady))
 		})
 
 		It("returns the JuiceFS runtime status pointer", func() {
-			runtime := &JuiceFSRuntime{}
-			runtime.Status.Selector = "app=juicefs"
+			runtimeObj := &JuiceFSRuntime{}
+			runtimeObj.Status.Selector = "app=juicefs"
 
-			Expect(runtime.GetStatus()).To(BeIdenticalTo(&runtime.Status))
-			Expect(runtime.GetStatus().Selector).To(Equal("app=juicefs"))
+			Expect(runtimeObj.GetStatus()).To(BeIdenticalTo(&runtimeObj.Status))
+			Expect(runtimeObj.GetStatus().Selector).To(Equal("app=juicefs"))
 		})
 
 		It("returns the Thin runtime status pointer", func() {
-			runtime := &ThinRuntime{}
-			runtime.Status.SetupDuration = "1m"
+			runtimeObj := &ThinRuntime{}
+			runtimeObj.Status.SetupDuration = "1m"
 
-			Expect(runtime.GetStatus()).To(BeIdenticalTo(&runtime.Status))
-			Expect(runtime.GetStatus().SetupDuration).To(Equal("1m"))
+			Expect(runtimeObj.GetStatus()).To(BeIdenticalTo(&runtimeObj.Status))
+			Expect(runtimeObj.GetStatus().SetupDuration).To(Equal("1m"))
 		})
 
 		It("returns the Vineyard runtime status pointer", func() {
-			runtime := &VineyardRuntime{}
-			runtime.Status.ValueFileConfigmap = "values"
+			runtimeObj := &VineyardRuntime{}
+			runtimeObj.Status.ValueFileConfigmap = "values"
 
-			Expect(runtime.GetStatus()).To(BeIdenticalTo(&runtime.Status))
-			Expect(runtime.GetStatus().ValueFileConfigmap).To(Equal("values"))
+			Expect(runtimeObj.GetStatus()).To(BeIdenticalTo(&runtimeObj.Status))
+			Expect(runtimeObj.GetStatus().ValueFileConfigmap).To(Equal("values"))
 		})
 	})
 
@@ -101,10 +110,11 @@ var _ = Describe("runtime API helpers", func() {
 			Expect(listKinds).To(ContainElement(listGVK))
 		},
 		Entry("AlluxioRuntime", &AlluxioRuntime{TypeMeta: metav1.TypeMeta{APIVersion: GroupVersion.String(), Kind: "AlluxioRuntime"}}, &AlluxioRuntimeList{TypeMeta: metav1.TypeMeta{APIVersion: GroupVersion.String(), Kind: "AlluxioRuntimeList"}}, "AlluxioRuntime", "AlluxioRuntimeList"),
+		Entry("EFCRuntime", &EFCRuntime{TypeMeta: metav1.TypeMeta{APIVersion: GroupVersion.String(), Kind: EFCRuntimeKind}}, &EFCRuntimeList{TypeMeta: metav1.TypeMeta{APIVersion: GroupVersion.String(), Kind: "EFCRuntimeList"}}, EFCRuntimeKind, "EFCRuntimeList"),
 		Entry("GooseFSRuntime", &GooseFSRuntime{TypeMeta: metav1.TypeMeta{APIVersion: GroupVersion.String(), Kind: "GooseFSRuntime"}}, &GooseFSRuntimeList{TypeMeta: metav1.TypeMeta{APIVersion: GroupVersion.String(), Kind: "GooseFSRuntimeList"}}, "GooseFSRuntime", "GooseFSRuntimeList"),
-		Entry("JindoRuntime", &JindoRuntime{TypeMeta: metav1.TypeMeta{APIVersion: GroupVersion.String(), Kind: "JindoRuntime"}}, &JindoRuntimeList{TypeMeta: metav1.TypeMeta{APIVersion: GroupVersion.String(), Kind: "JindoRuntimeList"}}, "JindoRuntime", "JindoRuntimeList"),
-		Entry("JuiceFSRuntime", &JuiceFSRuntime{TypeMeta: metav1.TypeMeta{APIVersion: GroupVersion.String(), Kind: "JuiceFSRuntime"}}, &JuiceFSRuntimeList{TypeMeta: metav1.TypeMeta{APIVersion: GroupVersion.String(), Kind: "JuiceFSRuntimeList"}}, "JuiceFSRuntime", "JuiceFSRuntimeList"),
-		Entry("ThinRuntime", &ThinRuntime{TypeMeta: metav1.TypeMeta{APIVersion: GroupVersion.String(), Kind: "ThinRuntime"}}, &ThinRuntimeList{TypeMeta: metav1.TypeMeta{APIVersion: GroupVersion.String(), Kind: "ThinRuntimeList"}}, "ThinRuntime", "ThinRuntimeList"),
-		Entry("VineyardRuntime", &VineyardRuntime{TypeMeta: metav1.TypeMeta{APIVersion: GroupVersion.String(), Kind: "VineyardRuntime"}}, &VineyardRuntimeList{TypeMeta: metav1.TypeMeta{APIVersion: GroupVersion.String(), Kind: "VineyardRuntimeList"}}, "VineyardRuntime", "VineyardRuntimeList"),
+		Entry("JindoRuntime", &JindoRuntime{TypeMeta: metav1.TypeMeta{APIVersion: GroupVersion.String(), Kind: JindoRuntimeKind}}, &JindoRuntimeList{TypeMeta: metav1.TypeMeta{APIVersion: GroupVersion.String(), Kind: "JindoRuntimeList"}}, JindoRuntimeKind, "JindoRuntimeList"),
+		Entry("JuiceFSRuntime", &JuiceFSRuntime{TypeMeta: metav1.TypeMeta{APIVersion: GroupVersion.String(), Kind: JuiceFSRuntimeKind}}, &JuiceFSRuntimeList{TypeMeta: metav1.TypeMeta{APIVersion: GroupVersion.String(), Kind: "JuiceFSRuntimeList"}}, JuiceFSRuntimeKind, "JuiceFSRuntimeList"),
+		Entry("ThinRuntime", &ThinRuntime{TypeMeta: metav1.TypeMeta{APIVersion: GroupVersion.String(), Kind: ThinRuntimeKind}}, &ThinRuntimeList{TypeMeta: metav1.TypeMeta{APIVersion: GroupVersion.String(), Kind: "ThinRuntimeList"}}, ThinRuntimeKind, "ThinRuntimeList"),
+		Entry("VineyardRuntime", &VineyardRuntime{TypeMeta: metav1.TypeMeta{APIVersion: GroupVersion.String(), Kind: VineyardRuntimeKind}}, &VineyardRuntimeList{TypeMeta: metav1.TypeMeta{APIVersion: GroupVersion.String(), Kind: "VineyardRuntimeList"}}, VineyardRuntimeKind, "VineyardRuntimeList"),
 	)
 })

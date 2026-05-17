@@ -47,20 +47,20 @@ var _ = Describe("status deep copy helpers", func() {
 				CacheAffinity: &corev1.NodeAffinity{},
 			}
 
-			copy := status.DeepCopy()
+			copied := status.DeepCopy()
 
-			Expect(copy).NotTo(BeNil())
-			Expect(copy).NotTo(BeIdenticalTo(status))
-			Expect(copy.WorkerPhase).To(Equal(RuntimePhaseReady))
-			Expect(copy.Conditions).To(HaveLen(1))
-			Expect(copy.Conditions[0].Reason).To(Equal(RuntimeWorkersReadyReason))
-			Expect(copy.MountTime).NotTo(BeNil())
-			Expect(copy.MountTime).NotTo(BeIdenticalTo(status.MountTime))
-			Expect(copy.MountTime.Time).To(Equal(status.MountTime.Time))
-			Expect(copy.Mounts).To(HaveLen(1))
-			Expect(copy.Mounts[0].MountPoint).To(Equal("s3://bucket/data"))
+			Expect(copied).NotTo(BeNil())
+			Expect(copied).NotTo(BeIdenticalTo(status))
+			Expect(copied.WorkerPhase).To(Equal(RuntimePhaseReady))
+			Expect(copied.Conditions).To(HaveLen(1))
+			Expect(copied.Conditions[0].Reason).To(Equal(RuntimeWorkersReadyReason))
+			Expect(copied.MountTime).NotTo(BeNil())
+			Expect(copied.MountTime).NotTo(BeIdenticalTo(status.MountTime))
+			Expect(copied.MountTime.Time).To(Equal(status.MountTime.Time))
+			Expect(copied.Mounts).To(HaveLen(1))
+			Expect(copied.Mounts[0].MountPoint).To(Equal("s3://bucket/data"))
 
-			copy.Mounts[0].MountPoint = "changed"
+			copied.Mounts[0].MountPoint = "changed"
 			Expect(status.Mounts[0].MountPoint).To(Equal("s3://bucket/data"))
 		})
 	})
@@ -83,16 +83,16 @@ var _ = Describe("status deep copy helpers", func() {
 				}},
 			}
 
-			copy := status.DeepCopy()
+			copied := status.DeepCopy()
 
-			Expect(copy).NotTo(BeNil())
-			Expect(copy).NotTo(BeIdenticalTo(status))
-			Expect(copy.Worker.Phase).To(Equal(RuntimePhasePartialReady))
-			Expect(copy.MountPoints).To(HaveLen(1))
-			Expect(copy.MountPoints[0].Mount.MountPoint).To(Equal("/data/cache"))
-			Expect(copy.MountPoints[0].MountTime).NotTo(BeIdenticalTo(status.MountPoints[0].MountTime))
+			Expect(copied).NotTo(BeNil())
+			Expect(copied).NotTo(BeIdenticalTo(status))
+			Expect(copied.Worker.Phase).To(Equal(RuntimePhasePartialReady))
+			Expect(copied.MountPoints).To(HaveLen(1))
+			Expect(copied.MountPoints[0].Mount.MountPoint).To(Equal("/data/cache"))
+			Expect(copied.MountPoints[0].MountTime).NotTo(BeIdenticalTo(status.MountPoints[0].MountTime))
 
-			copy.MountPoints[0].Mount.MountPoint = "/mutated"
+			copied.MountPoints[0].Mount.MountPoint = "/mutated"
 			Expect(status.MountPoints[0].Mount.MountPoint).To(Equal("/data/cache"))
 		})
 	})
@@ -117,18 +117,18 @@ var _ = Describe("status deep copy helpers", func() {
 				NodeAffinity: &corev1.NodeAffinity{},
 			}
 
-			copy := status.DeepCopy()
+			copied := status.DeepCopy()
 
-			Expect(copy).NotTo(BeNil())
-			Expect(copy).NotTo(BeIdenticalTo(status))
-			Expect(copy.Phase).To(Equal(common.PhaseComplete))
-			Expect(copy.Duration).To(Equal("10s"))
-			Expect(copy.Infos).To(Equal(map[string]string{"path": "/tmp/data"}))
-			Expect(copy.LastScheduleTime).NotTo(BeIdenticalTo(status.LastScheduleTime))
-			Expect(copy.WaitingFor.OperationComplete).NotTo(BeNil())
-			Expect(*copy.WaitingFor.OperationComplete).To(BeTrue())
+			Expect(copied).NotTo(BeNil())
+			Expect(copied).NotTo(BeIdenticalTo(status))
+			Expect(copied.Phase).To(Equal(common.PhaseComplete))
+			Expect(copied.Duration).To(Equal("10s"))
+			Expect(copied.Infos).To(Equal(map[string]string{"path": "/tmp/data"}))
+			Expect(copied.LastScheduleTime).NotTo(BeIdenticalTo(status.LastScheduleTime))
+			Expect(copied.WaitingFor.OperationComplete).NotTo(BeNil())
+			Expect(*copied.WaitingFor.OperationComplete).To(BeTrue())
 
-			copy.Infos["path"] = "/tmp/other"
+			copied.Infos["path"] = "/tmp/other"
 			Expect(status.Infos["path"]).To(Equal("/tmp/data"))
 		})
 	})
