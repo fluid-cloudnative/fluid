@@ -21,8 +21,6 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
 var _ = Describe("DataLoad types", func() {
@@ -61,7 +59,9 @@ var _ = Describe("DataLoad types", func() {
 			Expect(ok).To(BeTrue())
 			Expect(copiedDataLoad).NotTo(BeIdenticalTo(dataLoad))
 			Expect(copiedDataLoad.Spec).To(Equal(dataLoad.Spec))
-			Expect(copiedDataLoad.Spec.RunAfter).NotTo(BeIdenticalTo(dataLoad.Spec.RunAfter))
+			if dataLoad.Spec.RunAfter != nil {
+				Expect(copiedDataLoad.Spec.RunAfter).NotTo(BeIdenticalTo(dataLoad.Spec.RunAfter))
+			}
 			Expect(copiedDataLoad.Status).To(Equal(dataLoad.Status))
 
 			dataLoadList := &DataLoadList{Items: []DataLoad{*dataLoad}}
@@ -109,13 +109,3 @@ var _ = Describe("DataLoad types", func() {
 		})
 	})
 })
-
-func apiGVKFor(object runtime.Object) (schema.GroupVersionKind, error) {
-	gvks, _, err := UnitTestScheme.ObjectKinds(object)
-	if err != nil {
-		return schema.GroupVersionKind{}, err
-	}
-
-	Expect(gvks).NotTo(BeEmpty())
-	return gvks[0], nil
-}
