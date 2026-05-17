@@ -64,6 +64,7 @@ var _ = Describe("DataProcess types", func() {
 			Expect(copiedDataProcess).NotTo(BeIdenticalTo(dataProcess))
 			Expect(copiedDataProcess.Spec.Dataset).To(Equal(dataProcess.Spec.Dataset))
 			Expect(copiedDataProcess.Spec.Processor.Script).NotTo(BeNil())
+			Expect(copiedDataProcess.Spec.Processor.Script).NotTo(BeIdenticalTo(dataProcess.Spec.Processor.Script))
 			Expect(*copiedDataProcess.Spec.Processor.Script).To(Equal(*dataProcess.Spec.Processor.Script))
 			Expect(copiedDataProcess.Status).To(Equal(dataProcess.Status))
 

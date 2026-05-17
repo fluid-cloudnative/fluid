@@ -61,21 +61,11 @@ var _ = Describe("DataBackup types", func() {
 			Expect(copiedDataBackup).NotTo(BeIdenticalTo(dataBackup))
 			Expect(copiedDataBackup.Spec).To(Equal(dataBackup.Spec))
 			// Verify deep copy of nested pointers.
-			if dataBackup.Spec.RunAs != nil {
-				Expect(copiedDataBackup.Spec.RunAs).NotTo(BeIdenticalTo(dataBackup.Spec.RunAs))
-			}
-			if dataBackup.Spec.RunAfter != nil {
-				Expect(copiedDataBackup.Spec.RunAfter).NotTo(BeIdenticalTo(dataBackup.Spec.RunAfter))
-			}
+			Expect(copiedDataBackup.Spec.RunAs).NotTo(BeIdenticalTo(dataBackup.Spec.RunAs))
+			Expect(copiedDataBackup.Spec.RunAfter).NotTo(BeIdenticalTo(dataBackup.Spec.RunAfter))
 			Expect(copiedDataBackup.Status).To(Equal(dataBackup.Status))
-			if dataBackup.Spec.RunAs != nil {
-				if dataBackup.Spec.RunAs.UID != nil {
-					Expect(copiedDataBackup.Spec.RunAs.UID).NotTo(BeIdenticalTo(dataBackup.Spec.RunAs.UID))
-				}
-				if dataBackup.Spec.RunAs.GID != nil {
-					Expect(copiedDataBackup.Spec.RunAs.GID).NotTo(BeIdenticalTo(dataBackup.Spec.RunAs.GID))
-				}
-			}
+			Expect(copiedDataBackup.Spec.RunAs.UID).NotTo(BeIdenticalTo(dataBackup.Spec.RunAs.UID))
+			Expect(copiedDataBackup.Spec.RunAs.GID).NotTo(BeIdenticalTo(dataBackup.Spec.RunAs.GID))
 
 			dataBackupList := &DataBackupList{Items: []DataBackup{*dataBackup}}
 			copiedListObject := dataBackupList.DeepCopyObject()

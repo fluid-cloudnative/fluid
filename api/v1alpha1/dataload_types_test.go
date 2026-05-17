@@ -60,11 +60,9 @@ var _ = Describe("DataLoad types", func() {
 			Expect(copiedDataLoad).NotTo(BeIdenticalTo(dataLoad))
 			Expect(copiedDataLoad.Spec).To(Equal(dataLoad.Spec))
 			// Verify deep copy of nested pointers.
-			if dataLoad.Spec.RunAfter != nil {
-				Expect(copiedDataLoad.Spec.RunAfter).NotTo(BeIdenticalTo(dataLoad.Spec.RunAfter))
-				dataLoad.Spec.RunAfter.Name = "changed-after-copy"
-				Expect(copiedDataLoad.Spec.RunAfter.ObjectRef).To(Equal(ObjectRef{Kind: "DataLoad", Name: "prepare"}))
-			}
+			Expect(copiedDataLoad.Spec.RunAfter).NotTo(BeIdenticalTo(dataLoad.Spec.RunAfter))
+			dataLoad.Spec.RunAfter.Name = "changed-after-copy"
+			Expect(copiedDataLoad.Spec.RunAfter.ObjectRef).To(Equal(ObjectRef{Kind: "DataLoad", Name: "prepare"}))
 			Expect(copiedDataLoad.Status).To(Equal(dataLoad.Status))
 
 			dataLoadList := &DataLoadList{Items: []DataLoad{*dataLoad}}
