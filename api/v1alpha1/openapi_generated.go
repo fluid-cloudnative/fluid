@@ -79,6 +79,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.EFCRuntime":                        schema_fluid_cloudnative_fluid_api_v1alpha1_EFCRuntime(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.EFCRuntimeList":                    schema_fluid_cloudnative_fluid_api_v1alpha1_EFCRuntimeList(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.EFCRuntimeSpec":                    schema_fluid_cloudnative_fluid_api_v1alpha1_EFCRuntimeSpec(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.EmptyDirMediumSource":              schema_fluid_cloudnative_fluid_api_v1alpha1_EmptyDirMediumSource(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.EncryptOption":                     schema_fluid_cloudnative_fluid_api_v1alpha1_EncryptOption(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.EncryptOptionSource":               schema_fluid_cloudnative_fluid_api_v1alpha1_EncryptOptionSource(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.ExecutionCommonEntry":              schema_fluid_cloudnative_fluid_api_v1alpha1_ExecutionCommonEntry(ref),
@@ -88,6 +89,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.ExtraResourcesComponentDependency": schema_fluid_cloudnative_fluid_api_v1alpha1_ExtraResourcesComponentDependency(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.HCFSStatus":                        schema_fluid_cloudnative_fluid_api_v1alpha1_HCFSStatus(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.HeadlessRuntimeComponentService":   schema_fluid_cloudnative_fluid_api_v1alpha1_HeadlessRuntimeComponentService(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.HostPathMediumSource":              schema_fluid_cloudnative_fluid_api_v1alpha1_HostPathMediumSource(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.InitFuseSpec":                      schema_fluid_cloudnative_fluid_api_v1alpha1_InitFuseSpec(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.InitUsersSpec":                     schema_fluid_cloudnative_fluid_api_v1alpha1_InitUsersSpec(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.JindoCompTemplateSpec":             schema_fluid_cloudnative_fluid_api_v1alpha1_JindoCompTemplateSpec(ref),
@@ -103,7 +105,6 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.JuiceFSRuntimeSpec":                schema_fluid_cloudnative_fluid_api_v1alpha1_JuiceFSRuntimeSpec(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.Level":                             schema_fluid_cloudnative_fluid_api_v1alpha1_Level(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.MasterSpec":                        schema_fluid_cloudnative_fluid_api_v1alpha1_MasterSpec(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.MediumSource":                      schema_fluid_cloudnative_fluid_api_v1alpha1_MediumSource(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.Metadata":                          schema_fluid_cloudnative_fluid_api_v1alpha1_Metadata(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.MetadataSyncPolicy":                schema_fluid_cloudnative_fluid_api_v1alpha1_MetadataSyncPolicy(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.Mount":                             schema_fluid_cloudnative_fluid_api_v1alpha1_Mount(ref),
@@ -153,7 +154,6 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.VineyardRuntime":                   schema_fluid_cloudnative_fluid_api_v1alpha1_VineyardRuntime(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.VineyardRuntimeList":               schema_fluid_cloudnative_fluid_api_v1alpha1_VineyardRuntimeList(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.VineyardRuntimeSpec":               schema_fluid_cloudnative_fluid_api_v1alpha1_VineyardRuntimeSpec(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.VolumeMediumSource":                schema_fluid_cloudnative_fluid_api_v1alpha1_VolumeMediumSource(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.VolumeSource":                      schema_fluid_cloudnative_fluid_api_v1alpha1_VolumeSource(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.WaitingStatus":                     schema_fluid_cloudnative_fluid_api_v1alpha1_WaitingStatus(ref),
 	}
@@ -3788,6 +3788,35 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_EFCRuntimeSpec(ref common.Refer
 	}
 }
 
+func schema_fluid_cloudnative_fluid_api_v1alpha1_EmptyDirMediumSource(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "EmptyDirMediumSource describes emptyDir volume as a storage medium. Can be backed by node's default storage or memory (tmpfs).",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"quota": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Quota specifies the maximum storage capacity for the emptyDir volume. For Memory medium, this limit is also constrained by the sum of container memory limits. The actual limit = min(Quota, sum of container memory limits). Example: \"100Gi\" limits the emptyDir to 100GiB.",
+							Ref:         ref("k8s.io/apimachinery/pkg/api/resource.Quantity"),
+						},
+					},
+					"medium": {
+						SchemaProps: spec.SchemaProps{
+							Description: "medium represents what type of storage medium should back this directory. The default is \"\" which means to use the node's default medium. Must be an empty string (default) or Memory. More info: https://kubernetes.io/docs/concepts/storage/volumes#emptydir",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+				},
+				Required: []string{"quota"},
+			},
+		},
+		Dependencies: []string{
+			"k8s.io/apimachinery/pkg/api/resource.Quantity"},
+	}
+}
+
 func schema_fluid_cloudnative_fluid_api_v1alpha1_EncryptOption(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
@@ -4053,6 +4082,57 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_HeadlessRuntimeComponentService
 				Type:        []string{"object"},
 			},
 		},
+	}
+}
+
+func schema_fluid_cloudnative_fluid_api_v1alpha1_HostPathMediumSource(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "HostPathMediumSource describes hostPath volumes as a storage medium. Multiple paths can be configured to distribute cache across different disks.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"paths": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Paths is a list of file paths on the host machine to be used for caching. Multiple paths allow distributing cache across different mount points or disks. Example: [\"/mnt/cache1\", \"/mnt/cache2\"]",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: "",
+										Type:    []string{"string"},
+										Format:  "",
+									},
+								},
+							},
+						},
+					},
+					"quotas": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Quotas is a list of storage quotas corresponding to each path. The length of Quotas must match the length of Paths. Each quota defines the maximum cache size for the corresponding path. Example: [\"100Gi\", \"50Gi\"] allocates 100GiB to the first path and 50GiB to the second.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Ref: ref("k8s.io/apimachinery/pkg/api/resource.Quantity"),
+									},
+								},
+							},
+						},
+					},
+					"type": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Type specifies the type of hostPath volume. Defaults to empty string (no validation). More info: https://kubernetes.io/docs/concepts/storage/volumes#hostpath",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+				},
+				Required: []string{"paths", "quotas"},
+			},
+		},
+		Dependencies: []string{
+			"k8s.io/apimachinery/pkg/api/resource.Quantity"},
 	}
 }
 
@@ -5499,33 +5579,6 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_MasterSpec(ref common.Reference
 	}
 }
 
-func schema_fluid_cloudnative_fluid_api_v1alpha1_MediumSource(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Description: "MediumSource describes the storage medium type for tiered store. Only one of its members may be specified.",
-				Type:        []string{"object"},
-				Properties: map[string]spec.Schema{
-					"processMemory": {
-						SchemaProps: spec.SchemaProps{
-							Description: "ProcessMemory indicates that process memory should be used as the storage medium. The cache will be stored in the process's memory space.",
-							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.ProcessMemoryMediumSource"),
-						},
-					},
-					"volume": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Volume indicates that a Kubernetes volume should be used as the storage medium. Supported volume types include hostPath, emptyDir, and ephemeral volumes.",
-							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.VolumeMediumSource"),
-						},
-					},
-				},
-			},
-		},
-		Dependencies: []string{
-			"github.com/fluid-cloudnative/fluid/api/v1alpha1.ProcessMemoryMediumSource", "github.com/fluid-cloudnative/fluid/api/v1alpha1.VolumeMediumSource"},
-	}
-}
-
 func schema_fluid_cloudnative_fluid_api_v1alpha1_Metadata(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
@@ -5967,10 +6020,21 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_ProcessMemoryMediumSource(ref c
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
-				Description: "ProcessMemoryMediumSource describes process memory as a storage medium. When specified, cache data will be stored in the process's memory space, and the quota will be added to the container's resource requests and limits.",
+				Description: "ProcessMemoryMediumSource describes process memory as a storage medium. Cache data will be stored in the process's memory space.",
 				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"quota": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Quota specifies the amount of memory to allocate for caching. This value will be added to the container's resource requests and limits. Example: \"4Gi\" allocates 4GiB memory for cache.",
+							Ref:         ref("k8s.io/apimachinery/pkg/api/resource.Quantity"),
+						},
+					},
+				},
+				Required: []string{"quota"},
 			},
 		},
+		Dependencies: []string{
+			"k8s.io/apimachinery/pkg/api/resource.Quantity"},
 	}
 }
 
@@ -6851,42 +6915,25 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_RuntimeTieredStoreLevel(ref com
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
-				Description: "RuntimeTieredStoreLevel describes the configuration for a single tier in the tiered storage",
+				Description: "RuntimeTieredStoreLevel describes the configuration for a single tier in the tiered storage. Each tier can use different storage media (e.g., memory, SSD, HDD). Only one of ProcessMemory, EmptyDir, or HostPath should be specified.",
 				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
-					"medium": {
+					"processMemory": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Medium describes the storage medium type for this tier. Supported types include process memory and various volume types.",
-							Default:     map[string]interface{}{},
-							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.MediumSource"),
+							Description: "ProcessMemory indicates that process memory should be used as one storage medium. When specified, cache data will be stored in the process's memory space, and the quota will be added to the container's resource requests and limits.",
+							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.ProcessMemoryMediumSource"),
 						},
 					},
-					"path": {
+					"emptyDir": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Path is a list of file paths to be used for the cache tier. Multiple paths can be specified to distribute cache across different mount points. For example: [\"/mnt/cache1\", \"/mnt/cache2\"].",
-							Type:        []string{"array"},
-							Items: &spec.SchemaOrArray{
-								Schema: &spec.Schema{
-									SchemaProps: spec.SchemaProps{
-										Default: "",
-										Type:    []string{"string"},
-										Format:  "",
-									},
-								},
-							},
+							Description: "EmptyDir indicates that an emptyDir volume should be used as the storage medium.",
+							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.EmptyDirMediumSource"),
 						},
 					},
-					"quota": {
+					"hostPath": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Quota is a list of storage quotas for each path in the tier. The length of Quota should match the length of Path. Each quota corresponds to the path at the same index. For example: [\"100Gi\", \"50Gi\"] allocates 100GiB to the first path and 50GiB to the second path.",
-							Type:        []string{"array"},
-							Items: &spec.SchemaOrArray{
-								Schema: &spec.Schema{
-									SchemaProps: spec.SchemaProps{
-										Ref: ref("k8s.io/apimachinery/pkg/api/resource.Quantity"),
-									},
-								},
-							},
+							Description: "HostPath indicates that one or more hostPath volumes should be used as a storage medium.",
+							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.HostPathMediumSource"),
 						},
 					},
 					"high": {
@@ -6898,7 +6945,7 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_RuntimeTieredStoreLevel(ref com
 					},
 					"low": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Low is the ratio of low watermark of the tier (e.g., \"0.7\"). Eviction will continue until cache usage falls below this ratio.",
+							Description: "Low is the ratio of low watermark of the tier (e.g., \"0.7\"). Eviction will continue until cache usage falls below this ratio. Type specifies the type of hostPath volume. Defaults to empty string (no validation). More info: https://kubernetes.io/docs/concepts/storage/volumes#hostpath",
 							Type:        []string{"string"},
 							Format:      "",
 						},
@@ -6907,7 +6954,7 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_RuntimeTieredStoreLevel(ref com
 			},
 		},
 		Dependencies: []string{
-			"github.com/fluid-cloudnative/fluid/api/v1alpha1.MediumSource", "k8s.io/apimachinery/pkg/api/resource.Quantity"},
+			"github.com/fluid-cloudnative/fluid/api/v1alpha1.EmptyDirMediumSource", "github.com/fluid-cloudnative/fluid/api/v1alpha1.HostPathMediumSource", "github.com/fluid-cloudnative/fluid/api/v1alpha1.ProcessMemoryMediumSource"},
 	}
 }
 
@@ -8446,39 +8493,6 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_VineyardRuntimeSpec(ref common.
 		},
 		Dependencies: []string{
 			"github.com/fluid-cloudnative/fluid/api/v1alpha1.MasterSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.PodMetadata", "github.com/fluid-cloudnative/fluid/api/v1alpha1.TieredStore", "github.com/fluid-cloudnative/fluid/api/v1alpha1.VineyardClientSocketSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.VineyardCompTemplateSpec", "k8s.io/api/core/v1.Volume"},
-	}
-}
-
-func schema_fluid_cloudnative_fluid_api_v1alpha1_VolumeMediumSource(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Description: "VolumeMediumSource describes a Kubernetes volume as a storage medium. Only one of its members may be specified.",
-				Type:        []string{"object"},
-				Properties: map[string]spec.Schema{
-					"hostPath": {
-						SchemaProps: spec.SchemaProps{
-							Description: "HostPath represents a pre-existing file or directory on the host machine that is directly exposed to the container. More info: https://kubernetes.io/docs/concepts/storage/volumes#hostpath",
-							Ref:         ref("k8s.io/api/core/v1.HostPathVolumeSource"),
-						},
-					},
-					"emptyDir": {
-						SchemaProps: spec.SchemaProps{
-							Description: "EmptyDir represents a temporary directory that shares a pod's lifetime. More info: https://kubernetes.io/docs/concepts/storage/volumes#emptydir",
-							Ref:         ref("k8s.io/api/core/v1.EmptyDirVolumeSource"),
-						},
-					},
-					"ephemeral": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Ephemeral represents a volume that is handled by a cluster storage driver. The volume's lifecycle is tied to the pod that defines it. More info: https://kubernetes.io/docs/concepts/storage/ephemeral-volumes/",
-							Ref:         ref("k8s.io/api/core/v1.EphemeralVolumeSource"),
-						},
-					},
-				},
-			},
-		},
-		Dependencies: []string{
-			"k8s.io/api/core/v1.EmptyDirVolumeSource", "k8s.io/api/core/v1.EphemeralVolumeSource", "k8s.io/api/core/v1.HostPathVolumeSource"},
 	}
 }
 

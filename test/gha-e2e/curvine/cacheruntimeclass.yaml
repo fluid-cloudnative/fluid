@@ -27,7 +27,12 @@ extraResources:
           [worker]
           dir_reserved = "0"
           data_dir = [
-            "[DISK]testing/data"
+          {{- range $index, $level := (ds "config").worker.tieredStoreLevels }}
+          {{- range $pathIndex, $mountPath := $level.mountPaths }}
+          {{- if or $index $pathIndex }},{{ end }}
+          "[{{$level.mediumType}}:{{ index $level.quotas $pathIndex }}]{{ $mountPath }}"
+          {{- end }}
+          {{- end }}
           ]
 dataOperationSpecs:
   - name: DataLoad

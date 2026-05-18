@@ -166,6 +166,8 @@ func (e *CacheEngine) generateRuntimeConfigData(ctx context.Context, runtime *da
 				Name: GetComponentServiceName(e.name, common.ComponentTypeWorker),
 			}
 		}
+		// Extract tiered store configuration for worker
+		config.Worker.TieredStoreLevels = e.extractTieredStoreLevels(&runtime.Spec.Worker.TieredStore)
 	}
 	if !runtime.Spec.Client.Disabled {
 		config.Client = &common.CacheRuntimeComponentConfig{
@@ -180,6 +182,8 @@ func (e *CacheEngine) generateRuntimeConfigData(ctx context.Context, runtime *da
 				Name: GetComponentServiceName(e.name, common.ComponentTypeClient),
 			}
 		}
+		// Extract tiered store configuration for client
+		config.Client.TieredStoreLevels = e.extractTieredStoreLevels(&runtime.Spec.Client.TieredStore)
 	}
 
 	b, _ := json.Marshal(config)
@@ -188,4 +192,55 @@ func (e *CacheEngine) generateRuntimeConfigData(ctx context.Context, runtime *da
 		e.getRuntimeConfigFileName(): string(b),
 	}
 	return data, nil
+}
+
+// extractTieredStoreLevels extracts tiered store configuration from RuntimeTieredStore
+// and converts it to TieredStoreLevelConfig for the ConfigMap
+func (e *CacheEngine) extractTieredStoreLevels(tieredStore *datav1alpha1.RuntimeTieredStore) []common.TieredStoreLevelConfig {
+	if tieredStore == nil || len(tieredStore.Levels) == 0 {
+		return nil
+	}
+
+	var levels []common.TieredStoreLevelConfig
+
+	for levelIndex, level := range tieredStore.Levels {
+		// Determine medium type and extract corresponding configuration
+		levelConfig := common.TieredStoreLevelConfig{
+			High: level.High,
+			Low:  level.Low,
+		}
+		// some cache system like curvine need set the medium type
+		// default HDD, currently only use MEM and HDD.
+		levelConfig.MediumType = common.HDD
+		if level.ProcessMemory != nil {
+			levelConfig.MediumType = common.Memory
+			levelConfig.MountPaths = []string{GetMemoryTieredStoreMountPath(levelIndex)}
+			levelConfig.Quotas = []string{level.ProcessMemory.Quota.String()}
+		} else if level.HostPath != nil {
+			// Generate mount paths for all host paths
+			var mountPaths []string
+			for pathIndex := range level.HostPath.Paths {
+				mountPaths = append(mountPaths, GetHostPathTieredStoreMountPath(levelIndex, pathIndex))
+			}
+			levelConfig.MountPaths = mountPaths
+			// Convert quotas to string array
+			var quotas []string
+			for _, quota := range level.HostPath.Quotas {
+				quotas = append(quotas, quota.String())
+			}
+			levelConfig.Quotas = quotas
+
+		} else if level.EmptyDir != nil {
+			// MEM medium
+			if level.EmptyDir.Medium == corev1.StorageMediumMemory {
+				levelConfig.MediumType = common.Memory
+			}
+			levelConfig.MountPaths = []string{GetEmptyDirTieredStoreMountPath(levelIndex)}
+			levelConfig.Quotas = []string{level.EmptyDir.Quota.String()}
+		}
+
+		levels = append(levels, levelConfig)
+	}
+
+	return levels
 }

@@ -216,26 +216,76 @@ type RuntimeTieredStore struct {
 	Levels []RuntimeTieredStoreLevel `json:"levels,omitempty"`
 }
 
-// RuntimeTieredStoreLevel describes the configuration for a single tier in the tiered storage
-type RuntimeTieredStoreLevel struct {
-	// Medium describes the storage medium type for this tier.
-	// Supported types include process memory and various volume types.
-	// +optional
-	Medium MediumSource `json:"medium,omitempty"`
+// ProcessMemoryMediumSource describes process memory as a storage medium.
+// Cache data will be stored in the process's memory space.
+type ProcessMemoryMediumSource struct {
+	// Quota specifies the amount of memory to allocate for caching.
+	// This value will be added to the container's resource requests and limits.
+	// Example: "4Gi" allocates 4GiB memory for cache.
+	// +kubebuilder:validation:Required
+	Quota resource.Quantity `json:"quota"`
+}
 
-	// Path is a list of file paths to be used for the cache tier.
-	// Multiple paths can be specified to distribute cache across different mount points.
-	// For example: ["/mnt/cache1", "/mnt/cache2"].
+// HostPathMediumSource describes hostPath volumes as a storage medium.
+// Multiple paths can be configured to distribute cache across different disks.
+type HostPathMediumSource struct {
+	// Paths is a list of file paths on the host machine to be used for caching.
+	// Multiple paths allow distributing cache across different mount points or disks.
+	// Example: ["/mnt/cache1", "/mnt/cache2"]
 	// +kubebuilder:validation:MinItems=1
-	// +optional
-	Path []string `json:"path,omitempty"`
+	// +kubebuilder:validation:Required
+	Paths []string `json:"paths"`
 
-	// Quota is a list of storage quotas for each path in the tier.
-	// The length of Quota should match the length of Path.
-	// Each quota corresponds to the path at the same index.
-	// For example: ["100Gi", "50Gi"] allocates 100GiB to the first path and 50GiB to the second path.
+	// Quotas is a list of storage quotas corresponding to each path.
+	// The length of Quotas must match the length of Paths.
+	// Each quota defines the maximum cache size for the corresponding path.
+	// Example: ["100Gi", "50Gi"] allocates 100GiB to the first path and 50GiB to the second.
+	// +kubebuilder:validation:MinItems=1
+	// +kubebuilder:validation:Required
+	Quotas []resource.Quantity `json:"quotas"`
+
+	// Type specifies the type of hostPath volume.
+	// Defaults to empty string (no validation).
+	// More info: https://kubernetes.io/docs/concepts/storage/volumes#hostpath
 	// +optional
-	Quota []resource.Quantity `json:"quota,omitempty"`
+	Type *corev1.HostPathType `json:"type,omitempty"`
+}
+
+// EmptyDirMediumSource describes emptyDir volume as a storage medium.
+// Can be backed by node's default storage or memory (tmpfs).
+type EmptyDirMediumSource struct {
+	// Quota specifies the maximum storage capacity for the emptyDir volume.
+	// For Memory medium, this limit is also constrained by the sum of container memory limits.
+	// The actual limit = min(Quota, sum of container memory limits).
+	// Example: "100Gi" limits the emptyDir to 100GiB.
+	// +kubebuilder:validation:Required
+	Quota resource.Quantity `json:"quota"`
+
+	// medium represents what type of storage medium should back this directory.
+	// The default is "" which means to use the node's default medium.
+	// Must be an empty string (default) or Memory.
+	// More info: https://kubernetes.io/docs/concepts/storage/volumes#emptydir
+	// +optional
+	Medium corev1.StorageMedium `json:"medium,omitempty"`
+}
+
+// RuntimeTieredStoreLevel describes the configuration for a single tier in the tiered storage.
+// Each tier can use different storage media (e.g., memory, SSD, HDD).
+// Only one of ProcessMemory, EmptyDir, or HostPath should be specified.
+type RuntimeTieredStoreLevel struct {
+	// ProcessMemory indicates that process memory should be used as one storage medium.
+	// When specified, cache data will be stored in the process's memory space,
+	// and the quota will be added to the container's resource requests and limits.
+	// +optional
+	ProcessMemory *ProcessMemoryMediumSource `json:"processMemory,omitempty"`
+
+	// EmptyDir indicates that an emptyDir volume should be used as the storage medium.
+	// +optional
+	EmptyDir *EmptyDirMediumSource `json:"emptyDir,omitempty"`
+
+	// HostPath indicates that one or more hostPath volumes should be used as a storage medium.
+	// +optional
+	HostPath *HostPathMediumSource `json:"hostPath,omitempty"`
 
 	// High is the ratio of high watermark of the tier (e.g., "0.9").
 	// When cache usage exceeds this ratio, eviction will be triggered.
@@ -244,69 +294,11 @@ type RuntimeTieredStoreLevel struct {
 
 	// Low is the ratio of low watermark of the tier (e.g., "0.7").
 	// Eviction will continue until cache usage falls below this ratio.
-	// +optional
-	Low string `json:"low,omitempty"`
-}
-
-// MediumSource describes the storage medium type for tiered store.
-// Only one of its members may be specified.
-type MediumSource struct {
-	// ProcessMemory indicates that process memory should be used as the storage medium.
-	// The cache will be stored in the process's memory space.
-	// +optional
-	ProcessMemory *ProcessMemoryMediumSource `json:"processMemory,omitempty"`
-
-	// Volume indicates that a Kubernetes volume should be used as the storage medium.
-	// Supported volume types include hostPath, emptyDir, and ephemeral volumes.
-	// +optional
-	Volume *VolumeMediumSource `json:"volume,omitempty"`
-}
-
-//tieredStore:
-//  levels:
-//	- quota: 8Gi # quota will add to component.container.resource.request/limit.memory
-//	  high: "0.99"
-//    low: "0.99"
-//	  mediumSource:
-//      processMemory: {}
-
-// ProcessMemoryMediumSource describes process memory as a storage medium.
-// When specified, cache data will be stored in the process's memory space,
-// and the quota will be added to the container's resource requests and limits.
-type ProcessMemoryMediumSource struct {
-}
-
-//tieredStore:
-//  levels:
-//	- quota: 8Gi
-//	  high: "0.99"
-//    low: "0.99"
-// 	  path: /dev/shm
-//	  mediumSource:
-//		emptyDir:{}
-//	    # Or one of the following:
-//      # ephemeral:
-//      #   volumeClaimTemplate:{}
-//		# hostPath:{}
-
-// VolumeMediumSource describes a Kubernetes volume as a storage medium.
-// Only one of its members may be specified.
-type VolumeMediumSource struct {
-	// HostPath represents a pre-existing file or directory on the host machine that is directly exposed to the container.
+	// Type specifies the type of hostPath volume.
+	// Defaults to empty string (no validation).
 	// More info: https://kubernetes.io/docs/concepts/storage/volumes#hostpath
 	// +optional
-	HostPath *corev1.HostPathVolumeSource `json:"hostPath,omitempty"`
-
-	// EmptyDir represents a temporary directory that shares a pod's lifetime.
-	// More info: https://kubernetes.io/docs/concepts/storage/volumes#emptydir
-	// +optional
-	EmptyDir *corev1.EmptyDirVolumeSource `json:"emptyDir,omitempty"`
-
-	// Ephemeral represents a volume that is handled by a cluster storage driver.
-	// The volume's lifecycle is tied to the pod that defines it.
-	// More info: https://kubernetes.io/docs/concepts/storage/ephemeral-volumes/
-	// +optional
-	Ephemeral *corev1.EphemeralVolumeSource `json:"ephemeral,omitempty"`
+	Low string `json:"low,omitempty"`
 }
 
 func (runtime *CacheRuntime) GetStatus() *CacheRuntimeStatus {
