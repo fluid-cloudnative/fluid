@@ -123,14 +123,18 @@ type DataRestoreLocation struct {
 }
 
 // DatasetSpec defines the desired state of Dataset
+// +kubebuilder:validation:XValidation:rule="self.allowEmptyMounts == true || (has(self.mounts) && size(self.mounts) >= 1)",message="Mounts must have at least one item unless AllowEmptyMounts is true"
 type DatasetSpec struct {
 	// Mount Points to be mounted on cache runtime. <br>
 	// This field can be empty because some runtimes don't need to mount external storage (e.g.
 	// <a href="https://v6d.io/">Vineyard</a>).
-	// +kubebuilder:validation:MinItems=1
 	// +kubebuilder:validation:UniqueItems=false
 	// +optional
 	Mounts []Mount `json:"mounts,omitempty"`
+
+	// AllowEmptyMounts indicates whether Mounts can be empty
+	// +optional
+	AllowEmptyMounts bool `json:"allowEmptyMounts,omitempty"`
 
 	// The owner of the dataset
 	// +optional
