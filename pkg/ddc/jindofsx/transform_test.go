@@ -941,6 +941,38 @@ func TestTransformLogConfig(t *testing.T) {
 	}
 }
 
+func TestTransformLogConfigWithBucketSecretPaths(t *testing.T) {
+	engine := &JindoFSxEngine{Log: fake.NullLogger()}
+	value := &Jindo{
+		BucketSecretPaths: map[string]string{
+			"bucket-a": "secrets:///token/bucket-a/",
+		},
+		Master: Master{
+			FileStoreProperties: map[string]string{
+				"jindofsx.oss.bucket.bucket-a.endpoint": "oss-cn-shanghai.aliyuncs.com",
+			},
+		},
+	}
+
+	engine.transformLogConfig(&datav1alpha1.JindoRuntime{}, value)
+
+	if got := value.FuseLogConfig["fs.oss.provider.endpoint"]; got != "secrets:///token/" {
+		t.Fatalf("expected generic oss provider endpoint, got %q", got)
+	}
+	if got := value.FuseLogConfig["fs.oss.provider.format"]; got != jindoSecretProviderFormat {
+		t.Fatalf("expected generic oss provider format %q, got %q", jindoSecretProviderFormat, got)
+	}
+	if got := value.FuseLogConfig["fs.oss.endpoint"]; got != "oss-cn-shanghai.aliyuncs.com" {
+		t.Fatalf("expected generic fuse log endpoint, got %q", got)
+	}
+	if got := value.FuseLogConfig["fs.oss.bucket.bucket-a.provider.endpoint"]; got != "secrets:///token/bucket-a/" {
+		t.Fatalf("expected bucket-a fuse log provider endpoint, got %q", got)
+	}
+	if got := value.FuseLogConfig["aliyun.oss.bucket.bucket-a.provider.url"]; got != "secrets:///token/bucket-a/" {
+		t.Fatalf("expected bucket-a fuse log provider url, got %q", got)
+	}
+}
+
 func TestJindoFSxEngine_transformEnvVariables(t *testing.T) {
 	type args struct {
 		runtime *datav1alpha1.JindoRuntime

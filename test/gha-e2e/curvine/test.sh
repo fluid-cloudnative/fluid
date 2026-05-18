@@ -125,13 +125,15 @@ function create_job() {
 
 function wait_job_completed() {
     local job_name=$1
+    local succeed=""
+    local failed_condition=""
     while true; do
         succeed=$(kubectl get job "$job_name" -ojsonpath='{@.status.succeeded}')
-        failed=$(kubectl get job "$job_name" -ojsonpath='{@.status.failed}')
-        if [[ "$failed" -ne "0" ]]; then
+        failed_condition=$(kubectl get job "$job_name" -ojsonpath='{.status.conditions[?(@.type=="Failed")].status}')
+        if [[ "$failed_condition" == "True" ]]; then
             panic "job failed when accessing data"
         fi
-        if [[ "$succeed" -eq "1" ]]; then
+        if [[ "$succeed" == "1" ]]; then
             break
         fi
         sleep 5
