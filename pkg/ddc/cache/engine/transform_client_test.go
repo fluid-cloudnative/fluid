@@ -88,10 +88,6 @@ var _ = Describe("CacheEngine Transform Client Tests", Label("pkg.ddc.cache.engi
 			FileSystemType: "test-fs",
 			Topology: &datav1alpha1.RuntimeTopology{
 				Client: &datav1alpha1.RuntimeComponentDefinition{
-					WorkloadType: metav1.TypeMeta{
-						Kind:       "DaemonSet",
-						APIVersion: "apps/v1",
-					},
 					Template: corev1.PodTemplateSpec{
 						Spec: corev1.PodSpec{
 							NodeSelector: map[string]string{
@@ -185,7 +181,6 @@ var _ = Describe("CacheEngine Transform Client Tests", Label("pkg.ddc.cache.engi
 				Expect(value.Client.Enabled).To(BeTrue())
 				Expect(value.Client.ComponentType).To(Equal(common.ComponentTypeClient))
 				Expect(value.Client.Replicas).To(Equal(int32(1))) // Client always has 1 replica
-				Expect(value.Client.WorkloadType.Kind).To(Equal("DaemonSet"))
 			})
 
 			It("should merge node selectors correctly", func() {

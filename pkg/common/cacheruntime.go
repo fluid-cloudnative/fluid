@@ -18,7 +18,6 @@ package common
 
 import (
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type ComponentType string
@@ -47,7 +46,6 @@ type CacheRuntimeComponentValue struct {
 	Name            string
 	Namespace       string
 	Enabled         bool
-	WorkloadType    metav1.TypeMeta
 	Replicas        int32
 	PodTemplateSpec corev1.PodTemplateSpec
 	Owner           *OwnerReference
@@ -73,8 +71,7 @@ type ComponentIdentity struct {
 // ComponentStatusInfo contains the minimal information needed for status updates
 type ComponentStatusInfo struct {
 	ComponentIdentity
-	Enabled      bool
-	WorkloadType metav1.TypeMeta
+	Enabled bool
 }
 
 // CacheRuntimeConfig defines the config of runtime, will be auto mounted by configmap in the component pod.

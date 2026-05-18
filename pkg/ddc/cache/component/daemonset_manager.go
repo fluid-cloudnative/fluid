@@ -142,3 +142,9 @@ func (s *DaemonSetManager) ConstructComponentStatus(ctx context.Context, identit
 		ReadyReplicas:       readyReplicas,
 	}, nil
 }
+
+// SyncComponentSpec is not supported for DaemonSet
+// DaemonSet does not support in-place update, pods will be recreated when spec changes
+func (s *DaemonSetManager) SyncComponentSpec(ctx context.Context, identity *common.ComponentIdentity, spec ComponentSpec) error {
+	return fmt.Errorf("SyncComponentSpec is not supported for DaemonSet component %s/%s, DaemonSet does not support in-place update", identity.Namespace, identity.Name)
+}

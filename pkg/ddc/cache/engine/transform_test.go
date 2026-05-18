@@ -73,7 +73,6 @@ var _ = Describe("CacheEngine Transform Tests", Label("pkg.ddc.cache.engine.tran
 			FileSystemType: "test-fs",
 			Topology: &datav1alpha1.RuntimeTopology{
 				Master: &datav1alpha1.RuntimeComponentDefinition{
-					WorkloadType: metav1.TypeMeta{Kind: "StatefulSet", APIVersion: "apps/v1"},
 					Template: corev1.PodTemplateSpec{
 						Spec: corev1.PodSpec{
 							Containers: []corev1.Container{{Name: "master", Image: "test-master:latest"}},
@@ -81,7 +80,6 @@ var _ = Describe("CacheEngine Transform Tests", Label("pkg.ddc.cache.engine.tran
 					},
 				},
 				Worker: &datav1alpha1.RuntimeComponentDefinition{
-					WorkloadType: metav1.TypeMeta{Kind: "StatefulSet", APIVersion: "apps/v1"},
 					Template: corev1.PodTemplateSpec{
 						Spec: corev1.PodSpec{
 							Containers: []corev1.Container{{Name: "worker", Image: "test-worker:latest"}},
@@ -89,7 +87,6 @@ var _ = Describe("CacheEngine Transform Tests", Label("pkg.ddc.cache.engine.tran
 					},
 				},
 				Client: &datav1alpha1.RuntimeComponentDefinition{
-					WorkloadType: metav1.TypeMeta{Kind: "DaemonSet", APIVersion: "apps/v1"},
 					Template: corev1.PodTemplateSpec{
 						Spec: corev1.PodSpec{
 							Containers: []corev1.Container{{Name: "client", Image: "test-client:latest"}},
@@ -317,19 +314,16 @@ var _ = Describe("CacheEngine Transform Tests", Label("pkg.ddc.cache.engine.tran
 				Expect(statusValue.Master.Enabled).To(BeTrue())
 				Expect(statusValue.Master.ComponentIdentity.Name).To(Equal("test-runtime-master"))
 				Expect(statusValue.Master.ComponentIdentity.Namespace).To(Equal("default"))
-				Expect(statusValue.Master.WorkloadType.Kind).To(Equal("StatefulSet"))
 
 				Expect(statusValue.Worker).NotTo(BeNil())
 				Expect(statusValue.Worker.Enabled).To(BeTrue())
 				Expect(statusValue.Worker.ComponentIdentity.Name).To(Equal("test-runtime-worker"))
 				Expect(statusValue.Worker.ComponentIdentity.Namespace).To(Equal("default"))
-				Expect(statusValue.Worker.WorkloadType.Kind).To(Equal("StatefulSet"))
 
 				Expect(statusValue.Client).NotTo(BeNil())
 				Expect(statusValue.Client.Enabled).To(BeTrue())
 				Expect(statusValue.Client.ComponentIdentity.Name).To(Equal("test-runtime-client"))
 				Expect(statusValue.Client.ComponentIdentity.Namespace).To(Equal("default"))
-				Expect(statusValue.Client.WorkloadType.Kind).To(Equal("DaemonSet"))
 			})
 		})
 

@@ -59,6 +59,7 @@ require (
 	github.com/container-storage-interface/spec v1.8.0
 	github.com/docker/go-units v0.5.0
 	github.com/felixge/fgprof v0.9.5
+	github.com/fluid-cloudnative/advanced-statefulset v0.0.0-20260518081011-ad1ab7583915
 	github.com/go-logr/logr v1.4.3
 	github.com/golang/glog v1.2.5
 	github.com/golang/mock v1.6.0
@@ -94,7 +95,7 @@ require (
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/emicklei/go-restful/v3 v3.11.0 // indirect
-	github.com/evanphx/json-patch v4.12.0+incompatible // indirect
+	github.com/evanphx/json-patch v5.6.0+incompatible // indirect
 	github.com/evanphx/json-patch/v5 v5.8.0 // indirect
 	github.com/fsnotify/fsnotify v1.7.0 // indirect
 	github.com/go-logr/zapr v1.3.0 // indirect

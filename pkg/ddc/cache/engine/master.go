@@ -58,7 +58,7 @@ func (e *CacheEngine) shouldSetupMaster() (bool, error) {
 }
 
 func (e *CacheEngine) setupMasterInternal(masterValue *common.CacheRuntimeComponentValue) error {
-	manager := component.NewComponentHelper(masterValue.WorkloadType, e.Client)
+	manager := component.NewComponentHelper(masterValue.ComponentType, e.Client)
 	err := manager.Reconciler(context.TODO(), masterValue)
 	if err != nil {
 		return err

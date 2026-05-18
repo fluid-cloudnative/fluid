@@ -77,10 +77,6 @@ var _ = Describe("CacheEngine Transform Master Tests", Label("pkg.ddc.cache.engi
 			FileSystemType: "test-fs",
 			Topology: &datav1alpha1.RuntimeTopology{
 				Master: &datav1alpha1.RuntimeComponentDefinition{
-					WorkloadType: metav1.TypeMeta{
-						Kind:       "StatefulSet",
-						APIVersion: "apps/v1",
-					},
 					Template: corev1.PodTemplateSpec{
 						Spec: corev1.PodSpec{
 							NodeSelector: map[string]string{
@@ -179,7 +175,6 @@ var _ = Describe("CacheEngine Transform Master Tests", Label("pkg.ddc.cache.engi
 				Expect(value.Master.Enabled).To(BeTrue())
 				Expect(value.Master.ComponentType).To(Equal(common.ComponentTypeMaster))
 				Expect(value.Master.Replicas).To(Equal(int32(3)))
-				Expect(value.Master.WorkloadType.Kind).To(Equal("StatefulSet"))
 			})
 
 			It("should configure headless service when defined", func() {

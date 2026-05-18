@@ -3480,13 +3480,6 @@ spec:
                         - containers
                         type: object
                     type: object
-                  workloadType:
-                    properties:
-                      apiVersion:
-                        type: string
-                      kind:
-                        type: string
-                    type: object
                 type: object
               master:
                 properties:
@@ -6900,13 +6893,6 @@ spec:
                         - containers
                         type: object
                     type: object
-                  workloadType:
-                    properties:
-                      apiVersion:
-                        type: string
-                      kind:
-                        type: string
-                    type: object
                 type: object
               worker:
                 properties:
@@ -10319,13 +10305,6 @@ spec:
                         required:
                         - containers
                         type: object
-                    type: object
-                  workloadType:
-                    properties:
-                      apiVersion:
-                        type: string
-                      kind:
-                        type: string
                     type: object
                 type: object
             type: object

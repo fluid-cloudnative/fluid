@@ -19,9 +19,10 @@ package engine
 import (
 	"context"
 	"errors"
-	"testing"
 	"time"
 
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 	appsv1 "k8s.io/api/apps/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -29,6 +30,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 
+	workloadv1alpha1 "github.com/fluid-cloudnative/advanced-statefulset/api/workload/v1alpha1"
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
@@ -45,168 +47,157 @@ const (
 	testStatusWorkloadAP = "apps/v1"
 )
 
-func TestCheckAndUpdateRuntimeStatusClientNotReadyDoesNotBlockRuntimeReady(t *testing.T) {
-	engine, client := newStatusTestEngineWithClient(
-		t,
-		fake.NewFakeClientWithScheme(
-			datav1alpha1.UnitTestScheme,
-			newStatusTestRuntime(),
-			newStatefulSetComponent(testStatusMaster, testStatusNamespace, 1, 1),
-			newStatefulSetComponent(testStatusWorker, testStatusNamespace, 1, 1),
-			newDaemonSetComponent(testStatusClient, testStatusNamespace, 1, 0),
-		),
+var _ = Describe("CheckAndUpdateRuntimeStatus", func() {
+	var (
+		engine *CacheEngine
+		client ctrlclient.Client
 	)
 
-	ready, err := engine.CheckAndUpdateRuntimeStatus(newStatusTestRuntimeValue(true))
-	if err != nil {
-		t.Fatalf("CheckAndUpdateRuntimeStatus() unexpected error = %v", err)
-	}
-	if !ready {
-		t.Fatalf("expected runtime to become ready once master and worker are ready")
-	}
+	BeforeEach(func() {
+		// Default setup can be added here if needed
+	})
 
-	updatedRuntime := getUpdatedRuntime(t, client)
-	if updatedRuntime.Status.Client.Phase != datav1alpha1.RuntimePhaseNotReady {
-		t.Fatalf("expected client phase %q, got %q", datav1alpha1.RuntimePhaseNotReady, updatedRuntime.Status.Client.Phase)
-	}
-	if updatedRuntime.Status.SetupDuration == "" {
-		t.Fatalf("expected setup duration to be recorded once runtime is ready")
-	}
-}
+	Describe("Client component status handling", func() {
+		Context("when client is not ready", func() {
+			BeforeEach(func() {
+				engine, client = newStatusTestEngineWithClient(
+					fake.NewFakeClientWithScheme(
+						CacheEngineTestScheme,
+						newStatusTestRuntime(),
+						newAdvancedStatefulSetComponent(testStatusMaster, testStatusNamespace, 1, 1),
+						newAdvancedStatefulSetComponent(testStatusWorker, testStatusNamespace, 1, 1),
+						newDaemonSetComponent(testStatusClient, testStatusNamespace, 1, 0),
+					),
+				)
+			})
 
-func TestCheckAndUpdateRuntimeStatusClientPartialReadyDoesNotBlockRuntimeReady(t *testing.T) {
-	engine, client := newStatusTestEngineWithClient(
-		t,
-		fake.NewFakeClientWithScheme(
-			datav1alpha1.UnitTestScheme,
-			newStatusTestRuntime(),
-			newStatefulSetComponent(testStatusMaster, testStatusNamespace, 1, 1),
-			newStatefulSetComponent(testStatusWorker, testStatusNamespace, 1, 1),
-			newDaemonSetComponent(testStatusClient, testStatusNamespace, 2, 1),
-		),
-	)
+			It("should not block runtime ready and set client phase to NotReady", func() {
+				ready, err := engine.CheckAndUpdateRuntimeStatus(newStatusTestRuntimeValue(true))
+				Expect(err).NotTo(HaveOccurred())
+				Expect(ready).To(BeTrue(), "expected runtime to become ready once master and worker are ready")
 
-	ready, err := engine.CheckAndUpdateRuntimeStatus(newStatusTestRuntimeValue(true))
-	if err != nil {
-		t.Fatalf("CheckAndUpdateRuntimeStatus() unexpected error = %v", err)
-	}
-	if !ready {
-		t.Fatalf("expected runtime to become ready once master and worker are ready")
-	}
+				updatedRuntime := getUpdatedRuntime(client)
+				Expect(updatedRuntime.Status.Client.Phase).To(Equal(datav1alpha1.RuntimePhaseNotReady))
+				Expect(updatedRuntime.Status.SetupDuration).NotTo(BeEmpty(), "expected setup duration to be recorded once runtime is ready")
+			})
+		})
 
-	updatedRuntime := getUpdatedRuntime(t, client)
-	if updatedRuntime.Status.Client.Phase != datav1alpha1.RuntimePhasePartialReady {
-		t.Fatalf("expected client phase %q, got %q", datav1alpha1.RuntimePhasePartialReady, updatedRuntime.Status.Client.Phase)
-	}
-	if updatedRuntime.Status.SetupDuration == "" {
-		t.Fatalf("expected setup duration to be recorded once runtime is ready")
-	}
-}
+		Context("when client is partially ready", func() {
+			BeforeEach(func() {
+				engine, client = newStatusTestEngineWithClient(
+					fake.NewFakeClientWithScheme(
+						CacheEngineTestScheme,
+						newStatusTestRuntime(),
+						newAdvancedStatefulSetComponent(testStatusMaster, testStatusNamespace, 1, 1),
+						newAdvancedStatefulSetComponent(testStatusWorker, testStatusNamespace, 1, 1),
+						newDaemonSetComponent(testStatusClient, testStatusNamespace, 2, 1),
+					),
+				)
+			})
 
-func TestCheckAndUpdateRuntimeStatusClientZeroDesiredReplicasReportsNotReady(t *testing.T) {
-	engine, client := newStatusTestEngineWithClient(
-		t,
-		fake.NewFakeClientWithScheme(
-			datav1alpha1.UnitTestScheme,
-			newStatusTestRuntime(),
-			newStatefulSetComponent(testStatusMaster, testStatusNamespace, 1, 1),
-			newStatefulSetComponent(testStatusWorker, testStatusNamespace, 1, 1),
-			newDaemonSetComponent(testStatusClient, testStatusNamespace, 0, 0),
-		),
-	)
+			It("should not block runtime ready and set client phase to PartialReady", func() {
+				ready, err := engine.CheckAndUpdateRuntimeStatus(newStatusTestRuntimeValue(true))
+				Expect(err).NotTo(HaveOccurred())
+				Expect(ready).To(BeTrue(), "expected runtime to become ready once master and worker are ready")
 
-	ready, err := engine.CheckAndUpdateRuntimeStatus(newStatusTestRuntimeValue(true))
-	if err != nil {
-		t.Fatalf("CheckAndUpdateRuntimeStatus() unexpected error = %v", err)
-	}
-	if !ready {
-		t.Fatalf("expected runtime to stay ready when client desires zero replicas")
-	}
+				updatedRuntime := getUpdatedRuntime(client)
+				Expect(updatedRuntime.Status.Client.Phase).To(Equal(datav1alpha1.RuntimePhasePartialReady))
+				Expect(updatedRuntime.Status.SetupDuration).NotTo(BeEmpty(), "expected setup duration to be recorded once runtime is ready")
+			})
+		})
 
-	updatedRuntime := getUpdatedRuntime(t, client)
-	if updatedRuntime.Status.Client.Phase != datav1alpha1.RuntimePhaseNotReady {
-		t.Fatalf("expected client phase %q, got %q", datav1alpha1.RuntimePhaseNotReady, updatedRuntime.Status.Client.Phase)
-	}
-	if updatedRuntime.Status.Client.DesiredReplicas != 0 {
-		t.Fatalf("expected desired replicas to stay 0, got %d", updatedRuntime.Status.Client.DesiredReplicas)
-	}
-}
+		Context("when client has zero desired replicas", func() {
+			BeforeEach(func() {
+				engine, client = newStatusTestEngineWithClient(
+					fake.NewFakeClientWithScheme(
+						CacheEngineTestScheme,
+						newStatusTestRuntime(),
+						newAdvancedStatefulSetComponent(testStatusMaster, testStatusNamespace, 1, 1),
+						newAdvancedStatefulSetComponent(testStatusWorker, testStatusNamespace, 1, 1),
+						newDaemonSetComponent(testStatusClient, testStatusNamespace, 0, 0),
+					),
+				)
+			})
 
-func TestCheckAndUpdateRuntimeStatusClientFullyReadyReportsReady(t *testing.T) {
-	engine, client := newStatusTestEngineWithClient(
-		t,
-		fake.NewFakeClientWithScheme(
-			datav1alpha1.UnitTestScheme,
-			newStatusTestRuntime(),
-			newStatefulSetComponent(testStatusMaster, testStatusNamespace, 1, 1),
-			newStatefulSetComponent(testStatusWorker, testStatusNamespace, 1, 1),
-			newDaemonSetComponent(testStatusClient, testStatusNamespace, 2, 2),
-		),
-	)
+			It("should keep runtime ready and set client phase to NotReady with zero desired replicas", func() {
+				ready, err := engine.CheckAndUpdateRuntimeStatus(newStatusTestRuntimeValue(true))
+				Expect(err).NotTo(HaveOccurred())
+				Expect(ready).To(BeTrue(), "expected runtime to stay ready when client desires zero replicas")
 
-	ready, err := engine.CheckAndUpdateRuntimeStatus(newStatusTestRuntimeValue(true))
-	if err != nil {
-		t.Fatalf("CheckAndUpdateRuntimeStatus() unexpected error = %v", err)
-	}
-	if !ready {
-		t.Fatalf("expected runtime to stay ready when client is fully ready")
-	}
+				updatedRuntime := getUpdatedRuntime(client)
+				Expect(updatedRuntime.Status.Client.Phase).To(Equal(datav1alpha1.RuntimePhaseNotReady))
+				Expect(updatedRuntime.Status.Client.DesiredReplicas).To(Equal(int32(0)), "expected desired replicas to stay 0")
+			})
+		})
 
-	updatedRuntime := getUpdatedRuntime(t, client)
-	if updatedRuntime.Status.Client.Phase != datav1alpha1.RuntimePhaseReady {
-		t.Fatalf("expected client phase %q, got %q", datav1alpha1.RuntimePhaseReady, updatedRuntime.Status.Client.Phase)
-	}
-	if updatedRuntime.Status.Client.ReadyReplicas != updatedRuntime.Status.Client.DesiredReplicas {
-		t.Fatalf("expected ready replicas to match desired replicas, got %d/%d", updatedRuntime.Status.Client.ReadyReplicas, updatedRuntime.Status.Client.DesiredReplicas)
-	}
-}
+		Context("when client is fully ready", func() {
+			BeforeEach(func() {
+				engine, client = newStatusTestEngineWithClient(
+					fake.NewFakeClientWithScheme(
+						CacheEngineTestScheme,
+						newStatusTestRuntime(),
+						newAdvancedStatefulSetComponent(testStatusMaster, testStatusNamespace, 1, 1),
+						newAdvancedStatefulSetComponent(testStatusWorker, testStatusNamespace, 1, 1),
+						newDaemonSetComponent(testStatusClient, testStatusNamespace, 2, 2),
+					),
+				)
+			})
 
-func TestCheckAndUpdateRuntimeStatusRecomputesRuntimeReadyOnRetry(t *testing.T) {
-	baseClient := fake.NewFakeClientWithScheme(
-		datav1alpha1.UnitTestScheme,
-		newStatusTestRuntime(),
-		newStatefulSetComponent(testStatusMaster, testStatusNamespace, 1, 1),
-		newStatefulSetComponent(testStatusWorker, testStatusNamespace, 1, 1),
-	)
+			It("should keep runtime ready and set client phase to Ready", func() {
+				ready, err := engine.CheckAndUpdateRuntimeStatus(newStatusTestRuntimeValue(true))
+				Expect(err).NotTo(HaveOccurred())
+				Expect(ready).To(BeTrue(), "expected runtime to stay ready when client is fully ready")
 
-	client := &conflictOnceClient{
-		Client: baseClient,
-		statusWriter: &conflictOnceStatusWriter{
-			StatusWriter: baseClient.Status(),
-			beforeConflict: func(ctx context.Context) error {
-				worker := &appsv1.StatefulSet{}
-				if err := baseClient.Get(ctx, types.NamespacedName{Name: testStatusWorker, Namespace: testStatusNamespace}, worker); err != nil {
-					return err
+				updatedRuntime := getUpdatedRuntime(client)
+				Expect(updatedRuntime.Status.Client.Phase).To(Equal(datav1alpha1.RuntimePhaseReady))
+				Expect(updatedRuntime.Status.Client.ReadyReplicas).To(Equal(updatedRuntime.Status.Client.DesiredReplicas),
+					"expected ready replicas to match desired replicas")
+			})
+		})
+	})
+
+	Describe("Runtime status recomputation on retry", func() {
+		Context("when conflict occurs during status update", func() {
+			It("should recompute runtime ready status after retry", func() {
+				baseClient := fake.NewFakeClientWithScheme(
+					CacheEngineTestScheme,
+					newStatusTestRuntime(),
+					newAdvancedStatefulSetComponent(testStatusMaster, testStatusNamespace, 1, 1),
+					newAdvancedStatefulSetComponent(testStatusWorker, testStatusNamespace, 1, 1),
+				)
+
+				client := &conflictOnceClient{
+					Client: baseClient,
+					statusWriter: &conflictOnceStatusWriter{
+						StatusWriter: baseClient.Status(),
+						beforeConflict: func(ctx context.Context) error {
+							worker := &workloadv1alpha1.AdvancedStatefulSet{}
+							if err := baseClient.Get(ctx, types.NamespacedName{Name: testStatusWorker, Namespace: testStatusNamespace}, worker); err != nil {
+								return err
+							}
+
+							worker.Status.ReadyReplicas = 0
+							worker.Status.AvailableReplicas = 0
+							return baseClient.Status().Update(ctx, worker)
+						},
+					},
 				}
 
-				worker.Status.ReadyReplicas = 0
-				worker.Status.AvailableReplicas = 0
-				return baseClient.Status().Update(ctx, worker)
-			},
-		},
-	}
+				engine, _ := newStatusTestEngineWithClient(client)
+				ready, err := engine.CheckAndUpdateRuntimeStatus(newStatusTestRuntimeValue(false))
+				Expect(err).NotTo(HaveOccurred())
+				Expect(ready).To(BeFalse(), "expected runtime to be not ready after retry sees worker become not ready")
 
-	engine, _ := newStatusTestEngineWithClient(t, client)
-	ready, err := engine.CheckAndUpdateRuntimeStatus(newStatusTestRuntimeValue(false))
-	if err != nil {
-		t.Fatalf("CheckAndUpdateRuntimeStatus() unexpected error = %v", err)
-	}
-	if ready {
-		t.Fatalf("expected runtime to be not ready after retry sees worker become not ready")
-	}
+				updatedRuntime := getUpdatedRuntime(client)
+				Expect(updatedRuntime.Status.Worker.Phase).To(Equal(datav1alpha1.RuntimePhaseNotReady))
+				Expect(updatedRuntime.Status.SetupDuration).To(BeEmpty(),
+					"expected setup duration to stay empty when final runtime status is not ready")
+			})
+		})
+	})
+})
 
-	updatedRuntime := getUpdatedRuntime(t, client)
-	if updatedRuntime.Status.Worker.Phase != datav1alpha1.RuntimePhaseNotReady {
-		t.Fatalf("expected worker phase %q, got %q", datav1alpha1.RuntimePhaseNotReady, updatedRuntime.Status.Worker.Phase)
-	}
-	if updatedRuntime.Status.SetupDuration != "" {
-		t.Fatalf("expected setup duration to stay empty when final runtime status is not ready, got %q", updatedRuntime.Status.SetupDuration)
-	}
-}
-
-func newStatusTestEngineWithClient(t *testing.T, client ctrlclient.Client) (*CacheEngine, ctrlclient.Client) {
-	t.Helper()
-
+func newStatusTestEngineWithClient(client ctrlclient.Client) (*CacheEngine, ctrlclient.Client) {
 	return &CacheEngine{
 		Client:    client,
 		name:      testStatusRuntime,
@@ -217,23 +208,22 @@ func newStatusTestEngineWithClient(t *testing.T, client ctrlclient.Client) (*Cac
 
 func newStatusTestRuntimeValue(enableClient bool) *common.CacheRuntimeStatusValue {
 	value := &common.CacheRuntimeStatusValue{
-		Master: newStatusTestComponentValue(testStatusMaster, "StatefulSet"),
-		Worker: newStatusTestComponentValue(testStatusWorker, "StatefulSet"),
-		Client: newStatusTestComponentValue(testStatusClient, "DaemonSet"),
+		Master: newStatusTestComponentStatusInfo(common.ComponentTypeMaster, testStatusMaster),
+		Worker: newStatusTestComponentStatusInfo(common.ComponentTypeWorker, testStatusWorker),
+		Client: newStatusTestComponentStatusInfo(common.ComponentTypeClient, testStatusClient),
 	}
 	value.Client.Enabled = enableClient
 
 	return value
 }
 
-func newStatusTestComponentValue(name, kind string) *common.ComponentStatusInfo {
+func newStatusTestComponentStatusInfo(componentType common.ComponentType, name string) *common.ComponentStatusInfo {
 	return &common.ComponentStatusInfo{
 		ComponentIdentity: common.ComponentIdentity{
 			Name:      name,
 			Namespace: testStatusNamespace,
 		},
-		Enabled:      true,
-		WorkloadType: metav1.TypeMeta{APIVersion: testStatusWorkloadAP, Kind: kind},
+		Enabled: true,
 	}
 }
 
@@ -247,28 +237,23 @@ func newStatusTestRuntime() *datav1alpha1.CacheRuntime {
 	}
 }
 
-func getUpdatedRuntime(t *testing.T, client ctrlclient.Client) *datav1alpha1.CacheRuntime {
-	t.Helper()
-
+func getUpdatedRuntime(client ctrlclient.Client) *datav1alpha1.CacheRuntime {
 	updatedRuntime := &datav1alpha1.CacheRuntime{}
-	if err := client.Get(context.TODO(), types.NamespacedName{Name: testStatusRuntime, Namespace: testStatusNamespace}, updatedRuntime); err != nil {
-		t.Fatalf("failed to get updated runtime: %v", err)
-	}
-
+	Expect(client.Get(context.TODO(), types.NamespacedName{Name: testStatusRuntime, Namespace: testStatusNamespace}, updatedRuntime)).To(Succeed())
 	return updatedRuntime
 }
 
-func newStatefulSetComponent(name, namespace string, desiredReplicas, readyReplicas int32) *appsv1.StatefulSet {
+func newAdvancedStatefulSetComponent(name, namespace string, desiredReplicas, readyReplicas int32) *workloadv1alpha1.AdvancedStatefulSet {
 	replicas := desiredReplicas
-	return &appsv1.StatefulSet{
+	return &workloadv1alpha1.AdvancedStatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
 		},
-		Spec: appsv1.StatefulSetSpec{
+		Spec: workloadv1alpha1.AdvancedStatefulSetSpec{
 			Replicas: &replicas,
 		},
-		Status: appsv1.StatefulSetStatus{
+		Status: workloadv1alpha1.AdvancedStatefulSetStatus{
 			CurrentReplicas:   desiredReplicas,
 			AvailableReplicas: readyReplicas,
 			ReadyReplicas:     readyReplicas,

@@ -56,7 +56,7 @@ func (e *CacheEngine) ShouldSetupWorker() (bool, error) {
 }
 
 func (e *CacheEngine) SetupWorkerInternal(workerValue *common.CacheRuntimeComponentValue) error {
-	manager := component.NewComponentHelper(workerValue.WorkloadType, e.Client)
+	manager := component.NewComponentHelper(workerValue.ComponentType, e.Client)
 	err := manager.Reconciler(context.TODO(), workerValue)
 	if err != nil {
 		return err

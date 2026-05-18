@@ -91,10 +91,6 @@ var _ = Describe("CacheEngine Setup Tests", Label("pkg.ddc.cache.engine.setup_te
 			FileSystemType: "test-fs",
 			Topology: &datav1alpha1.RuntimeTopology{
 				Master: &datav1alpha1.RuntimeComponentDefinition{
-					WorkloadType: metav1.TypeMeta{
-						Kind:       "StatefulSet",
-						APIVersion: "apps/v1",
-					},
 					Template: corev1.PodTemplateSpec{
 						Spec: corev1.PodSpec{
 							Containers: []corev1.Container{
@@ -107,10 +103,6 @@ var _ = Describe("CacheEngine Setup Tests", Label("pkg.ddc.cache.engine.setup_te
 					},
 				},
 				Worker: &datav1alpha1.RuntimeComponentDefinition{
-					WorkloadType: metav1.TypeMeta{
-						Kind:       "StatefulSet",
-						APIVersion: "apps/v1",
-					},
 					Template: corev1.PodTemplateSpec{
 						Spec: corev1.PodSpec{
 							Containers: []corev1.Container{
@@ -123,10 +115,6 @@ var _ = Describe("CacheEngine Setup Tests", Label("pkg.ddc.cache.engine.setup_te
 					},
 				},
 				Client: &datav1alpha1.RuntimeComponentDefinition{
-					WorkloadType: metav1.TypeMeta{
-						Kind:       "DaemonSet",
-						APIVersion: "apps/v1",
-					},
 					Template: corev1.PodTemplateSpec{
 						Spec: corev1.PodSpec{
 							Containers: []corev1.Container{

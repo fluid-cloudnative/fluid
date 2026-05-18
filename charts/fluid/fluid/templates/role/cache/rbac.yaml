@@ -5,89 +5,89 @@ metadata:
   name: cacheruntime-controller
 rules:
   - apiGroups:
-    - ""
+      - ""
     resources:
-    - namespaces
+      - namespaces
     verbs:
-    - get
-    - list
-    - watch
+      - get
+      - list
+      - watch
   - apiGroups:
-    - ""
+      - ""
     resources:
-    - configmaps
+      - configmaps
     verbs:
-    - get
-    - list
-    - watch
-    - create
-    - update
-    - patch
-    - delete
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - patch
+      - delete
   - apiGroups:
-    - ""
+      - ""
     resources:
-    - persistentvolumeclaims
+      - persistentvolumeclaims
     verbs:
-    - get
-    - list
-    - watch
-    - create
-    - update
-    - patch
-    - delete
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - patch
+      - delete
   - apiGroups:
-    - ""
+      - ""
     resources:
-    - persistentvolumes
+      - persistentvolumes
     verbs:
-    - get
-    - list
-    - watch
-    - create
-    - delete
+      - get
+      - list
+      - watch
+      - create
+      - delete
   - apiGroups:
-    - ""
+      - ""
     resources:
-    - pods
+      - pods
     verbs:
-    - get
-    - list
-    - watch
-    - update
+      - get
+      - list
+      - watch
+      - update
   - apiGroups:
-    - ""
+      - ""
     resources:
-    - pods/exec
+      - pods/exec
     verbs:
-    - create
+      - create
   - apiGroups:
-    - ""
+      - ""
     resources:
-    - nodes
+      - nodes
     verbs:
-    - get
-    - list
-    - watch
-    - patch
+      - get
+      - list
+      - watch
+      - patch
   - apiGroups:
-    - ""
+      - ""
     resources:
-    - events
+      - events
     verbs:
-    - create
-    - patch
+      - create
+      - patch
   - apiGroups:
-    - ""
+      - ""
     resources:
-    - services
+      - services
     verbs:
-    - create
-    - patch
-    - delete
-    - list
-    - watch
-    - get
+      - create
+      - patch
+      - delete
+      - list
+      - watch
+      - get
   - apiGroups:
       - data.fluid.io
     resources:
@@ -138,6 +138,90 @@ rules:
       - update
       - patch
       - delete
+  - apiGroups:
+      - ""
+    resources:
+      - pods
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - patch
+      - delete
+  - apiGroups:
+      - ""
+    resources:
+      - pods/status
+    verbs:
+      - get
+      - update
+      - patch
+  - apiGroups:
+      - ""
+    resources:
+      - events
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - patch
+      - delete
+  - apiGroups:
+      - ""
+    resources:
+      - persistentvolumeclaims
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - patch
+      - delete
+  # Apps resources
+  - apiGroups:
+      - apps
+    resources:
+      - controllerrevisions
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - patch
+      - delete
+  # Custom resources
+  - apiGroups:
+      - workload.fluid.io
+    resources:
+      - advancedstatefulsets
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - patch
+      - delete
+  - apiGroups:
+      - workload.fluid.io
+    resources:
+      - advancedstatefulsets/status
+    verbs:
+      - get
+      - update
+      - patch
+  - apiGroups:
+      - workload.fluid.io
+    resources:
+      - advancedstatefulsets/finalizers
+    verbs:
+      - update
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
