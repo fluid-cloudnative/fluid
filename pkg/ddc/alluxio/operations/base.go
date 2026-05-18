@@ -204,6 +204,10 @@ func (a AlluxioFileUtils) QueryMetaDataInfoIntoFile(key KeyOfMetaDataFile, filen
 	return
 }
 
+// ExecMountScripts executes the mount script located at /etc/fluid/scripts/mount.sh in the Alluxio master pod.
+// The script is mounted by the master statefulset and handles the mounting of storage backends to Alluxio.
+// It runs the script with verbose logging enabled to capture detailed execution output.
+// Returns an error if the script execution fails, otherwise returns nil indicating successful mount operation.
 func (a AlluxioFileUtils) ExecMountScripts() error {
 	var (
 		// Note: this script is mounted in master/statefulset.yaml
