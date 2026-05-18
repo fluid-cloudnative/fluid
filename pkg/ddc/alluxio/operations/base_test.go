@@ -267,6 +267,12 @@ func TestAlluxioFIleUtils_MKdir(t *testing.T) {
 	}
 }
 
+// TestAlluxioFIleUtils_Mount verifies that AlluxioFileUtils.Mount returns the expected result
+// when mounting an Alluxio path to a UFS path with different read-only and shared flag combinations.
+// Parameters:
+// - t (*testing.T): The testing object used to report test failures.
+// Returns:
+// - None: This test reports failures through the testing object.
 func TestAlluxioFIleUtils_Mount(t *testing.T) {
 	ExecCommon := func(a AlluxioFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
 		return "alluxio mkdir success", "", nil
