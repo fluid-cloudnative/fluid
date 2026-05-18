@@ -642,6 +642,7 @@ func TestAlluxioFileUtils_MasterPodName(t *testing.T) {
 }
 
 func TestAlluxioFileUtils_ExecMountScripts(t *testing.T) {
+	// Mock exec to avoid invoking the mounted script during the unit test.
 	ExecCommon := func(command []string, verbose bool) (stdout string, stderr string, err error) {
 		return strings.Join(command, " "), "", nil
 	}
@@ -652,6 +653,7 @@ func TestAlluxioFileUtils_ExecMountScripts(t *testing.T) {
 	a := &AlluxioFileUtils{log: fake.NullLogger()}
 	patch1 := gomonkey.ApplyPrivateMethod(*a, "exec", ExecErr)
 
+	// ExecMountScripts should return the error reported by exec.
 	err := a.ExecMountScripts()
 	if err == nil {
 		t.Error("check failure, want err, got nil")
@@ -659,6 +661,7 @@ func TestAlluxioFileUtils_ExecMountScripts(t *testing.T) {
 	patch1.Reset()
 
 	patch2 := gomonkey.ApplyPrivateMethod(*a, "exec", ExecCommon)
+	// ExecMountScripts should complete without error when exec succeeds.
 	err = a.ExecMountScripts()
 	if err != nil {
 		t.Errorf("check failure, want nil, got err: %v", err)
