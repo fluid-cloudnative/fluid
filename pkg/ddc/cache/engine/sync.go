@@ -29,7 +29,6 @@ import (
 )
 
 func (e *CacheEngine) Sync(ctx cruntime.ReconcileRequestContext) (err error) {
-	// sync the runtime value configmap
 	runtime, err := e.getRuntime()
 	if err != nil {
 		return err
@@ -45,9 +44,14 @@ func (e *CacheEngine) Sync(ctx cruntime.ReconcileRequestContext) (err error) {
 		return err
 	}
 
-	// TODO: implement other logic
+	// handle ufs change - support dynamic mount updates
+	err = e.UpdateOnUFSChange(runtime)
+	if err != nil {
+		e.Log.Error(err, "Failed to update UFS")
+		return err
+	}
 
-	// handle ufs change
+	// TODO: implement other logic
 
 	// sync runtime status
 	runtimeValue, err := e.transform(dataset, runtime, runtimeClass)

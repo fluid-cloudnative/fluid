@@ -1798,54 +1798,51 @@ spec:
                 required:
                 - phase
                 type: object
-              mountPoints:
+              mountTime:
+                format: date-time
+                type: string
+              mounts:
                 items:
                   properties:
-                    mount:
-                      properties:
-                        encryptOptions:
-                          items:
-                            properties:
-                              name:
-                                type: string
-                              valueFrom:
-                                properties:
-                                  secretKeyRef:
-                                    properties:
-                                      key:
-                                        type: string
-                                      name:
-                                        type: string
-                                    required:
-                                    - name
-                                    type: object
-                                type: object
-                            required:
-                            - name
-                            type: object
-                          type: array
-                        mountPoint:
-                          minLength: 5
-                          type: string
-                        name:
-                          minLength: 0
-                          type: string
-                        options:
-                          additionalProperties:
+                    encryptOptions:
+                      items:
+                        properties:
+                          name:
                             type: string
-                          type: object
-                        path:
-                          type: string
-                        readOnly:
-                          type: boolean
-                        shared:
-                          type: boolean
-                      required:
-                      - mountPoint
-                      type: object
-                    mountTime:
-                      format: date-time
+                          valueFrom:
+                            properties:
+                              secretKeyRef:
+                                properties:
+                                  key:
+                                    type: string
+                                  name:
+                                    type: string
+                                required:
+                                - name
+                                type: object
+                            type: object
+                        required:
+                        - name
+                        type: object
+                      type: array
+                    mountPoint:
+                      minLength: 5
                       type: string
+                    name:
+                      minLength: 0
+                      type: string
+                    options:
+                      additionalProperties:
+                        type: string
+                      type: object
+                    path:
+                      type: string
+                    readOnly:
+                      type: boolean
+                    shared:
+                      type: boolean
+                  required:
+                  - mountPoint
                   type: object
                 type: array
               selector:
