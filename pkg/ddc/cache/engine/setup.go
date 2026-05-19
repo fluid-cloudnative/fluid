@@ -76,7 +76,13 @@ func (e *CacheEngine) Setup(ctx cruntime.ReconcileRequestContext) (ready bool, e
 		}
 	}
 
-	ready, err = e.CheckAndUpdateRuntimeStatus(runtimeValue)
+	// CheckAndUpdateRuntimeStatus after components are setup
+	// Use lightweight getRuntimeStatusValue instead of full transform for status update
+	statusValue, err := e.getRuntimeStatusValue(runtime, runtimeClass)
+	if err != nil {
+		return false, err
+	}
+	ready, err = e.CheckAndUpdateRuntimeStatus(statusValue)
 	if err != nil {
 		_ = utils.LoggingErrorExceptConflict(e.Log, err, "Failed to check if the runtime is ready", types.NamespacedName{Namespace: e.namespace, Name: e.name})
 		return

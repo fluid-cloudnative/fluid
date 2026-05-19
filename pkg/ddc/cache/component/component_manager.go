@@ -28,8 +28,8 @@ import (
 
 type ComponentManager interface {
 	Reconciler(ctx context.Context, component *common.CacheRuntimeComponentValue) error
-	ConstructComponentStatus(todo context.Context, value *common.CacheRuntimeComponentValue) (v1alpha1.RuntimeComponentStatus, error)
-	GetNodeAffinity(value *common.CacheRuntimeComponentValue) (*corev1.NodeAffinity, error)
+	ConstructComponentStatus(todo context.Context, identity *common.ComponentIdentity) (v1alpha1.RuntimeComponentStatus, error)
+	GetNodeAffinity(identity *common.ComponentIdentity) (*corev1.NodeAffinity, error)
 }
 
 func NewComponentHelper(workloadType metav1.TypeMeta, client client.Client) ComponentManager {

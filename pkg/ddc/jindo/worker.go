@@ -144,12 +144,12 @@ func (e *JindoEngine) buildWorkersAffinity(workers *v1.StatefulSet) (workersToUp
 						LabelSelector: &metav1.LabelSelector{
 							MatchExpressions: []metav1.LabelSelectorRequirement{
 								{
-									Key:      "fluid.io/dataset",
+									Key:      common.LabelAnnotationDataset,
 									Operator: metav1.LabelSelectorOpExists,
 								},
 							},
 						},
-						TopologyKey: "kubernetes.io/hostname",
+						TopologyKey: common.K8sNodeNameLabelKey,
 					},
 				},
 			}
@@ -163,12 +163,12 @@ func (e *JindoEngine) buildWorkersAffinity(workers *v1.StatefulSet) (workersToUp
 							LabelSelector: &metav1.LabelSelector{
 								MatchExpressions: []metav1.LabelSelectorRequirement{
 									{
-										Key:      "fluid.io/dataset",
+										Key:      common.LabelAnnotationDataset,
 										Operator: metav1.LabelSelectorOpExists,
 									},
 								},
 							},
-							TopologyKey: "kubernetes.io/hostname",
+							TopologyKey: common.K8sNodeNameLabelKey,
 						},
 					},
 				},
@@ -177,13 +177,13 @@ func (e *JindoEngine) buildWorkersAffinity(workers *v1.StatefulSet) (workersToUp
 						LabelSelector: &metav1.LabelSelector{
 							MatchExpressions: []metav1.LabelSelectorRequirement{
 								{
-									Key:      "fluid.io/dataset-placement",
+									Key:      common.LabelAnnotationDatasetPlacement,
 									Operator: metav1.LabelSelectorOpIn,
 									Values:   []string{string(datav1alpha1.ExclusiveMode)},
 								},
 							},
 						},
-						TopologyKey: "kubernetes.io/hostname",
+						TopologyKey: common.K8sNodeNameLabelKey,
 					},
 				},
 			}
