@@ -83,7 +83,7 @@ func InferEngineImpl(runtimeStatus fluidv1alpha1.RuntimeStatus, defaultImpl stri
 
 	// e.g. <dataset_name>-<engine_impl>-values, <dataset_name> may contain "-"
 	parts := strings.Split(runtimeStatus.ValueFileConfigmap, "-")
-	if len(parts) >= 3 {
+	if len(parts) >= 3 && parts[len(parts)-1] == "values" {
 		engineImpl := parts[len(parts)-2]
 		if _, exists := buildFuncMap[engineImpl]; exists {
 			return engineImpl
