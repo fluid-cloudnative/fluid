@@ -5717,13 +5717,32 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_JuiceFSRuntimeSpec(ref common.R
 					},
 					"volumes": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Volumes is the list of Kubernetes volumes that can be mounted by the alluxio runtime components and/or fuses.",
+							Description: "Volumes is the list of Kubernetes volumes that can be mounted by the JuiceFS runtime components and/or fuses.",
 							Type:        []string{"array"},
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
 										Default: map[string]interface{}{},
 										Ref:     ref("k8s.io/api/core/v1.Volume"),
+									},
+								},
+							},
+						},
+					},
+					"volumeClaimTemplates": {
+						VendorExtensible: spec.VendorExtensible{
+							Extensions: spec.Extensions{
+								"x-kubernetes-list-type": "atomic",
+							},
+						},
+						SchemaProps: spec.SchemaProps{
+							Description: "VolumeClaimTemplates is the list of Kubernetes persistent volume claim templates used by the JuiceFS worker StatefulSet.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("k8s.io/api/core/v1.PersistentVolumeClaim"),
 									},
 								},
 							},
@@ -5747,7 +5766,7 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_JuiceFSRuntimeSpec(ref common.R
 			},
 		},
 		Dependencies: []string{
-			"github.com/fluid-cloudnative/fluid/api/v1alpha1.InitUsersSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.JuiceFSCompTemplateSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.JuiceFSFuseSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.PodMetadata", "github.com/fluid-cloudnative/fluid/api/v1alpha1.RuntimeManagement", "github.com/fluid-cloudnative/fluid/api/v1alpha1.TieredStore", "github.com/fluid-cloudnative/fluid/api/v1alpha1.User", "github.com/fluid-cloudnative/fluid/api/v1alpha1.VersionSpec", "k8s.io/api/core/v1.Volume"},
+			"github.com/fluid-cloudnative/fluid/api/v1alpha1.InitUsersSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.JuiceFSCompTemplateSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.JuiceFSFuseSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.PodMetadata", "github.com/fluid-cloudnative/fluid/api/v1alpha1.RuntimeManagement", "github.com/fluid-cloudnative/fluid/api/v1alpha1.TieredStore", "github.com/fluid-cloudnative/fluid/api/v1alpha1.User", "github.com/fluid-cloudnative/fluid/api/v1alpha1.VersionSpec", "k8s.io/api/core/v1.PersistentVolumeClaim", "k8s.io/api/core/v1.Volume"},
 	}
 }
 
