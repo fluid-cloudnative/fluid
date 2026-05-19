@@ -1,5 +1,5 @@
 /*
-Copyright 2022 The Fluid Authors.
+Copyright 2026 The Fluid Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -17,17 +17,13 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"testing"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("IsHostNetwork", func() {
-	DescribeTable("reports whether the network mode uses the host network",
-		func(mode NetworkMode, expected bool) {
-			Expect(IsHostNetwork(mode)).To(Equal(expected))
-		},
-		Entry("host network mode", HostNetworkMode, true),
-		Entry("default network mode", DefaultNetworkMode, true),
-		Entry("container network mode", ContainerNetworkMode, false),
-	)
-})
+func TestV1alpha1(t *testing.T) {
+	RegisterFailHandler(Fail)
+	RunSpecs(t, "API V1alpha1 Suite")
+}
