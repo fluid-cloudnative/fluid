@@ -23,8 +23,11 @@ import (
 
 	data "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/ctrl"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/alluxio/operations"
+	"github.com/fluid-cloudnative/fluid/pkg/features"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	utilfeature "github.com/fluid-cloudnative/fluid/pkg/utils/feature"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
@@ -88,6 +91,26 @@ func (e *AlluxioEngine) SyncReplicas(ctx cruntime.ReconcileRequestContext) (err 
 			return err
 		}
 		runtimeToUpdate := runtime.DeepCopy()
+
+		// When the AdvancedStatefulSet feature is enabled and we detect a scale-in,
+		// decommission the targeted workers before the StatefulSet controller
+		// terminates them. This gives the Alluxio master a chance to migrate their
+		// cached blocks to the surviving workers. The reconciler requeues until the
+		// active worker count has dropped to the desired level.
+		if utilfeature.DefaultFeatureGate.Enabled(features.AdvancedStatefulSet) &&
+			workers.Spec.Replicas != nil &&
+			runtime.Replicas() < *workers.Spec.Replicas {
+
+			drained, drainErr := e.drainScalingDownWorkers(runtime.Replicas(), *workers.Spec.Replicas)
+			if drainErr != nil {
+				return drainErr
+			}
+			if !drained {
+				return fmt.Errorf("workers not yet drained; scale-in to %d replicas will resume on next reconcile",
+					runtime.Replicas())
+			}
+		}
+
 		err = e.Helper.SyncReplicas(ctx, runtimeToUpdate, runtimeToUpdate.Status, workers)
 		return err
 	})
@@ -96,4 +119,75 @@ func (e *AlluxioEngine) SyncReplicas(ctx cruntime.ReconcileRequestContext) (err 
 	}
 
 	return
+}
+
+// drainScalingDownWorkers decommissions the Alluxio workers that are about to be
+// removed when scaling from currentReplicas down to desiredReplicas.
+//
+// A standard StatefulSet removes the highest-ordinal pods first, so the targets
+// are ordinals [desiredReplicas, currentReplicas). The function issues a
+// decommission request via the master and returns whether Alluxio's active
+// worker count has already dropped to the desired level.
+func (e *AlluxioEngine) drainScalingDownWorkers(desiredReplicas, currentReplicas int32) (bool, error) {
+	masterPodName, masterContainerName := e.getMasterPodInfo()
+	fileUtils := operations.NewAlluxioFileUtils(masterPodName, masterContainerName, e.namespace, e.Log)
+
+	workerRPCPort := e.getWorkerRPCPort()
+	workerStsName := e.getWorkerName()
+
+	// Collect RPC addresses of the pods that will be terminated on scale-down.
+	var toDecommission []string
+	for ord := desiredReplicas; ord < currentReplicas; ord++ {
+		podName := fmt.Sprintf("%s-%d", workerStsName, ord)
+		pod := &corev1.Pod{}
+		if err := e.Client.Get(context.TODO(),
+			types.NamespacedName{Name: podName, Namespace: e.namespace}, pod); err != nil {
+			if errors.IsNotFound(err) {
+				// Pod is already gone; nothing to decommission here.
+				continue
+			}
+			return false, err
+		}
+		if pod.Status.PodIP == "" {
+			e.Log.Info("Worker pod has no IP yet, will retry", "pod", podName)
+			return false, nil
+		}
+		toDecommission = append(toDecommission,
+			fmt.Sprintf("%s:%d", pod.Status.PodIP, workerRPCPort))
+	}
+
+	if len(toDecommission) == 0 {
+		// All targeted pods are already gone from the cluster.
+		return true, nil
+	}
+
+	if err := fileUtils.DecommissionWorkers(toDecommission); err != nil {
+		return false, err
+	}
+
+	activeCount, err := fileUtils.CountActiveWorkers()
+	if err != nil {
+		return false, err
+	}
+
+	if int32(activeCount) > desiredReplicas {
+		e.Log.Info("Workers are still draining, will retry",
+			"activeWorkers", activeCount, "desired", desiredReplicas)
+		return false, nil
+	}
+
+	return true, nil
+}
+
+// getWorkerRPCPort returns the configured Alluxio worker RPC port, falling back
+// to the Alluxio default when the runtime does not override it.
+func (e *AlluxioEngine) getWorkerRPCPort() int {
+	runtime, err := e.getRuntime()
+	if err != nil {
+		return defaultWorkerRPCPort
+	}
+	if port, ok := runtime.Spec.Worker.Ports["rpc"]; ok && port > 0 {
+		return port
+	}
+	return defaultWorkerRPCPort
 }
