@@ -169,9 +169,6 @@ func TestCheckRuntimeHealthy(t *testing.T) {
 				},
 				Status: datav1alpha1.DatasetStatus{
 					Phase: datav1alpha1.BoundDatasetPhase,
-					CacheStates: map[common.CacheStateName]string{
-						common.Cached: "true",
-					},
 					HCFSStatus: &datav1alpha1.HCFSStatus{
 						Endpoint:                    "test Endpoint",
 						UnderlayerFileSystemVersion: "Underlayer HCFS Compatible Version",
@@ -236,7 +233,6 @@ func TestCheckRuntimeHealthy(t *testing.T) {
 			return
 		}
 		if !reflect.DeepEqual(datasets.Items[0].Status.Phase, test.expectedDataset.Status.Phase) ||
-			!reflect.DeepEqual(datasets.Items[0].Status.CacheStates, test.expectedDataset.Status.CacheStates) ||
 			!reflect.DeepEqual(datasets.Items[0].Status.HCFSStatus, test.expectedDataset.Status.HCFSStatus) {
 			t.Errorf("fail to exec the function with error %v", err)
 			return
