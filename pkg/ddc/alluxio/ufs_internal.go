@@ -45,10 +45,12 @@ func (e *AlluxioEngine) usedStorageBytesInternal() (value int64, err error) {
 	return
 }
 
+// freeStorageBytesInternal returns the number of bytes currently available in Alluxio storage.
 func (e *AlluxioEngine) freeStorageBytesInternal() (value int64, err error) {
 	return
 }
 
+// totalStorageBytesInternal returns the total capacity in bytes of the Alluxio file system.
 func (e *AlluxioEngine) totalStorageBytesInternal() (total int64, err error) {
 	podName, containerName := e.getMasterPodInfo()
 
@@ -61,6 +63,8 @@ func (e *AlluxioEngine) totalStorageBytesInternal() (total int64, err error) {
 	return
 }
 
+// totalFileNumsInternal returns the total number of files within the Alluxio file system.
+// It queries the master pod via AlluxioFileUtils.GetFileCount.
 func (e *AlluxioEngine) totalFileNumsInternal() (fileCount int64, err error) {
 	podName, containerName := e.getMasterPodInfo()
 
