@@ -18,6 +18,7 @@ package dataflowaffinity
 
 import (
 	"context"
+	"errors"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -275,7 +276,7 @@ var _ = Describe("DataOpJobReconciler", func() {
 					Log:    fake.NullLogger(),
 				}
 
-				err := f.injectPodNodeLabelsToJob(job)
+				err := f.injectPodNodeLabelsToJob(context.Background(), job)
 				Expect(err).NotTo(HaveOccurred())
 
 				wantAnnotations := map[string]string{
@@ -328,8 +329,37 @@ var _ = Describe("DataOpJobReconciler", func() {
 					Log:    fake.NullLogger(),
 				}
 
-				err := f.injectPodNodeLabelsToJob(job)
+				err := f.injectPodNodeLabelsToJob(context.Background(), job)
 				Expect(err).To(HaveOccurred())
+			})
+		})
+
+		Context("when caller context is canceled", func() {
+			It("should return the context error", func() {
+				job := &batchv1.Job{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "test-job-canceled",
+					},
+					Spec: batchv1.JobSpec{
+						Selector: &metav1.LabelSelector{
+							MatchLabels: map[string]string{
+								controllerUIDKey: jobControllerUIDValue,
+							},
+						},
+					},
+				}
+
+				c := fake.NewFakeClientWithScheme(testScheme, job)
+				f := &DataOpJobReconciler{
+					Client: fake.ContextAwareClient{Client: c},
+					Log:    fake.NullLogger(),
+				}
+
+				ctx, cancel := context.WithCancel(context.Background())
+				cancel()
+
+				err := f.injectPodNodeLabelsToJob(ctx, job)
+				Expect(errors.Is(err, context.Canceled)).To(BeTrue())
 			})
 		})
 	})
