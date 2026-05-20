@@ -41,6 +41,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.CacheRuntimeClientSpec":            schema_fluid_cloudnative_fluid_api_v1alpha1_CacheRuntimeClientSpec(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.CacheRuntimeList":                  schema_fluid_cloudnative_fluid_api_v1alpha1_CacheRuntimeList(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.CacheRuntimeMasterSpec":            schema_fluid_cloudnative_fluid_api_v1alpha1_CacheRuntimeMasterSpec(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.CacheRuntimeMountUfsOutput":        schema_fluid_cloudnative_fluid_api_v1alpha1_CacheRuntimeMountUfsOutput(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.CacheRuntimeSpec":                  schema_fluid_cloudnative_fluid_api_v1alpha1_CacheRuntimeSpec(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.CacheRuntimeStatus":                schema_fluid_cloudnative_fluid_api_v1alpha1_CacheRuntimeStatus(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.CacheRuntimeWorkerSpec":            schema_fluid_cloudnative_fluid_api_v1alpha1_CacheRuntimeWorkerSpec(ref),
@@ -111,7 +112,6 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.Metadata":                          schema_fluid_cloudnative_fluid_api_v1alpha1_Metadata(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.MetadataSyncPolicy":                schema_fluid_cloudnative_fluid_api_v1alpha1_MetadataSyncPolicy(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.Mount":                             schema_fluid_cloudnative_fluid_api_v1alpha1_Mount(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.MountPointStatus":                  schema_fluid_cloudnative_fluid_api_v1alpha1_MountPointStatus(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.OSAdvise":                          schema_fluid_cloudnative_fluid_api_v1alpha1_OSAdvise(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.ObjectRef":                         schema_fluid_cloudnative_fluid_api_v1alpha1_ObjectRef(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.OperationRef":                      schema_fluid_cloudnative_fluid_api_v1alpha1_OperationRef(ref),
@@ -1390,6 +1390,33 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_CacheRuntimeMasterSpec(ref comm
 	}
 }
 
+func schema_fluid_cloudnative_fluid_api_v1alpha1_CacheRuntimeMountUfsOutput(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"mounted": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Mounted are the ufs paths that have been mounted.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: "",
+										Type:    []string{"string"},
+										Format:  "",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+}
+
 func schema_fluid_cloudnative_fluid_api_v1alpha1_CacheRuntimeSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
@@ -1584,25 +1611,31 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_CacheRuntimeStatus(ref common.R
 							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.RuntimeComponentStatus"),
 						},
 					},
-					"mountPoints": {
+					"mounts": {
 						SchemaProps: spec.SchemaProps{
-							Description: "MountPoints represents the status of mount points specified in the bound dataset. Each entry tracks the mount configuration and the time of the last successful mount.",
+							Description: "Mounts contains the mount point configurations from the bound dataset. Currently not used, may be used when integrating thin runtime.",
 							Type:        []string{"array"},
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
 										Default: map[string]interface{}{},
-										Ref:     ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.MountPointStatus"),
+										Ref:     ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.Mount"),
 									},
 								},
 							},
+						},
+					},
+					"mountTime": {
+						SchemaProps: spec.SchemaProps{
+							Description: "MountTime is the timestamp of the last successful mount operation. If MountTime is earlier than the master component's start time, a remount will be required.",
+							Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.Time"),
 						},
 					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/fluid-cloudnative/fluid/api/v1alpha1.MountPointStatus", "github.com/fluid-cloudnative/fluid/api/v1alpha1.RuntimeComponentStatus", "github.com/fluid-cloudnative/fluid/api/v1alpha1.RuntimeCondition", "k8s.io/api/core/v1.NodeAffinity"},
+			"github.com/fluid-cloudnative/fluid/api/v1alpha1.Mount", "github.com/fluid-cloudnative/fluid/api/v1alpha1.RuntimeComponentStatus", "github.com/fluid-cloudnative/fluid/api/v1alpha1.RuntimeCondition", "k8s.io/api/core/v1.NodeAffinity", "k8s.io/apimachinery/pkg/apis/meta/v1.Time"},
 	}
 }
 
@@ -3853,7 +3886,7 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_ExecutionEntries(ref common.Ref
 				Properties: map[string]spec.Schema{
 					"mountUFS": {
 						SchemaProps: spec.SchemaProps{
-							Description: "MountUFS defines the operations for mounting UFS",
+							Description: "MountUFS defines the operations for mounting UFS. The command's stdout must be JSON matching CacheRuntimeMountUfsOutput.",
 							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.ExecutionCommonEntry"),
 						},
 					},
@@ -6174,34 +6207,6 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_Mount(ref common.ReferenceCallb
 	}
 }
 
-func schema_fluid_cloudnative_fluid_api_v1alpha1_MountPointStatus(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Description: "MountPointStatus describes the status of a single mount point in the dataset",
-				Type:        []string{"object"},
-				Properties: map[string]spec.Schema{
-					"mount": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Mount contains the mount point configuration from the bound dataset. This includes the remote path, mount options, and other mount-specific settings.",
-							Default:     map[string]interface{}{},
-							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.Mount"),
-						},
-					},
-					"mountTime": {
-						SchemaProps: spec.SchemaProps{
-							Description: "MountTime is the timestamp of the last successful mount operation. If MountTime is earlier than the master component's start time, a remount will be required.",
-							Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.Time"),
-						},
-					},
-				},
-			},
-		},
-		Dependencies: []string{
-			"github.com/fluid-cloudnative/fluid/api/v1alpha1.Mount", "k8s.io/apimachinery/pkg/apis/meta/v1.Time"},
-	}
-}
-
 func schema_fluid_cloudnative_fluid_api_v1alpha1_OSAdvise(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
@@ -7319,7 +7324,7 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_RuntimeStatus(ref common.Refere
 					},
 					"mounts": {
 						SchemaProps: spec.SchemaProps{
-							Description: "MountPoints represents the mount points specified in the bounded dataset",
+							Description: "Mounts represents the mount points specified in the bounded dataset. Currently only set and used in thin runtime, see pr #2257.",
 							Type:        []string{"array"},
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{

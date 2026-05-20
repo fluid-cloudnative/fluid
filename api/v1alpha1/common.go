@@ -318,3 +318,8 @@ type ClientMetrics struct {
 	// Defaults to None when it is not explicitly set.
 	ScrapeTarget string `json:"scrapeTarget,omitempty"`
 }
+
+type CacheRuntimeMountUfsOutput struct {
+	// Mounted are the ufs paths that have been mounted.
+	Mounted []string `json:"mounted,omitempty"`
+}

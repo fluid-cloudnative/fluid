@@ -126,7 +126,8 @@ type RuntimeStatus struct {
 	// if Mounttime is earlier than master starting time, remount will be required
 	MountTime *metav1.Time `json:"mountTime,omitempty"`
 
-	// MountPoints represents the mount points specified in the bounded dataset
+	// Mounts represents the mount points specified in the bounded dataset.
+	// Currently only set and used in thin runtime, see pr #2257.
 	Mounts []Mount `json:"mounts,omitempty"`
 
 	// CacheAffinity represents the runtime worker pods node affinity including node selector
