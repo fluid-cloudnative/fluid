@@ -122,6 +122,7 @@ func (e *CacheEngine) transformExtraConfigMapVolumes(
 					ReadOnly:  true,
 				})
 		}
+		// no need check container length, since it's already checked in initComponentValue
 		podSpec.Containers[0].VolumeMounts = append(podSpec.Containers[0].VolumeMounts, corev1.VolumeMount{
 			Name:      volumeName,
 			MountPath: cm.MountPath,
