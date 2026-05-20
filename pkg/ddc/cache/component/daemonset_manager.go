@@ -84,10 +84,6 @@ func (s *DaemonSetManager) reconcileDaemonSet(ctx context.Context, component *co
 func (s *DaemonSetManager) constructDaemonSet(component *common.CacheRuntimeComponentValue) *appsv1.DaemonSet {
 	matchLabels := getCommonLabelsFromComponent(component)
 
-	if len(component.MatchLabels) != 0 {
-		matchLabels = utils.UnionMapsWithOverride(matchLabels, component.MatchLabels)
-	}
-
 	podTemplateSpec := component.PodTemplateSpec
 	podTemplateSpec.Labels = utils.UnionMapsWithOverride(podTemplateSpec.Labels, matchLabels)
 

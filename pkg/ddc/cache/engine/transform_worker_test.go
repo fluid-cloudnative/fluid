@@ -368,6 +368,23 @@ var _ = Describe("CacheEngine Transform Worker Tests", Label("pkg.ddc.cache.engi
 				})
 			})
 
+			It("should set correct pod labels for worker pods to enable PodAntiAffinity", func() {
+				err := engine.transformWorker(dataset, runtimeObj, runtimeClass, config, value)
+				Expect(err).NotTo(HaveOccurred())
+
+				// Verify pod labels are set in PodTemplateSpec.Labels
+				// These labels are used by PodAntiAffinity rules for scheduling isolation
+				Expect(value.Worker.PodTemplateSpec.Labels).NotTo(BeNil())
+				Expect(value.Worker.PodTemplateSpec.Labels).To(HaveKey(common.LabelAnnotationDataset))
+				Expect(value.Worker.PodTemplateSpec.Labels).To(HaveKey(common.LabelAnnotationDatasetPlacement))
+
+				// Verify the dataset label uses human-readable format (namespace-name) instead of UID
+				// This is consistent with other runtimes like alluxio, juicefs, etc.
+				// Note: In test environment, runtimeInfo is built from runtime name, not dataset name
+				Expect(value.Worker.PodTemplateSpec.Labels[common.LabelAnnotationDataset]).To(Equal("default-test-runtime"))
+				Expect(value.Worker.PodTemplateSpec.Labels[common.LabelAnnotationDatasetPlacement]).To(Equal(string(datav1alpha1.ExclusiveMode)))
+			})
+
 			It("should preserve all original fields in runtimeClass after multiple transformations", func() {
 				// Store complete original PodTemplate
 				originalPodTemplate := runtimeClass.Topology.Worker.Template.DeepCopy()
@@ -519,8 +536,8 @@ var _ = Describe("CacheEngine Transform Worker Tests", Label("pkg.ddc.cache.engi
 				// Worker should be disabled
 				Expect(value.Worker.Enabled).To(BeFalse())
 
-				// MatchLabels should not be set for disabled worker
-				Expect(value.Worker.MatchLabels).To(BeNil())
+				// Pod labels should not be set for disabled worker
+				Expect(value.Worker.PodTemplateSpec.Labels).To(BeNil())
 			})
 		})
 	})

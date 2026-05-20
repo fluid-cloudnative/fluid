@@ -20,6 +20,7 @@ import (
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -59,11 +60,14 @@ func (e *CacheEngine) transformWorker(dataset *datav1alpha1.Dataset, runtime *da
 	// dataset.Spec.NodeAffinity only affects worker (cache) pods
 	e.buildWorkerAffinity(value.Worker.PodTemplateSpec.Spec.Affinity, dataset, runtimeInfo)
 
-	// inject stateful set pod match labels for workers
-	value.Worker.MatchLabels = map[string]string{
-		common.LabelAnnotationDataset:          runtimeInfo.GetOwnerDatasetUID(),
-		common.LabelAnnotationDatasetPlacement: (string)(runtimeInfo.GetPlacementModeWithDefault(datav1alpha1.ExclusiveMode)),
+	// inject pod labels for workers to enable PodAntiAffinity scheduling isolation
+	// These labels are used by PodAntiAffinity rules to isolate different datasets
+	// Use GetDatasetId to generate a human-readable dataset identifier for consistency with other runtimes
+	if value.Worker.PodTemplateSpec.Labels == nil {
+		value.Worker.PodTemplateSpec.Labels = make(map[string]string)
 	}
+	value.Worker.PodTemplateSpec.Labels[common.LabelAnnotationDataset] = utils.GetDatasetId(runtimeInfo.GetNamespace(), runtimeInfo.GetName(), runtimeInfo.GetOwnerDatasetUID())
+	value.Worker.PodTemplateSpec.Labels[common.LabelAnnotationDatasetPlacement] = (string)(runtimeInfo.GetPlacementModeWithDefault(datav1alpha1.ExclusiveMode))
 
 	// transform all volume-related configurations
 	err = e.transformVolumes(runtime.Spec.Volumes, runtime.Spec.Worker.VolumeMounts, dataset, componentDefinition, commonConfig, true, &value.Worker.PodTemplateSpec.Spec)

@@ -53,9 +53,6 @@ type CacheRuntimeComponentValue struct {
 	Owner           *OwnerReference
 	ComponentType   ComponentType
 
-	// component private labels for stateful set pod match
-	MatchLabels map[string]string
-
 	// Service name, can be not same as Component name
 	Service *CacheRuntimeComponentServiceConfig
 }
