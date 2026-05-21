@@ -65,15 +65,15 @@ func (e *CacheEngine) applyRuntimeConfigVolume(podSpec *corev1.PodSpec, commonCo
 		return
 	}
 
-	// Add runtime config volume
-	podSpec.Volumes = append(
+	// Add runtime config volume (use AppendOrOverrideVolume to avoid duplicates)
+	podSpec.Volumes = utils.AppendOrOverrideVolume(
 		podSpec.Volumes,
 		commonConfig.RuntimeConfigs.RuntimeConfigVolume,
 	)
 
 	// Add runtime config volume mount to init container if exists
 	if len(podSpec.InitContainers) > 0 {
-		podSpec.InitContainers[0].VolumeMounts = append(
+		podSpec.InitContainers[0].VolumeMounts = utils.AppendOrOverrideVolumeMounts(
 			podSpec.InitContainers[0].VolumeMounts,
 			commonConfig.RuntimeConfigs.RuntimeConfigVolumeMount,
 		)
@@ -81,7 +81,7 @@ func (e *CacheEngine) applyRuntimeConfigVolume(podSpec *corev1.PodSpec, commonCo
 
 	// Add runtime config volume mount to main container
 	if len(podSpec.Containers) > 0 {
-		podSpec.Containers[0].VolumeMounts = append(
+		podSpec.Containers[0].VolumeMounts = utils.AppendOrOverrideVolumeMounts(
 			podSpec.Containers[0].VolumeMounts,
 			commonConfig.RuntimeConfigs.RuntimeConfigVolumeMount,
 		)
@@ -104,7 +104,7 @@ func (e *CacheEngine) transformExtraConfigMapVolumes(
 			return fmt.Errorf("component has undefined config map extra resource '%s', check the CacheRuntimeClass definition", cm.Name)
 		}
 		volumeName := e.getRuntimeClassExtraConfigMapVolumeName(cm.Name)
-		podSpec.Volumes = append(podSpec.Volumes, corev1.Volume{
+		podSpec.Volumes = utils.AppendOrOverrideVolume(podSpec.Volumes, corev1.Volume{
 			Name: volumeName,
 			VolumeSource: corev1.VolumeSource{
 				ConfigMap: &corev1.ConfigMapVolumeSource{
@@ -115,7 +115,8 @@ func (e *CacheEngine) transformExtraConfigMapVolumes(
 			},
 		})
 		if len(podSpec.InitContainers) > 0 {
-			podSpec.InitContainers[0].VolumeMounts = append(podSpec.InitContainers[0].VolumeMounts,
+			podSpec.InitContainers[0].VolumeMounts = utils.AppendOrOverrideVolumeMounts(
+				podSpec.InitContainers[0].VolumeMounts,
 				corev1.VolumeMount{
 					Name:      volumeName,
 					MountPath: cm.MountPath,
@@ -123,11 +124,13 @@ func (e *CacheEngine) transformExtraConfigMapVolumes(
 				})
 		}
 		// no need check container length, since it's already checked in initComponentValue
-		podSpec.Containers[0].VolumeMounts = append(podSpec.Containers[0].VolumeMounts, corev1.VolumeMount{
-			Name:      volumeName,
-			MountPath: cm.MountPath,
-			ReadOnly:  true,
-		})
+		podSpec.Containers[0].VolumeMounts = utils.AppendOrOverrideVolumeMounts(
+			podSpec.Containers[0].VolumeMounts,
+			corev1.VolumeMount{
+				Name:      volumeName,
+				MountPath: cm.MountPath,
+				ReadOnly:  true,
+			})
 	}
 	return nil
 }
@@ -198,7 +201,7 @@ func (e *CacheEngine) transformRuntimeSpecVolumes(volumes []corev1.Volume, volum
 	referencedVolumeMap := make(map[string]bool)
 	for _, volumeMount := range volumeMounts {
 		referencedVolumeMap[volumeMount.Name] = true
-		podSpec.Containers[0].VolumeMounts = append(
+		podSpec.Containers[0].VolumeMounts = utils.AppendOrOverrideVolumeMounts(
 			podSpec.Containers[0].VolumeMounts, volumeMount,
 		)
 	}
