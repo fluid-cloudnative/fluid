@@ -426,6 +426,13 @@ func (a AlluxioFileUtils) GetFileCount() (fileCount int64, err error) {
 	return fileCount, nil
 }
 
+// MasterPodName gets the master pod name of the Alluxio cluster by parsing the output of `alluxio fsadmin report`.
+// This function is primarily responsible for executing the report command in the Alluxio container
+// and extracting the master address from the parsed output results.
+//
+// Returns:
+//   - masterPodName (string): The extracted master pod name or address. Returns the current pod name on failure.
+//   - err (error): Returns an error if the command execution fails or the output format is invalid.
 func (a AlluxioFileUtils) MasterPodName() (masterPodName string, err error) {
 	var (
 		command = []string{"alluxio", "fsadmin", "report"}
