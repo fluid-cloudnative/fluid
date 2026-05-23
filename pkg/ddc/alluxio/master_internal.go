@@ -113,6 +113,8 @@ func (e *AlluxioEngine) getHelmValuesConfigMapName() string {
 	return e.name + "-" + e.engineImpl + "-values"
 }
 
+// getMountConfigmapName returns the name of the ConfigMap that stores mount-related configurations for the Alluxio engine.
+// It uses the engine's name concatenated with "-mount-config" as the ConfigMap name.
 func (e *AlluxioEngine) getMountConfigmapName() string {
 	return e.name + "-mount-config"
 }
