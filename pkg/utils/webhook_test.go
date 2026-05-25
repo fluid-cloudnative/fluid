@@ -451,6 +451,27 @@ func TestInjectNodeSelectorTerms(t *testing.T) {
 				},
 			},
 		},
+		"test preserve existing match-all terms when injected terms are empty": {
+			nodeSelectorTermList: []corev1.NodeSelectorTerm{
+				{},
+			},
+			pod: &corev1.Pod{
+				Spec: corev1.PodSpec{
+					Affinity: &corev1.Affinity{
+						NodeAffinity: &corev1.NodeAffinity{
+							RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
+								NodeSelectorTerms: []corev1.NodeSelectorTerm{
+									{},
+								},
+							},
+						},
+					},
+				},
+			},
+			expectTerms: []corev1.NodeSelectorTerm{
+				{},
+			},
+		},
 		"test merge match fields when building cross product": {
 			nodeSelectorTermList: []corev1.NodeSelectorTerm{
 				{

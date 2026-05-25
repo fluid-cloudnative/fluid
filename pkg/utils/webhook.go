@@ -62,6 +62,17 @@ func InjectNodeSelectorTerms(requiredSchedulingTerms []corev1.NodeSelectorTerm, 
 	if len(pod.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms) == 0 {
 		pod.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms = requiredSchedulingTerms
 	} else {
+		hasRequiredConstraints := false
+		for i := 0; i < len(requiredSchedulingTerms); i++ {
+			if len(requiredSchedulingTerms[i].MatchExpressions) != 0 || len(requiredSchedulingTerms[i].MatchFields) != 0 {
+				hasRequiredConstraints = true
+				break
+			}
+		}
+		if !hasRequiredConstraints {
+			return
+		}
+
 		existingTerms := pod.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms
 		combinedTerms := make([]corev1.NodeSelectorTerm, 0, len(existingTerms)*len(requiredSchedulingTerms))
 		hasExistingConstraints := false
