@@ -407,7 +407,8 @@ func (r *RuntimeReconciler) CheckIfReferenceDatasetIsSupported(ctx cruntime.Reco
 		}
 		// Check if the physical runtime is CacheRuntime, which is not supported
 		if runtimeInfo.GetRuntimeType() == common.CacheRuntime {
-			return false, fmt.Errorf("CacheRuntime is not supported as physical runtime for reference datasets")
+			return false, fmt.Errorf("physical dataset %s/%s uses unsupported runtime type %q for reference datasets",
+				physicalDatasetNSN.Namespace, physicalDatasetNSN.Name, runtimeInfo.GetRuntimeType())
 		}
 	}
 

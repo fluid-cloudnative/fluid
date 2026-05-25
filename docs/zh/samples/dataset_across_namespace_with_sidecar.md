@@ -1,7 +1,7 @@
 # 示例 - Dataset缓存跨Namespace访问(Sidecar机制)
 本示例用来演示如何一份Dataset缓存数据，如何跨Namespace使用：
 - Namespace ns-a 创建 Dataset demo 和 AlluxioRuntime demo
-- Namespace ns-b 创建 Dataset demo-ref，其中demo-ref  mount的路径为`dataset://ns-a/demo"
+- Namespace ns-b 创建 Dataset demo-ref，其中demo-ref  mount的路径为`dataset://ns-a/demo`"
 
 ⚠️ **注意**：物理运行时（即原始Dataset绑定的Runtime）不能是CacheRuntime。
  

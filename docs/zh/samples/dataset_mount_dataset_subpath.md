@@ -1,7 +1,7 @@
 # 示例 - Dataset 挂载其它 Dataset的子路径
 本示例用来演示如何将Dataset挂载其它Dataset的子路径：
 - Namespace default 创建 Dataset phy 和 AlluxioRuntime phy；
-- Namespace ref 创建 Dataset subpath，其中demo-ref  mount的路径为`dataset://ns-a/demo"
+- Namespace ref 创建 Dataset subpath，其中demo-ref  mount的路径为`dataset://ns-a/demo`"
 
 本示例通过Sidecar机制实现，如果要采用CSI机制，可以结合参考[CSI机制挂载Dataset实现缓存共享](./dataset_across_namespace_with_csi.md)。
 ## 前提条件
