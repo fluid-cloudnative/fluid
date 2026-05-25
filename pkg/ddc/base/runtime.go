@@ -311,10 +311,9 @@ func WithTieredStore(tieredStore datav1alpha1.TieredStore) RuntimeInfoOption {
 		return nil
 	}
 }
-// GetTieredStoreInfo gets TieredStoreInfo from RuntimeInfo, the TieredStoreInfo is converted from datav1alpha1.TieredStore and stored in RuntimeInfo when building RuntimeInfo, so it can be used directly without conversion when getting it from RuntimeInfo.
-// The conversion logic is in WithTieredStore function.
-// If the length of Levels in datav1alpha1.TieredStore is 0, the Levels in TieredStoreInfo will also be an empty slice.
-// The TieredStoreInfo contains more structured information about the tiered store, such as the quota for each cache path, which is more convenient to use than the original datav1alpha1.TieredStore.
+// GetTieredStoreInfo returns the TieredStoreInfo associated with the RuntimeInfo.
+// The info is pre-converted from datav1alpha1.TieredStore for convenience (e.g., structured quotas).
+// If no levels are defined, the Levels slice in the returned struct will be nil.
 func (info *RuntimeInfo) GetTieredStoreInfo() TieredStoreInfo {
 	return info.tieredstoreInfo
 }
