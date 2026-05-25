@@ -376,6 +376,43 @@ func TestInjectNodeSelectorTerms(t *testing.T) {
 				},
 			},
 		},
+		"test preserve existing terms when injected terms are empty": {
+			nodeSelectorTermList: []corev1.NodeSelectorTerm{
+				{},
+			},
+			pod: &corev1.Pod{
+				Spec: corev1.PodSpec{
+					Affinity: &corev1.Affinity{
+						NodeAffinity: &corev1.NodeAffinity{
+							RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
+								NodeSelectorTerms: []corev1.NodeSelectorTerm{
+									{
+										MatchExpressions: []corev1.NodeSelectorRequirement{
+											{
+												Key:      "region",
+												Operator: corev1.NodeSelectorOpIn,
+												Values:   []string{"us-east-1"},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			expectTerms: []corev1.NodeSelectorTerm{
+				{
+					MatchExpressions: []corev1.NodeSelectorRequirement{
+						{
+							Key:      "region",
+							Operator: corev1.NodeSelectorOpIn,
+							Values:   []string{"us-east-1"},
+						},
+					},
+				},
+			},
+		},
 		"test existing match-all terms with injected terms produce injected terms": {
 			nodeSelectorTermList: []corev1.NodeSelectorTerm{
 				{},

@@ -97,6 +97,9 @@ func InjectNodeSelectorTerms(requiredSchedulingTerms []corev1.NodeSelectorTerm, 
 				combinedTerms = append(combinedTerms, combinedTerm)
 			}
 		}
+		if len(combinedTerms) == 0 {
+			return
+		}
 		pod.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms = combinedTerms
 	}
 
