@@ -260,6 +260,16 @@ func WithAnnotations(annotations map[string]string) RuntimeInfoOption {
 	}
 }
 
+// GetAnnotations returns the annotations map associated with the runtime.
+//
+// The annotations are typically copied from the underlying Kubernetes runtime
+// object (for example, AlluxioRuntime, JindoRuntime, etc.) via the
+// `WithAnnotations` option when building the `RuntimeInfo`.
+//
+// Returns:
+//   - map[string]string: the annotations map stored on `RuntimeInfo`. The
+//     returned map is not deep-copied; callers should avoid modifying it if
+//     it may be shared.
 func (info *RuntimeInfo) GetAnnotations() map[string]string {
 	return info.annotations
 }
