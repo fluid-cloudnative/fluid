@@ -341,6 +341,9 @@ func (info *RuntimeInfo) GetRuntimeType() string {
 	return info.runtimeType
 }
 
+// IsPlacementModeSet reports whether the placement mode has been explicitly configured
+// on the RuntimeInfo. It returns true if the internal placementMode pointer is not nil,
+// indicating that a placement mode (e.g., ExclusiveMode) has been set; otherwise, it returns false.
 func (info *RuntimeInfo) IsPlacementModeSet() bool {
 	return info.placementMode != nil
 }
