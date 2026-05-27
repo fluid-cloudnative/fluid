@@ -71,7 +71,11 @@ func (e *CacheEngine) SetupClientInternal(clientValue *common.CacheRuntimeCompon
 			return err
 		}
 
-		clientStatus, err := manager.ConstructComponentStatus(context.TODO(), clientValue)
+		identity := &common.ComponentIdentity{
+			Name:      clientValue.Name,
+			Namespace: clientValue.Namespace,
+		}
+		clientStatus, err := manager.ConstructComponentStatus(context.TODO(), identity)
 		if err != nil {
 			return err
 		}

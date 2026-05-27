@@ -215,8 +215,8 @@ func newStatusTestEngineWithClient(t *testing.T, client ctrlclient.Client) (*Cac
 	}, client
 }
 
-func newStatusTestRuntimeValue(enableClient bool) *common.CacheRuntimeValue {
-	value := &common.CacheRuntimeValue{
+func newStatusTestRuntimeValue(enableClient bool) *common.CacheRuntimeStatusValue {
+	value := &common.CacheRuntimeStatusValue{
 		Master: newStatusTestComponentValue(testStatusMaster, "StatefulSet"),
 		Worker: newStatusTestComponentValue(testStatusWorker, "StatefulSet"),
 		Client: newStatusTestComponentValue(testStatusClient, "DaemonSet"),
@@ -226,11 +226,13 @@ func newStatusTestRuntimeValue(enableClient bool) *common.CacheRuntimeValue {
 	return value
 }
 
-func newStatusTestComponentValue(name, kind string) *common.CacheRuntimeComponentValue {
-	return &common.CacheRuntimeComponentValue{
+func newStatusTestComponentValue(name, kind string) *common.ComponentStatusInfo {
+	return &common.ComponentStatusInfo{
+		ComponentIdentity: common.ComponentIdentity{
+			Name:      name,
+			Namespace: testStatusNamespace,
+		},
 		Enabled:      true,
-		Name:         name,
-		Namespace:    testStatusNamespace,
 		WorkloadType: metav1.TypeMeta{APIVersion: testStatusWorkloadAP, Kind: kind},
 	}
 }

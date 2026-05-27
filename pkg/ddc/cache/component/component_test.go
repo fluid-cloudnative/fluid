@@ -118,6 +118,14 @@ func setupTestClient() client.Client {
 	return fake.NewFakeClientWithScheme(scheme)
 }
 
+// newComponentIdentity creates a ComponentIdentity from a CacheRuntimeComponentValue
+func newComponentIdentity(component *common.CacheRuntimeComponentValue) *common.ComponentIdentity {
+	return &common.ComponentIdentity{
+		Name:      component.Name,
+		Namespace: component.Namespace,
+	}
+}
+
 var _ = Describe("StatefulSetManager", func() {
 	var (
 		manager   *StatefulSetManager
@@ -233,7 +241,7 @@ var _ = Describe("StatefulSetManager", func() {
 			}
 			Expect(manager.client.Create(ctx, sts)).To(Succeed())
 
-			status, err := manager.ConstructComponentStatus(ctx, component)
+			status, err := manager.ConstructComponentStatus(ctx, newComponentIdentity(component))
 			Expect(err).NotTo(HaveOccurred())
 			Expect(status.DesiredReplicas).To(Equal(int32(3)))
 			Expect(status.ReadyReplicas).To(Equal(int32(3)))
@@ -261,7 +269,7 @@ var _ = Describe("StatefulSetManager", func() {
 			}
 			Expect(manager.client.Create(ctx, sts)).To(Succeed())
 
-			status, err := manager.ConstructComponentStatus(ctx, component)
+			status, err := manager.ConstructComponentStatus(ctx, newComponentIdentity(component))
 			Expect(err).NotTo(HaveOccurred())
 			Expect(status.DesiredReplicas).To(Equal(int32(3)))
 			Expect(status.ReadyReplicas).To(Equal(int32(2)))
@@ -287,14 +295,14 @@ var _ = Describe("StatefulSetManager", func() {
 			}
 			Expect(manager.client.Create(ctx, sts)).To(Succeed())
 
-			status, err := manager.ConstructComponentStatus(ctx, component)
+			status, err := manager.ConstructComponentStatus(ctx, newComponentIdentity(component))
 			Expect(err).NotTo(HaveOccurred())
 			Expect(status.ReadyReplicas).To(Equal(int32(0)))
 			Expect(status.Phase).To(Equal(datav1alpha1.RuntimePhaseNotReady))
 		})
 
 		It("should return error when StatefulSet doesn't exist", func() {
-			_, err := manager.ConstructComponentStatus(ctx, component)
+			_, err := manager.ConstructComponentStatus(ctx, newComponentIdentity(component))
 			Expect(err).To(HaveOccurred())
 		})
 	})
@@ -397,7 +405,7 @@ var _ = Describe("DaemonSetManager", func() {
 			}
 			Expect(manager.client.Create(ctx, ds)).To(Succeed())
 
-			status, err := manager.ConstructComponentStatus(ctx, component)
+			status, err := manager.ConstructComponentStatus(ctx, newComponentIdentity(component))
 			Expect(err).NotTo(HaveOccurred())
 			Expect(status.DesiredReplicas).To(Equal(int32(3)))
 			Expect(status.ReadyReplicas).To(Equal(int32(3)))
@@ -422,7 +430,7 @@ var _ = Describe("DaemonSetManager", func() {
 			}
 			Expect(manager.client.Create(ctx, ds)).To(Succeed())
 
-			status, err := manager.ConstructComponentStatus(ctx, component)
+			status, err := manager.ConstructComponentStatus(ctx, newComponentIdentity(component))
 			Expect(err).NotTo(HaveOccurred())
 			Expect(status.DesiredReplicas).To(Equal(int32(3)))
 			Expect(status.ReadyReplicas).To(Equal(int32(2)))
@@ -448,7 +456,7 @@ var _ = Describe("DaemonSetManager", func() {
 			}
 			Expect(manager.client.Create(ctx, ds)).To(Succeed())
 
-			status, err := manager.ConstructComponentStatus(ctx, component)
+			status, err := manager.ConstructComponentStatus(ctx, newComponentIdentity(component))
 			Expect(err).NotTo(HaveOccurred())
 			Expect(status.DesiredReplicas).To(Equal(int32(3)))
 			Expect(status.ReadyReplicas).To(Equal(int32(0)))
@@ -458,7 +466,7 @@ var _ = Describe("DaemonSetManager", func() {
 		})
 
 		It("should return error when DaemonSet doesn't exist", func() {
-			_, err := manager.ConstructComponentStatus(ctx, component)
+			_, err := manager.ConstructComponentStatus(ctx, newComponentIdentity(component))
 			Expect(err).To(HaveOccurred())
 		})
 	})

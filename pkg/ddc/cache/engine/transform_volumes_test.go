@@ -20,664 +20,310 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
-	"github.com/fluid-cloudnative/fluid/pkg/common"
 	corev1 "k8s.io/api/core/v1"
-)
-
-// Constants for test values
-const (
-	testSecretName1  = "test-secret-1"
-	testSecretName2  = "test-secret-2"
-	testSecretKey    = "access-key"
-	testMountName    = "test-mount"
-	testMountPoint   = "s3://test-bucket"
-	nativeMountPoint = "local:///mnt/test"
 )
 
 var _ = Describe("CacheEngine Transform Volumes Tests", Label("pkg.ddc.cache.engine.transform_volumes_test.go"), func() {
 	var (
-		engine *CacheEngine
-		value  *common.CacheRuntimeValue
+		engine  *CacheEngine
+		podSpec *corev1.PodSpec
 	)
 
 	BeforeEach(func() {
 		engine = &CacheEngine{}
-		value = &common.CacheRuntimeValue{
-			Master: &common.CacheRuntimeComponentValue{
-				Enabled: true,
-				PodTemplateSpec: corev1.PodTemplateSpec{
-					Spec: corev1.PodSpec{
-						Containers: []corev1.Container{
-							{
-								Name: "master",
-							},
-						},
-					},
+		podSpec = &corev1.PodSpec{
+			Containers: []corev1.Container{
+				{
+					Name:  "test-container",
+					Image: "test-image:latest",
 				},
 			},
 		}
 	})
 
-	Describe("transformEncryptOptionsToMasterVolumes", func() {
-		Context("when dataset has shared encrypt options", func() {
-			It("should correctly transform shared encrypt options to master volumes", func() {
-				dataset := &datav1alpha1.Dataset{
-					Spec: datav1alpha1.DatasetSpec{
-						Mounts: []datav1alpha1.Mount{
-							{
-								MountPoint: testMountPoint,
-								Name:       testMountName,
-							},
+	Describe("transformRuntimeSpecVolumes", func() {
+		Context("when handling volumes and volumeMounts", func() {
+			It("should only add volumes that are referenced by volumeMounts", func() {
+				volumes := []corev1.Volume{
+					{
+						Name: "used-volume",
+						VolumeSource: corev1.VolumeSource{
+							EmptyDir: &corev1.EmptyDirVolumeSource{},
 						},
-						SharedEncryptOptions: []datav1alpha1.EncryptOption{
-							{
-								Name: "aws-access-key-id",
-								ValueFrom: datav1alpha1.EncryptOptionSource{
-									SecretKeyRef: datav1alpha1.SecretKeySelector{
-										Name: testSecretName1,
-										Key:  testSecretKey,
-									},
-								},
-							},
+					},
+					{
+						Name: "unused-volume",
+						VolumeSource: corev1.VolumeSource{
+							EmptyDir: &corev1.EmptyDirVolumeSource{},
 						},
 					},
 				}
+				volumeMounts := []corev1.VolumeMount{
+					{
+						Name:      "used-volume",
+						MountPath: "/mnt/used",
+					},
+				}
 
-				engine.transformEncryptOptionsToComponentVolumes(dataset, value.Master)
+				err := engine.transformRuntimeSpecVolumes(volumes, volumeMounts, podSpec)
+				Expect(err).NotTo(HaveOccurred())
 
-				Expect(value.Master.PodTemplateSpec.Spec.Volumes).To(HaveLen(1))
-				Expect(value.Master.PodTemplateSpec.Spec.Volumes[0].Name).To(Equal(secretVolumeNamePrefix + testSecretName1))
-				Expect(value.Master.PodTemplateSpec.Spec.Volumes[0].Secret.SecretName).To(Equal(testSecretName1))
+				// Should only have the used volume
+				Expect(podSpec.Volumes).To(HaveLen(1))
+				Expect(podSpec.Volumes[0].Name).To(Equal("used-volume"))
 
-				Expect(value.Master.PodTemplateSpec.Spec.Containers[0].VolumeMounts).To(HaveLen(1))
-				Expect(value.Master.PodTemplateSpec.Spec.Containers[0].VolumeMounts[0].Name).To(Equal(secretVolumeNamePrefix + testSecretName1))
-				Expect(value.Master.PodTemplateSpec.Spec.Containers[0].VolumeMounts[0].MountPath).To(Equal("/etc/fluid/secrets/" + testSecretName1))
-				Expect(value.Master.PodTemplateSpec.Spec.Containers[0].VolumeMounts[0].ReadOnly).To(BeTrue())
+				// Should have the volume mount
+				Expect(podSpec.Containers[0].VolumeMounts).To(HaveLen(1))
+				Expect(podSpec.Containers[0].VolumeMounts[0].Name).To(Equal("used-volume"))
 			})
-		})
 
-		Context("when dataset has mount-specific encrypt options", func() {
-			It("should correctly transform mount encrypt options to master volumes", func() {
-				dataset := &datav1alpha1.Dataset{
-					Spec: datav1alpha1.DatasetSpec{
-						Mounts: []datav1alpha1.Mount{
-							{
-								MountPoint: testMountPoint,
-								Name:       testMountName,
-								EncryptOptions: []datav1alpha1.EncryptOption{
-									{
-										Name: "aws-secret-access-key",
-										ValueFrom: datav1alpha1.EncryptOptionSource{
-											SecretKeyRef: datav1alpha1.SecretKeySelector{
-												Name: testSecretName2,
-												Key:  testSecretKey,
-											},
-										},
-									},
-								},
-							},
+			It("should return error when volumeMount references non-existent volume", func() {
+				volumes := []corev1.Volume{
+					{
+						Name: "existing-volume",
+						VolumeSource: corev1.VolumeSource{
+							EmptyDir: &corev1.EmptyDirVolumeSource{},
 						},
 					},
 				}
+				volumeMounts := []corev1.VolumeMount{
+					{
+						Name:      "non-existent-volume",
+						MountPath: "/mnt/nonexistent",
+					},
+				}
 
-				engine.transformEncryptOptionsToComponentVolumes(dataset, value.Master)
-
-				Expect(value.Master.PodTemplateSpec.Spec.Volumes).To(HaveLen(1))
-				Expect(value.Master.PodTemplateSpec.Spec.Volumes[0].Name).To(Equal(secretVolumeNamePrefix + testSecretName2))
-				Expect(value.Master.PodTemplateSpec.Spec.Volumes[0].Secret.SecretName).To(Equal(testSecretName2))
-
-				Expect(value.Master.PodTemplateSpec.Spec.Containers[0].VolumeMounts).To(HaveLen(1))
-				Expect(value.Master.PodTemplateSpec.Spec.Containers[0].VolumeMounts[0].Name).To(Equal(secretVolumeNamePrefix + testSecretName2))
-				Expect(value.Master.PodTemplateSpec.Spec.Containers[0].VolumeMounts[0].MountPath).To(Equal("/etc/fluid/secrets/" + testSecretName2))
-				Expect(value.Master.PodTemplateSpec.Spec.Containers[0].VolumeMounts[0].ReadOnly).To(BeTrue())
+				err := engine.transformRuntimeSpecVolumes(volumes, volumeMounts, podSpec)
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("volume not found for volumeMount non-existent-volume"))
 			})
-		})
 
-		Context("when dataset has both shared and mount-specific encrypt options", func() {
-			It("should correctly transform all encrypt options to master volumes", func() {
-				dataset := &datav1alpha1.Dataset{
-					Spec: datav1alpha1.DatasetSpec{
-						Mounts: []datav1alpha1.Mount{
-							{
-								MountPoint: testMountPoint,
-								Name:       testMountName,
-								EncryptOptions: []datav1alpha1.EncryptOption{
-									{
-										Name: "aws-secret-access-key",
-										ValueFrom: datav1alpha1.EncryptOptionSource{
-											SecretKeyRef: datav1alpha1.SecretKeySelector{
-												Name: testSecretName2,
-												Key:  testSecretKey,
-											},
-										},
-									},
-								},
-							},
+			It("should not add any volumes when volumeMounts is empty", func() {
+				volumes := []corev1.Volume{
+					{
+						Name: "some-volume",
+						VolumeSource: corev1.VolumeSource{
+							EmptyDir: &corev1.EmptyDirVolumeSource{},
 						},
-						SharedEncryptOptions: []datav1alpha1.EncryptOption{
-							{
-								Name: "aws-access-key-id",
-								ValueFrom: datav1alpha1.EncryptOptionSource{
-									SecretKeyRef: datav1alpha1.SecretKeySelector{
-										Name: testSecretName1,
-										Key:  testSecretKey,
-									},
-								},
-							},
+					},
+				}
+				volumeMounts := []corev1.VolumeMount{}
+
+				err := engine.transformRuntimeSpecVolumes(volumes, volumeMounts, podSpec)
+				Expect(err).NotTo(HaveOccurred())
+
+				// No volumes should be added
+				Expect(podSpec.Volumes).To(BeEmpty())
+				Expect(podSpec.Containers[0].VolumeMounts).To(BeEmpty())
+			})
+
+			It("should not add duplicate volumes that already exist in podSpec", func() {
+				// Pre-add a volume to podSpec
+				podSpec.Volumes = []corev1.Volume{
+					{
+						Name: "existing-volume",
+						VolumeSource: corev1.VolumeSource{
+							EmptyDir: &corev1.EmptyDirVolumeSource{},
 						},
 					},
 				}
 
-				engine.transformEncryptOptionsToComponentVolumes(dataset, value.Master)
-
-				Expect(value.Master.PodTemplateSpec.Spec.Volumes).To(HaveLen(2))
-				volumeNames := []string{
-					value.Master.PodTemplateSpec.Spec.Volumes[0].Name,
-					value.Master.PodTemplateSpec.Spec.Volumes[1].Name,
+				volumes := []corev1.Volume{
+					{
+						Name: "existing-volume",
+						VolumeSource: corev1.VolumeSource{
+							ConfigMap: &corev1.ConfigMapVolumeSource{},
+						},
+					},
+					{
+						Name: "new-volume",
+						VolumeSource: corev1.VolumeSource{
+							EmptyDir: &corev1.EmptyDirVolumeSource{},
+						},
+					},
 				}
-				Expect(volumeNames).To(ContainElements(
-					secretVolumeNamePrefix+testSecretName1,
-					secretVolumeNamePrefix+testSecretName2,
+				volumeMounts := []corev1.VolumeMount{
+					{
+						Name:      "existing-volume",
+						MountPath: "/mnt/existing",
+					},
+					{
+						Name:      "new-volume",
+						MountPath: "/mnt/new",
+					},
+				}
+
+				err := engine.transformRuntimeSpecVolumes(volumes, volumeMounts, podSpec)
+				Expect(err).NotTo(HaveOccurred())
+
+				// Should have 2 volumes total (1 existing + 1 new)
+				Expect(podSpec.Volumes).To(HaveLen(2))
+				volumeNames := []string{podSpec.Volumes[0].Name, podSpec.Volumes[1].Name}
+				Expect(volumeNames).To(ContainElements("existing-volume", "new-volume"))
+
+				// Should have 2 volume mounts
+				Expect(podSpec.Containers[0].VolumeMounts).To(HaveLen(2))
+			})
+
+			It("should handle mixed scenario with some volumes existing and some missing", func() {
+				// Pre-add one volume to podSpec
+				podSpec.Volumes = []corev1.Volume{
+					{
+						Name: "pre-existing-volume",
+						VolumeSource: corev1.VolumeSource{
+							EmptyDir: &corev1.EmptyDirVolumeSource{},
+						},
+					},
+				}
+
+				volumes := []corev1.Volume{
+					{
+						Name: "pre-existing-volume",
+						VolumeSource: corev1.VolumeSource{
+							Secret: &corev1.SecretVolumeSource{},
+						},
+					},
+					{
+						Name: "new-volume-1",
+						VolumeSource: corev1.VolumeSource{
+							EmptyDir: &corev1.EmptyDirVolumeSource{},
+						},
+					},
+					{
+						Name: "new-volume-2",
+						VolumeSource: corev1.VolumeSource{
+							ConfigMap: &corev1.ConfigMapVolumeSource{},
+						},
+					},
+				}
+				volumeMounts := []corev1.VolumeMount{
+					{
+						Name:      "pre-existing-volume",
+						MountPath: "/mnt/pre",
+					},
+					{
+						Name:      "new-volume-1",
+						MountPath: "/mnt/new1",
+					},
+					{
+						Name:      "new-volume-2",
+						MountPath: "/mnt/new2",
+					},
+				}
+
+				err := engine.transformRuntimeSpecVolumes(volumes, volumeMounts, podSpec)
+				Expect(err).NotTo(HaveOccurred())
+
+				// Should have 3 volumes total (1 pre-existing + 2 new)
+				Expect(podSpec.Volumes).To(HaveLen(3))
+
+				// Should have 3 volume mounts
+				Expect(podSpec.Containers[0].VolumeMounts).To(HaveLen(3))
+			})
+
+			It("should return error when containers is empty", func() {
+				emptyPodSpec := &corev1.PodSpec{
+					Containers: []corev1.Container{},
+				}
+
+				volumes := []corev1.Volume{
+					{
+						Name: "test-volume",
+						VolumeSource: corev1.VolumeSource{
+							EmptyDir: &corev1.EmptyDirVolumeSource{},
+						},
+					},
+				}
+				volumeMounts := []corev1.VolumeMount{
+					{
+						Name:      "test-volume",
+						MountPath: "/mnt/test",
+					},
+				}
+
+				err := engine.transformRuntimeSpecVolumes(volumes, volumeMounts, emptyPodSpec)
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("podTemplateSpec does not have any containers"))
+			})
+
+			It("should handle empty volumes and empty volumeMounts", func() {
+				volumes := []corev1.Volume{}
+				volumeMounts := []corev1.VolumeMount{}
+
+				err := engine.transformRuntimeSpecVolumes(volumes, volumeMounts, podSpec)
+				Expect(err).NotTo(HaveOccurred())
+
+				// No changes should be made
+				Expect(podSpec.Volumes).To(BeEmpty())
+				Expect(podSpec.Containers[0].VolumeMounts).To(BeEmpty())
+			})
+
+			It("should preserve existing volumes in podSpec", func() {
+				// Pre-add volumes to podSpec
+				podSpec.Volumes = []corev1.Volume{
+					{
+						Name: "runtime-config",
+						VolumeSource: corev1.VolumeSource{
+							ConfigMap: &corev1.ConfigMapVolumeSource{},
+						},
+					},
+				}
+
+				volumes := []corev1.Volume{
+					{
+						Name: "app-volume",
+						VolumeSource: corev1.VolumeSource{
+							EmptyDir: &corev1.EmptyDirVolumeSource{},
+						},
+					},
+				}
+				volumeMounts := []corev1.VolumeMount{
+					{
+						Name:      "app-volume",
+						MountPath: "/mnt/app",
+					},
+				}
+
+				err := engine.transformRuntimeSpecVolumes(volumes, volumeMounts, podSpec)
+				Expect(err).NotTo(HaveOccurred())
+
+				// Should have 2 volumes (1 existing + 1 new)
+				Expect(podSpec.Volumes).To(HaveLen(2))
+				volumeNames := []string{podSpec.Volumes[0].Name, podSpec.Volumes[1].Name}
+				Expect(volumeNames).To(ContainElements("runtime-config", "app-volume"))
+			})
+
+			It("should return error when multiple volumeMounts reference non-existent volumes", func() {
+				volumes := []corev1.Volume{
+					{
+						Name: "valid-volume",
+						VolumeSource: corev1.VolumeSource{
+							EmptyDir: &corev1.EmptyDirVolumeSource{},
+						},
+					},
+				}
+				volumeMounts := []corev1.VolumeMount{
+					{
+						Name:      "valid-volume",
+						MountPath: "/mnt/valid",
+					},
+					{
+						Name:      "missing-volume-1",
+						MountPath: "/mnt/missing1",
+					},
+					{
+						Name:      "missing-volume-2",
+						MountPath: "/mnt/missing2",
+					},
+				}
+
+				err := engine.transformRuntimeSpecVolumes(volumes, volumeMounts, podSpec)
+				Expect(err).To(HaveOccurred())
+				// Should report one of the missing volumes
+				Expect(err.Error()).To(Or(
+					ContainSubstring("volume not found for volumeMount missing-volume-1"),
+					ContainSubstring("volume not found for volumeMount missing-volume-2"),
 				))
-
-				Expect(value.Master.PodTemplateSpec.Spec.Containers[0].VolumeMounts).To(HaveLen(2))
-				mountNames := []string{
-					value.Master.PodTemplateSpec.Spec.Containers[0].VolumeMounts[0].Name,
-					value.Master.PodTemplateSpec.Spec.Containers[0].VolumeMounts[1].Name,
-				}
-				Expect(mountNames).To(ContainElements(
-					secretVolumeNamePrefix+testSecretName1,
-					secretVolumeNamePrefix+testSecretName2,
-				))
-			})
-		})
-
-		Context("when dataset has native fluid scheme mount", func() {
-			It("should skip native fluid scheme mounts", func() {
-				dataset := &datav1alpha1.Dataset{
-					Spec: datav1alpha1.DatasetSpec{
-						Mounts: []datav1alpha1.Mount{
-							{
-								MountPoint: nativeMountPoint,
-								Name:       testMountName,
-								EncryptOptions: []datav1alpha1.EncryptOption{
-									{
-										Name: "some-option",
-										ValueFrom: datav1alpha1.EncryptOptionSource{
-											SecretKeyRef: datav1alpha1.SecretKeySelector{
-												Name: testSecretName1,
-												Key:  testSecretKey,
-											},
-										},
-									},
-								},
-							},
-						},
-					},
-				}
-
-				engine.transformEncryptOptionsToComponentVolumes(dataset, value.Master)
-
-				Expect(value.Master.PodTemplateSpec.Spec.Volumes).To(BeEmpty())
-				Expect(value.Master.PodTemplateSpec.Spec.Containers[0].VolumeMounts).To(BeEmpty())
-			})
-		})
-
-		Context("when master is disabled", func() {
-			It("should not add any volumes", func() {
-				value.Master.Enabled = false
-				dataset := &datav1alpha1.Dataset{
-					Spec: datav1alpha1.DatasetSpec{
-						Mounts: []datav1alpha1.Mount{
-							{
-								MountPoint: testMountPoint,
-								Name:       testMountName,
-								EncryptOptions: []datav1alpha1.EncryptOption{
-									{
-										Name: "some-option",
-										ValueFrom: datav1alpha1.EncryptOptionSource{
-											SecretKeyRef: datav1alpha1.SecretKeySelector{
-												Name: testSecretName1,
-												Key:  testSecretKey,
-											},
-										},
-									},
-								},
-							},
-						},
-					},
-				}
-
-				engine.transformEncryptOptionsToComponentVolumes(dataset, value.Master)
-
-				Expect(value.Master.PodTemplateSpec.Spec.Volumes).To(BeEmpty())
-				Expect(value.Master.PodTemplateSpec.Spec.Containers[0].VolumeMounts).To(BeEmpty())
-			})
-		})
-
-		Context("when master is nil", func() {
-			It("should not panic", func() {
-				value.Master = nil
-				dataset := &datav1alpha1.Dataset{
-					Spec: datav1alpha1.DatasetSpec{
-						Mounts: []datav1alpha1.Mount{
-							{
-								MountPoint: testMountPoint,
-								Name:       testMountName,
-							},
-						},
-					},
-				}
-
-				// Should not panic
-				engine.transformEncryptOptionsToComponentVolumes(dataset, value.Master)
-			})
-		})
-
-		Context("when same secret is used multiple times", func() {
-			It("should override existing volume and volume mount", func() {
-				dataset := &datav1alpha1.Dataset{
-					Spec: datav1alpha1.DatasetSpec{
-						Mounts: []datav1alpha1.Mount{
-							{
-								MountPoint: testMountPoint,
-								Name:       testMountName,
-								EncryptOptions: []datav1alpha1.EncryptOption{
-									{
-										Name: "option1",
-										ValueFrom: datav1alpha1.EncryptOptionSource{
-											SecretKeyRef: datav1alpha1.SecretKeySelector{
-												Name: testSecretName1,
-												Key:  testSecretKey,
-											},
-										},
-									},
-								},
-							},
-							{
-								MountPoint: "s3://another-bucket",
-								Name:       "another-mount",
-								EncryptOptions: []datav1alpha1.EncryptOption{
-									{
-										Name: "option2",
-										ValueFrom: datav1alpha1.EncryptOptionSource{
-											SecretKeyRef: datav1alpha1.SecretKeySelector{
-												Name: testSecretName1,
-												Key:  testSecretKey,
-											},
-										},
-									},
-								},
-							},
-						},
-					},
-				}
-
-				engine.transformEncryptOptionsToComponentVolumes(dataset, value.Master)
-
-				// Should only have one volume for the same secret
-				Expect(value.Master.PodTemplateSpec.Spec.Volumes).To(HaveLen(1))
-				Expect(value.Master.PodTemplateSpec.Spec.Volumes[0].Name).To(Equal(secretVolumeNamePrefix + testSecretName1))
-
-				// Should only have one volume mount for the same secret
-				Expect(value.Master.PodTemplateSpec.Spec.Containers[0].VolumeMounts).To(HaveLen(1))
-				Expect(value.Master.PodTemplateSpec.Spec.Containers[0].VolumeMounts[0].Name).To(Equal(secretVolumeNamePrefix + testSecretName1))
-			})
-		})
-
-		Context("when encrypt option has empty secret name", func() {
-			It("should skip encrypt options with empty secret name in shared encrypt options", func() {
-				dataset := &datav1alpha1.Dataset{
-					Spec: datav1alpha1.DatasetSpec{
-						Mounts: []datav1alpha1.Mount{
-							{
-								MountPoint: testMountPoint,
-								Name:       testMountName,
-							},
-						},
-						SharedEncryptOptions: []datav1alpha1.EncryptOption{
-							{
-								Name: "aws-access-key-id",
-								ValueFrom: datav1alpha1.EncryptOptionSource{
-									SecretKeyRef: datav1alpha1.SecretKeySelector{
-										Name: "", // Empty secret name
-										Key:  testSecretKey,
-									},
-								},
-							},
-						},
-					},
-				}
-
-				engine.transformEncryptOptionsToComponentVolumes(dataset, value.Master)
-
-				// Should not add any volumes for empty secret name
-				Expect(value.Master.PodTemplateSpec.Spec.Volumes).To(BeEmpty())
-				Expect(value.Master.PodTemplateSpec.Spec.Containers[0].VolumeMounts).To(BeEmpty())
-			})
-
-			It("should skip encrypt options with empty secret name in mount encrypt options", func() {
-				dataset := &datav1alpha1.Dataset{
-					Spec: datav1alpha1.DatasetSpec{
-						Mounts: []datav1alpha1.Mount{
-							{
-								MountPoint: testMountPoint,
-								Name:       testMountName,
-								EncryptOptions: []datav1alpha1.EncryptOption{
-									{
-										Name: "aws-secret-access-key",
-										ValueFrom: datav1alpha1.EncryptOptionSource{
-											SecretKeyRef: datav1alpha1.SecretKeySelector{
-												Name: "", // Empty secret name
-												Key:  testSecretKey,
-											},
-										},
-									},
-								},
-							},
-						},
-					},
-				}
-
-				engine.transformEncryptOptionsToComponentVolumes(dataset, value.Master)
-
-				// Should not add any volumes for empty secret name
-				Expect(value.Master.PodTemplateSpec.Spec.Volumes).To(BeEmpty())
-				Expect(value.Master.PodTemplateSpec.Spec.Containers[0].VolumeMounts).To(BeEmpty())
-			})
-
-			It("should skip empty secret names but process valid ones", func() {
-				dataset := &datav1alpha1.Dataset{
-					Spec: datav1alpha1.DatasetSpec{
-						Mounts: []datav1alpha1.Mount{
-							{
-								MountPoint: testMountPoint,
-								Name:       testMountName,
-								EncryptOptions: []datav1alpha1.EncryptOption{
-									{
-										Name: "invalid-option",
-										ValueFrom: datav1alpha1.EncryptOptionSource{
-											SecretKeyRef: datav1alpha1.SecretKeySelector{
-												Name: "", // Empty secret name - should be skipped
-												Key:  testSecretKey,
-											},
-										},
-									},
-									{
-										Name: "valid-option",
-										ValueFrom: datav1alpha1.EncryptOptionSource{
-											SecretKeyRef: datav1alpha1.SecretKeySelector{
-												Name: testSecretName1, // Valid secret name
-												Key:  testSecretKey,
-											},
-										},
-									},
-								},
-							},
-						},
-						SharedEncryptOptions: []datav1alpha1.EncryptOption{
-							{
-								Name: "another-invalid-option",
-								ValueFrom: datav1alpha1.EncryptOptionSource{
-									SecretKeyRef: datav1alpha1.SecretKeySelector{
-										Name: "", // Empty secret name - should be skipped
-										Key:  testSecretKey,
-									},
-								},
-							},
-						},
-					},
-				}
-
-				engine.transformEncryptOptionsToComponentVolumes(dataset, value.Master)
-
-				// Should only add volume for the valid secret name
-				Expect(value.Master.PodTemplateSpec.Spec.Volumes).To(HaveLen(1))
-				Expect(value.Master.PodTemplateSpec.Spec.Volumes[0].Name).To(Equal(secretVolumeNamePrefix + testSecretName1))
-				Expect(value.Master.PodTemplateSpec.Spec.Volumes[0].Secret.SecretName).To(Equal(testSecretName1))
-
-				Expect(value.Master.PodTemplateSpec.Spec.Containers[0].VolumeMounts).To(HaveLen(1))
-				Expect(value.Master.PodTemplateSpec.Spec.Containers[0].VolumeMounts[0].Name).To(Equal(secretVolumeNamePrefix + testSecretName1))
-				Expect(value.Master.PodTemplateSpec.Spec.Containers[0].VolumeMounts[0].MountPath).To(Equal("/etc/fluid/secrets/" + testSecretName1))
-			})
-		})
-	})
-
-	Describe("transformEncryptOptionsToComponentVolumes for Worker", func() {
-		BeforeEach(func() {
-			value.Worker = &common.CacheRuntimeComponentValue{
-				Enabled: true,
-				PodTemplateSpec: corev1.PodTemplateSpec{
-					Spec: corev1.PodSpec{
-						Containers: []corev1.Container{
-							{
-								Name: "worker",
-							},
-						},
-					},
-				},
-			}
-		})
-
-		Context("when dataset has shared encrypt options for worker", func() {
-			It("should correctly transform shared encrypt options to worker volumes", func() {
-				dataset := &datav1alpha1.Dataset{
-					Spec: datav1alpha1.DatasetSpec{
-						Mounts: []datav1alpha1.Mount{
-							{
-								MountPoint: testMountPoint,
-								Name:       testMountName,
-							},
-						},
-						SharedEncryptOptions: []datav1alpha1.EncryptOption{
-							{
-								Name: "aws-access-key-id",
-								ValueFrom: datav1alpha1.EncryptOptionSource{
-									SecretKeyRef: datav1alpha1.SecretKeySelector{
-										Name: testSecretName1,
-										Key:  testSecretKey,
-									},
-								},
-							},
-						},
-					},
-				}
-
-				engine.transformEncryptOptionsToComponentVolumes(dataset, value.Worker)
-
-				Expect(value.Worker.PodTemplateSpec.Spec.Volumes).To(HaveLen(1))
-				Expect(value.Worker.PodTemplateSpec.Spec.Volumes[0].Name).To(Equal(secretVolumeNamePrefix + testSecretName1))
-				Expect(value.Worker.PodTemplateSpec.Spec.Volumes[0].Secret.SecretName).To(Equal(testSecretName1))
-
-				Expect(value.Worker.PodTemplateSpec.Spec.Containers[0].VolumeMounts).To(HaveLen(1))
-				Expect(value.Worker.PodTemplateSpec.Spec.Containers[0].VolumeMounts[0].Name).To(Equal(secretVolumeNamePrefix + testSecretName1))
-				Expect(value.Worker.PodTemplateSpec.Spec.Containers[0].VolumeMounts[0].MountPath).To(Equal("/etc/fluid/secrets/" + testSecretName1))
-				Expect(value.Worker.PodTemplateSpec.Spec.Containers[0].VolumeMounts[0].ReadOnly).To(BeTrue())
-			})
-		})
-
-		Context("when worker is disabled", func() {
-			It("should not add any volumes", func() {
-				value.Worker.Enabled = false
-				dataset := &datav1alpha1.Dataset{
-					Spec: datav1alpha1.DatasetSpec{
-						Mounts: []datav1alpha1.Mount{
-							{
-								MountPoint: testMountPoint,
-								Name:       testMountName,
-								EncryptOptions: []datav1alpha1.EncryptOption{
-									{
-										Name: "some-option",
-										ValueFrom: datav1alpha1.EncryptOptionSource{
-											SecretKeyRef: datav1alpha1.SecretKeySelector{
-												Name: testSecretName1,
-												Key:  testSecretKey,
-											},
-										},
-									},
-								},
-							},
-						},
-					},
-				}
-
-				engine.transformEncryptOptionsToComponentVolumes(dataset, value.Worker)
-
-				Expect(value.Worker.PodTemplateSpec.Spec.Volumes).To(BeEmpty())
-				Expect(value.Worker.PodTemplateSpec.Spec.Containers[0].VolumeMounts).To(BeEmpty())
-			})
-		})
-
-		Context("when encrypt option has empty secret name for worker", func() {
-			It("should skip encrypt options with empty secret name", func() {
-				dataset := &datav1alpha1.Dataset{
-					Spec: datav1alpha1.DatasetSpec{
-						Mounts: []datav1alpha1.Mount{
-							{
-								MountPoint: testMountPoint,
-								Name:       testMountName,
-								EncryptOptions: []datav1alpha1.EncryptOption{
-									{
-										Name: "aws-secret-access-key",
-										ValueFrom: datav1alpha1.EncryptOptionSource{
-											SecretKeyRef: datav1alpha1.SecretKeySelector{
-												Name: "", // Empty secret name
-												Key:  testSecretKey,
-											},
-										},
-									},
-								},
-							},
-						},
-						SharedEncryptOptions: []datav1alpha1.EncryptOption{
-							{
-								Name: "aws-access-key-id",
-								ValueFrom: datav1alpha1.EncryptOptionSource{
-									SecretKeyRef: datav1alpha1.SecretKeySelector{
-										Name: "", // Empty secret name
-										Key:  testSecretKey,
-									},
-								},
-							},
-						},
-					},
-				}
-
-				engine.transformEncryptOptionsToComponentVolumes(dataset, value.Worker)
-
-				// Should not add any volumes for empty secret name
-				Expect(value.Worker.PodTemplateSpec.Spec.Volumes).To(BeEmpty())
-				Expect(value.Worker.PodTemplateSpec.Spec.Containers[0].VolumeMounts).To(BeEmpty())
-			})
-		})
-	})
-
-	Describe("shouldMountSecrets helper function", func() {
-		Context("when SecretMount config is nil", func() {
-			It("should return defaultEnabled value", func() {
-				// Test with defaultEnabled = true (for Master/Worker)
-				Expect(shouldMountSecrets(nil, true)).To(BeTrue())
-
-				// Test with defaultEnabled = false (for Client)
-				Expect(shouldMountSecrets(nil, false)).To(BeFalse())
-			})
-		})
-
-		Context("when SecretMount config is provided", func() {
-			It("should return the configured Enabled value", func() {
-				// Test with Enabled = true
-				config := &datav1alpha1.SecretMountComponentDependency{
-					Enabled: true,
-				}
-				Expect(shouldMountSecrets(config, false)).To(BeTrue())
-
-				// Test with Enabled = false
-				config.Enabled = false
-				Expect(shouldMountSecrets(config, true)).To(BeFalse())
-			})
-		})
-	})
-
-	Describe("Client component secret mount behavior", func() {
-		var (
-			clientValue *common.CacheRuntimeComponentValue
-			dataset     *datav1alpha1.Dataset
-		)
-
-		BeforeEach(func() {
-			clientValue = &common.CacheRuntimeComponentValue{
-				Enabled: true,
-				PodTemplateSpec: corev1.PodTemplateSpec{
-					Spec: corev1.PodSpec{
-						Containers: []corev1.Container{
-							{
-								Name: "client",
-							},
-						},
-					},
-				},
-			}
-			dataset = &datav1alpha1.Dataset{
-				Spec: datav1alpha1.DatasetSpec{
-					SharedEncryptOptions: []datav1alpha1.EncryptOption{
-						{
-							Name: "test-secret",
-							ValueFrom: datav1alpha1.EncryptOptionSource{
-								SecretKeyRef: datav1alpha1.SecretKeySelector{
-									Name: testSecretName1,
-									Key:  testSecretKey,
-								},
-							},
-						},
-					},
-				},
-			}
-		})
-
-		Context("when Client has no SecretMount configuration (default disabled)", func() {
-			It("should not mount secrets to client pod", func() {
-				// Simulate Client with nil SecretMount (default behavior)
-				if shouldMountSecrets(nil, false) {
-					engine.transformEncryptOptionsToComponentVolumes(dataset, clientValue)
-				}
-
-				// Should not add any volumes for Client by default
-				Expect(clientValue.PodTemplateSpec.Spec.Volumes).To(BeEmpty())
-				Expect(clientValue.PodTemplateSpec.Spec.Containers[0].VolumeMounts).To(BeEmpty())
-			})
-		})
-
-		Context("when Client has SecretMount explicitly enabled", func() {
-			It("should mount secrets to client pod", func() {
-				// Simulate Client with SecretMount enabled
-				secretMountConfig := &datav1alpha1.SecretMountComponentDependency{
-					Enabled: true,
-				}
-				if shouldMountSecrets(secretMountConfig, false) {
-					engine.transformEncryptOptionsToComponentVolumes(dataset, clientValue)
-				}
-
-				// Should add volumes for Client when explicitly enabled
-				Expect(clientValue.PodTemplateSpec.Spec.Volumes).To(HaveLen(1))
-				Expect(clientValue.PodTemplateSpec.Spec.Volumes[0].Name).To(Equal(secretVolumeNamePrefix + testSecretName1))
-				Expect(clientValue.PodTemplateSpec.Spec.Containers[0].VolumeMounts).To(HaveLen(1))
-			})
-		})
-
-		Context("when Client has SecretMount explicitly disabled", func() {
-			It("should not mount secrets to client pod", func() {
-				// Simulate Client with SecretMount explicitly disabled
-				secretMountConfig := &datav1alpha1.SecretMountComponentDependency{
-					Enabled: false,
-				}
-				if shouldMountSecrets(secretMountConfig, false) {
-					engine.transformEncryptOptionsToComponentVolumes(dataset, clientValue)
-				}
-
-				// Should not add any volumes for Client
-				Expect(clientValue.PodTemplateSpec.Spec.Volumes).To(BeEmpty())
-				Expect(clientValue.PodTemplateSpec.Spec.Containers[0].VolumeMounts).To(BeEmpty())
 			})
 		})
 	})

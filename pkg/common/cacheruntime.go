@@ -36,12 +36,9 @@ const (
 )
 
 type CacheRuntimeValue struct {
-	// RuntimeIdentity is used to identify the runtime (name/namespace)
-	RuntimeIdentity RuntimeIdentity `json:"runtimeIdentity"`
-
-	Master *CacheRuntimeComponentValue `json:"master,omitempty"`
-	Worker *CacheRuntimeComponentValue `json:"worker,omitempty"`
-	Client *CacheRuntimeComponentValue `json:"client,omitempty"`
+	Master *CacheRuntimeComponentValue
+	Worker *CacheRuntimeComponentValue
+	Client *CacheRuntimeComponentValue
 }
 
 // CacheRuntimeComponentValue is the common value for building CacheRuntimeValue.
@@ -54,10 +51,30 @@ type CacheRuntimeComponentValue struct {
 	Replicas        int32
 	PodTemplateSpec corev1.PodTemplateSpec
 	Owner           *OwnerReference
-	ComponentType   ComponentType `json:"componentType,omitempty"`
+	ComponentType   ComponentType
 
 	// Service name, can be not same as Component name
 	Service *CacheRuntimeComponentServiceConfig
+}
+
+// CacheRuntimeStatusValue contains only the fields needed for status update
+type CacheRuntimeStatusValue struct {
+	Master *ComponentStatusInfo
+	Worker *ComponentStatusInfo
+	Client *ComponentStatusInfo
+}
+
+// ComponentIdentity contains minimal identity information for component status queries
+type ComponentIdentity struct {
+	Name      string
+	Namespace string
+}
+
+// ComponentStatusInfo contains the minimal information needed for status updates
+type ComponentStatusInfo struct {
+	ComponentIdentity
+	Enabled      bool
+	WorkloadType metav1.TypeMeta
 }
 
 // CacheRuntimeConfig defines the config of runtime, will be auto mounted by configmap in the component pod.

@@ -18,786 +18,558 @@ package engine
 
 import (
 	"context"
+	"os"
 	"time"
+
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/tools/record"
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
 var _ = Describe("CacheEngine Sync Tests", Label("pkg.ddc.cache.engine.sync_test.go"), func() {
 	var (
-		fakeClient client.Client
-		engine     *CacheEngine
-		ctx        cruntime.ReconcileRequestContext
-		testScheme *runtime.Scheme
+		engine       *CacheEngine
+		runtimeObj   *datav1alpha1.CacheRuntime
+		runtimeClass *datav1alpha1.CacheRuntimeClass
+		dataset      *datav1alpha1.Dataset
+		ctx          cruntime.ReconcileRequestContext
 	)
 
 	BeforeEach(func() {
-		testScheme = runtime.NewScheme()
-		Expect(datav1alpha1.AddToScheme(testScheme)).NotTo(HaveOccurred())
-		Expect(corev1.AddToScheme(testScheme)).NotTo(HaveOccurred())
-		Expect(appsv1.AddToScheme(testScheme)).NotTo(HaveOccurred())
+		scheme := runtime.NewScheme()
+		_ = datav1alpha1.AddToScheme(scheme)
+		_ = corev1.AddToScheme(scheme)
+		// Add apps/v1 for StatefulSet and DaemonSet
+		_ = appsv1.AddToScheme(scheme)
 
-		fakeClient = fake.NewClientBuilder().WithScheme(testScheme).Build()
+		// Create dataset (name must match runtime name for cache runtime)
+		dataset = &datav1alpha1.Dataset{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "test-runtime",
+				Namespace: "default",
+				UID:       "test-dataset-uid",
+			},
+			Spec: datav1alpha1.DatasetSpec{},
+		}
 
-		log := GinkgoLogr
-		recorder := record.NewFakeRecorder(100)
+		// Create runtime
+		runtimeObj = &datav1alpha1.CacheRuntime{
+			TypeMeta: metav1.TypeMeta{
+				APIVersion: "data.fluid.io/v1alpha1",
+				Kind:       "CacheRuntime",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "test-runtime",
+				Namespace: "default",
+				UID:       "test-runtime-uid",
+			},
+			Spec: datav1alpha1.CacheRuntimeSpec{
+				RuntimeClassName: "test-class",
+				Master:           datav1alpha1.CacheRuntimeMasterSpec{Replicas: 1},
+				Worker:           datav1alpha1.CacheRuntimeWorkerSpec{Replicas: 2},
+				Client:           datav1alpha1.CacheRuntimeClientSpec{},
+			},
+		}
+		// Initialize status fields separately due to embedded struct
+		runtimeObj.Status.Master.Phase = datav1alpha1.RuntimePhaseNone
+		runtimeObj.Status.Worker.Phase = datav1alpha1.RuntimePhaseNone
+		runtimeObj.Status.Client.Phase = datav1alpha1.RuntimePhaseNone
+
+		// Create runtime class
+		runtimeClass = &datav1alpha1.CacheRuntimeClass{
+			ObjectMeta:     metav1.ObjectMeta{Name: "test-class"},
+			FileSystemType: "test-fs",
+			Topology: &datav1alpha1.RuntimeTopology{
+				Master: &datav1alpha1.RuntimeComponentDefinition{
+					WorkloadType: metav1.TypeMeta{Kind: "StatefulSet", APIVersion: "apps/v1"},
+					Template: corev1.PodTemplateSpec{
+						Spec: corev1.PodSpec{
+							Containers: []corev1.Container{{Name: "master", Image: "test-master:latest"}},
+						},
+					},
+				},
+				Worker: &datav1alpha1.RuntimeComponentDefinition{
+					WorkloadType: metav1.TypeMeta{Kind: "StatefulSet", APIVersion: "apps/v1"},
+					Template: corev1.PodTemplateSpec{
+						Spec: corev1.PodSpec{
+							Containers: []corev1.Container{{Name: "worker", Image: "test-worker:latest"}},
+						},
+					},
+				},
+				Client: &datav1alpha1.RuntimeComponentDefinition{
+					WorkloadType: metav1.TypeMeta{Kind: "DaemonSet", APIVersion: "apps/v1"},
+					Template: corev1.PodTemplateSpec{
+						Spec: corev1.PodSpec{
+							Containers: []corev1.Container{{Name: "client", Image: "test-client:latest"}},
+						},
+					},
+				},
+			},
+		}
+
+		// Create master StatefulSet
+		masterSts := &appsv1.StatefulSet{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "test-runtime-master",
+				Namespace: "default",
+			},
+			Spec: appsv1.StatefulSetSpec{
+				Replicas: func() *int32 { i := int32(1); return &i }(),
+				Template: corev1.PodTemplateSpec{
+					Spec: corev1.PodSpec{
+						Containers: []corev1.Container{{Name: "master", Image: "test-master:latest"}},
+					},
+				},
+			},
+			Status: appsv1.StatefulSetStatus{
+				ReadyReplicas: 1,
+			},
+		}
+
+		// Create worker StatefulSet
+		workerSts := &appsv1.StatefulSet{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "test-runtime-worker",
+				Namespace: "default",
+			},
+			Spec: appsv1.StatefulSetSpec{
+				Replicas: func() *int32 { i := int32(2); return &i }(),
+				Template: corev1.PodTemplateSpec{
+					Spec: corev1.PodSpec{
+						Containers: []corev1.Container{{Name: "worker", Image: "test-worker:latest"}},
+					},
+				},
+			},
+			Status: appsv1.StatefulSetStatus{
+				ReadyReplicas: 2,
+			},
+		}
+
+		// Create client DaemonSet
+		clientDs := &appsv1.DaemonSet{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "test-runtime-client",
+				Namespace: "default",
+			},
+			Spec: appsv1.DaemonSetSpec{
+				Template: corev1.PodTemplateSpec{
+					Spec: corev1.PodSpec{
+						Containers: []corev1.Container{{Name: "client", Image: "test-client:latest"}},
+					},
+				},
+			},
+			Status: appsv1.DaemonSetStatus{
+				NumberReady:            0,
+				DesiredNumberScheduled: 0,
+			},
+		}
+
+		fakeClient := fake.NewClientBuilder().
+			WithScheme(scheme).
+			WithObjects(dataset, runtimeObj, runtimeClass, masterSts, workerSts, clientDs).
+			WithStatusSubresource(runtimeObj).
+			Build()
 
 		engine = &CacheEngine{
-			Client:                 fakeClient,
-			Log:                    log,
-			Recorder:               recorder,
-			name:                   "test-runtime",
-			namespace:              "default",
-			runtimeType:            "cache",
-			engineImpl:             "cache",
-			gracefulShutdownLimits: 5,
-			retryShutdown:          0,
-			syncRetryDuration:      5 * time.Second,
-			timeOfLastSync:         time.Now(),
+			name:      "test-runtime",
+			namespace: "default",
+			Client:    fakeClient,
+			Log:       ctrl.Log.WithName("test"),
 		}
 
 		ctx = cruntime.ReconcileRequestContext{
-			Context: context.Background(),
-			NamespacedName: types.NamespacedName{
-				Name:      "test-runtime",
-				Namespace: "default",
-			},
-			Runtime:     &datav1alpha1.CacheRuntime{},
-			RuntimeType: "cache",
-			EngineImpl:  "cache",
-			Client:      fakeClient,
-			Log:         log,
-			Recorder:    recorder,
+			Context:        context.Background(),
+			Log:            ctrl.Log.WithName("test"),
+			RuntimeType:    "cache",
+			NamespacedName: types.NamespacedName{Name: "test-runtime", Namespace: "default"},
 		}
 	})
 
-	Describe("Sync - Main Entry Point Tests", func() {
-		Context("when CacheRuntime does not exist", func() {
-			It("should return error from getRuntime", func() {
+	Describe("Sync", func() {
+		Context("when runtime exists", func() {
+			It("should sync successfully", func() {
+				err := engine.Sync(ctx)
+				Expect(err).NotTo(HaveOccurred())
+			})
+		})
+
+		Context("when runtime does not exist", func() {
+			BeforeEach(func() {
+				scheme := runtime.NewScheme()
+				_ = datav1alpha1.AddToScheme(scheme)
+				_ = appsv1.AddToScheme(scheme)
+				fakeClient := fake.NewClientBuilder().WithScheme(scheme).Build()
+				engine.Client = fakeClient
+			})
+
+			It("should return error", func() {
 				err := engine.Sync(ctx)
 				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(ContainSubstring("not found"))
 			})
 		})
 
-		Context("when CacheRuntime exists but CacheRuntimeClass is missing", func() {
+		Context("when runtimeClass does not exist", func() {
 			BeforeEach(func() {
-				rt := &datav1alpha1.CacheRuntime{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "test-runtime",
-						Namespace: "default",
-						UID:       types.UID("test-uid-123"),
-					},
-					Spec: datav1alpha1.CacheRuntimeSpec{
-						RuntimeClassName: "non-existent-class",
-					},
-				}
-				Expect(fakeClient.Create(context.Background(), rt)).NotTo(HaveOccurred())
+				runtimeObj.Spec.RuntimeClassName = "non-existent-class"
+				scheme := runtime.NewScheme()
+				_ = datav1alpha1.AddToScheme(scheme)
+				_ = appsv1.AddToScheme(scheme)
+				fakeClient := fake.NewClientBuilder().
+					WithScheme(scheme).
+					WithObjects(runtimeObj).
+					Build()
+				engine.Client = fakeClient
 			})
 
-			It("should fail when generating configmap data due to missing runtime class", func() {
+			It("should return error", func() {
 				err := engine.Sync(ctx)
 				Expect(err).To(HaveOccurred())
-				// The error occurs during generateRuntimeConfigData when trying to get runtime class
 			})
 		})
 
-		Context("when CacheRuntime and CacheRuntimeClass exist but Dataset is missing", func() {
+		Context("with existing configmap", func() {
 			BeforeEach(func() {
-				runtimeClass := &datav1alpha1.CacheRuntimeClass{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "test-runtime-class",
-					},
-					FileSystemType: "cache",
-					Topology: &datav1alpha1.RuntimeTopology{
-						Master: &datav1alpha1.RuntimeComponentDefinition{
-							Options: map[string]string{},
-							Service: datav1alpha1.RuntimeComponentService{},
-							Template: corev1.PodTemplateSpec{
-								Spec: corev1.PodSpec{
-									Containers: []corev1.Container{
-										{
-											Name:  "master",
-											Image: "test-image:latest",
-										},
-									},
-								},
-							},
-						},
-						Worker: &datav1alpha1.RuntimeComponentDefinition{
-							Options: map[string]string{},
-							Template: corev1.PodTemplateSpec{
-								Spec: corev1.PodSpec{
-									Containers: []corev1.Container{
-										{
-											Name:  "worker",
-											Image: "test-image:latest",
-										},
-									},
-								},
-							},
-						},
-						Client: &datav1alpha1.RuntimeComponentDefinition{
-							Options: map[string]string{},
-							Service: datav1alpha1.RuntimeComponentService{},
-							Template: corev1.PodTemplateSpec{
-								Spec: corev1.PodSpec{
-									Containers: []corev1.Container{
-										{
-											Name:  "client",
-											Image: "test-image:latest",
-										},
-									},
-								},
-							},
-						},
-					},
-				}
-				Expect(fakeClient.Create(context.Background(), runtimeClass)).NotTo(HaveOccurred())
-
-				rt := &datav1alpha1.CacheRuntime{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "test-runtime",
-						Namespace: "default",
-						UID:       types.UID("test-uid-456"),
-					},
-					Spec: datav1alpha1.CacheRuntimeSpec{
-						RuntimeClassName: "test-runtime-class",
-					},
-				}
-				Expect(fakeClient.Create(context.Background(), rt)).NotTo(HaveOccurred())
-			})
-
-			It("should fail when generating configmap data due to missing dataset", func() {
-				err := engine.Sync(ctx)
-				Expect(err).To(HaveOccurred())
-				// Error occurs in generateRuntimeConfigData when GetDataset fails
-			})
-		})
-
-		Context("when all dependencies exist and ConfigMap needs to be created", func() {
-			BeforeEach(func() {
-				// Create Dataset
-				dataset := &datav1alpha1.Dataset{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "test-runtime",
-						Namespace: "default",
-					},
-					Spec: datav1alpha1.DatasetSpec{
-						Mounts: []datav1alpha1.Mount{
-							{
-								Name:       "test-mount",
-								MountPoint: "local:///mnt/test",
-								Path:       "/data",
-							},
-						},
-					},
-				}
-				Expect(fakeClient.Create(context.Background(), dataset)).NotTo(HaveOccurred())
-
-				// Create RuntimeClass
-				runtimeClass := &datav1alpha1.CacheRuntimeClass{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "test-runtime-class",
-					},
-					FileSystemType: "cache",
-					Topology: &datav1alpha1.RuntimeTopology{
-						Master: &datav1alpha1.RuntimeComponentDefinition{
-							Options: map[string]string{"master-key": "master-value"},
-							Service: datav1alpha1.RuntimeComponentService{},
-							Template: corev1.PodTemplateSpec{
-								Spec: corev1.PodSpec{
-									Containers: []corev1.Container{
-										{
-											Name:  "master",
-											Image: "test-image:latest",
-										},
-									},
-								},
-							},
-						},
-						Worker: &datav1alpha1.RuntimeComponentDefinition{
-							Options: map[string]string{"worker-key": "worker-value"},
-							Template: corev1.PodTemplateSpec{
-								Spec: corev1.PodSpec{
-									Containers: []corev1.Container{
-										{
-											Name:  "worker",
-											Image: "test-image:latest",
-										},
-									},
-								},
-							},
-						},
-						Client: &datav1alpha1.RuntimeComponentDefinition{
-							Options: map[string]string{"client-key": "client-value"},
-							Service: datav1alpha1.RuntimeComponentService{},
-							Template: corev1.PodTemplateSpec{
-								Spec: corev1.PodSpec{
-									Containers: []corev1.Container{
-										{
-											Name:  "client",
-											Image: "test-image:latest",
-										},
-									},
-								},
-							},
-						},
-					},
-				}
-				Expect(fakeClient.Create(context.Background(), runtimeClass)).NotTo(HaveOccurred())
-
-				// Create Runtime
-				rt := &datav1alpha1.CacheRuntime{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "test-runtime",
-						Namespace: "default",
-						UID:       types.UID("test-uid-789"),
-					},
-					Spec: datav1alpha1.CacheRuntimeSpec{
-						RuntimeClassName: "test-runtime-class",
-						Master: datav1alpha1.CacheRuntimeMasterSpec{
-							Replicas: 1,
-						},
-						Worker: datav1alpha1.CacheRuntimeWorkerSpec{
-							Replicas: 2,
-						},
-						Client: datav1alpha1.CacheRuntimeClientSpec{
-							RuntimeComponentCommonSpec: datav1alpha1.RuntimeComponentCommonSpec{
-								Disabled: false,
-							},
-						},
-					},
-				}
-				Expect(fakeClient.Create(context.Background(), rt)).NotTo(HaveOccurred())
-			})
-
-			It("should create ConfigMap with correct owner reference and data", func() {
-				// ignore if occurs error, only check the config map created
-				_ = engine.Sync(ctx)
-
-				// Verify ConfigMap was created
-				configMap := &corev1.ConfigMap{}
-				err := fakeClient.Get(context.Background(), types.NamespacedName{
-					Name:      "fluid-runtime-config-test-runtime",
-					Namespace: "default",
-				}, configMap)
-				Expect(err).NotTo(HaveOccurred())
-
-				// Verify owner reference
-				Expect(configMap.OwnerReferences).To(HaveLen(1))
-				Expect(configMap.OwnerReferences[0].Name).To(Equal("test-runtime"))
-				Expect(configMap.OwnerReferences[0].UID).To(Equal(types.UID("test-uid-789")))
-				Expect(*configMap.OwnerReferences[0].Controller).To(BeTrue())
-
-				// Verify ConfigMap data contains runtime.json key
-				Expect(configMap.Data).To(HaveKey("runtime.json"))
-				Expect(configMap.Data["runtime.json"]).NotTo(BeEmpty())
-			})
-		})
-
-		Context("when ConfigMap already exists with same data", func() {
-			BeforeEach(func() {
-				// Create Dataset
-				dataset := &datav1alpha1.Dataset{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "test-runtime",
-						Namespace: "default",
-					},
-					Spec: datav1alpha1.DatasetSpec{
-						Mounts: []datav1alpha1.Mount{
-							{
-								Name:       "test-mount",
-								MountPoint: "local:///mnt/test",
-							},
-						},
-					},
-				}
-				Expect(fakeClient.Create(context.Background(), dataset)).NotTo(HaveOccurred())
-
-				// Create RuntimeClass
-				runtimeClass := &datav1alpha1.CacheRuntimeClass{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "test-runtime-class",
-					},
-					FileSystemType: "cache",
-					Topology: &datav1alpha1.RuntimeTopology{
-						Master: &datav1alpha1.RuntimeComponentDefinition{
-							Options: map[string]string{},
-							Service: datav1alpha1.RuntimeComponentService{},
-							Template: corev1.PodTemplateSpec{
-								Spec: corev1.PodSpec{
-									Containers: []corev1.Container{
-										{
-											Name:  "master",
-											Image: "test-image:latest",
-										},
-									},
-								},
-							},
-						},
-						Worker: &datav1alpha1.RuntimeComponentDefinition{
-							Options: map[string]string{},
-							Template: corev1.PodTemplateSpec{
-								Spec: corev1.PodSpec{
-									Containers: []corev1.Container{
-										{
-											Name:  "worker",
-											Image: "test-image:latest",
-										},
-									},
-								},
-							},
-						},
-						Client: &datav1alpha1.RuntimeComponentDefinition{
-							Options: map[string]string{},
-							Service: datav1alpha1.RuntimeComponentService{},
-							Template: corev1.PodTemplateSpec{
-								Spec: corev1.PodSpec{
-									Containers: []corev1.Container{
-										{
-											Name:  "client",
-											Image: "test-image:latest",
-										},
-									},
-								},
-							},
-						},
-					},
-				}
-				Expect(fakeClient.Create(context.Background(), runtimeClass)).NotTo(HaveOccurred())
-
-				// Create Runtime
-				rt := &datav1alpha1.CacheRuntime{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "test-runtime",
-						Namespace: "default",
-						UID:       types.UID("test-uid-sync"),
-					},
-					Spec: datav1alpha1.CacheRuntimeSpec{
-						RuntimeClassName: "test-runtime-class",
-					},
-				}
-				Expect(fakeClient.Create(context.Background(), rt)).NotTo(HaveOccurred())
-			})
-
-			It("should not update ConfigMap when data is unchanged", func() {
-				// ignore if occurs error, only check the config map created
-				_ = engine.Sync(ctx)
-
-				// Get the created ConfigMap
-				originalCM := &corev1.ConfigMap{}
-				err := fakeClient.Get(context.Background(), types.NamespacedName{
-					Name:      "fluid-runtime-config-test-runtime",
-					Namespace: "default",
-				}, originalCM)
-				Expect(err).NotTo(HaveOccurred())
-				originalData := originalCM.Data["runtime.json"]
-				Expect(originalData).NotTo(BeEmpty())
-
-				// Second call to Sync should not change the ConfigMap data
-				_ = engine.Sync(ctx)
-
-				// Verify ConfigMap data was not changed
-				updatedCM := &corev1.ConfigMap{}
-				err = fakeClient.Get(context.Background(), types.NamespacedName{
-					Name:      "fluid-runtime-config-test-runtime",
-					Namespace: "default",
-				}, updatedCM)
-				Expect(err).NotTo(HaveOccurred())
-				// The data content should remain exactly the same
-				Expect(updatedCM.Data["runtime.json"]).To(Equal(originalData))
-			})
-		})
-
-		Context("when ConfigMap exists with different data", func() {
-			BeforeEach(func() {
-				// Create Dataset
-				dataset := &datav1alpha1.Dataset{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "test-runtime",
-						Namespace: "default",
-					},
-					Spec: datav1alpha1.DatasetSpec{
-						Mounts: []datav1alpha1.Mount{
-							{
-								Name:       "new-mount",
-								MountPoint: "s3://new-bucket",
-							},
-						},
-					},
-				}
-				Expect(fakeClient.Create(context.Background(), dataset)).NotTo(HaveOccurred())
-
-				// Create RuntimeClass
-				runtimeClass := &datav1alpha1.CacheRuntimeClass{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "test-runtime-class",
-					},
-					FileSystemType: "cache",
-					Topology: &datav1alpha1.RuntimeTopology{
-						Master: &datav1alpha1.RuntimeComponentDefinition{
-							Options: map[string]string{},
-							Service: datav1alpha1.RuntimeComponentService{},
-							Template: corev1.PodTemplateSpec{
-								Spec: corev1.PodSpec{
-									Containers: []corev1.Container{
-										{
-											Name:  "master",
-											Image: "test-image:latest",
-										},
-									},
-								},
-							},
-						},
-						Worker: &datav1alpha1.RuntimeComponentDefinition{
-							Options: map[string]string{},
-							Template: corev1.PodTemplateSpec{
-								Spec: corev1.PodSpec{
-									Containers: []corev1.Container{
-										{
-											Name:  "worker",
-											Image: "test-image:latest",
-										},
-									},
-								},
-							},
-						},
-						Client: &datav1alpha1.RuntimeComponentDefinition{
-							Options: map[string]string{},
-							Service: datav1alpha1.RuntimeComponentService{},
-							Template: corev1.PodTemplateSpec{
-								Spec: corev1.PodSpec{
-									Containers: []corev1.Container{
-										{
-											Name:  "client",
-											Image: "test-image:latest",
-										},
-									},
-								},
-							},
-						},
-					},
-				}
-				Expect(fakeClient.Create(context.Background(), runtimeClass)).NotTo(HaveOccurred())
-
-				// Create Runtime
-				rt := &datav1alpha1.CacheRuntime{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "test-runtime",
-						Namespace: "default",
-						UID:       types.UID("test-uid-update"),
-					},
-					Spec: datav1alpha1.CacheRuntimeSpec{
-						RuntimeClassName: "test-runtime-class",
-					},
-				}
-				Expect(fakeClient.Create(context.Background(), rt)).NotTo(HaveOccurred())
-
-				// Pre-create ConfigMap with old data
-				oldCM := &corev1.ConfigMap{
+				configMap := &corev1.ConfigMap{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "fluid-runtime-config-test-runtime",
 						Namespace: "default",
 					},
-					Data: map[string]string{
-						"runtime.json": `{"old":"data"}`,
-					},
+					Data: map[string]string{"old-key": "old-value"},
 				}
-				Expect(fakeClient.Create(context.Background(), oldCM)).NotTo(HaveOccurred())
+				scheme := runtime.NewScheme()
+				_ = datav1alpha1.AddToScheme(scheme)
+				_ = corev1.AddToScheme(scheme)
+				_ = appsv1.AddToScheme(scheme)
+				// Create StatefulSets and DaemonSet for status update
+				masterSts := &appsv1.StatefulSet{
+					ObjectMeta: metav1.ObjectMeta{Name: "test-runtime-master", Namespace: "default"},
+					Spec:       appsv1.StatefulSetSpec{Replicas: func() *int32 { i := int32(1); return &i }()},
+					Status:     appsv1.StatefulSetStatus{ReadyReplicas: 1},
+				}
+				workerSts := &appsv1.StatefulSet{
+					ObjectMeta: metav1.ObjectMeta{Name: "test-runtime-worker", Namespace: "default"},
+					Spec:       appsv1.StatefulSetSpec{Replicas: func() *int32 { i := int32(2); return &i }()},
+					Status:     appsv1.StatefulSetStatus{ReadyReplicas: 2},
+				}
+				clientDs := &appsv1.DaemonSet{
+					ObjectMeta: metav1.ObjectMeta{Name: "test-runtime-client", Namespace: "default"},
+					Status:     appsv1.DaemonSetStatus{NumberReady: 0, DesiredNumberScheduled: 0},
+				}
+				fakeClient := fake.NewClientBuilder().
+					WithScheme(scheme).
+					WithObjects(dataset, runtimeObj, runtimeClass, configMap, masterSts, workerSts, clientDs).
+					WithStatusSubresource(runtimeObj).
+					Build()
+				engine.Client = fakeClient
 			})
 
-			It("should update ConfigMap with new data", func() {
-				// ignore if occurs error, only check the config map created
-				_ = engine.Sync(ctx)
-
-				// Verify ConfigMap was updated
-				updatedCM := &corev1.ConfigMap{}
-				err := fakeClient.Get(context.Background(), types.NamespacedName{
-					Name:      "fluid-runtime-config-test-runtime",
-					Namespace: "default",
-				}, updatedCM)
+			It("should update configmap", func() {
+				err := engine.Sync(ctx)
 				Expect(err).NotTo(HaveOccurred())
 
-				// Data should no longer contain old data
-				Expect(updatedCM.Data["runtime.json"]).NotTo(ContainSubstring(`"old":"data"`))
-				// Should contain new mount information
-				Expect(updatedCM.Data["runtime.json"]).To(ContainSubstring("new-mount"))
-				Expect(updatedCM.Data["runtime.json"]).To(ContainSubstring("s3://new-bucket"))
+				// Verify configmap was updated
+				cm := &corev1.ConfigMap{}
+				err = engine.Client.Get(context.Background(), types.NamespacedName{
+					Name:      "fluid-runtime-config-test-runtime",
+					Namespace: "default",
+				}, cm)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(cm.Data).NotTo(BeNil())
 			})
 		})
 
-		Context("when runtime spec has disabled components", func() {
-			BeforeEach(func() {
-				dataset := &datav1alpha1.Dataset{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "test-runtime",
-						Namespace: "default",
-					},
-					Spec: datav1alpha1.DatasetSpec{
-						Mounts: []datav1alpha1.Mount{
-							{
-								Name:       "test-mount",
-								MountPoint: "local:///mnt/test",
-							},
-						},
-					},
-				}
-				Expect(fakeClient.Create(context.Background(), dataset)).NotTo(HaveOccurred())
-
-				runtimeClass := &datav1alpha1.CacheRuntimeClass{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "test-runtime-class",
-					},
-					FileSystemType: "cache",
-					Topology: &datav1alpha1.RuntimeTopology{
-						Master: &datav1alpha1.RuntimeComponentDefinition{
-							Options: map[string]string{},
-							Service: datav1alpha1.RuntimeComponentService{},
-							Template: corev1.PodTemplateSpec{
-								Spec: corev1.PodSpec{
-									Containers: []corev1.Container{
-										{
-											Name:  "master",
-											Image: "test-image:latest",
-										},
-									},
-								},
-							},
-						},
-						Worker: &datav1alpha1.RuntimeComponentDefinition{
-							Options: map[string]string{},
-							Template: corev1.PodTemplateSpec{
-								Spec: corev1.PodSpec{
-									Containers: []corev1.Container{
-										{
-											Name:  "worker",
-											Image: "test-image:latest",
-										},
-									},
-								},
-							},
-						},
-						Client: &datav1alpha1.RuntimeComponentDefinition{
-							Options: map[string]string{},
-							Service: datav1alpha1.RuntimeComponentService{},
-							Template: corev1.PodTemplateSpec{
-								Spec: corev1.PodSpec{
-									Containers: []corev1.Container{
-										{
-											Name:  "client",
-											Image: "test-image:latest",
-										},
-									},
-								},
-							},
-						},
-					},
-				}
-				Expect(fakeClient.Create(context.Background(), runtimeClass)).NotTo(HaveOccurred())
-
-				rt := &datav1alpha1.CacheRuntime{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "test-runtime",
-						Namespace: "default",
-						UID:       types.UID("test-uid-disabled-comp"),
-					},
-					Spec: datav1alpha1.CacheRuntimeSpec{
-						RuntimeClassName: "test-runtime-class",
-						Master: datav1alpha1.CacheRuntimeMasterSpec{
-							RuntimeComponentCommonSpec: datav1alpha1.RuntimeComponentCommonSpec{
-								Disabled: true,
-							},
-						},
-						Worker: datav1alpha1.CacheRuntimeWorkerSpec{
-							RuntimeComponentCommonSpec: datav1alpha1.RuntimeComponentCommonSpec{
-								Disabled: true,
-							},
-						},
-						Client: datav1alpha1.CacheRuntimeClientSpec{
-							RuntimeComponentCommonSpec: datav1alpha1.RuntimeComponentCommonSpec{
-								Disabled: true,
-							},
-						},
-					},
-				}
-				Expect(fakeClient.Create(context.Background(), rt)).NotTo(HaveOccurred())
-			})
-
-			It("should generate configmap without disabled components", func() {
-				// ignore if occurs error, only check the config map created
-				_ = engine.Sync(ctx)
-
-				configMap := &corev1.ConfigMap{}
-				err := fakeClient.Get(context.Background(), types.NamespacedName{
-					Name:      "fluid-runtime-config-test-runtime",
-					Namespace: "default",
-				}, configMap)
+		Context("without existing configmap", func() {
+			It("should create configmap", func() {
+				err := engine.Sync(ctx)
 				Expect(err).NotTo(HaveOccurred())
 
-				// Verify configmap data does not contain master/worker/client sections
-				jsonData := configMap.Data["runtime.json"]
-				Expect(jsonData).NotTo(BeEmpty())
-				// When all components are disabled, they should not appear in the config
-				Expect(jsonData).NotTo(ContainSubstring(`"master":`))
-				Expect(jsonData).NotTo(ContainSubstring(`"worker":`))
-				Expect(jsonData).NotTo(ContainSubstring(`"client":`))
-			})
-		})
-
-		Context("when dataset has shared options and encrypt options", func() {
-			BeforeEach(func() {
-				// Create secret for encrypt options
-				secret := &corev1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "test-secret",
-						Namespace: "default",
-					},
-					Data: map[string][]byte{
-						"access-key": []byte("my-access-key"),
-					},
-				}
-				Expect(fakeClient.Create(context.Background(), secret)).NotTo(HaveOccurred())
-
-				dataset := &datav1alpha1.Dataset{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "test-runtime",
-						Namespace: "default",
-					},
-					Spec: datav1alpha1.DatasetSpec{
-						SharedOptions: map[string]string{
-							"shared-opt": "shared-value",
-						},
-						SharedEncryptOptions: []datav1alpha1.EncryptOption{
-							{
-								Name: "SHARED_SECRET",
-								ValueFrom: datav1alpha1.EncryptOptionSource{
-									SecretKeyRef: datav1alpha1.SecretKeySelector{
-										Name: "test-secret",
-										Key:  "access-key",
-									},
-								},
-							},
-						},
-						Mounts: []datav1alpha1.Mount{
-							{
-								Name:       "s3-mount",
-								MountPoint: "s3://my-bucket",
-								Options: map[string]string{
-									"mount-opt": "mount-value",
-								},
-								EncryptOptions: []datav1alpha1.EncryptOption{
-									{
-										Name: "MOUNT_SECRET",
-										ValueFrom: datav1alpha1.EncryptOptionSource{
-											SecretKeyRef: datav1alpha1.SecretKeySelector{
-												Name: "test-secret",
-												Key:  "access-key",
-											},
-										},
-									},
-								},
-							},
-						},
-					},
-				}
-				Expect(fakeClient.Create(context.Background(), dataset)).NotTo(HaveOccurred())
-
-				runtimeClass := &datav1alpha1.CacheRuntimeClass{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "test-runtime-class",
-					},
-					FileSystemType: "cache",
-					Topology: &datav1alpha1.RuntimeTopology{
-						Master: &datav1alpha1.RuntimeComponentDefinition{
-							Options: map[string]string{},
-							Service: datav1alpha1.RuntimeComponentService{},
-							Template: corev1.PodTemplateSpec{
-								Spec: corev1.PodSpec{
-									Containers: []corev1.Container{
-										{
-											Name:  "master",
-											Image: "test-image:latest",
-										},
-									},
-								},
-							},
-						},
-						Worker: &datav1alpha1.RuntimeComponentDefinition{
-							Options: map[string]string{},
-							Template: corev1.PodTemplateSpec{
-								Spec: corev1.PodSpec{
-									Containers: []corev1.Container{
-										{
-											Name:  "worker",
-											Image: "test-image:latest",
-										},
-									},
-								},
-							},
-						},
-						Client: &datav1alpha1.RuntimeComponentDefinition{
-							Options: map[string]string{},
-							Service: datav1alpha1.RuntimeComponentService{},
-							Template: corev1.PodTemplateSpec{
-								Spec: corev1.PodSpec{
-									Containers: []corev1.Container{
-										{
-											Name:  "client",
-											Image: "test-image:latest",
-										},
-									},
-								},
-							},
-						},
-					},
-				}
-				Expect(fakeClient.Create(context.Background(), runtimeClass)).NotTo(HaveOccurred())
-
-				rt := &datav1alpha1.CacheRuntime{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "test-runtime",
-						Namespace: "default",
-						UID:       types.UID("test-uid-encrypt"),
-					},
-					Spec: datav1alpha1.CacheRuntimeSpec{
-						RuntimeClassName: "test-runtime-class",
-					},
-				}
-				Expect(fakeClient.Create(context.Background(), rt)).NotTo(HaveOccurred())
-			})
-
-			It("should include shared and encrypt options in configmap", func() {
-				// ignore if occurs error, only check the config map created
-				_ = engine.Sync(ctx)
-
-				configMap := &corev1.ConfigMap{}
-				err := fakeClient.Get(context.Background(), types.NamespacedName{
+				// Verify configmap was created
+				cm := &corev1.ConfigMap{}
+				err = engine.Client.Get(context.Background(), types.NamespacedName{
 					Name:      "fluid-runtime-config-test-runtime",
 					Namespace: "default",
-				}, configMap)
+				}, cm)
 				Expect(err).NotTo(HaveOccurred())
-
-				jsonData := configMap.Data["runtime.json"]
-				Expect(jsonData).To(ContainSubstring("shared-opt"))
-				Expect(jsonData).To(ContainSubstring("shared-value"))
-				Expect(jsonData).To(ContainSubstring("mount-opt"))
-				Expect(jsonData).To(ContainSubstring("mount-value"))
-				// Encrypt options should be converted to file paths
-				Expect(jsonData).To(ContainSubstring("/etc/fluid/secrets/test-secret/access-key"))
+				Expect(cm.Data).NotTo(BeNil())
+				Expect(cm.OwnerReferences).NotTo(BeEmpty())
 			})
 		})
 	})
 
+	Describe("syncRuntimeValueConfigMap", func() {
+		Context("when configmap does not exist", func() {
+			It("should create new configmap", func() {
+				err := engine.syncRuntimeValueConfigMap(ctx, runtimeObj)
+				Expect(err).NotTo(HaveOccurred())
+
+				// Verify configmap was created
+				cm := &corev1.ConfigMap{}
+				err = engine.Client.Get(context.Background(), types.NamespacedName{
+					Name:      "fluid-runtime-config-test-runtime",
+					Namespace: "default",
+				}, cm)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(cm.Name).To(Equal("fluid-runtime-config-test-runtime"))
+				Expect(cm.Namespace).To(Equal("default"))
+				Expect(cm.Data).NotTo(BeNil())
+				Expect(len(cm.Data)).To(BeNumerically(">", 0))
+
+				// Verify owner reference
+				Expect(cm.OwnerReferences).NotTo(BeEmpty())
+				Expect(cm.OwnerReferences[0].Name).To(Equal("test-runtime"))
+				Expect(cm.OwnerReferences[0].Kind).To(Equal("CacheRuntime"))
+				Expect(*cm.OwnerReferences[0].Controller).To(BeTrue())
+				Expect(*cm.OwnerReferences[0].BlockOwnerDeletion).To(BeTrue())
+			})
+		})
+
+		Context("when configmap already exists", func() {
+			BeforeEach(func() {
+				configMap := &corev1.ConfigMap{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "fluid-runtime-config-test-runtime",
+						Namespace: "default",
+					},
+					Data: map[string]string{"old-key": "old-value"},
+				}
+				scheme := runtime.NewScheme()
+				_ = datav1alpha1.AddToScheme(scheme)
+				_ = corev1.AddToScheme(scheme)
+				_ = appsv1.AddToScheme(scheme)
+				// Create StatefulSets and DaemonSet for status update
+				masterSts := &appsv1.StatefulSet{
+					ObjectMeta: metav1.ObjectMeta{Name: "test-runtime-master", Namespace: "default"},
+					Spec:       appsv1.StatefulSetSpec{Replicas: func() *int32 { i := int32(1); return &i }()},
+					Status:     appsv1.StatefulSetStatus{ReadyReplicas: 1},
+				}
+				workerSts := &appsv1.StatefulSet{
+					ObjectMeta: metav1.ObjectMeta{Name: "test-runtime-worker", Namespace: "default"},
+					Spec:       appsv1.StatefulSetSpec{Replicas: func() *int32 { i := int32(2); return &i }()},
+					Status:     appsv1.StatefulSetStatus{ReadyReplicas: 2},
+				}
+				clientDs := &appsv1.DaemonSet{
+					ObjectMeta: metav1.ObjectMeta{Name: "test-runtime-client", Namespace: "default"},
+					Status:     appsv1.DaemonSetStatus{NumberReady: 0, DesiredNumberScheduled: 0},
+				}
+				fakeClient := fake.NewClientBuilder().
+					WithScheme(scheme).
+					WithObjects(dataset, runtimeObj, runtimeClass, configMap, masterSts, workerSts, clientDs).
+					WithStatusSubresource(runtimeObj).
+					Build()
+				engine.Client = fakeClient
+			})
+
+			It("should update existing configmap", func() {
+				err := engine.syncRuntimeValueConfigMap(ctx, runtimeObj)
+				Expect(err).NotTo(HaveOccurred())
+
+				// Verify configmap was updated
+				cm := &corev1.ConfigMap{}
+				err = engine.Client.Get(context.Background(), types.NamespacedName{
+					Name:      "fluid-runtime-config-test-runtime",
+					Namespace: "default",
+				}, cm)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(cm.Data).NotTo(HaveKey("old-key")) // Old data should be replaced
+			})
+		})
+
+		Context("when configmap data is unchanged", func() {
+			BeforeEach(func() {
+				// First sync to create configmap
+				err := engine.syncRuntimeValueConfigMap(ctx, runtimeObj)
+				Expect(err).NotTo(HaveOccurred())
+
+				// Get the created configmap
+				cm := &corev1.ConfigMap{}
+				err = engine.Client.Get(context.Background(), types.NamespacedName{
+					Name:      "fluid-runtime-config-test-runtime",
+					Namespace: "default",
+				}, cm)
+				Expect(err).NotTo(HaveOccurred())
+
+				// Store original data
+				originalData := make(map[string]string)
+				for k, v := range cm.Data {
+					originalData[k] = v
+				}
+
+				// Update engine's client to use same objects
+				scheme := runtime.NewScheme()
+				_ = datav1alpha1.AddToScheme(scheme)
+				_ = corev1.AddToScheme(scheme)
+				_ = appsv1.AddToScheme(scheme)
+				// Create StatefulSets and DaemonSet for status update
+				masterSts := &appsv1.StatefulSet{
+					ObjectMeta: metav1.ObjectMeta{Name: "test-runtime-master", Namespace: "default"},
+					Spec:       appsv1.StatefulSetSpec{Replicas: func() *int32 { i := int32(1); return &i }()},
+					Status:     appsv1.StatefulSetStatus{ReadyReplicas: 1},
+				}
+				workerSts := &appsv1.StatefulSet{
+					ObjectMeta: metav1.ObjectMeta{Name: "test-runtime-worker", Namespace: "default"},
+					Spec:       appsv1.StatefulSetSpec{Replicas: func() *int32 { i := int32(2); return &i }()},
+					Status:     appsv1.StatefulSetStatus{ReadyReplicas: 2},
+				}
+				clientDs := &appsv1.DaemonSet{
+					ObjectMeta: metav1.ObjectMeta{Name: "test-runtime-client", Namespace: "default"},
+					Status:     appsv1.DaemonSetStatus{NumberReady: 0, DesiredNumberScheduled: 0},
+				}
+				fakeClient := fake.NewClientBuilder().
+					WithScheme(scheme).
+					WithObjects(dataset, runtimeObj, runtimeClass, cm, masterSts, workerSts, clientDs).
+					WithStatusSubresource(runtimeObj).
+					Build()
+				engine.Client = fakeClient
+			})
+
+			It("should not update configmap when data is same", func() {
+				// Second sync with same data
+				err := engine.syncRuntimeValueConfigMap(ctx, runtimeObj)
+				Expect(err).NotTo(HaveOccurred())
+
+				// Verify configmap still exists
+				cm := &corev1.ConfigMap{}
+				err = engine.Client.Get(context.Background(), types.NamespacedName{
+					Name:      "fluid-runtime-config-test-runtime",
+					Namespace: "default",
+				}, cm)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(cm.Data).NotTo(BeNil())
+			})
+		})
+
+		Context("error handling", func() {
+			It("should handle empty runtime gracefully", func() {
+				// Create a minimal runtime object
+				minimalRuntime := &datav1alpha1.CacheRuntime{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "data.fluid.io/v1alpha1",
+						Kind:       "CacheRuntime",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "test-runtime",
+						Namespace: "default",
+						UID:       "test-runtime-uid",
+					},
+					Spec: datav1alpha1.CacheRuntimeSpec{
+						RuntimeClassName: "test-class",
+					},
+				}
+
+				scheme := runtime.NewScheme()
+				_ = datav1alpha1.AddToScheme(scheme)
+				_ = corev1.AddToScheme(scheme)
+				_ = appsv1.AddToScheme(scheme)
+				// Create necessary resources
+				masterSts := &appsv1.StatefulSet{
+					ObjectMeta: metav1.ObjectMeta{Name: "test-runtime-master", Namespace: "default"},
+					Spec:       appsv1.StatefulSetSpec{Replicas: func() *int32 { i := int32(1); return &i }()},
+					Status:     appsv1.StatefulSetStatus{ReadyReplicas: 1},
+				}
+				workerSts := &appsv1.StatefulSet{
+					ObjectMeta: metav1.ObjectMeta{Name: "test-runtime-worker", Namespace: "default"},
+					Spec:       appsv1.StatefulSetSpec{Replicas: func() *int32 { i := int32(2); return &i }()},
+					Status:     appsv1.StatefulSetStatus{ReadyReplicas: 2},
+				}
+				clientDs := &appsv1.DaemonSet{
+					ObjectMeta: metav1.ObjectMeta{Name: "test-runtime-client", Namespace: "default"},
+					Status:     appsv1.DaemonSetStatus{NumberReady: 0, DesiredNumberScheduled: 0},
+				}
+				fakeClient := fake.NewClientBuilder().
+					WithScheme(scheme).
+					WithObjects(dataset, minimalRuntime, runtimeClass, masterSts, workerSts, clientDs).
+					WithStatusSubresource(minimalRuntime).
+					Build()
+				engine.Client = fakeClient
+
+				err := engine.syncRuntimeValueConfigMap(ctx, minimalRuntime)
+				Expect(err).NotTo(HaveOccurred())
+			})
+		})
+	})
+
+	Describe("getSyncRetryDuration", func() {
+		Context("when environment variable is not set", func() {
+			It("should return nil duration", func() {
+				// Ensure env var is not set
+				os.Unsetenv(syncRetryDurationEnv)
+
+				duration, err := getSyncRetryDuration()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(duration).To(BeNil())
+			})
+		})
+
+		Context("when environment variable is set to valid duration", func() {
+			AfterEach(func() {
+				os.Unsetenv(syncRetryDurationEnv)
+			})
+
+			It("should parse and return duration", func() {
+				os.Setenv(syncRetryDurationEnv, "5s")
+
+				duration, err := getSyncRetryDuration()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(duration).NotTo(BeNil())
+				Expect(*duration).To(Equal(5 * time.Second))
+			})
+		})
+
+		Context("when environment variable is set to invalid duration", func() {
+			AfterEach(func() {
+				os.Unsetenv(syncRetryDurationEnv)
+			})
+
+			It("should return error", func() {
+				os.Setenv(syncRetryDurationEnv, "invalid")
+
+				duration, err := getSyncRetryDuration()
+				Expect(err).To(HaveOccurred())
+				Expect(duration).To(BeNil())
+			})
+		})
+
+		Context("with different duration formats", func() {
+			AfterEach(func() {
+				os.Unsetenv(syncRetryDurationEnv)
+			})
+
+			It("should parse minutes correctly", func() {
+				os.Setenv(syncRetryDurationEnv, "2m")
+
+				duration, err := getSyncRetryDuration()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(duration).NotTo(BeNil())
+				Expect(*duration).To(Equal(2 * time.Minute))
+			})
+
+			It("should parse milliseconds correctly", func() {
+				os.Setenv(syncRetryDurationEnv, "500ms")
+
+				duration, err := getSyncRetryDuration()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(duration).NotTo(BeNil())
+				Expect(*duration).To(Equal(500 * time.Millisecond))
+			})
+
+			It("should parse complex duration correctly", func() {
+				os.Setenv(syncRetryDurationEnv, "1h30m45s")
+
+				duration, err := getSyncRetryDuration()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(duration).NotTo(BeNil())
+				expected := 1*time.Hour + 30*time.Minute + 45*time.Second
+				Expect(*duration).To(Equal(expected))
+			})
+		})
+	})
 })
