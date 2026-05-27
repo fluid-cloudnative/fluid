@@ -26,11 +26,11 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/testutil"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -48,27 +48,15 @@ func (info *CacheRuntimeInfo) GetWorkerPods(client client.Client) ([]corev1.Pod,
 	if err != nil {
 		return nil, err
 	}
+
 	workerSelector, err := metav1.LabelSelectorAsSelector(workers.Spec.Selector)
 	if err != nil {
 		return nil, err
 	}
 
-	// Get pods using the selector
-	podList := &corev1.PodList{}
-	err = client.List(context.TODO(), podList)
-	if err != nil {
-		return nil, err
-	}
+	workerPods, err := kubeclient.GetPodsForStatefulSet(client, workers, workerSelector)
 
-	// Filter pods by namespace and selector
-	var filteredPods []corev1.Pod
-	for _, pod := range podList.Items {
-		if pod.Namespace == info.GetNamespace() && workerSelector.Matches(labels.Set(pod.Labels)) {
-			filteredPods = append(filteredPods, pod)
-		}
-	}
-
-	return filteredPods, nil
+	return workerPods, err
 }
 
 // getRuntime get the current runtime

@@ -74,7 +74,7 @@ func (s *AdvancedStatefulSetManager) reconcileStatefulSet(ctx context.Context, c
 	}
 	// if already created, update it
 	if err == nil {
-		return s.updateAdvancedStatefulSet(ctx, asts, component)
+		return nil
 	}
 	// create the advanced stateful set
 	asts = s.constructAdvancedStatefulSet(component)
@@ -136,49 +136,6 @@ func (s *AdvancedStatefulSetManager) constructAdvancedStatefulSet(component *com
 	return asts
 }
 
-// updateAdvancedStatefulSet updates an existing AdvancedStatefulSet with new component configuration
-func (s *AdvancedStatefulSetManager) updateAdvancedStatefulSet(ctx context.Context, existingAsts *workloadv1alpha1.AdvancedStatefulSet, component *common.CacheRuntimeComponentValue) error {
-	logger := log.FromContext(ctx)
-	logger.Info("start to updating advanced statefulset workload")
-
-	// Create a copy of the existing ASTS for comparison
-	astsToUpdate := existingAsts.DeepCopy()
-
-	// Update replicas if changed
-	if component.Replicas != *existingAsts.Spec.Replicas {
-		logger.Info("replicas changed", "old", *existingAsts.Spec.Replicas, "new", component.Replicas)
-		astsToUpdate.Spec.Replicas = &component.Replicas
-	}
-
-	// Update PodTemplateSpec - this is key for in-place updates
-	// The AdvancedStatefulSet controller will detect changes and perform in-place updates when possible
-	matchLabels := getCommonLabelsFromComponent(component)
-	podTemplateSpec := component.PodTemplateSpec
-	podTemplateSpec.Labels = utils.UnionMapsWithOverride(podTemplateSpec.Labels, matchLabels)
-
-	// Check if pod template has changed
-	if !reflect.DeepEqual(existingAsts.Spec.Template, podTemplateSpec) {
-		logger.Info("pod template changed, will trigger update")
-		astsToUpdate.Spec.Template = podTemplateSpec
-	}
-
-	// Only update if there are changes
-	if reflect.DeepEqual(existingAsts, astsToUpdate) {
-		logger.Info("no changes detected, skip update")
-		return nil
-	}
-
-	// Update the AdvancedStatefulSet
-	err := s.client.Update(ctx, astsToUpdate)
-	if err != nil {
-		logger.Error(err, "failed to update advanced statefulset")
-		return err
-	}
-
-	logger.Info("update advanced statefulset workload succeed")
-	return nil
-}
-
 func (s *AdvancedStatefulSetManager) ConstructComponentStatus(ctx context.Context, identity *common.ComponentIdentity) (datav1alpha1.RuntimeComponentStatus, error) {
 	logger := log.FromContext(ctx)
 	logger.Info("start to ConstructComponentStatus")
@@ -190,7 +147,10 @@ func (s *AdvancedStatefulSetManager) ConstructComponentStatus(ctx context.Contex
 		return datav1alpha1.RuntimeComponentStatus{}, err
 	}
 
-	desiredReplicas := *asts.Spec.Replicas
+	desiredReplicas := int32(0)
+	if asts.Spec.Replicas != nil {
+		desiredReplicas = *asts.Spec.Replicas
+	}
 	readyReplicas := asts.Status.ReadyReplicas
 
 	runtimePhase := datav1alpha1.RuntimePhaseNotReady
@@ -283,9 +243,12 @@ func (s *AdvancedStatefulSetManager) SyncComponentSpec(ctx context.Context, iden
 // updateReplicas updates the replica count if changed
 // Returns true if update is needed
 func (s *AdvancedStatefulSetManager) updateReplicas(asts *workloadv1alpha1.AdvancedStatefulSet, newReplicas int32, logger logr.Logger) bool {
-	currentReplicas := *asts.Spec.Replicas
-	if currentReplicas != newReplicas {
-		logger.Info("replicas changed, will update", "old", currentReplicas, "new", newReplicas)
+	var oldReplicas int32 = 0
+	if asts.Spec.Replicas != nil {
+		oldReplicas = *asts.Spec.Replicas
+	}
+	if oldReplicas != newReplicas {
+		logger.Info("replicas changed, will update", "old", oldReplicas, "new", newReplicas)
 		asts.Spec.Replicas = &newReplicas
 		return true
 	}
