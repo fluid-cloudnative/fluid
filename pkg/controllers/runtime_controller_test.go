@@ -200,7 +200,7 @@ var _ = Describe("RuntimeReconciler", func() {
 				Fail("Expected an error but got nil")
 			}
 			Expect(supported).To(BeFalse())
-			Expect(err.Error()).To(ContainSubstring("CacheRuntime is not supported"))
+			Expect(err.Error()).To(ContainSubstring("unsupported runtime type"))
 		})
 
 		It("allows a reference dataset when physical runtime is AlluxioRuntime", func() {
@@ -238,6 +238,33 @@ var _ = Describe("RuntimeReconciler", func() {
 				Fail(fmt.Sprintf("Unexpected error: %v", err))
 			}
 			Expect(supported).To(BeTrue())
+		})
+
+		It("rejects a reference dataset when physical dataset is not bound (Runtimes is empty)", func() {
+			dataset := newTestDatasetWithMounts(defaultNamespace, demoDatasetName, []datav1alpha1.Mount{{
+				MountPoint: demoPhysicalDatasetMount,
+			}})
+			// Physical dataset exists but Status.Runtimes is empty (not bound yet)
+			physicalDataset := &datav1alpha1.Dataset{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "physical-dataset",
+					Namespace: "demo",
+				},
+				Status: datav1alpha1.DatasetStatus{
+					Runtimes: []datav1alpha1.Runtime{}, // Empty - not bound to any runtime
+				},
+			}
+			r := newTestRuntimeReconciler(dataset, physicalDataset)
+
+			supported, err := r.CheckIfReferenceDatasetIsSupported(cruntime.ReconcileRequestContext{
+				Dataset:     dataset,
+				RuntimeType: common.ThinRuntime,
+				Client:      r.Client,
+			})
+
+			Expect(err).To(HaveOccurred())
+			Expect(supported).To(BeFalse())
+			Expect(err.Error()).To(ContainSubstring("failed to get runtime info"))
 		})
 	})
 
