@@ -207,10 +207,11 @@ var _ = Describe("CacheEngine Transform Worker Tests", Label("pkg.ddc.cache.engi
 				Expect(value.Worker.PodTemplateSpec.Spec.Affinity.NodeAffinity.
 					RequiredDuringSchedulingIgnoredDuringExecution).NotTo(BeNil())
 
-				// Should have 2 node selector terms (one from runtimeClass, one from dataset)
+				// Should have 1 node selector terms, 2 match expressions
 				terms := value.Worker.PodTemplateSpec.Spec.Affinity.NodeAffinity.
 					RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms
-				Expect(terms).To(HaveLen(2))
+				Expect(terms).To(HaveLen(1))
+				Expect(terms[0].MatchExpressions).To(HaveLen(2))
 
 				// Verify the original runtimeClass still has only 1 term
 				originalTerms := runtimeClass.Topology.Worker.Template.Spec.Affinity.

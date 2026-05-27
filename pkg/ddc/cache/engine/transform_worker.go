@@ -173,8 +173,16 @@ func (e *CacheEngine) buildWorkerAffinity(affinity *corev1.Affinity, dataset *da
 		return
 	}
 
-	// Merge node selector terms from both
-	affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms = append(
-		affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms,
-		datasetNodeAffinity.Required.NodeSelectorTerms...)
+	// Merge node selector terms from both, a Cartesian product, example: (A or B) X (C or D) = (A and C) or (A and D) or (B and C) or (B and D)
+	existing := affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms
+	var merged []corev1.NodeSelectorTerm
+	for _, eTerm := range existing {
+		for _, dTerm := range datasetNodeAffinity.Required.NodeSelectorTerms {
+			combined := eTerm.DeepCopy()
+			combined.MatchExpressions = append(combined.MatchExpressions, dTerm.MatchExpressions...)
+			merged = append(merged, *combined)
+		}
+	}
+	affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms = merged
+
 }
