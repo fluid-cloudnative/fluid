@@ -160,7 +160,7 @@ func (r *RuntimeReconciler) ReconcileInternal(ctx cruntime.ReconcileRequestConte
 		isSupport, err := r.CheckIfReferenceDatasetIsSupported(ctx)
 		if !isSupport {
 			ctx.Log.Info(err.Error(), "dataset", dataset.Name)
-			r.Recorder.Eventf(runtime, corev1.EventTypeWarning, common.ErrorProcessRuntimeReason, err.Error())
+			r.Recorder.Eventf(runtime, corev1.EventTypeWarning, common.ErrorProcessRuntimeReason, "fail to check runtime support for thin runtime, error: %s", err.Error())
 			return utils.RequeueAfterInterval(time.Duration(20 * time.Second))
 		}
 
