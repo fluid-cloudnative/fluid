@@ -270,7 +270,6 @@ func (s *AdvancedStatefulSetManager) updateImage(asts *workloadv1alpha1.Advanced
 		return false
 	}
 
-	// TODO: 之前的镜像如何决定的。。。是否会触发强制更新（如之前用的 runtimeclass ）
 	// Build new image: directly concatenate image and imageTag
 	newImage := version.Image + ":" + version.ImageTag
 
