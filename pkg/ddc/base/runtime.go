@@ -212,6 +212,7 @@ func WithMetadataList(metadataList []datav1alpha1.Metadata) RuntimeInfoOption {
 	}
 }
 
+// GetMetadataList returns the metadata list of the runtime
 func (info *RuntimeInfo) GetMetadataList() []datav1alpha1.Metadata {
 	return info.metadataList
 }
