@@ -154,6 +154,8 @@ func TestAlluxioFileUtils_ReportSummary(t *testing.T) {
 	}
 }
 
+// TestAlluxioFileUtils_LoadMetadataWithoutTimeout tests LoadMetadataWithoutTimeout
+// by mocking the internal exec behavior to cover both failure and success cases.
 func TestAlluxioFileUtils_LoadMetadataWithoutTimeout(t *testing.T) {
 	ExecWithoutTimeoutCommon := func(a AlluxioFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
 		return "Alluxio cluster summary", "", nil
