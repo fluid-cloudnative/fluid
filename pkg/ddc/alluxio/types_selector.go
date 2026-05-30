@@ -67,7 +67,16 @@ type NodeAffinity struct {
 	// +optional
 	RequiredDuringSchedulingIgnoredDuringExecution *NodeSelector `json:"requiredDuringSchedulingIgnoredDuringExecution"`
 }
-
+// translateCacheToNodeAffinity converts a CacheableNodeAffinity into an Alluxio NodeAffinity.
+// It returns nil when the input affinity or its required scheduling rule is not specified.
+// For each required node selector term, it copies the match expressions into the Alluxio
+// node affinity model while preserving selector keys, operators, and values.
+//
+// Parameters:
+//   - dataAffinity: the cacheable node affinity configuration to translate.
+//
+// Returns:
+//   - nodeAffinity: the translated Alluxio node affinity, or nil if no required affinity is configured.
 func translateCacheToNodeAffinity(dataAffinity *datav1alpha1.CacheableNodeAffinity) (nodeAffinity *NodeAffinity) {
 	nodeAffinity = nil
 	if dataAffinity == nil || dataAffinity.Required == nil {
