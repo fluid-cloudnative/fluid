@@ -84,6 +84,17 @@ func TestLoadMetaData(t *testing.T) {
 	}
 }
 
+// TestAlluxioFileUtils_Du tests the Du method of AlluxioFileUtils.
+// It verifies the method's ability to parse the output of the alluxio fs du command
+// and handle various error scenarios such as execution errors, too many lines,
+// data number mismatches, and parse errors.
+//
+// Test cases:
+// - EXEC_ERR: Tests handling of command execution errors.
+// - TOO_MANY_LINES: Tests handling of output with too many lines.
+// - DATA_NUM: Tests handling of mismatched data numbers.
+// - PARSE_ERR: Tests handling of parse errors.
+// - FINE: Tests successful parsing of du output.
 func TestAlluxioFileUtils_Du(t *testing.T) {
 	out1, out2, out3 := 111, 222, "%233"
 	mockExec := func(ctx context.Context, p1, p2, p3 string, p4 []string) (stdout string, stderr string, e error) {
