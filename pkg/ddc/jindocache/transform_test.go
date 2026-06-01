@@ -28,6 +28,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base/portallocator"
+	jindocommon "github.com/fluid-cloudnative/fluid/pkg/ddc/jindo"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	corev1 "k8s.io/api/core/v1"
@@ -1004,8 +1005,8 @@ func TestTransformLogConfigWithBucketSecretPaths(t *testing.T) {
 	if got := value.FuseLogConfig["fs.oss.provider.endpoint"]; got != "secrets:///token/" {
 		t.Fatalf("expected generic oss provider endpoint, got %q", got)
 	}
-	if got := value.FuseLogConfig["fs.oss.provider.format"]; got != jindoSecretProviderFormat {
-		t.Fatalf("expected generic oss provider format %q, got %q", jindoSecretProviderFormat, got)
+	if got := value.FuseLogConfig["fs.oss.provider.format"]; got != jindocommon.SecretProviderFormat {
+		t.Fatalf("expected generic oss provider format %q, got %q", jindocommon.SecretProviderFormat, got)
 	}
 	if got := value.FuseLogConfig["fs.oss.endpoint"]; got != "oss-cn-shanghai.aliyuncs.com" {
 		t.Fatalf("expected generic fuse log endpoint, got %q", got)
@@ -1767,8 +1768,8 @@ func TestJindoCacheEngine_transformMasterWithMultipleOSSEncryptOptions(t *testin
 	if got := value.Master.TokenProperties["jindocache.oss.bucket.bucket-a.provider.endpoint"]; got != "secrets:///token/bucket-a/" {
 		t.Fatalf("expected bucket-a token provider endpoint, got %q", got)
 	}
-	if got := value.Master.TokenProperties["jindocache.oss.bucket.bucket-a.provider.format"]; got != jindoSecretProviderFormat {
-		t.Fatalf("expected bucket-a token provider format %q, got %q", jindoSecretProviderFormat, got)
+	if got := value.Master.TokenProperties["jindocache.oss.bucket.bucket-a.provider.format"]; got != jindocommon.SecretProviderFormat {
+		t.Fatalf("expected bucket-a token provider format %q, got %q", jindocommon.SecretProviderFormat, got)
 	}
 	if got := value.Master.TokenProperties["jindocache.oss.bucket.bucket-b.provider.endpoint"]; got != "secrets:///token/bucket-b/" {
 		t.Fatalf("expected bucket-b token provider endpoint, got %q", got)
@@ -1779,8 +1780,8 @@ func TestJindoCacheEngine_transformMasterWithMultipleOSSEncryptOptions(t *testin
 	if got := value.Fuse.FuseProperties["fs.oss.provider.endpoint"]; got != "secrets:///token/" {
 		t.Fatalf("expected generic fuse provider endpoint, got %q", got)
 	}
-	if got := value.Fuse.FuseProperties["fs.oss.provider.format"]; got != jindoSecretProviderFormat {
-		t.Fatalf("expected generic fuse provider format %q, got %q", jindoSecretProviderFormat, got)
+	if got := value.Fuse.FuseProperties["fs.oss.provider.format"]; got != jindocommon.SecretProviderFormat {
+		t.Fatalf("expected generic fuse provider format %q, got %q", jindocommon.SecretProviderFormat, got)
 	}
 	if got := value.Fuse.FuseProperties["fs.oss.endpoint"]; got != "oss-cn-shanghai.aliyuncs.com" {
 		t.Fatalf("expected generic fuse endpoint, got %q", got)
@@ -1788,8 +1789,8 @@ func TestJindoCacheEngine_transformMasterWithMultipleOSSEncryptOptions(t *testin
 	if got := value.Fuse.FuseProperties["aliyun.oss.bucket.bucket-a.provider.url"]; got != "secrets:///token/bucket-a/" {
 		t.Fatalf("expected bucket-a fuse provider url, got %q", got)
 	}
-	if got := value.Fuse.FuseProperties["fs.oss.bucket.bucket-b.credentials.provider"]; got != jindoOSSCredentialsProvider {
-		t.Fatalf("expected bucket-b fuse credentials provider %q, got %q", jindoOSSCredentialsProvider, got)
+	if got := value.Fuse.FuseProperties["fs.oss.bucket.bucket-b.credentials.provider"]; got != jindocommon.OSSCredentialsProvider {
+		t.Fatalf("expected bucket-b fuse credentials provider %q, got %q", jindocommon.OSSCredentialsProvider, got)
 	}
 }
 

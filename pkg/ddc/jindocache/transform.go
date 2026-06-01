@@ -32,6 +32,7 @@ import (
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base/portallocator"
+	jindocommon "github.com/fluid-cloudnative/fluid/pkg/ddc/jindo"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/docker"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/transformer"
@@ -46,103 +47,8 @@ type smartdataConfig struct {
 }
 
 const (
-	jindoOSSCredentialsProvider = "com.aliyun.jindodata.oss.auth.CustomCredentialsProvider"
-	jindoSecretProviderFormat   = "JSON"
-	jindoSecretMountPath        = "/token"
-	jindoCacheOSSBucketPrefix   = "jindocache.oss.bucket."
-	jindoAccessKeyIDSuffix      = ".accessKeyId"
-	jindoAccessKeySecretSuffix  = ".accessKeySecret"
-	jindoEndpointSuffix         = ".endpoint"
-	jindoDLSStorageEnableSuffix = ".data.lake.storage.enable"
+	jindoCacheOSSBucketPrefix = "jindocache.oss.bucket."
 )
-
-func buildBucketSecretURI(bucketName string) string {
-	return fmt.Sprintf("secrets://%s/%s/", jindoSecretMountPath, bucketName)
-}
-
-func validateSecretKeyRef(secretKeyRef datav1alpha1.SecretKeySelector, optionName, mountPoint string) error {
-	if secretKeyRef.Name == "" || secretKeyRef.Key == "" {
-		return fmt.Errorf("encryptOption %s for mount %s must reference both secret name and key", optionName, mountPoint)
-	}
-
-	return nil
-}
-
-func getSecretDataValue(secret *corev1.Secret, secretName, secretKey string) (string, error) {
-	value, ok := secret.Data[secretKey]
-	if !ok {
-		return "", fmt.Errorf("secret %s does not contain key %s", secretName, secretKey)
-	}
-
-	return string(value), nil
-}
-
-func appendSecretProjection(projections []corev1.SecretProjection, secretName, secretKey, itemPath string) ([]corev1.SecretProjection, error) {
-	for i, projection := range projections {
-		for _, item := range projection.Items {
-			if item.Path != itemPath {
-				continue
-			}
-			if projection.Name == secretName && item.Key == secretKey {
-				return projections, nil
-			}
-			return nil, fmt.Errorf("conflicting secret projection for %s", itemPath)
-		}
-		if projection.Name == secretName {
-			projections[i].Items = append(projections[i].Items, corev1.KeyToPath{
-				Key:  secretKey,
-				Path: itemPath,
-			})
-			return projections, nil
-		}
-	}
-
-	return append(projections, corev1.SecretProjection{
-		LocalObjectReference: corev1.LocalObjectReference{
-			Name: secretName,
-		},
-		Items: []corev1.KeyToPath{{
-			Key:  secretKey,
-			Path: itemPath,
-		}},
-	}), nil
-}
-
-func setBucketSecretProviderProperties(properties map[string]string, prefix, bucketName, secretURI string) {
-	properties[fmt.Sprintf("%s.oss.bucket.%s.credentials.provider", prefix, bucketName)] = jindoOSSCredentialsProvider
-	properties[fmt.Sprintf("%s.oss.bucket.%s.provider.endpoint", prefix, bucketName)] = secretURI
-	properties[fmt.Sprintf("%s.oss.bucket.%s.provider.format", prefix, bucketName)] = jindoSecretProviderFormat
-}
-
-func buildBucketPropertyKey(prefix, bucketName, suffix string) string {
-	return prefix + bucketName + suffix
-}
-
-func extractSingleOSSEndpoint(properties map[string]string, prefix string) (string, bool) {
-	var endpoint string
-	for key, value := range properties {
-		if !strings.HasPrefix(key, prefix) || !strings.HasSuffix(key, jindoEndpointSuffix) {
-			continue
-		}
-		if endpoint == "" {
-			endpoint = value
-			continue
-		}
-		if endpoint != value {
-			return "", false
-		}
-	}
-	return endpoint, endpoint != ""
-}
-
-func parseOSSMountBucket(mountPoint string) (string, error) {
-	bucket, _, _ := strings.Cut(strings.TrimPrefix(mountPoint, "oss://"), "/")
-	if bucket == "" {
-		return "", fmt.Errorf("incorrect oss mountPoint with %v, please check your path is dir or file ", mountPoint)
-	}
-
-	return bucket, nil
-}
 
 func (e *JindoCacheEngine) transform(runtime *datav1alpha1.JindoRuntime) (value *Jindo, err error) {
 	if runtime == nil {
@@ -509,7 +415,7 @@ func (e *JindoCacheEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, m
 		mountType := "oss"
 		ossBucketName := ""
 		if strings.HasPrefix(mount.MountPoint, "oss://") {
-			ossBucketName, err = parseOSSMountBucket(mount.MountPoint)
+			ossBucketName, err = jindocommon.ParseOSSMountBucket(mount.MountPoint)
 			if err != nil {
 				e.Log.Error(err, "mount.MountPoint", mount.MountPoint)
 				return err
@@ -519,9 +425,9 @@ func (e *JindoCacheEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, m
 				e.Log.Error(err, "oss endpoint can not be null")
 				return err
 			}
-			propertiesFileStore[buildBucketPropertyKey(jindoCacheOSSBucketPrefix, ossBucketName, jindoEndpointSuffix)] = mount.Options["fs.oss.endpoint"]
+			propertiesFileStore[jindocommon.BuildBucketPropertyKey(jindoCacheOSSBucketPrefix, ossBucketName, jindocommon.EndpointSuffix)] = mount.Options["fs.oss.endpoint"]
 			if strings.Contains(mount.Options["fs.oss.endpoint"], "dls") {
-				propertiesFileStore[buildBucketPropertyKey(jindoCacheOSSBucketPrefix, ossBucketName, jindoDLSStorageEnableSuffix)] = "true"
+				propertiesFileStore[jindocommon.BuildBucketPropertyKey(jindoCacheOSSBucketPrefix, ossBucketName, jindocommon.DLSStorageEnableSuffix)] = "true"
 			}
 
 			hasOSSAccessKeyIDRef := false
@@ -539,11 +445,15 @@ func (e *JindoCacheEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, m
 				e.Log.Error(err, "mount.MountPoint", mount.MountPoint)
 				return err
 			}
+			if (!hasOSSAccessKeyIDRef && mount.Options["fs.oss.accessKeyId"] != "") ||
+				(!hasOSSAccessKeySecretRef && mount.Options["fs.oss.accessKeySecret"] != "") {
+				e.Log.Info(jindocommon.PlaintextCredentialWarning, "bucket", ossBucketName, "source", "mountOptions")
+			}
 			if !hasOSSAccessKeyIDRef && mount.Options["fs.oss.accessKeyId"] != "" {
-				propertiesFileStore[buildBucketPropertyKey(jindoCacheOSSBucketPrefix, ossBucketName, jindoAccessKeyIDSuffix)] = mount.Options["fs.oss.accessKeyId"]
+				propertiesFileStore[jindocommon.BuildBucketPropertyKey(jindoCacheOSSBucketPrefix, ossBucketName, jindocommon.AccessKeyIDSuffix)] = mount.Options["fs.oss.accessKeyId"]
 			}
 			if !hasOSSAccessKeySecretRef && mount.Options["fs.oss.accessKeySecret"] != "" {
-				propertiesFileStore[buildBucketPropertyKey(jindoCacheOSSBucketPrefix, ossBucketName, jindoAccessKeySecretSuffix)] = mount.Options["fs.oss.accessKeySecret"]
+				propertiesFileStore[jindocommon.BuildBucketPropertyKey(jindoCacheOSSBucketPrefix, ossBucketName, jindocommon.AccessKeySecretSuffix)] = mount.Options["fs.oss.accessKeySecret"]
 			}
 		}
 
@@ -597,7 +507,7 @@ func (e *JindoCacheEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, m
 		for _, encryptOption := range mount.EncryptOptions {
 			key := encryptOption.Name
 			secretKeyRef := encryptOption.ValueFrom.SecretKeyRef
-			if err = validateSecretKeyRef(secretKeyRef, key, mount.MountPoint); err != nil {
+			if err = jindocommon.ValidateSecretKeyRef(secretKeyRef, key, mount.MountPoint); err != nil {
 				e.Log.Error(err, "invalid encryptOption secret reference", "key", key, "mountPoint", mount.MountPoint)
 				return err
 			}
@@ -611,12 +521,12 @@ func (e *JindoCacheEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, m
 						itemPath = ossBucketName + "/AccessKeySecret"
 					}
 					if itemPath != "" {
-						secretURI := buildBucketSecretURI(ossBucketName)
+						secretURI := jindocommon.BuildBucketSecretURI(ossBucketName)
 						if value.BucketSecretPaths == nil {
 							value.BucketSecretPaths = map[string]string{}
 						}
 						value.BucketSecretPaths[ossBucketName] = secretURI
-						value.SecretProjections, err = appendSecretProjection(value.SecretProjections, secretKeyRef.Name, secretKeyRef.Key, itemPath)
+						value.SecretProjections, err = jindocommon.AppendSecretProjection(value.SecretProjections, secretKeyRef.Name, secretKeyRef.Key, itemPath)
 						if err != nil {
 							return err
 						}
@@ -630,16 +540,17 @@ func (e *JindoCacheEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, m
 					e.Log.Error(err, "can't get the input secret from dataset", "secretName", secretKeyRef.Name)
 					return err
 				}
-				secretValue, err := getSecretDataValue(secret, secretKeyRef.Name, secretKeyRef.Key)
+				secretValue, err := jindocommon.GetSecretDataValue(secret, secretKeyRef.Name, secretKeyRef.Key)
 				if err != nil {
 					e.Log.Error(err, "missing key in referenced secret", "secretName", secretKeyRef.Name, "key", key)
 					return err
 				}
+				e.Log.Info(jindocommon.PlaintextCredentialWarning, "bucket", ossBucketName, "source", "secret", "secretName", secretKeyRef.Name, "key", key)
 				if key == "fs.oss.accessKeyId" {
-					propertiesFileStore[buildBucketPropertyKey(jindoCacheOSSBucketPrefix, ossBucketName, jindoAccessKeyIDSuffix)] = secretValue
+					propertiesFileStore[jindocommon.BuildBucketPropertyKey(jindoCacheOSSBucketPrefix, ossBucketName, jindocommon.AccessKeyIDSuffix)] = secretValue
 				}
 				if key == "fs.oss.accessKeySecret" {
-					propertiesFileStore[buildBucketPropertyKey(jindoCacheOSSBucketPrefix, ossBucketName, jindoAccessKeySecretSuffix)] = secretValue
+					propertiesFileStore[jindocommon.BuildBucketPropertyKey(jindoCacheOSSBucketPrefix, ossBucketName, jindocommon.AccessKeySecretSuffix)] = secretValue
 				}
 				e.Log.Info("Get OSS bucket credential from Secret successfully", "bucket", ossBucketName, "secretName", secretKeyRef.Name, "key", key)
 				continue
@@ -660,7 +571,7 @@ func (e *JindoCacheEngine) transformMaster(runtime *datav1alpha1.JindoRuntime, m
 					e.Log.Error(err, "can't get the input secret from dataset", "secretName", secretKeyRef.Name)
 					return err
 				}
-				secretValue, err := getSecretDataValue(secret, secretKeyRef.Name, secretKeyRef.Key)
+				secretValue, err := jindocommon.GetSecretDataValue(secret, secretKeyRef.Name, secretKeyRef.Key)
 				if err != nil {
 					e.Log.Error(err, "missing key in referenced secret", "secretName", secretKeyRef.Name, "key", key)
 					return err
@@ -821,22 +732,22 @@ func (e *JindoCacheEngine) transformFuse(runtime *datav1alpha1.JindoRuntime, val
 	}
 	// set secret
 	if len(value.Secret) != 0 {
-		properties["fs."+value.MountType+".credentials.provider"] = jindoOSSCredentialsProvider
+		properties["fs."+value.MountType+".credentials.provider"] = jindocommon.OSSCredentialsProvider
 		properties["aliyun."+value.MountType+".provider.url"] = "secrets:///token/"
 		properties["fs."+value.MountType+".provider.endpoint"] = "secrets:///token/"
-		properties["fs."+value.MountType+".provider.format"] = jindoSecretProviderFormat
+		properties["fs."+value.MountType+".provider.format"] = jindocommon.SecretProviderFormat
 	}
 	if len(value.BucketSecretPaths) != 0 {
-		properties["fs."+value.MountType+".credentials.provider"] = jindoOSSCredentialsProvider
+		properties["fs."+value.MountType+".credentials.provider"] = jindocommon.OSSCredentialsProvider
 		properties["aliyun."+value.MountType+".provider.url"] = "secrets:///token/"
 		properties["fs."+value.MountType+".provider.endpoint"] = "secrets:///token/"
-		properties["fs."+value.MountType+".provider.format"] = jindoSecretProviderFormat
+		properties["fs."+value.MountType+".provider.format"] = jindocommon.SecretProviderFormat
 	}
 	for bucketName, secretURI := range value.BucketSecretPaths {
-		setBucketSecretProviderProperties(properties, "fs", bucketName, secretURI)
+		jindocommon.SetBucketSecretProviderProperties(properties, "fs", bucketName, secretURI)
 		properties["aliyun.oss.bucket."+bucketName+".provider.url"] = secretURI
 	}
-	if endpoint, ok := extractSingleOSSEndpoint(value.Master.FileStoreProperties, jindoCacheOSSBucketPrefix); ok {
+	if endpoint, ok := jindocommon.ExtractSingleOSSEndpoint(value.Master.FileStoreProperties, jindoCacheOSSBucketPrefix); ok {
 		properties["fs.oss.endpoint"] = endpoint
 		properties["jindocache.oss.endpoint"] = endpoint
 		properties["aliyun.oss.endpoint"] = endpoint
@@ -933,15 +844,15 @@ func (e *JindoCacheEngine) transformLogConfig(runtime *datav1alpha1.JindoRuntime
 	if len(value.BucketSecretPaths) != 0 {
 		fuseProperties["aliyun.oss.provider.url"] = "secrets:///token/"
 		fuseProperties["fs.oss.provider.endpoint"] = "secrets:///token/"
-		fuseProperties["fs.oss.provider.format"] = jindoSecretProviderFormat
+		fuseProperties["fs.oss.provider.format"] = jindocommon.SecretProviderFormat
 		for bucketName, secretURI := range value.BucketSecretPaths {
-			setBucketSecretProviderProperties(fuseProperties, "fs", bucketName, secretURI)
+			jindocommon.SetBucketSecretProviderProperties(fuseProperties, "fs", bucketName, secretURI)
 			fuseProperties["aliyun.oss.bucket."+bucketName+".provider.url"] = secretURI
-			if endpoint, ok := value.Master.FileStoreProperties[buildBucketPropertyKey(jindoCacheOSSBucketPrefix, bucketName, jindoEndpointSuffix)]; ok {
+			if endpoint, ok := value.Master.FileStoreProperties[jindocommon.BuildBucketPropertyKey(jindoCacheOSSBucketPrefix, bucketName, jindocommon.EndpointSuffix)]; ok {
 				fuseProperties["fs.oss.bucket."+bucketName+".endpoint"] = endpoint
 			}
 		}
-		if endpoint, ok := extractSingleOSSEndpoint(value.Master.FileStoreProperties, jindoCacheOSSBucketPrefix); ok {
+		if endpoint, ok := jindocommon.ExtractSingleOSSEndpoint(value.Master.FileStoreProperties, jindoCacheOSSBucketPrefix); ok {
 			fuseProperties["fs.oss.endpoint"] = endpoint
 			fuseProperties["aliyun.oss.endpoint"] = endpoint
 		}
@@ -1149,12 +1060,12 @@ func (e *JindoCacheEngine) transformToken(value *Jindo) {
 	if len(value.BucketSecretPaths) != 0 {
 		properties["default.credential.provider"] = "secrets:///token/"
 		properties["jindocache."+value.MountType+".provider.endpoint"] = "secrets:///token/"
-		properties["jindocache."+value.MountType+".provider.format"] = jindoSecretProviderFormat
+		properties["jindocache."+value.MountType+".provider.format"] = jindocommon.SecretProviderFormat
 	}
 	for bucketName, secretURI := range value.BucketSecretPaths {
-		setBucketSecretProviderProperties(properties, "jindocache", bucketName, secretURI)
+		jindocommon.SetBucketSecretProviderProperties(properties, "jindocache", bucketName, secretURI)
 	}
-	if endpoint, ok := extractSingleOSSEndpoint(value.Master.FileStoreProperties, jindoCacheOSSBucketPrefix); ok {
+	if endpoint, ok := jindocommon.ExtractSingleOSSEndpoint(value.Master.FileStoreProperties, jindoCacheOSSBucketPrefix); ok {
 		properties["jindocache.oss.endpoint"] = endpoint
 	}
 	value.Master.TokenProperties = properties
