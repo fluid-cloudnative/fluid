@@ -314,18 +314,90 @@ var _ = Describe("CronStatusHandler", func() {
 })
 
 var _ = Describe("OnEventStatusHandler", func() {
-	It("GetOperationStatus returns nil result and nil error (stub)", func() {
-		testScheme := runtime.NewScheme()
-		Expect(v1alpha1.AddToScheme(testScheme)).To(Succeed())
-		dataload := &v1alpha1.DataLoad{
-			ObjectMeta: v1.ObjectMeta{Name: dataLoadName, Namespace: defaultNamespace},
-		}
-		c := fake.NewFakeClientWithScheme(testScheme, dataload)
-		handler := &OnEventStatusHandler{Client: c, dataLoad: dataload}
-		ctx := cruntime.ReconcileRequestContext{Log: fake.NullLogger()}
+	var (
+		testScheme   *runtime.Scheme
+		mockDataload v1alpha1.DataLoad
+	)
 
-		result, err := handler.GetOperationStatus(ctx, &dataload.Status)
+	BeforeEach(func() {
+		testScheme = runtime.NewScheme()
+		Expect(v1alpha1.AddToScheme(testScheme)).To(Succeed())
+		Expect(batchv1.AddToScheme(testScheme)).To(Succeed())
+
+		mockDataload = v1alpha1.DataLoad{
+			ObjectMeta: v1.ObjectMeta{
+				Name:      dataLoadName,
+				Namespace: defaultNamespace,
+			},
+			Status: v1alpha1.OperationStatus{
+				Phase: common.PhasePending,
+			},
+		}
+	})
+
+	DescribeTable("GetOperationStatus",
+		func(job batchv1.Job, expectedPhase common.Phase, expectedConditionType common.ConditionType) {
+			client := fake.NewFakeClientWithScheme(testScheme, &mockDataload, &job)
+			handler := &OnEventStatusHandler{Client: client, dataLoad: &mockDataload}
+			ctx := cruntime.ReconcileRequestContext{
+				NamespacedName: types.NamespacedName{Namespace: defaultNamespace, Name: ""},
+				Log:            fake.NullLogger(),
+			}
+
+			opStatus, err := handler.GetOperationStatus(ctx, &mockDataload.Status)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(opStatus).NotTo(BeNil())
+			Expect(opStatus.Phase).To(Equal(expectedPhase))
+			Expect(opStatus.Conditions).To(HaveLen(1))
+			Expect(opStatus.Conditions[0].Type).To(Equal(expectedConditionType))
+			Expect(opStatus.Duration).NotTo(BeEmpty())
+		},
+		Entry("job success yields PhaseComplete",
+			batchv1.Job{
+				ObjectMeta: v1.ObjectMeta{Name: loaderJobName, Namespace: defaultNamespace},
+				Status: batchv1.JobStatus{
+					Conditions: []batchv1.JobCondition{{
+						Type:               batchv1.JobComplete,
+						LastProbeTime:      v1.NewTime(time.Now()),
+						LastTransitionTime: v1.NewTime(time.Now()),
+					}},
+				},
+			},
+			common.PhaseComplete,
+			common.Complete,
+		),
+		Entry("job failed yields PhaseFailed",
+			batchv1.Job{
+				ObjectMeta: v1.ObjectMeta{Name: loaderJobName, Namespace: defaultNamespace},
+				Status: batchv1.JobStatus{
+					Conditions: []batchv1.JobCondition{{
+						Type:               batchv1.JobFailed,
+						LastProbeTime:      v1.NewTime(time.Now()),
+						LastTransitionTime: v1.NewTime(time.Now()),
+					}},
+				},
+			},
+			common.PhaseFailed,
+			common.Failed,
+		),
+	)
+
+	It("returns unchanged status when job is still running", func() {
+		runningJob := batchv1.Job{
+			ObjectMeta: v1.ObjectMeta{Name: loaderJobName, Namespace: defaultNamespace},
+			Status:     batchv1.JobStatus{},
+		}
+		client := fake.NewFakeClientWithScheme(testScheme, &mockDataload, &runningJob)
+		handler := &OnEventStatusHandler{Client: client, dataLoad: &mockDataload}
+		ctx := cruntime.ReconcileRequestContext{
+			NamespacedName: types.NamespacedName{Namespace: defaultNamespace, Name: ""},
+			Log:            fake.NullLogger(),
+		}
+		original := mockDataload.Status.DeepCopy()
+
+		opStatus, err := handler.GetOperationStatus(ctx, &mockDataload.Status)
 		Expect(err).NotTo(HaveOccurred())
-		Expect(result).To(BeNil())
+		Expect(opStatus).NotTo(BeNil())
+		Expect(*opStatus).To(Equal(*original))
 	})
 })

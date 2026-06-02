@@ -213,6 +213,54 @@ func (c *CronStatusHandler) GetOperationStatus(ctx cruntime.ReconcileRequestCont
 }
 
 func (o *OnEventStatusHandler) GetOperationStatus(ctx cruntime.ReconcileRequestContext, opStatus *datav1alpha1.OperationStatus) (result *datav1alpha1.OperationStatus, err error) {
-	//TODO implement me
-	return nil, nil
+	result = opStatus.DeepCopy()
+	object := o.dataMigrate
+	releaseName := utils.GetDataMigrateReleaseName(object.GetName())
+	jobName := utils.GetDataMigrateJobName(releaseName)
+	job, err := kubeclient.GetJob(o.Client, jobName, object.GetNamespace())
+
+	if err != nil {
+		if utils.IgnoreNotFound(err) == nil {
+			ctx.Log.Info("Related Job missing, will delete helm chart and retry", "namespace", ctx.Namespace, "jobName", jobName)
+			if err = helm.DeleteReleaseIfExists(releaseName, ctx.Namespace); err != nil {
+				o.Log.Error(err, "can't delete DataMigrate release", "namespace", ctx.Namespace, "releaseName", releaseName)
+				return
+			}
+			return
+		}
+		ctx.Log.Error(err, "can't get DataMigrate job", "namespace", ctx.Namespace, "jobName", jobName)
+		return
+	}
+
+	finishedJobCondition := kubeclient.GetFinishedJobCondition(job)
+	if finishedJobCondition == nil {
+		ctx.Log.V(1).Info("DataMigrate job still running", "namespace", ctx.Namespace, "jobName", jobName)
+		return
+	}
+
+	isJobSucceed := finishedJobCondition.Type == batchv1.JobComplete
+	if o.dataMigrate.Spec.Parallelism == 1 && result.NodeAffinity == nil && isJobSucceed {
+		result.NodeAffinity, err = dataflow.GenerateNodeAffinity(job)
+		if err != nil {
+			return nil, errors.Wrap(err, "error to generate the node labels")
+		}
+	}
+
+	result.Conditions = []datav1alpha1.Condition{
+		{
+			Type:               common.ConditionType(finishedJobCondition.Type),
+			Status:             finishedJobCondition.Status,
+			Reason:             finishedJobCondition.Reason,
+			Message:            finishedJobCondition.Message,
+			LastProbeTime:      finishedJobCondition.LastProbeTime,
+			LastTransitionTime: finishedJobCondition.LastTransitionTime,
+		},
+	}
+	if isJobSucceed {
+		result.Phase = common.PhaseComplete
+	} else {
+		result.Phase = common.PhaseFailed
+	}
+	result.Duration = utils.CalculateDuration(job.CreationTimestamp.Time, finishedJobCondition.LastTransitionTime.Time)
+	return
 }
