@@ -515,6 +515,7 @@ func (a AlluxioFileUtils) Mkdir(alluxioPath string) (err error) {
 	return
 }
 
+// Du returns UFS size, cached size, and cache percentage for a path by running `alluxio fs du -s`.
 func (a AlluxioFileUtils) Du(alluxioPath string) (ufs int64, cached int64, cachedPercentage string, err error) {
 	var (
 		command = []string{"alluxio", "fs", "du", "-s", alluxioPath}
