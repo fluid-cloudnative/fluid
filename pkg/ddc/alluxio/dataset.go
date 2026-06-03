@@ -144,6 +144,7 @@ func (e *AlluxioEngine) UpdateDatasetStatus(phase datav1alpha1.DatasetPhase) (er
 	return
 }
 
+// BindToDataset binds the dataset to the Alluxio runtime by updating the dataset phase to Bound.
 func (e *AlluxioEngine) BindToDataset() (err error) {
 	return e.UpdateDatasetStatus(datav1alpha1.BoundDatasetPhase)
 }
