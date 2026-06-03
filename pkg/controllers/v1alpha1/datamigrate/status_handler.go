@@ -223,7 +223,7 @@ func (o *OnEventStatusHandler) GetOperationStatus(ctx cruntime.ReconcileRequestC
 		if utils.IgnoreNotFound(err) == nil {
 			ctx.Log.Info("Related Job missing, will delete helm chart and retry", "namespace", ctx.Namespace, "jobName", jobName)
 			if err = helm.DeleteReleaseIfExists(releaseName, ctx.Namespace); err != nil {
-				o.Log.Error(err, "can't delete DataMigrate release", "namespace", ctx.Namespace, "releaseName", releaseName)
+				ctx.Log.Error(err, "can't delete DataMigrate release", "namespace", ctx.Namespace, "releaseName", releaseName)
 				return
 			}
 			return
