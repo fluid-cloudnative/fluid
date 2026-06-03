@@ -18,6 +18,8 @@ package watch
 
 import (
 	"context"
+
+	"github.com/fluid-cloudnative/advanced-statefulset/api/workload/v1alpha1"
 	appsv1 "k8s.io/api/apps/v1"
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
@@ -111,6 +113,51 @@ func SetupWatcherForReconcilerWithDataset(mgr ctrl.Manager, options controller.O
 			log.Error(err, "Failed to watch Dataset")
 			return err
 		}
+	}
+
+	return
+}
+
+func SetupWatcherForCacheRuntimeReconciler(mgr ctrl.Manager, options controller.Options, r Controller) (err error) {
+	options.Reconciler = r
+	c, err := controller.New(r.ControllerName(), mgr, options)
+	if err != nil {
+		return err
+	}
+
+	runtimeEventHandler := &runtimeEventHandler{}
+	err = c.Watch(source.Kind(mgr.GetCache(), r.ManagedResource()), &handler.EnqueueRequestForObject{}, predicate.Funcs{
+		CreateFunc: runtimeEventHandler.onCreateFunc(r),
+		UpdateFunc: runtimeEventHandler.onUpdateFunc(r),
+		DeleteFunc: runtimeEventHandler.onDeleteFunc(r),
+	})
+	if err != nil {
+		log.Error(err, "Failed to watch JindoRuntime")
+		return err
+	}
+
+	astHandler := &statefulsetEventHandler{}
+	err = c.Watch(source.Kind(mgr.GetCache(), &v1alpha1.AdvancedStatefulSet{}),
+		handler.EnqueueRequestForOwner(mgr.GetScheme(), mgr.GetRESTMapper(), r.ManagedResource(), handler.OnlyControllerOwner()),
+		predicate.Funcs{
+			CreateFunc: astHandler.onCreateFunc(r),
+			UpdateFunc: astHandler.onUpdateFunc(r),
+			DeleteFunc: astHandler.onDeleteFunc(r),
+		})
+	if err != nil {
+		return err
+	}
+
+	daemonsetEventHandler := &daemonsetEventHandler{}
+	err = c.Watch(source.Kind(mgr.GetCache(), &appsv1.DaemonSet{}),
+		handler.EnqueueRequestForOwner(mgr.GetScheme(), mgr.GetRESTMapper(), r.ManagedResource(), handler.OnlyControllerOwner()),
+		predicate.Funcs{
+			CreateFunc: daemonsetEventHandler.onCreateFunc(r),
+			UpdateFunc: daemonsetEventHandler.onUpdateFunc(r),
+			DeleteFunc: daemonsetEventHandler.onDeleteFunc(r),
+		})
+	if err != nil {
+		return err
 	}
 
 	return
