@@ -201,6 +201,7 @@ func (o *OnEventStatusHandler) GetOperationStatus(ctx cruntime.ReconcileRequestC
 				ctx.Log.Error(err, "can't delete dataload release", "namespace", ctx.Namespace, "releaseName", releaseName)
 				return
 			}
+			return
 		}
 		ctx.Log.Error(err, "can't get dataload job", "namespace", ctx.Namespace, "jobName", jobName)
 		return
