@@ -1,5 +1,5 @@
 /*
-Copyright 2026 The Fluid Authors.
+Copyright 2023 The Fluid Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -613,5 +613,30 @@ var _ = Describe("OnEventStatusHandler", func() {
 		Expect(err).NotTo(HaveOccurred())
 		Expect(opStatus).NotTo(BeNil())
 		Expect(*opStatus).To(Equal(*original))
+	})
+
+	It("skips NodeAffinity generation when Parallelism > 1", func() {
+		mockMigrate.Spec.Parallelism = 2
+		mockMigrate.Status.NodeAffinity = nil
+		releaseName := utils.GetDataMigrateReleaseName(mockMigrate.Name)
+		jobName := utils.GetDataMigrateJobName(releaseName)
+		completedJob := batchv1.Job{
+			ObjectMeta: v1.ObjectMeta{Name: jobName, Namespace: "default"},
+			Status: batchv1.JobStatus{
+				Conditions: []batchv1.JobCondition{{
+					Type:               batchv1.JobComplete,
+					LastProbeTime:      v1.NewTime(time.Now()),
+					LastTransitionTime: v1.NewTime(time.Now()),
+				}},
+			},
+		}
+		c := fake.NewFakeClientWithScheme(testScheme, &mockMigrate, &completedJob)
+		handler := &OnEventStatusHandler{Client: c, Log: fake.NullLogger(), dataMigrate: &mockMigrate}
+		ctx := cruntime.ReconcileRequestContext{Log: fake.NullLogger()}
+		opStatus, err := handler.GetOperationStatus(ctx, &mockMigrate.Status)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(opStatus.Phase).To(Equal(common.PhaseComplete))
+		// NodeAffinity must not be set for parallel migrations
+		Expect(opStatus.NodeAffinity).To(BeNil())
 	})
 })

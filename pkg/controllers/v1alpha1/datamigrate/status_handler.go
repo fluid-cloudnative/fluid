@@ -221,20 +221,20 @@ func (o *OnEventStatusHandler) GetOperationStatus(ctx cruntime.ReconcileRequestC
 
 	if err != nil {
 		if utils.IgnoreNotFound(err) == nil {
-			ctx.Log.Info("Related Job missing, will delete helm chart and retry", "namespace", ctx.Namespace, "jobName", jobName)
-			if err = helm.DeleteReleaseIfExists(releaseName, ctx.Namespace); err != nil {
-				ctx.Log.Error(err, "can't delete DataMigrate release", "namespace", ctx.Namespace, "releaseName", releaseName)
+			ctx.Log.Info("Related Job missing, will delete helm chart and retry", "namespace", object.GetNamespace(), "jobName", jobName)
+			if err = helm.DeleteReleaseIfExists(releaseName, object.GetNamespace()); err != nil {
+				ctx.Log.Error(err, "can't delete DataMigrate release", "namespace", object.GetNamespace(), "releaseName", releaseName)
 				return
 			}
 			return
 		}
-		ctx.Log.Error(err, "can't get DataMigrate job", "namespace", ctx.Namespace, "jobName", jobName)
+		ctx.Log.Error(err, "can't get DataMigrate job", "namespace", object.GetNamespace(), "jobName", jobName)
 		return
 	}
 
 	finishedJobCondition := kubeclient.GetFinishedJobCondition(job)
 	if finishedJobCondition == nil {
-		ctx.Log.V(1).Info("DataMigrate job still running", "namespace", ctx.Namespace, "jobName", jobName)
+		ctx.Log.V(1).Info("DataMigrate job still running", "namespace", object.GetNamespace(), "jobName", jobName)
 		return
 	}
 
