@@ -67,6 +67,7 @@ type NodeAffinity struct {
 	// +optional
 	RequiredDuringSchedulingIgnoredDuringExecution *NodeSelector `json:"requiredDuringSchedulingIgnoredDuringExecution"`
 }
+
 // translateCacheToNodeAffinity converts a CacheableNodeAffinity into an Alluxio NodeAffinity.
 // It returns nil when the input affinity or its required scheduling rule is not specified.
 // For each required node selector term, it copies the match expressions into the Alluxio
