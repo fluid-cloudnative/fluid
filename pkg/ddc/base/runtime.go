@@ -649,7 +649,7 @@ type RuntimeStatusAccessor interface {
 // GetRuntimeStatusAccessor returns a unified status accessor for the given runtime
 func GetRuntimeStatusAccessor(client client.Client, runtimeType, name, namespace string) (RuntimeStatusAccessor, error) {
 	switch runtimeType {
-	case common.AlluxioRuntime, common.JindoRuntime, common.GooseFSRuntime,
+	case common.AlluxioRuntime, common.JindoRuntime,
 		common.JuiceFSRuntime, common.EFCRuntime, common.ThinRuntime, common.VineyardRuntime:
 		status, err := GetDDCRuntimeStatus(client, runtimeType, name, namespace)
 		if err != nil {
