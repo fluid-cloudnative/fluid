@@ -82,7 +82,7 @@ func (e *CacheEngine) createConfigMapInRuntimeClass(ctx context.Context, extraRe
 
 // create if not exists
 func (e *CacheEngine) createRuntimeValueConfigMap(ctx context.Context, runtime *datav1alpha1.CacheRuntime, owner []metav1.OwnerReference) error {
-	configMap, err := kubeclient.GetConfigmapByNameWithContext(ctx, e.Client, e.getRuntimeConfigConfigMapName(), e.namespace)
+	configMap, err := kubeclient.GetConfigmapByNameWithContext(ctx, e.Client, common.GetCacheRuntimeConfigConfigMapName(e.name), e.namespace)
 	if err != nil {
 		return err
 	}
@@ -95,7 +95,7 @@ func (e *CacheEngine) createRuntimeValueConfigMap(ctx context.Context, runtime *
 		return errors.Wrap(err, "failed to generate runtime config")
 	}
 
-	return kubeclient.CreateConfigMapWithOwnerWithContext(ctx, e.Client, e.getRuntimeConfigConfigMapName(), e.namespace, data, owner)
+	return kubeclient.CreateConfigMapWithOwnerWithContext(ctx, e.Client, common.GetCacheRuntimeConfigConfigMapName(e.name), e.namespace, data, owner)
 }
 
 // generateRuntimeConfigData generate the data in the config map for runtime config
@@ -142,7 +142,7 @@ func (e *CacheEngine) generateRuntimeConfigData(ctx context.Context, runtime *da
 	if !runtime.Spec.Master.Disabled {
 		config.Master = &common.CacheRuntimeComponentConfig{
 			Enabled:  true,
-			Name:     GetComponentName(e.name, common.ComponentTypeMaster),
+			Name:     common.GetCacheComponentName(e.name, common.ComponentTypeMaster),
 			Replicas: runtime.Spec.Master.Replicas,
 			Options: utils.UnionMapsWithOverride(
 				utils.UnionMapsWithOverride(runtimeClass.Topology.Master.Options, runtime.Spec.Options), runtime.Spec.Master.Options),
@@ -156,7 +156,7 @@ func (e *CacheEngine) generateRuntimeConfigData(ctx context.Context, runtime *da
 	if !runtime.Spec.Worker.Disabled {
 		config.Worker = &common.CacheRuntimeComponentConfig{
 			Enabled:  true,
-			Name:     GetComponentName(e.name, common.ComponentTypeWorker),
+			Name:     common.GetCacheComponentName(e.name, common.ComponentTypeWorker),
 			Replicas: runtime.Spec.Worker.Replicas,
 			Options: utils.UnionMapsWithOverride(
 				utils.UnionMapsWithOverride(runtimeClass.Topology.Worker.Options, runtime.Spec.Options), runtime.Spec.Worker.Options),
@@ -170,7 +170,7 @@ func (e *CacheEngine) generateRuntimeConfigData(ctx context.Context, runtime *da
 	if !runtime.Spec.Client.Disabled {
 		config.Client = &common.CacheRuntimeComponentConfig{
 			Enabled: true,
-			Name:    GetComponentName(e.name, common.ComponentTypeClient),
+			Name:    common.GetCacheComponentName(e.name, common.ComponentTypeClient),
 			// Replicas: 1,
 			Options: utils.UnionMapsWithOverride(
 				utils.UnionMapsWithOverride(runtimeClass.Topology.Client.Options, runtime.Spec.Options), runtime.Spec.Client.Options),

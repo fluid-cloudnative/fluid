@@ -34,7 +34,7 @@ func (e *CacheEngine) initComponentValue(
 	replicas int32,
 ) (*common.CacheRuntimeComponentValue, error) {
 	componentValue := &common.CacheRuntimeComponentValue{
-		Name:          GetComponentName(e.name, componentType),
+		Name:          common.GetCacheComponentName(e.name, componentType),
 		Namespace:     e.namespace,
 		Enabled:       true,
 		ComponentType: componentType,

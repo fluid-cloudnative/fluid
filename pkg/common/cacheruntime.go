@@ -17,6 +17,8 @@
 package common
 
 import (
+	"fmt"
+
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -112,4 +114,14 @@ type CacheRuntimeComponentConfig struct {
 
 type CacheRuntimeComponentServiceConfig struct {
 	Name string `json:"name"`
+}
+
+// GetCacheComponentName gets the component name using runtime name and component type.
+func GetCacheComponentName(runtimeName string, componentType ComponentType) string {
+	return fmt.Sprintf("%s-%s", runtimeName, componentType)
+}
+
+// GetCacheRuntimeConfigConfigMapName get the configmap name of the runtime config.
+func GetCacheRuntimeConfigConfigMapName(name string) string {
+	return fmt.Sprintf("fluid-runtime-config-%s", name)
 }

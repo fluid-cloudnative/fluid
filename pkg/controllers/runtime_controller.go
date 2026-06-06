@@ -398,20 +398,6 @@ func (r *RuntimeReconciler) CheckIfReferenceDatasetIsSupported(ctx cruntime.Reco
 		return false, fmt.Errorf("dataset mounting another dataset can only use thin runtime")
 	}
 
-	// Step 3: For ThinRuntime with reference datasets, validate the physical runtime type
-	for _, physicalDatasetNSN := range physicalDatasets {
-		runtimeInfo, err := base.GetRuntimeInfo(r.Client, physicalDatasetNSN.Name, physicalDatasetNSN.Namespace)
-		if err != nil {
-			// If we can't get runtime info, return error and wait for next reconcile
-			return false, fmt.Errorf("failed to get runtime info for physical dataset %s/%s: %w", physicalDatasetNSN.Namespace, physicalDatasetNSN.Name, err)
-		}
-		// Check if the physical runtime is CacheRuntime, which is not supported
-		if runtimeInfo.GetRuntimeType() == common.CacheRuntime {
-			return false, fmt.Errorf("physical dataset %s/%s uses unsupported runtime type %q for reference datasets",
-				physicalDatasetNSN.Namespace, physicalDatasetNSN.Name, runtimeInfo.GetRuntimeType())
-		}
-	}
-
 	return true, nil
 }
 

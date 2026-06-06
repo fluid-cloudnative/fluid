@@ -170,7 +170,7 @@ var _ = Describe("CacheEngine Transform Master Tests", Label("pkg.ddc.cache.engi
 				Expect(err).NotTo(HaveOccurred())
 
 				// Verify basic properties
-				Expect(value.Master.Name).To(Equal(GetComponentName("test-runtime", common.ComponentTypeMaster)))
+				Expect(value.Master.Name).To(Equal(common.GetCacheComponentName("test-runtime", common.ComponentTypeMaster)))
 				Expect(value.Master.Namespace).To(Equal("default"))
 				Expect(value.Master.Enabled).To(BeTrue())
 				Expect(value.Master.ComponentType).To(Equal(common.ComponentTypeMaster))

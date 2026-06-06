@@ -4,7 +4,6 @@ In addition to the storage/cache systems natively integrated with Fluid, Fluid p
 
 ⚠️ **Note**:
 - ThinRuntime supports two usage modes: **Normal Mode** (by specifying the `profileName` field to mount external storage systems) and **Reference Dataset Mode** (without specifying `profileName` to reference other Datasets)
-- In reference dataset mode, the physical runtime (the runtime bound to the original dataset) must NOT be CacheRuntime
 
 ## Prerequisites
 

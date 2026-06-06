@@ -113,7 +113,7 @@ func (e *CacheEngine) setupMasterInternal(masterValue *common.CacheRuntimeCompon
 
 func (e *CacheEngine) getMasterPodInfo(runtimeClass *datav1alpha1.CacheRuntimeClass) (podName string, containerName string, err error) {
 	// pod name is auto generated
-	podName = GetComponentName(e.name, common.ComponentTypeMaster) + "-0"
+	podName = common.GetCacheComponentName(e.name, common.ComponentTypeMaster) + "-0"
 	// container name, use the first container name
 	if runtimeClass.Topology == nil || runtimeClass.Topology.Master == nil ||
 		len(runtimeClass.Topology.Master.Template.Spec.Containers) == 0 {

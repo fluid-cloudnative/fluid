@@ -147,6 +147,7 @@ func NewCache() cache.Options {
 		common.JindoRuntime,
 		common.JuiceFSRuntime,
 		common.EFCRuntime,
+		common.CacheRuntime,
 	})
 	if err != nil {
 		panic(err)

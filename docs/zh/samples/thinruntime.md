@@ -4,7 +4,6 @@
 
 ⚠️ **注意**：
 - ThinRuntime支持两种使用模式：**普通模式**（通过指定`profileName`字段，用于挂载外部存储系统）和**引用数据集模式**（不指定`profileName`字段，用于引用其他Dataset）
-- 在引用数据集模式下，物理运行时（即原始Dataset绑定的Runtime）不能是CacheRuntime
 
 ## 前提条件
 

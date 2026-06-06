@@ -176,7 +176,7 @@ var _ = Describe("CacheEngine Transform Client Tests", Label("pkg.ddc.cache.engi
 				Expect(err).NotTo(HaveOccurred())
 
 				// Verify basic properties
-				Expect(value.Client.Name).To(Equal(GetComponentName("test-runtime", common.ComponentTypeClient)))
+				Expect(value.Client.Name).To(Equal(common.GetCacheComponentName("test-runtime", common.ComponentTypeClient)))
 				Expect(value.Client.Namespace).To(Equal("default"))
 				Expect(value.Client.Enabled).To(BeTrue())
 				Expect(value.Client.ComponentType).To(Equal(common.ComponentTypeClient))

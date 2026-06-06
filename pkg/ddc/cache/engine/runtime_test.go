@@ -54,7 +54,7 @@ var _ = Describe("CacheRuntimeInfo GetWorkerPods Tests", Label("pkg.ddc.cache.en
 			cacheRuntimeInfo = &CacheRuntimeInfo{RuntimeInfoInterface: runtimeInfo}
 
 			// Create AdvancedStatefulSet with specific labels
-			workerName := GetComponentName(runtimeName, common.ComponentTypeWorker)
+			workerName := common.GetCacheComponentName(runtimeName, common.ComponentTypeWorker)
 
 			advancedSts := &workloadv1alpha1.AdvancedStatefulSet{
 				TypeMeta: metav1.TypeMeta{
@@ -158,7 +158,7 @@ var _ = Describe("CacheRuntimeInfo GetWorkerPods Tests", Label("pkg.ddc.cache.en
 			}
 
 			// Create non-matching pod (master pod)
-			masterName := GetComponentName(runtimeName, common.ComponentTypeMaster)
+			masterName := common.GetCacheComponentName(runtimeName, common.ComponentTypeMaster)
 			nonMatchingPod := &corev1.Pod{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-cache-master-0",
@@ -209,7 +209,7 @@ var _ = Describe("CacheRuntimeInfo GetWorkerPods Tests", Label("pkg.ddc.cache.en
 			cacheRuntimeInfo = &CacheRuntimeInfo{RuntimeInfoInterface: runtimeInfo}
 
 			// Create AdvancedStatefulSet with specific labels
-			workerName := GetComponentName(runtimeName, common.ComponentTypeWorker)
+			workerName := common.GetCacheComponentName(runtimeName, common.ComponentTypeWorker)
 
 			advancedSts := &workloadv1alpha1.AdvancedStatefulSet{
 				TypeMeta: metav1.TypeMeta{
@@ -232,7 +232,7 @@ var _ = Describe("CacheRuntimeInfo GetWorkerPods Tests", Label("pkg.ddc.cache.en
 			}
 
 			// Create non-matching pods only (master pods)
-			masterName := GetComponentName(runtimeName, common.ComponentTypeMaster)
+			masterName := common.GetCacheComponentName(runtimeName, common.ComponentTypeMaster)
 			nonMatchingPod := &corev1.Pod{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-cache-master-0",
@@ -281,7 +281,7 @@ var _ = Describe("CacheRuntimeInfo GetWorkerPods Tests", Label("pkg.ddc.cache.en
 			cacheRuntimeInfo = &CacheRuntimeInfo{RuntimeInfoInterface: runtimeInfo}
 
 			// Create AdvancedStatefulSet in default namespace
-			workerName := GetComponentName(runtimeName, common.ComponentTypeWorker)
+			workerName := common.GetCacheComponentName(runtimeName, common.ComponentTypeWorker)
 
 			advancedSts := &workloadv1alpha1.AdvancedStatefulSet{
 				TypeMeta: metav1.TypeMeta{
@@ -371,7 +371,7 @@ var _ = Describe("CacheRuntimeInfo GetWorkerPods Tests", Label("pkg.ddc.cache.en
 			cacheRuntimeInfo = &CacheRuntimeInfo{RuntimeInfoInterface: runtimeInfo}
 
 			// Create AdvancedStatefulSet
-			workerName := GetComponentName(runtimeName, common.ComponentTypeWorker)
+			workerName := common.GetCacheComponentName(runtimeName, common.ComponentTypeWorker)
 
 			advancedSts := &workloadv1alpha1.AdvancedStatefulSet{
 				TypeMeta: metav1.TypeMeta{
@@ -435,7 +435,7 @@ var _ = Describe("CacheRuntimeInfo GetWorkerPods Tests", Label("pkg.ddc.cache.en
 			runtimeName := "my-cache-runtime"
 			expectedWorkerName := runtimeName + "-" + string(common.ComponentTypeWorker)
 
-			actualWorkerName := GetComponentName(runtimeName, common.ComponentTypeWorker)
+			actualWorkerName := common.GetCacheComponentName(runtimeName, common.ComponentTypeWorker)
 			Expect(actualWorkerName).To(Equal(expectedWorkerName))
 			Expect(actualWorkerName).To(Equal("my-cache-runtime-worker"))
 		})
@@ -444,7 +444,7 @@ var _ = Describe("CacheRuntimeInfo GetWorkerPods Tests", Label("pkg.ddc.cache.en
 			runtimeName := "my-cache-runtime"
 			expectedMasterName := runtimeName + "-" + string(common.ComponentTypeMaster)
 
-			actualMasterName := GetComponentName(runtimeName, common.ComponentTypeMaster)
+			actualMasterName := common.GetCacheComponentName(runtimeName, common.ComponentTypeMaster)
 			Expect(actualMasterName).To(Equal(expectedMasterName))
 			Expect(actualMasterName).To(Equal("my-cache-runtime-master"))
 		})

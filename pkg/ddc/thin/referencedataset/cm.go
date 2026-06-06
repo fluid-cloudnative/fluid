@@ -33,13 +33,7 @@ import (
 )
 
 func copyFuseDaemonSetForRefDataset(ctx context.Context, client client.Client, refDataset *datav1alpha1.Dataset, physicalRuntimeInfo base.RuntimeInfoInterface) error {
-	var fuseName string
-	switch physicalRuntimeInfo.GetRuntimeType() {
-	case common.JindoRuntime:
-		fuseName = physicalRuntimeInfo.GetName() + "-" + common.JindoChartName + "-fuse"
-	default:
-		fuseName = physicalRuntimeInfo.GetName() + "-fuse"
-	}
+	fuseName := physicalRuntimeInfo.GetFuseName()
 	ds, err := kubeclient.GetDaemonsetWithContext(ctx, client, fuseName, physicalRuntimeInfo.GetNamespace())
 	if err != nil {
 		return err
@@ -135,6 +129,13 @@ func (e *ReferenceDatasetEngine) createConfigMapForRefDataset(ctx context.Contex
 		e.Log.Info("Skip createConfigMapForRefDataset because the physicalRuntimeType=EFC", "name", e.name, "namespace", e.namespace)
 	case common.ThinRuntime:
 		e.Log.Info("Skip createConfigMapForRefDataset because the physicalRuntimeType=THIN", "name", e.name, "namespace", e.namespace)
+	case common.CacheRuntime:
+		clientConfigMapName := common.GetCacheRuntimeConfigConfigMapName(physicalRuntimeName)
+		err := kubeclient.CopyConfigMapWithContext(ctx, client, types.NamespacedName{Name: clientConfigMapName, Namespace: physicalRuntimeNamespace},
+			types.NamespacedName{Name: clientConfigMapName, Namespace: refNameSpace}, ownerReference)
+		if err != nil {
+			return err
+		}
 	default:
 		err := fmt.Errorf("fail to get configmap for runtime type: %s", physicalRuntimeType)
 		return err
