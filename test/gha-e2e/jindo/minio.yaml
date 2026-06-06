@@ -44,7 +44,7 @@ spec:
       containers:
       - name: minio
         # Pulls the default Minio image from Docker Hub
-        image: local/minio-e2e:latest
+        image: minio/minio
         imagePullPolicy: IfNotPresent
         resources:
           limits:
@@ -112,7 +112,7 @@ spec:
       subdomain: minio-a
       containers:
       - name: minio
-        image: local/minio-e2e:latest
+        image: minio/minio
         imagePullPolicy: IfNotPresent
         resources:
           limits:
@@ -179,7 +179,7 @@ spec:
       subdomain: minio-b
       containers:
       - name: minio
-        image: local/minio-e2e:latest
+        image: minio/minio
         imagePullPolicy: IfNotPresent
         resources:
           limits:

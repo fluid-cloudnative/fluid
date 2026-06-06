@@ -10,7 +10,6 @@ get_image_tag() {
 }
 
 build_images() {
-    minio_e2e_img="local/minio-e2e:latest"
     oss_emulator_img="${IMG_REPO}/oss-emulator:e2e"
     images=(
         "${IMG_REPO}/dataset-controller:${IMAGE_TAG}"
@@ -26,17 +25,10 @@ build_images() {
         "${IMG_REPO}/fluid-csi:${IMAGE_TAG}"
         "${IMG_REPO}/fluid-webhook:${IMAGE_TAG}"
         "${IMG_REPO}/fluid-crd-upgrader:${IMAGE_TAG}"
-        "${minio_e2e_img}"
         "${oss_emulator_img}"
     )
 
     make docker-build-all
-    tmpdir=$(mktemp -d)
-    cat > "${tmpdir}/Dockerfile" <<'EOF'
-FROM minio/minio:latest
-EOF
-    docker build -t "${minio_e2e_img}" "${tmpdir}"
-    rm -rf "${tmpdir}"
     docker build -t "${oss_emulator_img}" test/gha-e2e/jindo/oss-emulator
 
     for img in "${images[@]}"; do

@@ -184,6 +184,7 @@ function main() {
     setup
     create_dataset
     wait_dataset_bound
+    wait_cache_client_ready
     create_job test/gha-e2e/curvine/write_job.yaml $write_job_name
     wait_job_completed $write_job_name
     create_dataload
