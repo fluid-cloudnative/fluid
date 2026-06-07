@@ -437,6 +437,7 @@ func (info *RuntimeInfo) GetFuseCleanPolicy() datav1alpha1.FuseCleanPolicy {
 	return info.fuse.CleanPolicy
 }
 
+// SetAPIReader sets the API reader for the runtime information.
 func (info *RuntimeInfo) SetAPIReader(apiReader client.Reader) {
 	info.apiReader = apiReader
 }
