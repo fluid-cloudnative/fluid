@@ -338,6 +338,17 @@ func (a AlluxioFileUtils) GetMountedAlluxioPaths() ([]string, error) {
 	return mountedPaths, err
 }
 
+// FindUnmountedAlluxioPaths returns the subset of the provided `alluxioPaths`
+// that are not currently mounted in the Alluxio filesystem. It retrieves the
+// current mounted paths via `GetMountedAlluxioPaths()` and computes the
+// difference using `utils.SubtractString`.
+//
+// Parameters:
+// - alluxioPaths: slice of Alluxio paths to check.
+//
+// Returns:
+// - []string: paths from `alluxioPaths` that are not mounted.
+// - error: non-nil if retrieving the list of mounted paths failed.
 func (a *AlluxioFileUtils) FindUnmountedAlluxioPaths(alluxioPaths []string) ([]string, error) {
 	mountedPaths, err := a.GetMountedAlluxioPaths()
 	if err != nil {
