@@ -436,6 +436,10 @@ func TestAlluxioFileUtils_FindUnmountedAlluxioPaths(t *testing.T) {
 	}
 }
 
+// TestAlluxioFileUtils_Ready verifies the Ready behavior of AlluxioFileUtils under
+// both failure and success conditions by mocking the internal exec command.
+// It confirms that Ready returns false when the readiness probe fails and true
+// when the probe returns a valid Alluxio cluster summary.
 func TestAlluxioFileUtils_Ready(t *testing.T) {
 	ExecCommon := func(a AlluxioFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
 		return "Alluxio cluster summary: ", "", nil
