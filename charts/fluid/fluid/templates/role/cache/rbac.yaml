@@ -138,6 +138,7 @@ rules:
       - update
       - patch
       - delete
+  # advance stateful set resources begin
   - apiGroups:
       - ""
     resources:
@@ -222,6 +223,7 @@ rules:
       - advancedstatefulsets/finalizers
     verbs:
       - update
+  # advance stateful set resources end
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role

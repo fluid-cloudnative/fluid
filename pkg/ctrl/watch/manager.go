@@ -132,11 +132,11 @@ func SetupWatcherForCacheRuntimeReconciler(mgr ctrl.Manager, options controller.
 		DeleteFunc: runtimeEventHandler.onDeleteFunc(r),
 	})
 	if err != nil {
-		log.Error(err, "Failed to watch JindoRuntime")
+		log.Error(err, "Failed to watch CacheRuntime")
 		return err
 	}
 
-	astHandler := &statefulsetEventHandler{}
+	astHandler := &advanceStatefulsetEventHandler{}
 	err = c.Watch(source.Kind(mgr.GetCache(), &v1alpha1.AdvancedStatefulSet{}),
 		handler.EnqueueRequestForOwner(mgr.GetScheme(), mgr.GetRESTMapper(), r.ManagedResource(), handler.OnlyControllerOwner()),
 		predicate.Funcs{

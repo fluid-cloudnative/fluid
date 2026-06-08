@@ -26,8 +26,11 @@ import (
 )
 
 type ComponentManager interface {
+	// Reconciler reconciles the component, used in Engine Setup
 	Reconciler(ctx context.Context, component *common.CacheRuntimeComponentValue) error
+	// ConstructComponentStatus constructs the component status, used for updating component status
 	ConstructComponentStatus(todo context.Context, identity *common.ComponentIdentity) (datav1alpha1.RuntimeComponentStatus, error)
+	// GetNodeAffinity gets the node affinity for the component, for app pod cache affinity
 	GetNodeAffinity(identity *common.ComponentIdentity) (*corev1.NodeAffinity, error)
 	// SyncComponentSpec synchronizes component specification changes to the workload
 	SyncComponentSpec(ctx context.Context, identity *common.ComponentIdentity, newSpec ComponentSpec) error

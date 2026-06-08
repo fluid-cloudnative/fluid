@@ -27,6 +27,7 @@ import (
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/dataset/lifecycle"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -154,9 +155,15 @@ func (e *CacheEngine) syncRuntimeSpec(ctx cruntime.ReconcileRequestContext, runt
 			Namespace: e.namespace,
 		}
 		manager := component.NewComponentHelper(common.ComponentTypeMaster, e.Client)
+		// Only sync resources if they are explicitly set (not zero-value)
+		// This prevents overwriting template defaults when user hasn't specified resources
+		var resources corev1.ResourceRequirements
+		if runtime.Spec.Master.Resources.Requests != nil || runtime.Spec.Master.Resources.Limits != nil {
+			resources = runtime.Spec.Master.Resources
+		}
 		masterSpec := component.ComponentSpec{
 			Version:   runtime.Spec.Master.RuntimeVersion,
-			Resources: runtime.Spec.Master.Resources,
+			Resources: resources,
 			Replicas:  &runtime.Spec.Master.Replicas,
 		}
 		if err := manager.SyncComponentSpec(ctx.Context, masterIdentity, masterSpec); err != nil {
@@ -172,9 +179,15 @@ func (e *CacheEngine) syncRuntimeSpec(ctx cruntime.ReconcileRequestContext, runt
 			Namespace: e.namespace,
 		}
 		manager := component.NewComponentHelper(common.ComponentTypeWorker, e.Client)
+		// Only sync resources if they are explicitly set (not zero-value)
+		// This prevents overwriting template defaults when user hasn't specified resources
+		var workerResources corev1.ResourceRequirements
+		if runtime.Spec.Worker.Resources.Requests != nil || runtime.Spec.Worker.Resources.Limits != nil {
+			workerResources = runtime.Spec.Worker.Resources
+		}
 		workerSpec := component.ComponentSpec{
 			Version:   runtime.Spec.Worker.RuntimeVersion,
-			Resources: runtime.Spec.Worker.Resources,
+			Resources: workerResources,
 			Replicas:  &runtime.Spec.Worker.Replicas,
 		}
 		if err := manager.SyncComponentSpec(ctx.Context, workerIdentity, workerSpec); err != nil {
