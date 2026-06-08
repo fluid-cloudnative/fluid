@@ -49,6 +49,12 @@ jobs:
         with:
           path: ${{ env.GOPATH }}/src/github.com/fluid-cloudnative/fluid
 
+      - name: Cache Kind and kubectl binaries
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.RUNNER_TOOL_CACHE }}/kind/v0.31.0
+          key: ${{ runner.os }}-kind-v0.31.0-kubectl-${{ matrix.kubernetes-version }}
+
       - name: Create k8s Kind Cluster
         uses: helm/kind-action@ef37e7f390d99f746eb8b610417061a60e82a6cc # v1.14.0
         with:
