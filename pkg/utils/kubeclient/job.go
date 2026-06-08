@@ -62,7 +62,7 @@ func GetSucceedPodForJobWithContext(ctx context.Context, c client.Client, job *v
 	var podList corev1.PodList
 	selector, err := metav1.LabelSelectorAsSelector(job.Spec.Selector)
 	if err != nil {
-		return nil, fmt.Errorf("error converting Job %s in namespace %s selector: %v", job.Name, job.Namespace, err)
+		return nil, fmt.Errorf("error converting Job %s in namespace %s selector: %w", job.Name, job.Namespace, err)
 	}
 	err = c.List(ctx, &podList, &client.ListOptions{
 		Namespace:     job.Namespace,

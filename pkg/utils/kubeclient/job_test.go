@@ -27,6 +27,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	utilerrors "k8s.io/apimachinery/pkg/util/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -117,6 +118,27 @@ var _ = Describe("Job related unit tests", Label("pkg.utils.kubeclient.job_test.
 
 				gotPod, err := GetSucceedPodForJobWithContext(ctx, contextAwareClient{Client: client}, job)
 				Expect(errors.Is(err, context.Canceled)).To(BeTrue())
+				Expect(gotPod).To(BeNil())
+			})
+		})
+
+		When("job selector is invalid", func() {
+			BeforeEach(func() {
+				resources = []runtime.Object{}
+			})
+
+			It("should wrap the selector conversion error", func() {
+				jobWithInvalidSelector := job.DeepCopy()
+				jobWithInvalidSelector.Spec.Selector = &metav1.LabelSelector{
+					MatchLabels: map[string]string{
+						"invalid key": "test-job",
+					},
+				}
+
+				gotPod, err := GetSucceedPodForJob(client, jobWithInvalidSelector)
+				Expect(err).NotTo(BeNil())
+				var selectorErr utilerrors.Aggregate
+				Expect(errors.As(err, &selectorErr)).To(BeTrue())
 				Expect(gotPod).To(BeNil())
 			})
 		})
