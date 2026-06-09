@@ -28,7 +28,6 @@ import (
 
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/alluxio"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/efc"
-	"github.com/fluid-cloudnative/fluid/pkg/ddc/goosefs"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/jindofsx"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/juicefs"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/thin"
@@ -54,7 +53,6 @@ var (
 		"alluxioruntime-controller":  alluxio.Precheck,
 		"jindoruntime-controller":    jindofsx.Precheck,
 		"juicefsruntime-controller":  juicefs.Precheck,
-		"goosefsruntime-controller":  goosefs.Precheck,
 		"thinruntime-controller":     thin.Precheck,
 		"efcruntime-controller":      efc.Precheck,
 		"vineyardruntime-controller": vineyard.Precheck,

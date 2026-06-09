@@ -116,13 +116,6 @@ func (e *ReferenceDatasetEngine) createConfigMapForRefDataset(ctx context.Contex
 		if err != nil {
 			return err
 		}
-	case common.GooseFSRuntime:
-		configMapName := physicalRuntimeName + "-config"
-		err := kubeclient.CopyConfigMapWithContext(ctx, client, types.NamespacedName{Name: configMapName, Namespace: physicalRuntimeNamespace},
-			types.NamespacedName{Name: configMapName, Namespace: refNameSpace}, ownerReference)
-		if err != nil {
-			return err
-		}
 	case common.JindoRuntime:
 		clientConfigMapName := physicalRuntimeName + "-jindofs-client-config"
 		err := kubeclient.CopyConfigMapWithContext(ctx, client, types.NamespacedName{Name: clientConfigMapName, Namespace: physicalRuntimeNamespace},

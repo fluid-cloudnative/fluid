@@ -94,7 +94,6 @@ rules:
       - alluxioruntimes
       - jindoruntimes
       - juicefsruntimes
-      - goosefsruntimes
       - efcruntimes
       - thinruntimes
       - thinruntimeprofiles
