@@ -220,8 +220,17 @@ func (r *dataProcessOperation) RemoveTargetDatasetStatusInProgress(dataset *data
 }
 
 func (r *dataProcessOperation) GetStatusHandler() dataoperation.StatusHandler {
-	// TODO: Support dataProcess.Spec.Policy
-	return &OnceStatusHandler{Client: r.Client, dataProcess: r.dataProcess}
+	policy := r.dataProcess.Spec.Policy
+	switch policy {
+	case datav1alpha1.Once:
+		return &OnceStatusHandler{Client: r.Client, dataProcess: r.dataProcess}
+	case datav1alpha1.Cron:
+		return &CronStatusHandler{Client: r.Client, dataProcess: r.dataProcess}
+	case datav1alpha1.OnEvent:
+		return &OnEventStatusHandler{Client: r.Client, dataProcess: r.dataProcess}
+	default:
+		return nil
+	}
 }
 
 // GetTTL implements dataoperation.OperationInterface.
