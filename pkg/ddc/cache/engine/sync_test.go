@@ -24,6 +24,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
+	workloadv1alpha1 "github.com/fluid-cloudnative/advanced-statefulset/api/workload/v1alpha1"
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
 	appsv1 "k8s.io/api/apps/v1"
@@ -45,11 +46,7 @@ var _ = Describe("CacheEngine Sync Tests", Label("pkg.ddc.cache.engine.sync_test
 	)
 
 	BeforeEach(func() {
-		scheme := runtime.NewScheme()
-		_ = datav1alpha1.AddToScheme(scheme)
-		_ = corev1.AddToScheme(scheme)
-		// Add apps/v1 for StatefulSet and DaemonSet
-		_ = appsv1.AddToScheme(scheme)
+		scheme := CacheEngineTestScheme
 
 		// Create dataset (name must match runtime name for cache runtime)
 		dataset = &datav1alpha1.Dataset{
@@ -90,7 +87,6 @@ var _ = Describe("CacheEngine Sync Tests", Label("pkg.ddc.cache.engine.sync_test
 			FileSystemType: "test-fs",
 			Topology: &datav1alpha1.RuntimeTopology{
 				Master: &datav1alpha1.RuntimeComponentDefinition{
-					WorkloadType: metav1.TypeMeta{Kind: "StatefulSet", APIVersion: "apps/v1"},
 					Template: corev1.PodTemplateSpec{
 						Spec: corev1.PodSpec{
 							Containers: []corev1.Container{{Name: "master", Image: "test-master:latest"}},
@@ -98,7 +94,6 @@ var _ = Describe("CacheEngine Sync Tests", Label("pkg.ddc.cache.engine.sync_test
 					},
 				},
 				Worker: &datav1alpha1.RuntimeComponentDefinition{
-					WorkloadType: metav1.TypeMeta{Kind: "StatefulSet", APIVersion: "apps/v1"},
 					Template: corev1.PodTemplateSpec{
 						Spec: corev1.PodSpec{
 							Containers: []corev1.Container{{Name: "worker", Image: "test-worker:latest"}},
@@ -106,7 +101,6 @@ var _ = Describe("CacheEngine Sync Tests", Label("pkg.ddc.cache.engine.sync_test
 					},
 				},
 				Client: &datav1alpha1.RuntimeComponentDefinition{
-					WorkloadType: metav1.TypeMeta{Kind: "DaemonSet", APIVersion: "apps/v1"},
 					Template: corev1.PodTemplateSpec{
 						Spec: corev1.PodSpec{
 							Containers: []corev1.Container{{Name: "client", Image: "test-client:latest"}},
@@ -116,41 +110,47 @@ var _ = Describe("CacheEngine Sync Tests", Label("pkg.ddc.cache.engine.sync_test
 			},
 		}
 
-		// Create master StatefulSet
-		masterSts := &appsv1.StatefulSet{
+		// Create master AdvancedStatefulSet
+		masterReplicas := int32(1)
+		masterSts := &workloadv1alpha1.AdvancedStatefulSet{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "test-runtime-master",
 				Namespace: "default",
 			},
-			Spec: appsv1.StatefulSetSpec{
-				Replicas: func() *int32 { i := int32(1); return &i }(),
+			Spec: workloadv1alpha1.AdvancedStatefulSetSpec{
+				Replicas: &masterReplicas,
 				Template: corev1.PodTemplateSpec{
 					Spec: corev1.PodSpec{
 						Containers: []corev1.Container{{Name: "master", Image: "test-master:latest"}},
 					},
 				},
 			},
-			Status: appsv1.StatefulSetStatus{
-				ReadyReplicas: 1,
+			Status: workloadv1alpha1.AdvancedStatefulSetStatus{
+				ReadyReplicas:     1,
+				CurrentReplicas:   1,
+				AvailableReplicas: 1,
 			},
 		}
 
-		// Create worker StatefulSet
-		workerSts := &appsv1.StatefulSet{
+		// Create worker AdvancedStatefulSet
+		workerReplicas := int32(2)
+		workerSts := &workloadv1alpha1.AdvancedStatefulSet{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "test-runtime-worker",
 				Namespace: "default",
 			},
-			Spec: appsv1.StatefulSetSpec{
-				Replicas: func() *int32 { i := int32(2); return &i }(),
+			Spec: workloadv1alpha1.AdvancedStatefulSetSpec{
+				Replicas: &workerReplicas,
 				Template: corev1.PodTemplateSpec{
 					Spec: corev1.PodSpec{
 						Containers: []corev1.Container{{Name: "worker", Image: "test-worker:latest"}},
 					},
 				},
 			},
-			Status: appsv1.StatefulSetStatus{
-				ReadyReplicas: 2,
+			Status: workloadv1alpha1.AdvancedStatefulSetStatus{
+				ReadyReplicas:     2,
+				CurrentReplicas:   2,
+				AvailableReplicas: 2,
 			},
 		}
 
@@ -249,16 +249,33 @@ var _ = Describe("CacheEngine Sync Tests", Label("pkg.ddc.cache.engine.sync_test
 				_ = datav1alpha1.AddToScheme(scheme)
 				_ = corev1.AddToScheme(scheme)
 				_ = appsv1.AddToScheme(scheme)
-				// Create StatefulSets and DaemonSet for status update
-				masterSts := &appsv1.StatefulSet{
+				_ = workloadv1alpha1.AddToScheme(scheme)
+				// Create AdvancedStatefulSets and DaemonSet for status update
+				masterReplicas := int32(1)
+				masterSts := &workloadv1alpha1.AdvancedStatefulSet{
 					ObjectMeta: metav1.ObjectMeta{Name: "test-runtime-master", Namespace: "default"},
-					Spec:       appsv1.StatefulSetSpec{Replicas: func() *int32 { i := int32(1); return &i }()},
-					Status:     appsv1.StatefulSetStatus{ReadyReplicas: 1},
+					Spec: workloadv1alpha1.AdvancedStatefulSetSpec{
+						Replicas: &masterReplicas,
+						Template: corev1.PodTemplateSpec{
+							Spec: corev1.PodSpec{
+								Containers: []corev1.Container{{Name: "master", Image: "test-master:latest"}},
+							},
+						},
+					},
+					Status: workloadv1alpha1.AdvancedStatefulSetStatus{ReadyReplicas: 1, CurrentReplicas: 1, AvailableReplicas: 1},
 				}
-				workerSts := &appsv1.StatefulSet{
+				workerReplicas := int32(2)
+				workerSts := &workloadv1alpha1.AdvancedStatefulSet{
 					ObjectMeta: metav1.ObjectMeta{Name: "test-runtime-worker", Namespace: "default"},
-					Spec:       appsv1.StatefulSetSpec{Replicas: func() *int32 { i := int32(2); return &i }()},
-					Status:     appsv1.StatefulSetStatus{ReadyReplicas: 2},
+					Spec: workloadv1alpha1.AdvancedStatefulSetSpec{
+						Replicas: &workerReplicas,
+						Template: corev1.PodTemplateSpec{
+							Spec: corev1.PodSpec{
+								Containers: []corev1.Container{{Name: "worker", Image: "test-worker:latest"}},
+							},
+						},
+					},
+					Status: workloadv1alpha1.AdvancedStatefulSetStatus{ReadyReplicas: 2, CurrentReplicas: 2, AvailableReplicas: 2},
 				}
 				clientDs := &appsv1.DaemonSet{
 					ObjectMeta: metav1.ObjectMeta{Name: "test-runtime-client", Namespace: "default"},
@@ -345,16 +362,26 @@ var _ = Describe("CacheEngine Sync Tests", Label("pkg.ddc.cache.engine.sync_test
 				_ = datav1alpha1.AddToScheme(scheme)
 				_ = corev1.AddToScheme(scheme)
 				_ = appsv1.AddToScheme(scheme)
-				// Create StatefulSets and DaemonSet for status update
-				masterSts := &appsv1.StatefulSet{
+				_ = workloadv1alpha1.AddToScheme(scheme)
+				// Create AdvancedStatefulSets and DaemonSet for status update
+				masterReplicas := int32(1)
+				masterSts := &workloadv1alpha1.AdvancedStatefulSet{
 					ObjectMeta: metav1.ObjectMeta{Name: "test-runtime-master", Namespace: "default"},
-					Spec:       appsv1.StatefulSetSpec{Replicas: func() *int32 { i := int32(1); return &i }()},
-					Status:     appsv1.StatefulSetStatus{ReadyReplicas: 1},
+					Spec:       workloadv1alpha1.AdvancedStatefulSetSpec{Replicas: &masterReplicas},
+					Status:     workloadv1alpha1.AdvancedStatefulSetStatus{ReadyReplicas: 1, CurrentReplicas: 1, AvailableReplicas: 1},
 				}
-				workerSts := &appsv1.StatefulSet{
+				workerReplicas := int32(2)
+				workerSts := &workloadv1alpha1.AdvancedStatefulSet{
 					ObjectMeta: metav1.ObjectMeta{Name: "test-runtime-worker", Namespace: "default"},
-					Spec:       appsv1.StatefulSetSpec{Replicas: func() *int32 { i := int32(2); return &i }()},
-					Status:     appsv1.StatefulSetStatus{ReadyReplicas: 2},
+					Spec: workloadv1alpha1.AdvancedStatefulSetSpec{
+						Replicas: &workerReplicas,
+						Template: corev1.PodTemplateSpec{
+							Spec: corev1.PodSpec{
+								Containers: []corev1.Container{{Name: "worker", Image: "test-worker:latest"}},
+							},
+						},
+					},
+					Status: workloadv1alpha1.AdvancedStatefulSetStatus{ReadyReplicas: 2, CurrentReplicas: 2, AvailableReplicas: 2},
 				}
 				clientDs := &appsv1.DaemonSet{
 					ObjectMeta: metav1.ObjectMeta{Name: "test-runtime-client", Namespace: "default"},
@@ -408,16 +435,26 @@ var _ = Describe("CacheEngine Sync Tests", Label("pkg.ddc.cache.engine.sync_test
 				_ = datav1alpha1.AddToScheme(scheme)
 				_ = corev1.AddToScheme(scheme)
 				_ = appsv1.AddToScheme(scheme)
-				// Create StatefulSets and DaemonSet for status update
-				masterSts := &appsv1.StatefulSet{
+				_ = workloadv1alpha1.AddToScheme(scheme)
+				// Create AdvancedStatefulSets and DaemonSet for status update
+				masterReplicas := int32(1)
+				masterSts := &workloadv1alpha1.AdvancedStatefulSet{
 					ObjectMeta: metav1.ObjectMeta{Name: "test-runtime-master", Namespace: "default"},
-					Spec:       appsv1.StatefulSetSpec{Replicas: func() *int32 { i := int32(1); return &i }()},
-					Status:     appsv1.StatefulSetStatus{ReadyReplicas: 1},
+					Spec:       workloadv1alpha1.AdvancedStatefulSetSpec{Replicas: &masterReplicas},
+					Status:     workloadv1alpha1.AdvancedStatefulSetStatus{ReadyReplicas: 1, CurrentReplicas: 1, AvailableReplicas: 1},
 				}
-				workerSts := &appsv1.StatefulSet{
+				workerReplicas := int32(2)
+				workerSts := &workloadv1alpha1.AdvancedStatefulSet{
 					ObjectMeta: metav1.ObjectMeta{Name: "test-runtime-worker", Namespace: "default"},
-					Spec:       appsv1.StatefulSetSpec{Replicas: func() *int32 { i := int32(2); return &i }()},
-					Status:     appsv1.StatefulSetStatus{ReadyReplicas: 2},
+					Spec: workloadv1alpha1.AdvancedStatefulSetSpec{
+						Replicas: &workerReplicas,
+						Template: corev1.PodTemplateSpec{
+							Spec: corev1.PodSpec{
+								Containers: []corev1.Container{{Name: "worker", Image: "test-worker:latest"}},
+							},
+						},
+					},
+					Status: workloadv1alpha1.AdvancedStatefulSetStatus{ReadyReplicas: 2, CurrentReplicas: 2, AvailableReplicas: 2},
 				}
 				clientDs := &appsv1.DaemonSet{
 					ObjectMeta: metav1.ObjectMeta{Name: "test-runtime-client", Namespace: "default"},
@@ -469,16 +506,26 @@ var _ = Describe("CacheEngine Sync Tests", Label("pkg.ddc.cache.engine.sync_test
 				_ = datav1alpha1.AddToScheme(scheme)
 				_ = corev1.AddToScheme(scheme)
 				_ = appsv1.AddToScheme(scheme)
+				_ = workloadv1alpha1.AddToScheme(scheme)
 				// Create necessary resources
-				masterSts := &appsv1.StatefulSet{
+				masterReplicas := int32(1)
+				masterSts := &workloadv1alpha1.AdvancedStatefulSet{
 					ObjectMeta: metav1.ObjectMeta{Name: "test-runtime-master", Namespace: "default"},
-					Spec:       appsv1.StatefulSetSpec{Replicas: func() *int32 { i := int32(1); return &i }()},
-					Status:     appsv1.StatefulSetStatus{ReadyReplicas: 1},
+					Spec:       workloadv1alpha1.AdvancedStatefulSetSpec{Replicas: &masterReplicas},
+					Status:     workloadv1alpha1.AdvancedStatefulSetStatus{ReadyReplicas: 1, CurrentReplicas: 1, AvailableReplicas: 1},
 				}
-				workerSts := &appsv1.StatefulSet{
+				workerReplicas := int32(2)
+				workerSts := &workloadv1alpha1.AdvancedStatefulSet{
 					ObjectMeta: metav1.ObjectMeta{Name: "test-runtime-worker", Namespace: "default"},
-					Spec:       appsv1.StatefulSetSpec{Replicas: func() *int32 { i := int32(2); return &i }()},
-					Status:     appsv1.StatefulSetStatus{ReadyReplicas: 2},
+					Spec: workloadv1alpha1.AdvancedStatefulSetSpec{
+						Replicas: &workerReplicas,
+						Template: corev1.PodTemplateSpec{
+							Spec: corev1.PodSpec{
+								Containers: []corev1.Container{{Name: "worker", Image: "test-worker:latest"}},
+							},
+						},
+					},
+					Status: workloadv1alpha1.AdvancedStatefulSetStatus{ReadyReplicas: 2, CurrentReplicas: 2, AvailableReplicas: 2},
 				}
 				clientDs := &appsv1.DaemonSet{
 					ObjectMeta: metav1.ObjectMeta{Name: "test-runtime-client", Namespace: "default"},

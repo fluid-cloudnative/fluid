@@ -21,6 +21,7 @@ import (
 	"reflect"
 	"time"
 
+	workloadv1alpha1 "github.com/fluid-cloudnative/advanced-statefulset/api/workload/v1alpha1"
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
@@ -42,10 +43,12 @@ type CacheRuntimeInfo struct {
 
 func (info *CacheRuntimeInfo) GetWorkerPods(client client.Client) ([]corev1.Pod, error) {
 	workerName := GetComponentName(info.GetName(), common.ComponentTypeWorker)
-	workers, err := kubeclient.GetStatefulSet(client, workerName, info.GetNamespace())
+	workers := &workloadv1alpha1.AdvancedStatefulSet{}
+	err := client.Get(context.TODO(), types.NamespacedName{Name: workerName, Namespace: info.GetNamespace()}, workers)
 	if err != nil {
 		return nil, err
 	}
+
 	workerSelector, err := metav1.LabelSelectorAsSelector(workers.Spec.Selector)
 	if err != nil {
 		return nil, err

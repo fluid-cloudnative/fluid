@@ -97,8 +97,7 @@ func (e *CacheEngine) getRuntimeStatusValue(runtime *datav1alpha1.CacheRuntime, 
 				Name:      GetComponentName(e.name, common.ComponentTypeMaster),
 				Namespace: e.namespace,
 			},
-			Enabled:      true,
-			WorkloadType: runtimeClass.Topology.Master.WorkloadType,
+			Enabled: true,
 		}
 	} else {
 		statusValue.Master = &common.ComponentStatusInfo{Enabled: false}
@@ -111,8 +110,7 @@ func (e *CacheEngine) getRuntimeStatusValue(runtime *datav1alpha1.CacheRuntime, 
 				Name:      GetComponentName(e.name, common.ComponentTypeWorker),
 				Namespace: e.namespace,
 			},
-			Enabled:      true,
-			WorkloadType: runtimeClass.Topology.Worker.WorkloadType,
+			Enabled: true,
 		}
 	} else {
 		statusValue.Worker = &common.ComponentStatusInfo{Enabled: false}
@@ -125,8 +123,7 @@ func (e *CacheEngine) getRuntimeStatusValue(runtime *datav1alpha1.CacheRuntime, 
 				Name:      GetComponentName(e.name, common.ComponentTypeClient),
 				Namespace: e.namespace,
 			},
-			Enabled:      true,
-			WorkloadType: runtimeClass.Topology.Client.WorkloadType,
+			Enabled: true,
 		}
 	} else {
 		statusValue.Client = &common.ComponentStatusInfo{Enabled: false}

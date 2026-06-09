@@ -31,7 +31,7 @@ import (
 )
 
 func (e *CacheEngine) setMasterComponentStatus(componentInfo *common.ComponentStatusInfo, status *fluidapi.CacheRuntimeStatus) (ready bool, err error) {
-	manager := component.NewComponentHelper(componentInfo.WorkloadType, e.Client)
+	manager := component.NewComponentHelper(common.ComponentTypeMaster, e.Client)
 
 	masterStatus, err := manager.ConstructComponentStatus(context.TODO(), &componentInfo.ComponentIdentity)
 	if err != nil {
@@ -48,7 +48,7 @@ func (e *CacheEngine) setMasterComponentStatus(componentInfo *common.ComponentSt
 	return ready, err
 }
 func (e *CacheEngine) setWorkerComponentStatus(componentInfo *common.ComponentStatusInfo, status *fluidapi.CacheRuntimeStatus) (ready bool, err error) {
-	manager := component.NewComponentHelper(componentInfo.WorkloadType, e.Client)
+	manager := component.NewComponentHelper(common.ComponentTypeWorker, e.Client)
 
 	workerStatus, err := manager.ConstructComponentStatus(context.TODO(), &componentInfo.ComponentIdentity)
 	if err != nil {
@@ -80,7 +80,7 @@ func (e *CacheEngine) setWorkerComponentStatus(componentInfo *common.ComponentSt
 	return ready, err
 }
 func (e *CacheEngine) setClientComponentStatus(componentInfo *common.ComponentStatusInfo, status *fluidapi.CacheRuntimeStatus) (fullyReady bool, err error) {
-	manager := component.NewComponentHelper(componentInfo.WorkloadType, e.Client)
+	manager := component.NewComponentHelper(common.ComponentTypeClient, e.Client)
 
 	clientStatus, err := manager.ConstructComponentStatus(context.TODO(), &componentInfo.ComponentIdentity)
 	if err != nil {

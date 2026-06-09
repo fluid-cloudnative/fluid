@@ -38,7 +38,6 @@ func (e *CacheEngine) initComponentValue(
 		Namespace:     e.namespace,
 		Enabled:       true,
 		ComponentType: componentType,
-		WorkloadType:  componentDefinition.WorkloadType,
 		// use deep copy to avoid modifying the original Template
 		PodTemplateSpec: *componentDefinition.Template.DeepCopy(),
 		Owner:           owner,

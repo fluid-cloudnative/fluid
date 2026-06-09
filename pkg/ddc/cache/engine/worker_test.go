@@ -19,15 +19,14 @@ package engine
 import (
 	"context"
 
+	"github.com/fluid-cloudnative/advanced-statefulset/api/workload/v1alpha1"
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -40,10 +39,7 @@ var _ = Describe("CacheEngine Worker Component Tests", Label("pkg.ddc.cache.engi
 	)
 
 	BeforeEach(func() {
-		scheme := runtime.NewScheme()
-		_ = datav1alpha1.AddToScheme(scheme)
-		_ = appsv1.AddToScheme(scheme)
-		_ = corev1.AddToScheme(scheme)
+		scheme := CacheEngineTestScheme
 
 		// Create runtime with None phase (needs setup)
 		runtimeObj = &datav1alpha1.CacheRuntime{
@@ -109,10 +105,6 @@ var _ = Describe("CacheEngine Worker Component Tests", Label("pkg.ddc.cache.engi
 						Name:       "test-runtime",
 						UID:        "test-uid",
 					},
-					WorkloadType: metav1.TypeMeta{
-						Kind:       "StatefulSet",
-						APIVersion: "apps/v1",
-					},
 					PodTemplateSpec: corev1.PodTemplateSpec{
 						Spec: corev1.PodSpec{
 							Containers: []corev1.Container{
@@ -132,7 +124,7 @@ var _ = Describe("CacheEngine Worker Component Tests", Label("pkg.ddc.cache.engi
 				Expect(ready).To(BeTrue())
 
 				// Verify StatefulSet was created
-				sts := &appsv1.StatefulSet{}
+				sts := &v1alpha1.AdvancedStatefulSet{}
 				err = engine.Client.Get(context.TODO(),
 					client.ObjectKey{Name: "test-runtime-worker", Namespace: "default"}, sts)
 				Expect(err).NotTo(HaveOccurred())

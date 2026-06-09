@@ -6245,13 +6245,6 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_RuntimeComponentDefinition(ref 
 				Description: "RuntimeComponentDefinition defines the configuration for a CacheRuntime component",
 				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
-					"workloadType": {
-						SchemaProps: spec.SchemaProps{
-							Description: "WorkloadType is the default workload type of the component",
-							Default:     map[string]interface{}{},
-							Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.TypeMeta"),
-						},
-					},
 					"options": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Options is a set of key-value pairs that provide additional configuration for the component",
@@ -6299,7 +6292,7 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_RuntimeComponentDefinition(ref 
 			},
 		},
 		Dependencies: []string{
-			"github.com/fluid-cloudnative/fluid/api/v1alpha1.ExecutionEntries", "github.com/fluid-cloudnative/fluid/api/v1alpha1.RuntimeComponentDependencies", "github.com/fluid-cloudnative/fluid/api/v1alpha1.RuntimeComponentService", "k8s.io/api/core/v1.PodTemplateSpec", "k8s.io/apimachinery/pkg/apis/meta/v1.TypeMeta"},
+			"github.com/fluid-cloudnative/fluid/api/v1alpha1.ExecutionEntries", "github.com/fluid-cloudnative/fluid/api/v1alpha1.RuntimeComponentDependencies", "github.com/fluid-cloudnative/fluid/api/v1alpha1.RuntimeComponentService", "k8s.io/api/core/v1.PodTemplateSpec"},
 	}
 }
 

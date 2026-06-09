@@ -69,6 +69,7 @@
   - [Dashboard 可视化管理](dashboard/overview.md)
 + 运维指南
   - [运行时监控](operation/monitoring.md)
+  - [CacheRuntime Spec 字段更新能力说明](cacheruntime/cacheruntime_spec_update.md)
   - [JVM性能分析](dev/profiling.md)
   - [自动弹性伸缩](operation/dataset_auto_scaling.md)
   - [定时弹性伸缩](operation/dataset_cron_scaling.md)

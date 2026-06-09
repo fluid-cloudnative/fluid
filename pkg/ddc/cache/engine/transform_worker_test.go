@@ -105,10 +105,6 @@ var _ = Describe("CacheEngine Transform Worker Tests", Label("pkg.ddc.cache.engi
 			FileSystemType: "test-fs",
 			Topology: &datav1alpha1.RuntimeTopology{
 				Worker: &datav1alpha1.RuntimeComponentDefinition{
-					WorkloadType: metav1.TypeMeta{
-						Kind:       "StatefulSet",
-						APIVersion: "apps/v1",
-					},
 					Template: corev1.PodTemplateSpec{
 						Spec: corev1.PodSpec{
 							Affinity: &corev1.Affinity{

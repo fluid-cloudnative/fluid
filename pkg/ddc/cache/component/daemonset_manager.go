@@ -142,3 +142,8 @@ func (s *DaemonSetManager) ConstructComponentStatus(ctx context.Context, identit
 		ReadyReplicas:       readyReplicas,
 	}, nil
 }
+
+// SyncComponentSpec is not supported for DaemonSet, Client Component does not support to be modified after created.
+func (s *DaemonSetManager) SyncComponentSpec(ctx context.Context, identity *common.ComponentIdentity, spec ComponentSpec) error {
+	return fmt.Errorf("SyncComponentSpec is not supported for DaemonSet component %s/%s, client component does not support to be modified after created", identity.Namespace, identity.Name)
+}

@@ -27,7 +27,6 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -40,10 +39,7 @@ var _ = Describe("CacheEngine Client Component Tests", Label("pkg.ddc.cache.engi
 	)
 
 	BeforeEach(func() {
-		scheme := runtime.NewScheme()
-		_ = datav1alpha1.AddToScheme(scheme)
-		_ = appsv1.AddToScheme(scheme)
-		_ = corev1.AddToScheme(scheme)
+		scheme := CacheEngineTestScheme
 
 		// Create runtime with None phase (needs setup)
 		runtimeObj = &datav1alpha1.CacheRuntime{
@@ -99,19 +95,16 @@ var _ = Describe("CacheEngine Client Component Tests", Label("pkg.ddc.cache.engi
 
 			BeforeEach(func() {
 				clientValue = &common.CacheRuntimeComponentValue{
-					Name:      "test-runtime-client",
-					Namespace: "default",
-					Enabled:   true,
-					Replicas:  1,
+					Name:          "test-runtime-client",
+					Namespace:     "default",
+					Enabled:       true,
+					Replicas:      1,
+					ComponentType: common.ComponentTypeClient,
 					Owner: &common.OwnerReference{
 						APIVersion: "data.fluid.io/v1alpha1",
 						Kind:       "CacheRuntime",
 						Name:       "test-runtime",
 						UID:        "test-uid",
-					},
-					WorkloadType: metav1.TypeMeta{
-						Kind:       "DaemonSet",
-						APIVersion: "apps/v1",
 					},
 					PodTemplateSpec: corev1.PodTemplateSpec{
 						Spec: corev1.PodSpec{

@@ -58,7 +58,7 @@ func (e *CacheEngine) ShouldSetupClient() (bool, error) {
 
 func (e *CacheEngine) SetupClientInternal(clientValue *common.CacheRuntimeComponentValue) error {
 	// 1. reconcile to create client workload
-	manager := component.NewComponentHelper(clientValue.WorkloadType, e.Client)
+	manager := component.NewComponentHelper(clientValue.ComponentType, e.Client)
 	err := manager.Reconciler(context.TODO(), clientValue)
 	if err != nil {
 		return err
