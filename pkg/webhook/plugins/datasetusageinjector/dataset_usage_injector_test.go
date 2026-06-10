@@ -169,7 +169,7 @@ var _ = Describe("DatasetUsageInjector", func() {
 		})
 
 		Context("when pod has different annotation value", func() {
-			It("should update the annotation", func() {
+			It("should merge the existing annotation with the new one", func() {
 				pod := &corev1.Pod{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test-update",
@@ -188,7 +188,7 @@ var _ = Describe("DatasetUsageInjector", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(shouldStop).To(BeFalse())
 
-				Expect(pod.Annotations[common.LabelAnnotationDatasetsInUse]).To(Equal("demo-dataset-1"))
+				Expect(pod.Annotations[common.LabelAnnotationDatasetsInUse]).To(Equal("demo-dataset-1,old-dataset"))
 			})
 		})
 	})
