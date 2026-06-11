@@ -14,10 +14,9 @@ linters:
         # Disable style checks that are auto-fixable but noisy
         - "-ST1023" # should omit type from declaration; it will be inferred from the right-hand side
 
-issues:
-  exclusions:
-    rules:
-      # Ignore unchecked errors in test files (common Go test pattern for setup/cleanup)
-      - path: "_test\\.go"
-        linters:
-          - errcheck
+exclusions:
+  rules:
+    # Ignore unchecked errors in test files (common Go test pattern for setup/cleanup)
+    - path: "_test\\.go"
+      linters:
+        - errcheck
