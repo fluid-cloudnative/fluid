@@ -6945,7 +6945,7 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_RuntimeTieredStoreLevel(ref com
 					},
 					"low": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Low is the ratio of low watermark of the tier (e.g., \"0.7\"). Eviction will continue until cache usage falls below this ratio. Type specifies the type of hostPath volume. Defaults to empty string (no validation). More info: https://kubernetes.io/docs/concepts/storage/volumes#hostpath",
+							Description: "Low is the ratio of low watermark of the tier (e.g., \"0.7\"). Eviction will continue until cache usage falls below this ratio.",
 							Type:        []string{"string"},
 							Format:      "",
 						},

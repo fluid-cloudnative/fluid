@@ -294,9 +294,6 @@ type RuntimeTieredStoreLevel struct {
 
 	// Low is the ratio of low watermark of the tier (e.g., "0.7").
 	// Eviction will continue until cache usage falls below this ratio.
-	// Type specifies the type of hostPath volume.
-	// Defaults to empty string (no validation).
-	// More info: https://kubernetes.io/docs/concepts/storage/volumes#hostpath
 	// +optional
 	Low string `json:"low,omitempty"`
 }

@@ -125,7 +125,7 @@ func GetEmptyDirTieredStoreMountPath(levelIndex int) string {
 	return getTieredStoreMountPath(levelIndex, 0, "emptydir")
 }
 
-// getTieredStoreMountPath generates the volume name for a tiered store medium
+// getTieredStoreMountPath generates the mount path for a tiered store medium
 func getTieredStoreMountPath(levelIndex int, pathIndex int, mediumType string) string {
 	return fmt.Sprintf("/etc/fluid/mount/tiered-store/level-%d-index-%d-%s", levelIndex, pathIndex, mediumType)
 }

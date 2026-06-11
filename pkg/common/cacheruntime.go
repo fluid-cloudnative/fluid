@@ -134,7 +134,7 @@ func GetCacheRuntimeConfigConfigMapName(name string) string {
 // This config will be mounted into the worker container via ConfigMap.
 type TieredStoreLevelConfig struct {
 	// MountPaths contains the mount paths inside the container for this tier
-	// For processMemory: empty array (no mount path)
+	// For processMemory: single element array with the mount path (e.g. ["/dev/shm"])
 	// For emptyDir: single element array with the mount path
 	// For hostPath: array of mount paths corresponding to each host path
 	MountPaths []string `json:"mountPaths,omitempty"`

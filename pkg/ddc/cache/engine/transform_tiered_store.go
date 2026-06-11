@@ -101,7 +101,7 @@ func (e *CacheEngine) handleProcessMemory(podSpec *corev1.PodSpec, container *co
 
 	// add an memory emptyDir for /dev/shm in the container
 	volumeName := fmt.Sprintf("tiered-store-level-%d-memory", levelIndex)
-	mountPath := GetEmptyDirTieredStoreMountPath(levelIndex)
+	mountPath := GetMemoryTieredStoreMountPath(levelIndex)
 	volume := corev1.Volume{
 		Name: volumeName,
 		VolumeSource: corev1.VolumeSource{
