@@ -113,6 +113,16 @@ var _ = Describe("CacheEngine TransformRuntimeTieredStore Tests", Label("pkg.ddc
 				memLimit := podSpec.Containers[0].Resources.Limits[corev1.ResourceMemory]
 				expectedLimit := resource.MustParse("8Gi") // 4Gi + 4Gi
 				Expect(memLimit.Cmp(expectedLimit)).To(Equal(0))
+
+				// Verify volume and volume mount are created for ProcessMemory
+				Expect(podSpec.Volumes).To(HaveLen(1))
+				Expect(podSpec.Volumes[0].Name).To(Equal("tiered-store-level-0-memory"))
+				Expect(podSpec.Volumes[0].EmptyDir).NotTo(BeNil())
+				Expect(podSpec.Volumes[0].EmptyDir.Medium).To(Equal(corev1.StorageMediumMemory))
+
+				// Verify volume mount path is set to /dev/shm (from GetMemoryTieredStoreMountPath)
+				Expect(podSpec.Containers[0].VolumeMounts).To(HaveLen(1))
+				Expect(podSpec.Containers[0].VolumeMounts[0].MountPath).To(Equal("/dev/shm"))
 			})
 
 			It("should return error when quota is zero", func() {
