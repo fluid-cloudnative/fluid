@@ -633,9 +633,21 @@ func GetRuntimeInfo(reader client.Reader, name, namespace string) (runtimeInfo R
 		return
 	}
 
+	// set fuse name
+	var fuseName string
+	switch runtimeType {
+	case common.JindoRuntime:
+		fuseName = name + "-" + common.JindoChartName + "-fuse"
+	case common.CacheRuntime:
+		fuseName = common.GetCacheComponentName(name, common.ComponentTypeClient)
+	default:
+		fuseName = name + "-fuse"
+	}
+
 	if runtimeInfo != nil {
 		runtimeInfo.SetAPIReader(reader)
 		runtimeInfo.SetOwnerDatasetUID(dataset.UID)
+		runtimeInfo.SetFuseName(fuseName)
 	}
 	return runtimeInfo, err
 }

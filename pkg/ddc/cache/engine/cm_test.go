@@ -108,7 +108,7 @@ func TestCreateRuntimeValueConfigMapCreatesMissingConfigMap(t *testing.T) {
 	}
 
 	created := &corev1.ConfigMap{}
-	if err := baseClient.Get(context.Background(), types.NamespacedName{Name: engine.getRuntimeConfigConfigMapName(), Namespace: "default"}, created); err != nil {
+	if err := baseClient.Get(context.Background(), types.NamespacedName{Name: common.GetCacheRuntimeConfigConfigMapName(engine.name), Namespace: "default"}, created); err != nil {
 		t.Fatalf("expected runtime value configmap to be created, got %v", err)
 	}
 	if _, ok := created.Data[engine.getRuntimeConfigFileName()]; !ok {
@@ -159,7 +159,7 @@ func TestSyncRuntimeValueConfigMapSkipsUnchangedData(t *testing.T) {
 		t.Fatalf("failed to generate runtime config data: %v", err)
 	}
 	configMap := &corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{Name: baseEngine.getRuntimeConfigConfigMapName(), Namespace: "default"},
+		ObjectMeta: metav1.ObjectMeta{Name: common.GetCacheRuntimeConfigConfigMapName(baseEngine.name), Namespace: "default"},
 		Data:       data,
 	}
 

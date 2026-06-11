@@ -42,7 +42,7 @@ type CacheRuntimeInfo struct {
 }
 
 func (info *CacheRuntimeInfo) GetWorkerPods(client client.Client) ([]corev1.Pod, error) {
-	workerName := GetComponentName(info.GetName(), common.ComponentTypeWorker)
+	workerName := common.GetCacheComponentName(info.GetName(), common.ComponentTypeWorker)
 	workers := &workloadv1alpha1.AdvancedStatefulSet{}
 	err := client.Get(context.TODO(), types.NamespacedName{Name: workerName, Namespace: info.GetNamespace()}, workers)
 	if err != nil {
@@ -94,8 +94,8 @@ func (e *CacheEngine) getRuntimeInfo() (base.RuntimeInfoInterface, error) {
 		if err != nil {
 			return e.runtimeInfo, err
 		}
+		// keep the same as base.GetRuntimeInfo
 		opts := []base.RuntimeInfoOption{
-			// TODO(cache runtime): useless code?
 			base.WithTieredStore(datav1alpha1.TieredStore{}),
 			// below used for create volume
 			base.WithMetadataList(base.GetMetadataListFromAnnotation(runtime)),
@@ -109,6 +109,8 @@ func (e *CacheEngine) getRuntimeInfo() (base.RuntimeInfoInterface, error) {
 		e.runtimeInfo = &CacheRuntimeInfo{runtimeInfo}
 		// Setup Fuse Deploy Mode
 		e.runtimeInfo.SetFuseNodeSelector(runtime.Spec.Client.NodeSelector)
+		e.runtimeInfo.SetupFuseCleanPolicy(runtime.Spec.Client.CleanPolicy)
+		e.runtimeInfo.SetFuseName(common.GetCacheComponentName(e.name, common.ComponentTypeClient))
 	}
 
 	if testutil.IsUnitTest() {
@@ -143,6 +145,7 @@ func (e *CacheEngine) getRuntimeInfo() (base.RuntimeInfoInterface, error) {
 			e.runtimeInfo.SetupWithDataset(dataset)
 		}
 	}
+	// no need to set APIReader as base.GetRuntimeInfo, it is not used in the reconciler (used in webhook mutation)
 
 	return e.runtimeInfo, nil
 }

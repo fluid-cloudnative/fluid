@@ -95,6 +95,7 @@ rules:
       - jindoruntimes
       - juicefsruntimes
       - efcruntimes
+      - cacheruntimes
       - thinruntimes
       - thinruntimeprofiles
       - datasets

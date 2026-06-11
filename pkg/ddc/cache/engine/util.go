@@ -35,11 +35,6 @@ const (
 	truncatedSecretMaxLength = secretMaxTotalLength - prefixSecretVolumeLength - hashSuffixLength
 )
 
-// GetComponentName gets the component name using runtime name and component type.
-func GetComponentName(runtimeName string, componentType common.ComponentType) string {
-	return fmt.Sprintf("%s-%s", runtimeName, componentType)
-}
-
 // GetComponentServiceName gets the component service name.
 func GetComponentServiceName(runtimeName string, componentType common.ComponentType) string {
 	return fmt.Sprintf("svc-%s-%s", runtimeName, componentType)
@@ -62,10 +57,6 @@ func (e *CacheEngine) getFuseMountPoint() string {
 	return fmt.Sprintf("%s/%s/%s/cache-fuse", mountRoot, e.namespace, e.name)
 }
 
-// getRuntimeConfigConfigMapName get the configmap name of the runtime config.
-func (e *CacheEngine) getRuntimeConfigConfigMapName() string {
-	return fmt.Sprintf("fluid-runtime-config-%s", e.name)
-}
 func (e *CacheEngine) getRuntimeConfigVolumeName() (targetPath string) {
 	return fmt.Sprintf("fluid-runtime-%s-config", e.name)
 }

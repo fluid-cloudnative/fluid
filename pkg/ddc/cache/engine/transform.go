@@ -94,7 +94,7 @@ func (e *CacheEngine) getRuntimeStatusValue(runtime *datav1alpha1.CacheRuntime, 
 	if runtimeClass.Topology.Master != nil && !runtime.Spec.Master.Disabled {
 		statusValue.Master = &common.ComponentStatusInfo{
 			ComponentIdentity: common.ComponentIdentity{
-				Name:      GetComponentName(e.name, common.ComponentTypeMaster),
+				Name:      common.GetCacheComponentName(e.name, common.ComponentTypeMaster),
 				Namespace: e.namespace,
 			},
 			Enabled: true,
@@ -107,7 +107,7 @@ func (e *CacheEngine) getRuntimeStatusValue(runtime *datav1alpha1.CacheRuntime, 
 	if runtimeClass.Topology.Worker != nil && !runtime.Spec.Worker.Disabled {
 		statusValue.Worker = &common.ComponentStatusInfo{
 			ComponentIdentity: common.ComponentIdentity{
-				Name:      GetComponentName(e.name, common.ComponentTypeWorker),
+				Name:      common.GetCacheComponentName(e.name, common.ComponentTypeWorker),
 				Namespace: e.namespace,
 			},
 			Enabled: true,
@@ -120,7 +120,7 @@ func (e *CacheEngine) getRuntimeStatusValue(runtime *datav1alpha1.CacheRuntime, 
 	if runtimeClass.Topology.Client != nil && !runtime.Spec.Client.Disabled {
 		statusValue.Client = &common.ComponentStatusInfo{
 			ComponentIdentity: common.ComponentIdentity{
-				Name:      GetComponentName(e.name, common.ComponentTypeClient),
+				Name:      common.GetCacheComponentName(e.name, common.ComponentTypeClient),
 				Namespace: e.namespace,
 			},
 			Enabled: true,
@@ -150,7 +150,7 @@ func (e *CacheEngine) transformRuntimeConfigVolume(config *CacheRuntimeComponent
 			VolumeSource: corev1.VolumeSource{
 				ConfigMap: &corev1.ConfigMapVolumeSource{
 					LocalObjectReference: corev1.LocalObjectReference{
-						Name: e.getRuntimeConfigConfigMapName(),
+						Name: common.GetCacheRuntimeConfigConfigMapName(e.name),
 					},
 				},
 			},

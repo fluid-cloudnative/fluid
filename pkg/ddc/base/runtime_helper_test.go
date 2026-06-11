@@ -58,6 +58,7 @@ var _ = Describe("RuntimeHelper", func() {
 					runtimeType: common.AlluxioRuntime,
 				}
 				runtimeInfo.SetAPIReader(fakeClient)
+				runtimeInfo.SetFuseName(ds.GetName())
 			})
 
 			It("should retrieve the fuse daemonset successfully", func() {
@@ -83,6 +84,7 @@ var _ = Describe("RuntimeHelper", func() {
 					runtimeType: common.JindoRuntime,
 				}
 				runtimeInfo.SetAPIReader(fakeClient)
+				runtimeInfo.SetFuseName(ds.GetName())
 			})
 
 			It("should retrieve the fuse daemonset successfully", func() {

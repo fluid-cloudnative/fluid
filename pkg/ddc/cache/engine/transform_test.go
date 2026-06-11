@@ -331,9 +331,9 @@ var _ = Describe("CacheEngine Transform Tests", Label("pkg.ddc.cache.engine.tran
 			It("should generate correct component names", func() {
 				statusValue, err := engine.getRuntimeStatusValue(runtimeObj, runtimeClass)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(statusValue.Master.ComponentIdentity.Name).To(Equal(GetComponentName("test-runtime", common.ComponentTypeMaster)))
-				Expect(statusValue.Worker.ComponentIdentity.Name).To(Equal(GetComponentName("test-runtime", common.ComponentTypeWorker)))
-				Expect(statusValue.Client.ComponentIdentity.Name).To(Equal(GetComponentName("test-runtime", common.ComponentTypeClient)))
+				Expect(statusValue.Master.ComponentIdentity.Name).To(Equal(common.GetCacheComponentName("test-runtime", common.ComponentTypeMaster)))
+				Expect(statusValue.Worker.ComponentIdentity.Name).To(Equal(common.GetCacheComponentName("test-runtime", common.ComponentTypeWorker)))
+				Expect(statusValue.Client.ComponentIdentity.Name).To(Equal(common.GetCacheComponentName("test-runtime", common.ComponentTypeClient)))
 			})
 		})
 	})

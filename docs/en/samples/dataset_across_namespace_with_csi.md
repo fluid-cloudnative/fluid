@@ -3,8 +3,6 @@ This demo is used to show how to use a Dataset cache across Namespace.
 - In Namespace `ns-a`, create Dataset `demo` and AlluxioRuntime `demo`
 - In Namespace `ns-b` create Dataset `demo-ref` and ThinRuntime `demo-ref`. The mountPoint of `demo-ref` is `dataset://ns-a/demo`
 
-⚠️ **Note**: The physical runtime (the runtime bound to the original dataset) must NOT be CacheRuntime.
-
 ## Prerequisites
 Before running this demo, please refer to the [installation documentation](../userguide/install.md) to complete the installation and check that the components of Fluid are working properly:
 ```shell

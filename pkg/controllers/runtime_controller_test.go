@@ -165,44 +165,6 @@ var _ = Describe("RuntimeReconciler", func() {
 			Expect(err.Error()).To(ContainSubstring("can only use thin runtime"))
 		})
 
-		It("rejects a reference dataset when physical runtime is CacheRuntime", func() {
-			dataset := newTestDatasetWithMounts(defaultNamespace, demoDatasetName, []datav1alpha1.Mount{{
-				MountPoint: demoPhysicalDatasetMount,
-			}})
-			physicalDataset := &datav1alpha1.Dataset{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "physical-dataset",
-					Namespace: "demo",
-				},
-				Status: datav1alpha1.DatasetStatus{
-					Runtimes: []datav1alpha1.Runtime{{
-						Name:      "physical-dataset",
-						Namespace: "demo",
-						Type:      common.CacheRuntime,
-					}},
-				},
-			}
-			cacheRuntime := &datav1alpha1.CacheRuntime{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "physical-dataset",
-					Namespace: "demo",
-				},
-			}
-			r := newTestRuntimeReconciler(dataset, physicalDataset, cacheRuntime)
-
-			supported, err := r.CheckIfReferenceDatasetIsSupported(cruntime.ReconcileRequestContext{
-				Dataset:     dataset,
-				RuntimeType: common.ThinRuntime,
-				Client:      r.Client,
-			})
-
-			if err == nil {
-				Fail("Expected an error but got nil")
-			}
-			Expect(supported).To(BeFalse())
-			Expect(err.Error()).To(ContainSubstring("unsupported runtime type"))
-		})
-
 		It("allows a reference dataset when physical runtime is AlluxioRuntime", func() {
 			dataset := newTestDatasetWithMounts(defaultNamespace, demoDatasetName, []datav1alpha1.Mount{{
 				MountPoint: demoPhysicalDatasetMount,
@@ -240,7 +202,7 @@ var _ = Describe("RuntimeReconciler", func() {
 			Expect(supported).To(BeTrue())
 		})
 
-		It("rejects a reference dataset when physical dataset is not bound (Runtimes is empty)", func() {
+		It("not reject a reference dataset when physical dataset is not bound (Runtimes is empty)", func() {
 			dataset := newTestDatasetWithMounts(defaultNamespace, demoDatasetName, []datav1alpha1.Mount{{
 				MountPoint: demoPhysicalDatasetMount,
 			}})
@@ -262,9 +224,8 @@ var _ = Describe("RuntimeReconciler", func() {
 				Client:      r.Client,
 			})
 
-			Expect(err).To(HaveOccurred())
-			Expect(supported).To(BeFalse())
-			Expect(err.Error()).To(ContainSubstring("failed to get runtime info"))
+			Expect(err).NotTo(HaveOccurred())
+			Expect(supported).To(BeTrue())
 		})
 	})
 

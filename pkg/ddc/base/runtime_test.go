@@ -830,6 +830,7 @@ var _ = Describe("GetRuntimeInfo", func() {
 				runtimeType: common.AlluxioRuntime,
 				fuse: Fuse{
 					CleanPolicy: v1alpha1.OnRuntimeDeletedCleanPolicy,
+					Name:        "alluxio-fuse",
 				},
 			},
 			wantErr: false,
@@ -848,6 +849,7 @@ var _ = Describe("GetRuntimeInfo", func() {
 				fuse: Fuse{
 					CleanPolicy:         v1alpha1.OnRuntimeDeletedCleanPolicy,
 					MetricsScrapeTarget: mountModeSelector{},
+					Name:                "jindo-jindofs-fuse",
 				},
 			},
 			wantErr: false,
@@ -865,6 +867,7 @@ var _ = Describe("GetRuntimeInfo", func() {
 				runtimeType: common.JuiceFSRuntime,
 				fuse: Fuse{
 					CleanPolicy: v1alpha1.OnRuntimeDeletedCleanPolicy,
+					Name:        "juice-fuse",
 				},
 			},
 			wantErr: false,
@@ -882,6 +885,7 @@ var _ = Describe("GetRuntimeInfo", func() {
 				runtimeType: common.JuiceFSRuntime,
 				fuse: Fuse{
 					CleanPolicy: v1alpha1.OnFuseChangedCleanPolicy,
+					Name:        "juice-update-strategy-on-idle-fuse",
 				},
 			},
 			wantErr: false,
@@ -899,6 +903,7 @@ var _ = Describe("GetRuntimeInfo", func() {
 				runtimeType: common.JuiceFSRuntime,
 				fuse: Fuse{
 					CleanPolicy: v1alpha1.OnDemandCleanPolicy,
+					Name:        "juice-fake-fuse",
 				},
 			},
 			wantErr: true,
@@ -916,6 +921,7 @@ var _ = Describe("GetRuntimeInfo", func() {
 				runtimeType: common.EFCRuntime,
 				fuse: Fuse{
 					CleanPolicy: v1alpha1.OnRuntimeDeletedCleanPolicy,
+					Name:        "efc-fuse",
 				},
 			},
 			wantErr: false,
@@ -933,6 +939,7 @@ var _ = Describe("GetRuntimeInfo", func() {
 				runtimeType: common.EFCRuntime,
 				fuse: Fuse{
 					CleanPolicy: v1alpha1.OnDemandCleanPolicy,
+					Name:        "efc-fake-fuse",
 				},
 			},
 			wantErr: true,

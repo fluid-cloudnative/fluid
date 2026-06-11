@@ -106,7 +106,7 @@ var _ = Describe("ConfigMap Operations", func() {
 
 				runtimeInfo, err := base.BuildRuntimeInfo("alluxio", "source-ns", common.AlluxioRuntime)
 				Expect(err).NotTo(HaveOccurred())
-
+				runtimeInfo.SetFuseName("alluxio-fuse")
 				err = copyFuseDaemonSetForRefDataset(context.TODO(), fakeClient, refDataset, runtimeInfo)
 				Expect(err).NotTo(HaveOccurred())
 
@@ -160,6 +160,7 @@ var _ = Describe("ConfigMap Operations", func() {
 
 				runtimeInfo, err := base.BuildRuntimeInfo("jindo", "source-ns", common.JindoRuntime)
 				Expect(err).NotTo(HaveOccurred())
+				runtimeInfo.SetFuseName("jindo-jindofs-fuse")
 
 				err = copyFuseDaemonSetForRefDataset(context.TODO(), fakeClient, refDataset, runtimeInfo)
 				Expect(err).NotTo(HaveOccurred())
@@ -217,6 +218,7 @@ var _ = Describe("ConfigMap Operations", func() {
 
 				runtimeInfo, err := base.BuildRuntimeInfo("alluxio", "source-ns", common.AlluxioRuntime)
 				Expect(err).NotTo(HaveOccurred())
+				runtimeInfo.SetFuseName("alluxio-fuse")
 
 				err = copyFuseDaemonSetForRefDataset(context.TODO(), fakeClient, refDataset, runtimeInfo)
 				Expect(err).NotTo(HaveOccurred())

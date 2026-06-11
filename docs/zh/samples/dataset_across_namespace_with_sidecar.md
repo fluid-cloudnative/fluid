@@ -2,8 +2,6 @@
 本示例用来演示如何一份Dataset缓存数据，如何跨Namespace使用：
 - Namespace ns-a 创建 Dataset demo 和 AlluxioRuntime demo
 - Namespace ns-b 创建 Dataset demo-ref，其中demo-ref  mount的路径为`dataset://ns-a/demo`
-
-⚠️ **注意**：物理运行时（即原始Dataset绑定的Runtime）不能是CacheRuntime。
  
 ## 前提条件
 在运行该示例之前，请参考[安装文档](../userguide/install.md)完成安装，并检查Fluid各组件正常运行：

@@ -91,7 +91,7 @@ func (e *CacheEngine) Sync(ctx cruntime.ReconcileRequestContext) (err error) {
 }
 
 func (e *CacheEngine) syncRuntimeValueConfigMap(ctx cruntime.ReconcileRequestContext, runtime *datav1alpha1.CacheRuntime) error {
-	configMap, err := kubeclient.GetConfigmapByNameWithContext(ctx, e.Client, e.getRuntimeConfigConfigMapName(), e.namespace)
+	configMap, err := kubeclient.GetConfigmapByNameWithContext(ctx, e.Client, common.GetCacheRuntimeConfigConfigMapName(e.name), e.namespace)
 	if err != nil {
 		return err
 	}
@@ -113,7 +113,7 @@ func (e *CacheEngine) syncRuntimeValueConfigMap(ctx cruntime.ReconcileRequestCon
 	}
 
 	if configMap == nil {
-		return kubeclient.CreateConfigMapWithOwnerWithContext(ctx, e.Client, e.getRuntimeConfigConfigMapName(), e.namespace, data, owner)
+		return kubeclient.CreateConfigMapWithOwnerWithContext(ctx, e.Client, common.GetCacheRuntimeConfigConfigMapName(e.name), e.namespace, data, owner)
 	}
 
 	configMapToUpdate := configMap.DeepCopy()
@@ -151,7 +151,7 @@ func (e *CacheEngine) syncRuntimeSpec(ctx cruntime.ReconcileRequestContext, runt
 	// Sync Master component if enabled (supports in-place update via AdvancedStatefulSet)
 	if runtimeClass.Topology.Master != nil && !runtime.Spec.Master.Disabled {
 		masterIdentity := &common.ComponentIdentity{
-			Name:      GetComponentName(e.name, common.ComponentTypeMaster),
+			Name:      common.GetCacheComponentName(e.name, common.ComponentTypeMaster),
 			Namespace: e.namespace,
 		}
 		manager := component.NewComponentHelper(common.ComponentTypeMaster, e.Client)
@@ -175,7 +175,7 @@ func (e *CacheEngine) syncRuntimeSpec(ctx cruntime.ReconcileRequestContext, runt
 	// Sync Worker component if enabled (supports in-place update via AdvancedStatefulSet)
 	if runtimeClass.Topology.Worker != nil && !runtime.Spec.Worker.Disabled {
 		workerIdentity := &common.ComponentIdentity{
-			Name:      GetComponentName(e.name, common.ComponentTypeWorker),
+			Name:      common.GetCacheComponentName(e.name, common.ComponentTypeWorker),
 			Namespace: e.namespace,
 		}
 		manager := component.NewComponentHelper(common.ComponentTypeWorker, e.Client)

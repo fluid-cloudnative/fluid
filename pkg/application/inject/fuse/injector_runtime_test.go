@@ -227,6 +227,7 @@ var _ = Describe("Fuse Injector", func() {
 				runtimeInfo, err := base.BuildRuntimeInfo("duplicate", "big-data", common.JindoRuntime)
 				Expect(err).NotTo(HaveOccurred())
 				runtimeInfo.SetAPIReader(fakeClient)
+				runtimeInfo.SetFuseName("duplicate-jindofs-fuse")
 				runtimeInfos["duplicate"] = runtimeInfo
 			})
 
@@ -265,6 +266,7 @@ var _ = Describe("Fuse Injector", func() {
 			runtimeInfo, err := base.BuildRuntimeInfo("test", "default", common.JindoRuntime)
 			Expect(err).NotTo(HaveOccurred())
 			runtimeInfo.SetAPIReader(fakeClient)
+			runtimeInfo.SetFuseName("test-jindofs-fuse")
 			runtimeInfos["test"] = runtimeInfo
 		})
 
@@ -340,6 +342,7 @@ var _ = Describe("Fuse Injector", func() {
 			runtimeInfo, err := base.BuildRuntimeInfo("test", "default", common.JindoRuntime)
 			Expect(err).NotTo(HaveOccurred())
 			runtimeInfo.SetAPIReader(fakeClient)
+			runtimeInfo.SetFuseName("test-jindofs-fuse")
 			runtimeInfos["test"] = runtimeInfo
 		})
 

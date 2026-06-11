@@ -26,7 +26,6 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils/cmdguard"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/validation"
 	"github.com/golang/glog"
-	corev1 "k8s.io/api/core/v1"
 	"k8s.io/utils/mount"
 )
 
@@ -113,27 +112,6 @@ func CheckMountPointBroken(mountPath string) (broken bool, err error) {
 		return false, fmt.Errorf("mountPath %s not exist", mountPath)
 	}
 	return false, nil
-}
-
-func GetRuntimeNameFromFusePod(pod corev1.Pod) (runtimeName string, err error) {
-	podName := pod.Name
-	strList := strings.Split(podName, "-fuse-")
-	if len(strList) != 2 {
-		err = fmt.Errorf("can't get runtime name from pod: %s, namespace: %s", pod.Name, pod.Namespace)
-		return
-	}
-	runtimeName = strList[0]
-	return
-}
-
-func IsFusePod(pod corev1.Pod) bool {
-	labels := pod.Labels
-	for k, v := range labels {
-		if k == "role" && strings.Contains(v, "-fuse") {
-			return true
-		}
-	}
-	return false
 }
 
 // PathExists returns true if the specified path exists. The code is replicated from "k8s.io/utils/mount.PathExists".
