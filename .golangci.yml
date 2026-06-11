@@ -12,6 +12,8 @@ linters:
         - "-QF1008" # could remove embedded field from selector
         - "-QF1011" # could omit type from declaration
         # Disable style checks that are auto-fixable but noisy
+        - "-ST1000" # package comment should be of the form "Package ..."
+        - "-ST1003" # should not use underscores in Go names / naming conventions
         - "-ST1023" # should omit type from declaration; it will be inferred from the right-hand side
 
   exclusions:
