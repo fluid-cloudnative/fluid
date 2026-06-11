@@ -1,0 +1,23 @@
+version: "2"
+
+linters:
+  settings:
+    staticcheck:
+      checks:
+        - all
+        # Disable quickfix suggestions (refactoring hints, not bugs)
+        - "-QF1001" # could apply De Morgan's law
+        - "-QF1004" # could use strings.ReplaceAll instead
+        - "-QF1007" # could merge conditional assignment into variable declaration
+        - "-QF1008" # could remove embedded field from selector
+        - "-QF1011" # could omit type from declaration
+        # Disable style checks that are auto-fixable but noisy
+        - "-ST1023" # should omit type from declaration; it will be inferred from the right-hand side
+
+issues:
+  exclusions:
+    rules:
+      # Ignore unchecked errors in test files (common Go test pattern for setup/cleanup)
+      - path: "_test\\.go"
+        linters:
+          - errcheck
