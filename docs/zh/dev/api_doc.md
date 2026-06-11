@@ -24,7 +24,6 @@ zz_unit_test_scheme.go with a "zz" prefix to ensure its init function is called 
 - [DataProcess](#dataprocess)
 - [Dataset](#dataset)
 - [EFCRuntime](#efcruntime)
-- [GooseFSRuntime](#goosefsruntime)
 - [JindoRuntime](#jindoruntime)
 - [JuiceFSRuntime](#juicefsruntime)
 - [ThinRuntime](#thinruntime)
@@ -234,6 +233,7 @@ CacheRuntimeClass defines a class of cache runtime implementations with specific
 | `fileSystemType` _string_ | FileSystemType is the file system type of the cache runtime (e.g., "alluxio", "juicefs") |  | Required: \{\} <br /> |
 | `topology` _[RuntimeTopology](#runtimetopology)_ | Topology describes the topology of the CacheRuntime components (master, worker, client) |  | Optional: \{\} <br /> |
 | `extraResources` _[RuntimeExtraResources](#runtimeextraresources)_ | ExtraResources specifies additional resources (e.g., ConfigMaps) used by the CacheRuntime components |  | Optional: \{\} <br /> |
+| `dataOperationSpecs` _[DataOperationSpec](#dataoperationspec) array_ | DataOperationSpecs specifies the data operation spec |  | Optional: \{\} <br /> |
 
 
 #### CacheRuntimeClientSpec
@@ -287,6 +287,8 @@ _Appears in:_
 | `nodeSelector` _object (keys:string, values:string)_ | NodeSelector is a selector which must be true for the pod to fit on a node.<br />Selector which must match a node's labels for the pod to be scheduled on that node.<br />More info: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/ |  | Optional: \{\} <br /> |
 | `tolerations` _[Toleration](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#toleration-v1-core) array_ | Tolerations are the pod's tolerations.<br />If specified, the pod's tolerations.<br />More info: https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/ |  | Optional: \{\} <br /> |
 | `replicas` _integer_ | Replicas is the desired number of replicas of the master component.<br />If unspecified, defaults to 1. | 1 | Minimum: 0 <br />Optional: \{\} <br /> |
+
+
 
 
 #### CacheRuntimeSpec
@@ -367,7 +369,6 @@ CleanCachePolicy defines policies when cleaning cache
 
 _Appears in:_
 - [EFCRuntimeSpec](#efcruntimespec)
-- [GooseFSRuntimeSpec](#goosefsruntimespec)
 - [JindoRuntimeSpec](#jindoruntimespec)
 - [RuntimeManagement](#runtimemanagement)
 
@@ -476,7 +477,6 @@ Data management strategies
 
 _Appears in:_
 - [AlluxioRuntimeSpec](#alluxioruntimespec)
-- [GooseFSRuntimeSpec](#goosefsruntimespec)
 
 | Field | Description | Default | Validation |
 | --- | --- | --- | --- |
@@ -620,6 +620,25 @@ _Appears in:_
 | `resources` _[ResourceRequirements](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#resourcerequirements-v1-core)_ | Resources that will be requested by the DataMigrate job. <br> |  | Optional: \{\} <br /> |
 | `parallelism` _integer_ | Parallelism defines the parallelism tasks numbers for DataMigrate. If the value is greater than 1, the job acts<br />as a launcher, and users should define the WorkerSpec. | 1 | Minimum: 1 <br />Optional: \{\} <br /> |
 | `parallelOptions` _object (keys:string, values:string)_ | ParallelOptions defines options like ssh port and ssh secret name when parallelism is greater than 1. |  | Optional: \{\} <br /> |
+
+
+#### DataOperationSpec
+
+
+
+
+
+
+
+_Appears in:_
+- [CacheRuntimeClass](#cacheruntimeclass)
+
+| Field | Description | Default | Validation |
+| --- | --- | --- | --- |
+| `name` _string_ | Name is the data operation name like DataLoad, DataBackup, DataMigrate etc. |  | Enum: [DataLoad DataBackup DataMigrate DataProcess] <br /> |
+| `image` _string_ | Image the image for data operation, if not existed, use the runtime/runtimeclass defined worker image. |  | Optional: \{\} <br /> |
+| `command` _string array_ | Command for data operation Pod container |  |  |
+| `args` _string array_ | Args for data operation Pod container |  |  |
 
 
 #### DataProcess
@@ -928,19 +947,6 @@ _Appears in:_
 | `valueFrom` _[EncryptOptionSource](#encryptoptionsource)_ | The valueFrom of encryptOption |  | Optional: \{\} <br /> |
 
 
-#### EncryptOptionComponentDependency
-
-
-
-EncryptOptionComponentDependency defines the configuration for encrypt option dependency
-
-
-
-_Appears in:_
-- [RuntimeComponentDependencies](#runtimecomponentdependencies)
-
-
-
 #### EncryptOptionSource
 
 
@@ -955,6 +961,40 @@ _Appears in:_
 | Field | Description | Default | Validation |
 | --- | --- | --- | --- |
 | `secretKeyRef` _[SecretKeySelector](#secretkeyselector)_ | The encryptInfo obtained from secret |  | Optional: \{\} <br /> |
+
+
+#### ExecutionCommonEntry
+
+
+
+
+
+
+
+_Appears in:_
+- [ExecutionEntries](#executionentries)
+
+| Field | Description | Default | Validation |
+| --- | --- | --- | --- |
+| `command` _string array_ |  |  |  |
+| `timeout` _integer_ | TimeoutSeconds is the timeout(seconds) for the execution entry, at least(default) 20 seconds. |  |  |
+
+
+#### ExecutionEntries
+
+
+
+
+
+
+
+_Appears in:_
+- [RuntimeComponentDefinition](#runtimecomponentdefinition)
+
+| Field | Description | Default | Validation |
+| --- | --- | --- | --- |
+| `mountUFS` _[ExecutionCommonEntry](#executioncommonentry)_ | MountUFS defines the operations for mounting UFS. The command's stdout must be JSON matching CacheRuntimeMountUfsOutput. |  |  |
+| `reportSummary` _[ExecutionCommonEntry](#executioncommonentry)_ | ReportSummary it defines the operation how to get cache status like capacity, hit ratio etc. |  |  |
 
 
 #### ExternalEndpointSpec
@@ -1020,7 +1060,6 @@ _Appears in:_
 - [AlluxioFuseSpec](#alluxiofusespec)
 - [CacheRuntimeClientSpec](#cacheruntimeclientspec)
 - [EFCFuseSpec](#efcfusespec)
-- [GooseFSFuseSpec](#goosefsfusespec)
 - [JindoFuseSpec](#jindofusespec)
 - [JuiceFSFuseSpec](#juicefsfusespec)
 - [ThinFuseSpec](#thinfusespec)
@@ -1032,106 +1071,6 @@ _Appears in:_
 | `OnDemand` | OnDemandCleanPolicy cleans fuse pod once the fuse pod on some node is not needed<br /> |
 | `OnRuntimeDeleted` | OnRuntimeDeletedCleanPolicy cleans fuse pod only when the cache runtime is deleted<br /> |
 | `OnFuseChanged` | OnFuseChangedCleanPolicy cleans fuse pod when the fuse in runtime is updated and the fuse pod on some node is not needed<br /> |
-
-
-#### GooseFSCompTemplateSpec
-
-
-
-GooseFSCompTemplateSpec is a description of the GooseFS commponents
-
-
-
-_Appears in:_
-- [GooseFSRuntimeSpec](#goosefsruntimespec)
-
-| Field | Description | Default | Validation |
-| --- | --- | --- | --- |
-| `replicas` _integer_ | Replicas is the desired number of replicas of the given template.<br />If unspecified, defaults to 1.<br />replicas is the min replicas of dataset in the cluster |  | Minimum: 1 <br />Optional: \{\} <br /> |
-| `jvmOptions` _string array_ | Options for JVM |  |  |
-| `properties` _object (keys:string, values:string)_ | Configurable properties for the GOOSEFS component. <br><br />Refer to <a href="https://cloud.tencent.com/document/product/436/56415">GOOSEFS Configuration Properties</a> for more info |  | Optional: \{\} <br /> |
-| `ports` _object (keys:string, values:integer)_ | Ports used by GooseFS(e.g. rpc: 19998 for master) |  | Optional: \{\} <br /> |
-| `resources` _[ResourceRequirements](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#resourcerequirements-v1-core)_ | Resources that will be requested by the GooseFS component. <br><br /><br><br />Resources are not allowed for ephemeral containers. Ephemeral containers use spare resources<br />already allocated to the pod. |  | Optional: \{\} <br /> |
-| `env` _object (keys:string, values:string)_ | Environment variables that will be used by GooseFS component. <br> |  |  |
-| `enabled` _boolean_ | Enabled or Disabled for the components. For now, only  API Gateway is enabled or disabled. |  | Optional: \{\} <br /> |
-| `nodeSelector` _object (keys:string, values:string)_ | NodeSelector is a selector which must be true for the master to fit on a node |  | Optional: \{\} <br /> |
-| `annotations` _object (keys:string, values:string)_ | Annotations is an unstructured key value map stored with a resource that may be<br />set by external tools to store and retrieve arbitrary metadata. They are not<br />queryable and should be preserved when modifying objects.<br />More info: http://kubernetes.io/docs/user-guide/annotations |  | Optional: \{\} <br /> |
-
-
-#### GooseFSFuseSpec
-
-
-
-GooseFSFuseSpec is a description of the GooseFS Fuse
-
-
-
-_Appears in:_
-- [GooseFSRuntimeSpec](#goosefsruntimespec)
-
-| Field | Description | Default | Validation |
-| --- | --- | --- | --- |
-| `image` _string_ | Image for GooseFS Fuse(e.g. goosefs/goosefs-fuse) |  |  |
-| `imageTag` _string_ | Image Tag for GooseFS Fuse(e.g. v1.0.1) |  |  |
-| `imagePullPolicy` _string_ | One of the three policies: `Always`, `IfNotPresent`, `Never` |  |  |
-| `jvmOptions` _string array_ | Options for JVM |  |  |
-| `properties` _object (keys:string, values:string)_ | Configurable properties for the GOOSEFS component. <br><br />Refer to <a href="https://cloud.tencent.com/document/product/436/56415">GOOSEFS Configuration Properties</a> for more info |  |  |
-| `env` _object (keys:string, values:string)_ | Environment variables that will be used by GooseFS Fuse |  |  |
-| `resources` _[ResourceRequirements](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#resourcerequirements-v1-core)_ | Resources that will be requested by GooseFS Fuse. <br><br /><br><br />Resources are not allowed for ephemeral containers. Ephemeral containers use spare resources<br />already allocated to the pod. |  | Optional: \{\} <br /> |
-| `args` _string array_ | Arguments that will be passed to GooseFS Fuse |  |  |
-| `nodeSelector` _object (keys:string, values:string)_ | NodeSelector is a selector which must be true for the fuse client to fit on a node,<br />this option only effect when global is enabled |  | Optional: \{\} <br /> |
-| `cleanPolicy` _[FuseCleanPolicy](#fusecleanpolicy)_ | CleanPolicy decides when to clean GooseFS Fuse pods.<br />Currently Fluid supports two policies: OnDemand and OnRuntimeDeleted<br />OnDemand cleans fuse pod once th fuse pod on some node is not needed<br />OnRuntimeDeleted cleans fuse pod only when the cache runtime is deleted<br />Defaults to OnRuntimeDeleted |  | Optional: \{\} <br /> |
-| `annotations` _object (keys:string, values:string)_ | Annotations is an unstructured key value map stored with a resource that may be<br />set by external tools to store and retrieve arbitrary metadata. They are not<br />queryable and should be preserved when modifying objects.<br />More info: http://kubernetes.io/docs/user-guide/annotations |  | Optional: \{\} <br /> |
-
-
-#### GooseFSRuntime
-
-
-
-GooseFSRuntime is the Schema for the goosefsruntimes API
-
-
-
-
-
-| Field | Description | Default | Validation |
-| --- | --- | --- | --- |
-| `apiVersion` _string_ | `data.fluid.io/v1alpha1` | | |
-| `kind` _string_ | `GooseFSRuntime` | | |
-| `metadata` _[ObjectMeta](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#objectmeta-v1-meta)_ | Refer to Kubernetes API documentation for fields of `metadata`. |  |  |
-| `spec` _[GooseFSRuntimeSpec](#goosefsruntimespec)_ |  |  |  |
-
-
-#### GooseFSRuntimeSpec
-
-
-
-GooseFSRuntimeSpec defines the desired state of GooseFSRuntime
-
-
-
-_Appears in:_
-- [GooseFSRuntime](#goosefsruntime)
-
-| Field | Description | Default | Validation |
-| --- | --- | --- | --- |
-| `goosefsVersion` _[VersionSpec](#versionspec)_ | The version information that instructs fluid to orchestrate a particular version of GooseFS. |  |  |
-| `master` _[GooseFSCompTemplateSpec](#goosefscomptemplatespec)_ | The component spec of GooseFS master |  |  |
-| `jobMaster` _[GooseFSCompTemplateSpec](#goosefscomptemplatespec)_ | The component spec of GooseFS job master |  |  |
-| `worker` _[GooseFSCompTemplateSpec](#goosefscomptemplatespec)_ | The component spec of GooseFS worker |  |  |
-| `jobWorker` _[GooseFSCompTemplateSpec](#goosefscomptemplatespec)_ | The component spec of GooseFS job Worker |  |  |
-| `apiGateway` _[GooseFSCompTemplateSpec](#goosefscomptemplatespec)_ | The component spec of GooseFS API Gateway |  |  |
-| `initUsers` _[InitUsersSpec](#initusersspec)_ | The spec of init users |  |  |
-| `fuse` _[GooseFSFuseSpec](#goosefsfusespec)_ | The component spec of GooseFS Fuse |  |  |
-| `properties` _object (keys:string, values:string)_ | Configurable properties for the GOOSEFS component. <br><br />Refer to <a href="https://cloud.tencent.com/document/product/436/56415">GOOSEFS Configuration Properties</a> for more info |  |  |
-| `jvmOptions` _string array_ | Options for JVM |  |  |
-| `tieredstore` _[TieredStore](#tieredstore)_ | Tiered storage used by GooseFS |  |  |
-| `data` _[Data](#data)_ | Management strategies for the dataset to which the runtime is bound |  |  |
-| `replicas` _integer_ | The replicas of the worker, need to be specified |  |  |
-| `runAs` _[User](#user)_ | Manage the user to run GooseFS Runtime<br />GooseFS support POSIX-ACL and Apache Ranger to manager authorization |  |  |
-| `disablePrometheus` _boolean_ | Disable monitoring for GooseFS Runtime<br />Prometheus is enabled by default |  | Optional: \{\} <br /> |
-| `hadoopConfig` _string_ | Name of the configMap used to support HDFS configurations when using HDFS as GooseFS's UFS. The configMap<br />must be in the same namespace with the GooseFSRuntime. The configMap should contain user-specific HDFS conf files in it.<br />For now, only "hdfs-site.xml" and "core-site.xml" are supported. It must take the filename of the conf file as the key and content<br />of the file as the value. |  | Optional: \{\} <br /> |
-| `cleanCachePolicy` _[CleanCachePolicy](#cleancachepolicy)_ | CleanCachePolicy defines cleanCache Policy |  | Optional: \{\} <br /> |
 
 
 #### HCFSStatus
@@ -1191,7 +1130,6 @@ InitUsersSpec is a description of the initialize the users for runtime
 
 _Appears in:_
 - [AlluxioRuntimeSpec](#alluxioruntimespec)
-- [GooseFSRuntimeSpec](#goosefsruntimespec)
 - [JuiceFSRuntimeSpec](#juicefsruntimespec)
 
 | Field | Description | Default | Validation |
@@ -1526,9 +1464,9 @@ Refer to <a href="https://docs.alluxio.io/os/user/stable/en/ufs/S3.html">Alluxio
 
 
 _Appears in:_
+- [CacheRuntimeStatus](#cacheruntimestatus)
 - [DatasetSpec](#datasetspec)
 - [DatasetStatus](#datasetstatus)
-- [MountPointStatus](#mountpointstatus)
 - [RuntimeStatus](#runtimestatus)
 
 | Field | Description | Default | Validation |
@@ -1540,23 +1478,6 @@ _Appears in:_
 | `readOnly` _boolean_ | Optional: Defaults to false (read-write). |  | Optional: \{\} <br /> |
 | `shared` _boolean_ | Optional: Defaults to false (shared). |  | Optional: \{\} <br /> |
 | `encryptOptions` _[EncryptOption](#encryptoption) array_ | The secret information |  | Optional: \{\} <br /> |
-
-
-#### MountPointStatus
-
-
-
-MountPointStatus describes the status of a single mount point in the dataset
-
-
-
-_Appears in:_
-- [CacheRuntimeStatus](#cacheruntimestatus)
-
-| Field | Description | Default | Validation |
-| --- | --- | --- | --- |
-| `mount` _[Mount](#mount)_ | Mount contains the mount point configuration from the bound dataset.<br />This includes the remote path, mount options, and other mount-specific settings. |  |  |
-| `mountTime` _[Time](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#time-v1-meta)_ | MountTime is the timestamp of the last successful mount operation.<br />If MountTime is earlier than the master component's start time, a remount will be required. |  | Optional: \{\} <br /> |
 
 
 #### NetworkMode
@@ -1875,11 +1796,11 @@ _Appears in:_
 
 | Field | Description | Default | Validation |
 | --- | --- | --- | --- |
-| `workloadType` _[TypeMeta](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#typemeta-v1-meta)_ | WorkloadType is the default workload type of the component |  | Optional: \{\} <br /> |
 | `options` _object (keys:string, values:string)_ | Options is a set of key-value pairs that provide additional configuration for the component |  | Optional: \{\} <br /> |
 | `template` _[PodTemplateSpec](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#podtemplatespec-v1-core)_ | Template describes the pods that will be created.<br />The template follows the standard PodTemplateSpec from Kubernetes core. |  | Optional: \{\} <br /> |
 | `service` _[RuntimeComponentService](#runtimecomponentservice)_ | Service is the service configuration for the component |  | Optional: \{\} <br /> |
 | `dependencies` _[RuntimeComponentDependencies](#runtimecomponentdependencies)_ | Dependencies specifies the dependencies required by the component |  | Optional: \{\} <br /> |
+| `executionEntries` _[ExecutionEntries](#executionentries)_ | ExecutionEntries entries to support out-of-tree integration. |  | Optional: \{\} <br /> |
 
 
 #### RuntimeComponentDependencies
@@ -1895,7 +1816,7 @@ _Appears in:_
 
 | Field | Description | Default | Validation |
 | --- | --- | --- | --- |
-| `encryptOption` _[EncryptOptionComponentDependency](#encryptoptioncomponentdependency)_ | EncryptOption is the configuration for encrypt option secret mount |  | Optional: \{\} <br /> |
+| `secretMount` _[SecretMountComponentDependency](#secretmountcomponentdependency)_ | SecretMount controls whether dataset encrypt-option secrets are mounted into this component pod.<br />Defaults to true for Master/Worker, false for Client unless explicitly enabled. |  | Optional: \{\} <br /> |
 | `extraResources` _[ExtraResourcesComponentDependency](#extraresourcescomponentdependency)_ | ExtraResources specifies the usage of extra resources such as ConfigMaps |  | Optional: \{\} <br /> |
 
 
@@ -2159,6 +2080,22 @@ _Appears in:_
 | `key` _string_ | The required key in the secret |  | Optional: \{\} <br /> |
 
 
+#### SecretMountComponentDependency
+
+
+
+SecretMountComponentDependency defines the secret mount configuration for component dependencies
+
+
+
+_Appears in:_
+- [RuntimeComponentDependencies](#runtimecomponentdependencies)
+
+| Field | Description | Default | Validation |
+| --- | --- | --- | --- |
+| `enabled` _boolean_ | Enabled indicates whether dataset encrypt-option secrets should be mounted into this component pod. |  | Optional: \{\} <br /> |
+
+
 #### TargetDataset
 
 
@@ -2373,7 +2310,6 @@ TieredStore is a description of the tiered store
 _Appears in:_
 - [AlluxioRuntimeSpec](#alluxioruntimespec)
 - [EFCRuntimeSpec](#efcruntimespec)
-- [GooseFSRuntimeSpec](#goosefsruntimespec)
 - [JindoRuntimeSpec](#jindoruntimespec)
 - [JuiceFSRuntimeSpec](#juicefsruntimespec)
 - [ThinRuntimeSpec](#thinruntimespec)
@@ -2396,7 +2332,6 @@ _Appears in:_
 - [AlluxioRuntimeSpec](#alluxioruntimespec)
 - [DataBackupSpec](#databackupspec)
 - [DatasetSpec](#datasetspec)
-- [GooseFSRuntimeSpec](#goosefsruntimespec)
 - [JindoRuntimeSpec](#jindoruntimespec)
 - [JuiceFSRuntimeSpec](#juicefsruntimespec)
 - [ThinRuntimeSpec](#thinruntimespec)
@@ -2425,7 +2360,6 @@ _Appears in:_
 - [DataMigrateSpec](#datamigratespec)
 - [EFCCompTemplateSpec](#efccomptemplatespec)
 - [EFCFuseSpec](#efcfusespec)
-- [GooseFSRuntimeSpec](#goosefsruntimespec)
 - [InitFuseSpec](#initfusespec)
 - [JindoRuntimeSpec](#jindoruntimespec)
 - [JuiceFSRuntimeSpec](#juicefsruntimespec)
