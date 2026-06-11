@@ -51,6 +51,7 @@ jobs:
         with:
           version: latest
           args: --timeout 10m --verbose
+          working-directory: ${{ env.GOPATH }}/src/github.com/fluid-cloudnative/fluid
 
       - name: Lint preparation
         run: |
