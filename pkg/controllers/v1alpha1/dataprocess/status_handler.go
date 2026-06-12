@@ -130,6 +130,11 @@ func (handler *CronStatusHandler) GetOperationStatus(ctx runtime.ReconcileReques
 		return
 	}
 
+	if cronjobStatus.LastScheduleTime == nil {
+		ctx.Log.Info("CronJob has not been scheduled yet", "namespace", ctx.Namespace, "cronjobName", cronjobName)
+		return
+	}
+
 	result.LastScheduleTime = cronjobStatus.LastScheduleTime
 	result.LastSuccessfulTime = cronjobStatus.LastSuccessfulTime
 
@@ -223,15 +228,14 @@ func (handler *OnEventStatusHandler) GetOperationStatus(ctx runtime.ReconcileReq
 		}
 	}
 
-	jobCondition := job.Status.Conditions[0]
 	result.Conditions = []datav1alpha1.Condition{
 		{
-			Type:               common.ConditionType(jobCondition.Type),
-			Status:             jobCondition.Status,
-			Reason:             jobCondition.Reason,
-			Message:            jobCondition.Message,
-			LastProbeTime:      jobCondition.LastProbeTime,
-			LastTransitionTime: jobCondition.LastTransitionTime,
+			Type:               common.ConditionType(finishedJobCondition.Type),
+			Status:             finishedJobCondition.Status,
+			Reason:             finishedJobCondition.Reason,
+			Message:            finishedJobCondition.Message,
+			LastProbeTime:      finishedJobCondition.LastProbeTime,
+			LastTransitionTime: finishedJobCondition.LastTransitionTime,
 		},
 	}
 	if isJobSucceed {
@@ -239,6 +243,6 @@ func (handler *OnEventStatusHandler) GetOperationStatus(ctx runtime.ReconcileReq
 	} else {
 		result.Phase = common.PhaseFailed
 	}
-	result.Duration = utils.CalculateDuration(job.CreationTimestamp.Time, jobCondition.LastTransitionTime.Time)
+	result.Duration = utils.CalculateDuration(job.CreationTimestamp.Time, finishedJobCondition.LastTransitionTime.Time)
 	return
 }
