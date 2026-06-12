@@ -171,25 +171,32 @@ When using `processMemory`:
 1. Adds `quota` to the container's `resources.requests.memory` and `resources.limits.memory`
 2. Accumulates if the container already has other resource requests
 3. `mediumType` is automatically set to MEM
+4. Creates an EmptyDir Volume with memory medium
+5. Volume name format: `tiered-store-level-{N}-memory`
+6. Mount path in container: `/dev/shm`
 
 ### EmptyDir Handling
 
 When using `emptyDir`:
 1. Creates an EmptyDir Volume
-2. Volume name format: `tieredstore-level{N}`
-3. `quota` is set as EmptyDir's `sizeLimit`
-4. If `medium` is set to `"Memory"`, uses tmpfs, `mediumType` is MEM
-5. If `medium` is empty, uses node's default storage, `mediumType` is HDD
+2. Volume name format: `tiered-store-level-{N}-index-{M}` (M is always 0 for EmptyDir)
+3. Mount path in container: `/etc/fluid/mount/tiered-store/level-{N}-index-{M}-emptydir`
+4. `quota` is set as EmptyDir's `sizeLimit`
+5. If `medium` is set to `"Memory"`, uses tmpfs, `mediumType` is MEM
+6. If `medium` is empty, uses node's default storage, `mediumType` is HDD
 
 ### HostPath Handling
 
 When using `hostPath`:
 1. Creates an independent HostPath Volume for each path
-2. Volume name format: `tieredstore-level{N}-path{M}`
-3. `paths` list specifies directory paths on the node
-4. `quotas` list specifies quotas for each path (for reference only, not enforced)
-5. `type` specifies the hostPath type (e.g., `DirectoryOrCreate`)
-6. `mediumType` is automatically set to HDD
+2. Volume name format: `tiered-store-level-{N}-index-{M}`
+3. Mount path in container: `/etc/fluid/mount/tiered-store/level-{N}-index-{M}-hostpath`
+4. `paths` list specifies directory paths on the node
+5. `quotas` list specifies quotas for each path (for reference only, not enforced)
+6. `type` specifies the hostPath type (e.g., `DirectoryOrCreate`)
+7. `mediumType` is automatically set to HDD
+
+> **Note:** Volume names are implementation details and may change. Users should not depend on specific volume name formats.
 
 ### Important Notes on Multi-path Configuration
 

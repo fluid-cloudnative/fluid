@@ -171,25 +171,32 @@ spec:
 1. 将 `quota` 添加到容器的 `resources.requests.memory` 和 `resources.limits.memory`
 2. 如果容器已有其他资源请求，会累加而不是覆盖
 3. `mediumType` 自动设置为 MEM
+4. 创建一个使用内存介质的 EmptyDir Volume
+5. Volume 名称格式：`tiered-store-level-{N}-memory`
+6. 容器内挂载路径：`/dev/shm`
 
 ### EmptyDir 处理
 
 当使用 `emptyDir` 时：
 1. 创建一个 EmptyDir Volume
-2. Volume 名称格式：`tieredstore-level{N}`
-3. `quota` 设置为 EmptyDir 的 `sizeLimit`
-4. 如果 `medium` 设置为 `"Memory"`，则使用 tmpfs，`mediumType` 为 MEM
-5. 如果 `medium` 为空，则使用节点默认存储，`mediumType` 为 HDD
+2. Volume 名称格式：`tiered-store-level-{N}-index-{M}`（EmptyDir 的 M 始终为 0）
+3. 容器内挂载路径：`/etc/fluid/mount/tiered-store/level-{N}-index-{M}-emptydir`
+4. `quota` 设置为 EmptyDir 的 `sizeLimit`
+5. 如果 `medium` 设置为 `"Memory"`，则使用 tmpfs，`mediumType` 为 MEM
+6. 如果 `medium` 为空，则使用节点默认存储，`mediumType` 为 HDD
 
 ### HostPath 处理
 
 当使用 `hostPath` 时：
 1. 为每个路径创建一个独立的 HostPath Volume
-2. Volume 名称格式：`tieredstore-level{N}-path{M}`
-3. `paths` 列表指定节点上的目录路径
-4. `quotas` 列表指定每个路径的配额（仅供参考，不会强制限制）
-5. `type` 指定 hostPath 类型（如 `DirectoryOrCreate`）
-6. `mediumType` 自动设置为 HDD
+2. Volume 名称格式：`tiered-store-level-{N}-index-{M}`
+3. 容器内挂载路径：`/etc/fluid/mount/tiered-store/level-{N}-index-{M}-hostpath`
+4. `paths` 列表指定节点上的目录路径
+5. `quotas` 列表指定每个路径的配额（仅供参考，不会强制限制）
+6. `type` 指定 hostPath 类型（如 `DirectoryOrCreate`）
+7. `mediumType` 自动设置为 HDD
+
+> **注意**：Volume 名称属于实现细节，可能会发生变化。用户不应依赖特定的 Volume 名称格式。
 
 ### 多路径配置的重要说明
 
