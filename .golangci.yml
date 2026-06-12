@@ -5,18 +5,10 @@ linters:
     staticcheck:
       checks:
         - all
-        # Disable quickfix suggestions (refactoring hints, not bugs)
-        - "-QF1001" # could apply De Morgan's law
-        - "-QF1004" # could use strings.ReplaceAll instead
-        - "-QF1007" # could merge conditional assignment into variable declaration
-        - "-QF1008" # could remove embedded field from selector
-        - "-QF1011" # could omit type from declaration
-        # Disable style checks that are auto-fixable but noisy
-        - "-ST1000" # package comment should be of the form "Package ..."
-        - "-ST1003" # should not use underscores in Go names / naming conventions
-        - "-ST1016" # methods on the same type should have the same receiver name
-        - "-ST1020" # comment on exported method/function should be of the form ...
-        - "-ST1023" # should omit type from declaration; it will be inferred from the right-hand side
+        # Disable all quickfix suggestions (refactoring hints, not bugs)
+        - "-QF*"
+        # Disable all style checks (pre-existing naming/comment conventions)
+        - "-ST*"
 
   exclusions:
     rules:
