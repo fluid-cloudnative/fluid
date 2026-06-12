@@ -34,6 +34,10 @@ func (e *ReferenceDatasetEngine) Validate(runtime.ReconcileRequestContext) (err 
 		return err
 	}
 
-	// TODO: impl validation logic for AlluxioEngine
+	err = e.checkDatasetMountSupport()
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
