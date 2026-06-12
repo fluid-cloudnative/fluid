@@ -111,3 +111,131 @@ func TestOnceGetOperationStatus(t *testing.T) {
 		}
 	}
 }
+
+func TestOnEventGetOperationStatus(t *testing.T) {
+	testScheme := runtime.NewScheme()
+	_ = v1alpha1.AddToScheme(testScheme)
+	_ = batchv1.AddToScheme(testScheme)
+
+	mockDataProcess := v1alpha1.DataProcess{
+		ObjectMeta: v1.ObjectMeta{
+			Name:      "test",
+			Namespace: "default",
+		},
+		Spec: v1alpha1.DataProcessSpec{
+			Policy: v1alpha1.OnEvent,
+		},
+	}
+
+	mockJob := batchv1.Job{
+		ObjectMeta: v1.ObjectMeta{
+			Name:      "test-processor-job",
+			Namespace: "default",
+		},
+		Status: batchv1.JobStatus{
+			Conditions: []batchv1.JobCondition{
+				{
+					Type:               batchv1.JobComplete,
+					LastProbeTime:      v1.NewTime(time.Now()),
+					LastTransitionTime: v1.NewTime(time.Now()),
+				},
+			},
+		},
+	}
+
+	mockFailedJob := batchv1.Job{
+		ObjectMeta: v1.ObjectMeta{
+			Name:      "test-processor-job",
+			Namespace: "default",
+		},
+		Status: batchv1.JobStatus{
+			Conditions: []batchv1.JobCondition{
+				{
+					Type:               batchv1.JobFailed,
+					LastProbeTime:      v1.NewTime(time.Now()),
+					LastTransitionTime: v1.NewTime(time.Now()),
+				},
+			},
+		},
+	}
+
+	testcases := []struct {
+		name          string
+		job           batchv1.Job
+		expectedPhase common.Phase
+	}{
+		{
+			name:          "job success",
+			job:           mockJob,
+			expectedPhase: common.PhaseComplete,
+		},
+		{
+			name:          "job failed",
+			job:           mockFailedJob,
+			expectedPhase: common.PhaseFailed,
+		},
+	}
+
+	for _, testcase := range testcases {
+		client := fake.NewFakeClientWithScheme(testScheme, &mockDataProcess, &testcase.job)
+		handler := &OnEventStatusHandler{Client: client, dataProcess: &mockDataProcess}
+		ctx := cruntime.ReconcileRequestContext{
+			NamespacedName: types.NamespacedName{
+				Namespace: "default",
+				Name:      "",
+			},
+			Log: fake.NullLogger(),
+		}
+		opStatus, err := handler.GetOperationStatus(ctx, &mockDataProcess.Status)
+		if err != nil {
+			t.Errorf("fail to GetOperationStatus with error %v", err)
+		}
+		if opStatus.Phase != testcase.expectedPhase {
+			t.Error("Failed to GetOperationStatus", "expected phase", testcase.expectedPhase, "get", opStatus.Phase)
+		}
+	}
+}
+
+func TestOnEventGetOperationStatusJobStillRunning(t *testing.T) {
+	testScheme := runtime.NewScheme()
+	_ = v1alpha1.AddToScheme(testScheme)
+	_ = batchv1.AddToScheme(testScheme)
+
+	mockDataProcess := v1alpha1.DataProcess{
+		ObjectMeta: v1.ObjectMeta{
+			Name:      "test",
+			Namespace: "default",
+		},
+		Spec: v1alpha1.DataProcessSpec{
+			Policy: v1alpha1.OnEvent,
+		},
+		Status: v1alpha1.OperationStatus{
+			Phase: common.PhasePending,
+		},
+	}
+
+	runningJob := batchv1.Job{
+		ObjectMeta: v1.ObjectMeta{
+			Name:      "test-processor-job",
+			Namespace: "default",
+		},
+		Status: batchv1.JobStatus{},
+	}
+
+	client := fake.NewFakeClientWithScheme(testScheme, &mockDataProcess, &runningJob)
+	handler := &OnEventStatusHandler{Client: client, dataProcess: &mockDataProcess}
+	ctx := cruntime.ReconcileRequestContext{
+		NamespacedName: types.NamespacedName{
+			Namespace: "default",
+			Name:      "",
+		},
+		Log: fake.NullLogger(),
+	}
+	opStatus, err := handler.GetOperationStatus(ctx, &mockDataProcess.Status)
+	if err != nil {
+		t.Errorf("fail to GetOperationStatus with error %v", err)
+	}
+	if opStatus.Phase != common.PhasePending {
+		t.Error("Failed to GetOperationStatus", "expected phase", common.PhasePending, "get", opStatus.Phase)
+	}
+}
