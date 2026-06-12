@@ -655,6 +655,7 @@ func TestAlluxioFileUtils_exec(t *testing.T) {
 	}
 }
 
+// TestAlluxioFileUtils_MasterPodName verifies that MasterPodName reports exec errors and extracts the master address from Alluxio summary output.
 func TestAlluxioFileUtils_MasterPodName(t *testing.T) {
 	ExecCommon := func(a AlluxioFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
 		return "Alluxio cluster summary: \n    Master Address: 192.168.0.193:20009\n    Web Port: 20010", "", nil
