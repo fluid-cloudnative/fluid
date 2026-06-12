@@ -229,8 +229,19 @@ func GetMetadataListFromAnnotation(accessor metav1.ObjectMetaAccessor) (ret []da
 	return
 }
 
+
+// WithMetadataList returns a RuntimeInfoOption that sets the metadataList field
+// on a RuntimeInfo instance.
+//
+// Parameters:
+//   - metadataList: a slice of Metadata objects to associate with the RuntimeInfo.
+//
+// Returns:
+//   - A RuntimeInfoOption function that, when applied, assigns the provided
+//     metadataList to info.metadataList and returns nil (no error).
 func WithMetadataList(metadataList []datav1alpha1.Metadata) RuntimeInfoOption {
 	return func(info *RuntimeInfo) error {
+		// Assign the provided metadataList to the RuntimeInfo instance.
 		info.metadataList = metadataList
 		return nil
 	}
