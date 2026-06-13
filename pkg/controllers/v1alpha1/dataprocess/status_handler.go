@@ -221,13 +221,6 @@ func (handler *OnEventStatusHandler) GetOperationStatus(ctx runtime.ReconcileReq
 	}
 	isJobSucceed := finishedJobCondition.Type == batchv1.JobComplete
 
-	if result.NodeAffinity == nil && isJobSucceed {
-		result.NodeAffinity, err = dataflow.GenerateNodeAffinity(job)
-		if err != nil {
-			return nil, errors.Wrap(err, "error to generate the node labels")
-		}
-	}
-
 	result.Conditions = []datav1alpha1.Condition{
 		{
 			Type:               common.ConditionType(finishedJobCondition.Type),

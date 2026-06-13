@@ -201,6 +201,27 @@ func (r *dataProcessOperation) Validate(ctx runtime.ReconcileRequestContext) ([]
 		}, err
 	}
 
+	// DataProcess with Cron policy must specify a non-empty schedule
+	if dataProcess.Spec.Policy == datav1alpha1.Cron && dataProcess.Spec.Schedule == "" {
+		r.Recorder.Eventf(dataProcess,
+			corev1.EventTypeWarning,
+			common.DataProcessScheduleNotSpecified,
+			"DataProcess(%s)'s policy is Cron but spec.schedule is not specified",
+			dataProcess.Name,
+		)
+		err := fmt.Errorf("DataProcess(%s/%s)'s policy is Cron but spec.schedule is not specified", dataProcess.Namespace, dataProcess.Name)
+		now := time.Now()
+		return []datav1alpha1.Condition{
+			{
+				Type:               common.Failed,
+				Status:             corev1.ConditionTrue,
+				Reason:             common.DataProcessScheduleNotSpecified,
+				Message:            "DataProcess's policy is Cron but spec.schedule is not specified",
+				LastProbeTime:      metav1.NewTime(now),
+				LastTransitionTime: metav1.NewTime(now),
+			},
+		}, err
+	}
 	return nil, nil
 }
 
@@ -219,6 +240,10 @@ func (r *dataProcessOperation) RemoveTargetDatasetStatusInProgress(dataset *data
 	// DataProcess does not need to recover Dataset status after execution.
 }
 
+// GetStatusHandler implements dataoperation.OperationInterface.
+// Unlike DataLoad, which returns nil for an unrecognized policy, this defaults
+// to OnceStatusHandler since policy is optional with a kubebuilder default of
+// Once, so an empty value should be treated the same as Once.
 func (r *dataProcessOperation) GetStatusHandler() dataoperation.StatusHandler {
 	policy := r.dataProcess.Spec.Policy
 	switch policy {
