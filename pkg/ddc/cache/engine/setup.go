@@ -18,10 +18,12 @@ package engine
 
 import (
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/metrics"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/pkg/errors"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 )
 
@@ -45,12 +47,12 @@ func (e *CacheEngine) Setup(ctx cruntime.ReconcileRequestContext) (ready bool, e
 	}
 
 	// create runtime value configmap for runtime mount
-	err = e.createRuntimeConfigMaps(runtimeClass)
+	err = e.createRuntimeConfigMaps(ctx, runtimeClass)
 	if err != nil {
 		return false, err
 	}
 
-	// Create Master/Worker/Client components
+	// Create Master/Worker/Client components, won't be nil.
 	e.Log.Info("Setup runtime", "runtime", ctx.Runtime)
 	if runtimeValue.Master.Enabled {
 		e.Log.Info("Setup master", "runtime", ctx.Runtime)
@@ -76,22 +78,31 @@ func (e *CacheEngine) Setup(ctx cruntime.ReconcileRequestContext) (ready bool, e
 		}
 	}
 
-	// dataset mount
-	if runtimeValue.Master.Enabled {
-		// currently only support mount ufs for master
-		err = e.PrepareUFS(runtimeClass.Topology.Master.ExecutionEntries, runtimeValue)
-		if err != nil {
-			return false, err
-		}
+	// CheckAndUpdateRuntimeStatus after components are setup
+	// Use lightweight getRuntimeStatusValue instead of full transform for status update
+	statusValue, err := e.getRuntimeStatusValue(runtime, runtimeClass)
+	if err != nil {
+		return false, err
 	}
-
-	ready, err = e.CheckAndUpdateRuntimeStatus(runtimeValue)
+	ready, err = e.CheckAndUpdateRuntimeStatus(statusValue)
 	if err != nil {
 		_ = utils.LoggingErrorExceptConflict(e.Log, err, "Failed to check if the runtime is ready", types.NamespacedName{Namespace: e.namespace, Name: e.name})
 		return
 	}
 	if !ready {
 		return
+	}
+
+	// dataset mount after runtime ready to ensure master pod is ready for executing commands.
+	// currently only support mount ufs for master in master-worker architecture
+	if runtimeValue.Master.Enabled {
+		// ignore the output for mount command, if executing succeed, all ufs mount will be ready.
+		// Even if dataset changes the mount info concurrently, the `sync` phase will make it correct eventually.
+		_, err = e.PrepareUFS(runtimeClass)
+		if err != nil {
+			e.Recorder.Eventf(runtime, corev1.EventTypeWarning, common.RuntimeMountUfsFailed, "Failed to execute mount ufs command")
+			return false, err
+		}
 	}
 
 	if err = e.BindToDataset(); err != nil {

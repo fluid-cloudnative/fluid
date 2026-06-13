@@ -1,0 +1,529 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.20.1
+  name: advancedstatefulsets.workload.fluid.io
+spec:
+  group: workload.fluid.io
+  names:
+    categories:
+    - fluid
+    kind: AdvancedStatefulSet
+    listKind: AdvancedStatefulSetList
+    plural: advancedstatefulsets
+    shortNames:
+    - asts
+    singular: advancedstatefulset
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .spec.replicas
+      name: DESIRED
+      type: integer
+    - jsonPath: .status.replicas
+      name: CURRENT
+      type: integer
+    - jsonPath: .status.updatedReplicas
+      name: UPDATED
+      type: integer
+    - jsonPath: .status.readyReplicas
+      name: READY
+      type: integer
+    - jsonPath: .metadata.creationTimestamp
+      name: AGE
+      type: date
+    - jsonPath: .spec.template.spec.containers[*].name
+      name: CONTAINERS
+      priority: 1
+      type: string
+    - jsonPath: .spec.template.spec.containers[*].image
+      name: IMAGES
+      priority: 1
+      type: string
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: AdvancedStatefulSet is the Schema for the statefulsets API
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: AdvancedStatefulSetSpec defines the desired state of AdvancedStatefulSet.
+            properties:
+              lifecycle:
+                description: Lifecycle defines the lifecycle hooks for pods.
+                properties:
+                  inPlaceUpdate:
+                    description: InPlaceUpdate is the hook during in-place updates.
+                    properties:
+                      finalizersHandler:
+                        description: FinalizersHandler holds finalizers to add on
+                          the pod during this lifecycle hook.
+                        items:
+                          type: string
+                        type: array
+                      labelsHandler:
+                        additionalProperties:
+                          type: string
+                        description: LabelsHandler holds label key-value pairs to
+                          set on the pod during this lifecycle hook.
+                        type: object
+                      markPodNotReady:
+                        description: MarkPodNotReady marks the pod as not ready during
+                          this lifecycle hook.
+                        type: boolean
+                    type: object
+                  preDelete:
+                    description: PreDelete is the hook before a pod is deleted.
+                    properties:
+                      finalizersHandler:
+                        description: FinalizersHandler holds finalizers to add on
+                          the pod during this lifecycle hook.
+                        items:
+                          type: string
+                        type: array
+                      labelsHandler:
+                        additionalProperties:
+                          type: string
+                        description: LabelsHandler holds label key-value pairs to
+                          set on the pod during this lifecycle hook.
+                        type: object
+                      markPodNotReady:
+                        description: MarkPodNotReady marks the pod as not ready during
+                          this lifecycle hook.
+                        type: boolean
+                    type: object
+                  preNormal:
+                    description: PreNormal is the hook before a pod transitions to
+                      normal state.
+                    properties:
+                      finalizersHandler:
+                        description: FinalizersHandler holds finalizers to add on
+                          the pod during this lifecycle hook.
+                        items:
+                          type: string
+                        type: array
+                      labelsHandler:
+                        additionalProperties:
+                          type: string
+                        description: LabelsHandler holds label key-value pairs to
+                          set on the pod during this lifecycle hook.
+                        type: object
+                      markPodNotReady:
+                        description: MarkPodNotReady marks the pod as not ready during
+                          this lifecycle hook.
+                        type: boolean
+                    type: object
+                type: object
+              ordinals:
+                description: Ordinals controls the numbering of replica indices in
+                  a AdvancedStatefulSet.
+                properties:
+                  start:
+                    description: Start is the starting ordinal for pod naming.
+                    format: int32
+                    type: integer
+                type: object
+              persistentVolumeClaimRetentionPolicy:
+                description: |-
+                  PersistentVolumeClaimRetentionPolicy describes the policy used for PVCs created from
+                  the AdvancedStatefulSet VolumeClaimTemplates.
+                properties:
+                  whenDeleted:
+                    description: WhenDeleted specifies what happens to PVCs when the
+                      AdvancedStatefulSet is deleted.
+                    type: string
+                  whenScaled:
+                    description: WhenScaled specifies what happens to PVCs when the
+                      AdvancedStatefulSet is scaled down.
+                    type: string
+                type: object
+              podManagementPolicy:
+                description: |-
+                  PodManagementPolicy controls how pods are created during initial scale up,
+                  when replacing pods on nodes, or when scaling down.
+                type: string
+              replicas:
+                description: Replicas is the desired number of replicas of the given
+                  Template.
+                format: int32
+                type: integer
+              reserveOrdinals:
+                description: ReserveOrdinals is the list of ordinals to skip when
+                  assigning pod ordinals.
+                items:
+                  anyOf:
+                  - type: integer
+                  - type: string
+                  x-kubernetes-int-or-string: true
+                type: array
+              revisionHistoryLimit:
+                description: |-
+                  RevisionHistoryLimit is the maximum number of revisions that will be maintained
+                  in the AdvancedStatefulSet's revision history.
+                format: int32
+                type: integer
+              scaleStrategy:
+                description: ScaleStrategy defines the strategy for scaling AdvancedStatefulSet
+                  pods.
+                properties:
+                  maxUnavailable:
+                    anyOf:
+                    - type: integer
+                    - type: string
+                    description: MaxUnavailable is the maximum number of pods that
+                      can be unavailable during scaling.
+                    x-kubernetes-int-or-string: true
+                type: object
+              selector:
+                description: Selector is a label query over pods that should match
+                  the replica count.
+                properties:
+                  matchExpressions:
+                    description: matchExpressions is a list of label selector requirements.
+                      The requirements are ANDed.
+                    items:
+                      description: |-
+                        A label selector requirement is a selector that contains values, a key, and an operator that
+                        relates the key and values.
+                      properties:
+                        key:
+                          description: key is the label key that the selector applies
+                            to.
+                          type: string
+                        operator:
+                          description: |-
+                            operator represents a key's relationship to a set of values.
+                            Valid operators are In, NotIn, Exists and DoesNotExist.
+                          type: string
+                        values:
+                          description: |-
+                            values is an array of string values. If the operator is In or NotIn,
+                            the values array must be non-empty. If the operator is Exists or DoesNotExist,
+                            the values array must be empty. This array is replaced during a strategic
+                            merge patch.
+                          items:
+                            type: string
+                          type: array
+                      required:
+                      - key
+                      - operator
+                      type: object
+                    type: array
+                  matchLabels:
+                    additionalProperties:
+                      type: string
+                    description: |-
+                      matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+                      map is equivalent to an element of matchExpressions, whose key field is "key", the
+                      operator is "In", and the values array contains only "value". The requirements are ANDed.
+                    type: object
+                type: object
+                x-kubernetes-map-type: atomic
+              serviceName:
+                description: ServiceName is the name of the service that governs this
+                  AdvancedStatefulSet.
+                type: string
+              template:
+                description: Template is the object that describes the pod that will
+                  be created.
+                x-kubernetes-preserve-unknown-fields: true
+              updateStrategy:
+                description: UpdateStrategy indicates the StatefulSetUpdateStrategy
+                  that will be employed.
+                properties:
+                  rollingUpdate:
+                    description: RollingUpdate is used to communicate parameters when
+                      Type is RollingUpdateStatefulSetStrategyType.
+                    properties:
+                      inPlaceUpdateStrategy:
+                        description: InPlaceUpdateStrategy defines the in-place update
+                          strategy.
+                        properties:
+                          gracePeriodSeconds:
+                            format: int32
+                            type: integer
+                        type: object
+                      maxUnavailable:
+                        anyOf:
+                        - type: integer
+                        - type: string
+                        description: MaxUnavailable is the maximum number of pods
+                          that can be unavailable during rolling update.
+                        x-kubernetes-int-or-string: true
+                      minReadySeconds:
+                        description: MinReadySeconds is the minimum number of seconds
+                          a pod must be ready before being considered available.
+                        format: int32
+                        type: integer
+                      partition:
+                        default: 0
+                        description: |-
+                          Partition indicates the ordinal at which the AdvancedStatefulSet should be partitioned for updates.
+                          Defaults to 0.
+                        format: int32
+                        type: integer
+                      paused:
+                        description: Paused indicates that the AdvancedStatefulSet
+                          is paused.
+                        type: boolean
+                      podUpdatePolicy:
+                        description: PodUpdatePolicy indicates the policy for pod
+                          updates.
+                        type: string
+                      unorderedUpdate:
+                        description: UnorderedUpdate allows updating pods out of order.
+                        properties:
+                          priorityStrategy:
+                            description: PriorityStrategy defines the priority order
+                              for pod updates.
+                            properties:
+                              orderPriority:
+                                description: OrderPriority specifies the ordered key
+                                  for pod update priority.
+                                items:
+                                  description: UpdatePriorityOrderTerm defines a single
+                                    ordered key for pod update priority.
+                                  properties:
+                                    orderedKey:
+                                      type: string
+                                  required:
+                                  - orderedKey
+                                  type: object
+                                type: array
+                              weightPriority:
+                                description: WeightPriority specifies the weight-based
+                                  priority for pod update.
+                                items:
+                                  description: UpdatePriorityWeightTerm defines a
+                                    weight-based priority for pods matching a selector.
+                                  properties:
+                                    matchSelector:
+                                      description: |-
+                                        A label selector is a label query over a set of resources. The result of matchLabels and
+                                        matchExpressions are ANDed. An empty label selector matches all objects. A null
+                                        label selector matches no objects.
+                                      properties:
+                                        matchExpressions:
+                                          description: matchExpressions is a list
+                                            of label selector requirements. The requirements
+                                            are ANDed.
+                                          items:
+                                            description: |-
+                                              A label selector requirement is a selector that contains values, a key, and an operator that
+                                              relates the key and values.
+                                            properties:
+                                              key:
+                                                description: key is the label key
+                                                  that the selector applies to.
+                                                type: string
+                                              operator:
+                                                description: |-
+                                                  operator represents a key's relationship to a set of values.
+                                                  Valid operators are In, NotIn, Exists and DoesNotExist.
+                                                type: string
+                                              values:
+                                                description: |-
+                                                  values is an array of string values. If the operator is In or NotIn,
+                                                  the values array must be non-empty. If the operator is Exists or DoesNotExist,
+                                                  the values array must be empty. This array is replaced during a strategic
+                                                  merge patch.
+                                                items:
+                                                  type: string
+                                                type: array
+                                            required:
+                                            - key
+                                            - operator
+                                            type: object
+                                          type: array
+                                        matchLabels:
+                                          additionalProperties:
+                                            type: string
+                                          description: |-
+                                            matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels
+                                            map is equivalent to an element of matchExpressions, whose key field is "key", the
+                                            operator is "In", and the values array contains only "value". The requirements are ANDed.
+                                          type: object
+                                      type: object
+                                      x-kubernetes-map-type: atomic
+                                    weight:
+                                      format: int32
+                                      type: integer
+                                  required:
+                                  - matchSelector
+                                  - weight
+                                  type: object
+                                type: array
+                            type: object
+                        type: object
+                    type: object
+                  type:
+                    description: Type indicates the type of the StatefulSetUpdateStrategy.
+                    type: string
+                type: object
+              volumeClaimTemplates:
+                description: VolumeClaimTemplates is a list of claims that pods are
+                  allowed to reference.
+                x-kubernetes-preserve-unknown-fields: true
+              volumeClaimUpdateStrategy:
+                description: VolumeClaimUpdateStrategy defines the strategy for updating
+                  volume claim templates.
+                properties:
+                  type:
+                    description: VolumeClaimUpdateStrategyType defines the strategy
+                      for updating volume claims.
+                    type: string
+                type: object
+            required:
+            - selector
+            - template
+            type: object
+          status:
+            description: AdvancedStatefulSetStatus defines the observed state of AdvancedStatefulSet.
+            properties:
+              availableReplicas:
+                description: |-
+                  AvailableReplicas is the number of Pods created by the AdvancedStatefulSet controller that have been Ready
+                  for minReadySeconds.
+                format: int32
+                type: integer
+              collisionCount:
+                description: CollisionCount is the count of hash collisions for the
+                  AdvancedStatefulSet.
+                format: int32
+                type: integer
+              conditions:
+                description: Conditions represent the latest available observations
+                  of a AdvancedStatefulSet's current state.
+                items:
+                  description: StatefulSetCondition describes the state of a statefulset
+                    at a certain point.
+                  properties:
+                    lastTransitionTime:
+                      description: Last time the condition transitioned from one status
+                        to another.
+                      format: date-time
+                      type: string
+                    message:
+                      description: A human readable message indicating details about
+                        the transition.
+                      type: string
+                    reason:
+                      description: The reason for the condition's last transition.
+                      type: string
+                    status:
+                      description: Status of the condition, one of True, False, Unknown.
+                      type: string
+                    type:
+                      description: Type of statefulset condition.
+                      type: string
+                  required:
+                  - status
+                  - type
+                  type: object
+                type: array
+              currentReplicas:
+                description: |-
+                  CurrentReplicas is the number of Pods created by the AdvancedStatefulSet controller from the AdvancedStatefulSet version
+                  indicated by currentRevision.
+                format: int32
+                type: integer
+              currentRevision:
+                description: |-
+                  CurrentRevision, if not empty, indicates the version of the AdvancedStatefulSet used to generate Pods in the sequence
+                  [0,currentReplicas).
+                type: string
+              labelSelector:
+                description: LabelSelector is the label selector for pods scaling
+                  purposes.
+                type: string
+              observedGeneration:
+                description: ObservedGeneration is the most recent generation observed
+                  for this AdvancedStatefulSet.
+                format: int64
+                type: integer
+              readyReplicas:
+                description: ReadyReplicas is the number of Pods created by the AdvancedStatefulSet
+                  controller that have a Ready Condition.
+                format: int32
+                type: integer
+              replicas:
+                description: Replicas is the number of Pods created by the AdvancedStatefulSet
+                  controller.
+                format: int32
+                type: integer
+              updateRevision:
+                description: |-
+                  UpdateRevision, if not empty, indicates the version of the AdvancedStatefulSet used to generate Pods in the sequence
+                  [replicas-updatedReplicas,replicas)
+                type: string
+              updatedAvailableReplicas:
+                description: UpdatedAvailableReplicas is the number of updated Pods
+                  that have been Ready for minReadySeconds.
+                format: int32
+                type: integer
+              updatedReadyReplicas:
+                description: UpdatedReadyReplicas is the number of updated Pods that
+                  have a Ready Condition.
+                format: int32
+                type: integer
+              updatedReplicas:
+                description: |-
+                  UpdatedReplicas is the number of Pods created by the AdvancedStatefulSet controller from the AdvancedStatefulSet version
+                  indicated by updateRevision.
+                format: int32
+                type: integer
+              volumeClaims:
+                description: VolumeClaims records the compatibility status of each
+                  volume claim template.
+                items:
+                  description: VolumeClaimStatus records the compatibility status
+                    of a volume claim template.
+                  properties:
+                    compatibleReadyReplicas:
+                      format: int32
+                      type: integer
+                    compatibleReplicas:
+                      format: int32
+                      type: integer
+                    volumeClaimName:
+                      type: string
+                  required:
+                  - compatibleReadyReplicas
+                  - compatibleReplicas
+                  - volumeClaimName
+                  type: object
+                type: array
+            required:
+            - availableReplicas
+            - currentReplicas
+            - readyReplicas
+            - replicas
+            - updatedReplicas
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      scale:
+        labelSelectorPath: .status.labelSelector
+        specReplicasPath: .spec.replicas
+        statusReplicasPath: .status.replicas
+      status: {}

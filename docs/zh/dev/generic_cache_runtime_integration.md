@@ -81,9 +81,8 @@ Topology中comopent主要包含以下内容
 | Options | 默认options，会被用户设置覆盖 |                                                                                                                                                                                                                          |
 | Template | PodTemplateSpec 原生字段   |                                                                                                                                                                                                                          |
 | Service | 目前仅支持Headless      |                                                                                                                                                                                                                          |
-| Dependencies | EncryptOption      | 该组件是否需要Fluid为其挂载Dataset中定义的用于访问数据源的访问密钥 【当前版本暂未支持】,使用 Dataset 的定义的密钥进行访问。                                                                                                                                                |
-|  | ExtraResources     | 该组件是否需要挂载额外的 ConfigMap （其依赖的ConfigMap 信息定义于 CacheRuntimeClass 的 ExtraResources 字段）。                                                                                                                                      |
-| ExecutionEntries| MountUFS           | 对于Master-Worker架构，当Master Ready时，需要执行底层文件系统的挂载操作。                                                                                                                                                                        |
+| Dependencies | ExtraResources     | 该组件是否需要挂载额外的 ConfigMap （其依赖的ConfigMap 信息定义于 CacheRuntimeClass 的 ExtraResources 字段）。                                                                                                                                      |
+| ExecutionEntries| MountUFS           | 对于Master-Worker架构，当Master Ready时，需要执行底层文件系统的挂载操作。MountUFS 脚本必须输出符合 `CacheRuntimeMountUfsOutput` 结构体格式的 JSON，包含已挂载的 UFS 路径列表。详见步骤 2.7。                                                                                                                                      |
 | ExecutionEntries| ReportSummary      | 缓存系统定义如何获取缓存信息指标的操作 【当前版本暂未支持】。                                                                                                                                                                                          |
 
 ### 步骤2.1 准备K8s适配的原生镜像及明确组件workloadType和PodTemplate
@@ -259,8 +258,7 @@ spec:
 
 在cacheruntime中，控制面的所有流程全都有Fluid来负责，但作为数据缓存引擎，提供服务时，需要整个缓存系统中的**拓扑**、**数据源、认证、缓存信息，**Fluid会根据不同的Component角色来通过配置文件的方式提供至组件内部，由组件内部进程负责解析该配置，来进行环境变量配置、数据引擎配置文件生成等操作，准备就绪后，可拉起数据引擎进程，解析过程中具体可参考下表：
 
-*   以上述资源为例，Master/Worker/Client挂载的由Fluid维护的Config示例如下：
-
+*   以上述资源为例，Master/Worker/Client挂载的由Fluid维护的Config示例如下： 其中，json中的"mounts", "accessModes", "targetPath" 字段信息均是来自于 DataSet 的 Spec 定义。
 
 ```json
 {
@@ -273,6 +271,10 @@ spec:
         "path_style": "true",
         "region_name": "us-east-1",
         "secret": "minioadmin"
+      },
+      "encryptOptions": {
+        "access-key": "/etc/fluid/secrets/minio-secret/access-key",
+        "secret-key": "/etc/fluid/secrets/minio-secret/secret-key"
       },
       "name": "minio",
       "path": "/minio"
@@ -316,3 +318,55 @@ spec:
   }
 }
 ```
+
+### 步骤2.7 MountUFS 脚本输出格式要求
+
+对于 Master-Worker 架构的缓存系统，当 Master 组件 Ready 后，Fluid 会执行 MountUFS 脚本来挂载底层文件系统（UFS）。**MountUFS 脚本必须输出符合 `CacheRuntimeMountUfsOutput` 结构体格式的 JSON**，以便 Fluid 能够正确解析已挂载的路径并同步 Dataset 状态。
+
+#### 可选配置说明
+
+如果底层缓存系统的镜像具备以下能力，可以**不设置 MountUFS**：
+
+1. **自动监控 RuntimeConfig 变化**：容器内的进程能够监听 "$FLUID_RUNTIME_CONFIG_PATH" 文件的变化
+2. **自动执行挂载操作**：当检测到 mounts 配置变化时，自动执行底层文件系统的挂载
+3. **Ready 状态控制**：确保只有在所有 UFS 挂载完成后，Master 组件的 Pod 启动时 Ready 状态才变为 true
+
+在这种情况下，Fluid 会通过 Kubernetes 的 Ready 探针来确认 Master 组件是否就绪，而无需额外执行 MountUFS 脚本。
+
+#### 使用场景
+
+MountUFS 脚本的输出主要用于以下场景：
+
+1. **挂载状态同步**：Fluid 通过解析脚本输出，确认哪些 UFS 路径已成功挂载
+2. **Dataset 状态更新**：根据挂载结果更新 Dataset 的挂载状态和 Phase
+3. **动态挂载管理**：当 Dataset 的 mounts 配置发生变化时，Fluid 会重新执行 MountUFS 脚本，并通过输出来验证挂载操作是否成功完成
+4. **重挂载检测**：在 Master Pod 重启等场景下，Fluid 会根据输出判断是否需要重新挂载
+
+#### 输出格式规范
+
+MountUFS 脚本的标准输出必须是以下 JSON 格式：
+
+```json
+{
+  "mounted": ["/path1", "/path2", "/path3"]
+}
+```
+
+其中：
+- `mounted`：字符串数组，包含所有已成功挂载的 UFS 路径列表
+- 如果没有挂载任何路径，应输出：`{"mounted": []}`
+
+#### Go 结构体定义
+
+```go
+type CacheRuntimeMountUfsOutput struct {
+    // Mounted are the ufs paths that have been mounted.
+    Mounted []string `json:"mounted,omitempty"`
+}
+```
+
+#### 注意事项
+
+1. **必须输出到标准输出（stdout）**：Fluid 会从脚本的标准输出读取 JSON 数据
+2. **错误信息输出到标准错误（stderr）**：使用 `>&2` 将错误信息输出到 stderr，避免污染 stdout
+3. **JSON 格式必须严格符合要求**：否则 Fluid 无法解析，会导致挂载失败

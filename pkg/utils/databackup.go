@@ -101,7 +101,7 @@ func GetRpcPortFromMasterContainer(container *v1.Container) (rpcPort int32) {
 	if container == nil {
 		return
 	}
-	if container.Name == "alluxio-master" || container.Name == "goosefs-master" {
+	if container.Name == "alluxio-master" {
 		for _, port := range container.Ports {
 			if port.Name == "rpc" {
 				rpcPort = port.HostPort

@@ -21,37 +21,34 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 )
 
-func (e *CacheEngine) transformMaster(runtime *datav1alpha1.CacheRuntime, runtimeClass *datav1alpha1.CacheRuntimeClass,
-	config *CacheRuntimeComponentCommonConfig, value *common.CacheRuntimeValue) error {
-	// TODO: these two field both indicate Master enabled or not, should be combined into one field.
-	if runtimeClass.Topology.Master == nil || runtime.Spec.Master.Disabled {
-		value.Master.Enabled = false
+func (e *CacheEngine) transformMaster(dataset *datav1alpha1.Dataset, runtime *datav1alpha1.CacheRuntime, runtimeClass *datav1alpha1.CacheRuntimeClass,
+	commonConfig *CacheRuntimeComponentCommonConfig, value *common.CacheRuntimeValue) error {
+	runtimeMaster := runtime.Spec.Master
+	// These two fields (runtimeClass.Topology.Master and runtimeMaster.Disabled) both indicate whether Master is enabled.
+	if runtimeClass.Topology == nil || runtimeClass.Topology.Master == nil || runtimeMaster.Disabled {
+		value.Master = &common.CacheRuntimeComponentValue{Enabled: false}
 		return nil
 	}
+	componentDefinition := runtimeClass.Topology.Master
 
-	component := runtimeClass.Topology.Master
-	value.Master = &common.CacheRuntimeComponentValue{
-		Name:            GetComponentName(e.name, common.ComponentTypeMaster),
-		Namespace:       e.namespace,
-		Enabled:         true,
-		ComponentType:   common.ComponentTypeMaster,
-		WorkloadType:    component.WorkloadType,
-		PodTemplateSpec: component.Template,
-		Owner:           config.Owner,
-		Replicas:        runtime.Spec.Master.Replicas,
-	}
-	if runtimeClass.Topology.Master.Service.Headless != nil {
-		value.Master.Service = &common.CacheRuntimeComponentServiceConfig{
-			Name: GetComponentServiceName(e.name, common.ComponentTypeMaster),
-		}
-	}
-
-	err := e.addCommonConfigForComponent(config, value.Master, component)
+	// Initialize component value with common fields
+	var err error
+	value.Master, err = e.initComponentValue(common.ComponentTypeMaster, componentDefinition, commonConfig.Owner, runtimeMaster.Replicas)
 	if err != nil {
 		return err
 	}
 
-	// TODO: transform runtime.Spec.Master, runtimeClass.Topology.Master, dataset.Spec into PodTemplateSpec
+	// TODO: TieredStore handling
+
+	// transform container related config, currently only modify the first container
+	e.transformComponentPodTemplate(runtimeMaster.RuntimeComponentCommonSpec, dataset, value.Master)
+
+	// transform all volume-related configurations
+	err = e.transformVolumes(runtime.Spec.Volumes, runtime.Spec.Master.VolumeMounts, dataset, componentDefinition, commonConfig, true, &value.Master.PodTemplateSpec.Spec)
+
+	if err != nil {
+		return err
+	}
 
 	return nil
 }

@@ -72,8 +72,6 @@ spec:
                 properties:
                   dependencies:
                     properties:
-                      encryptOption:
-                        type: object
                       extraResources:
                         properties:
                           configMaps:
@@ -85,6 +83,11 @@ spec:
                                   type: string
                               type: object
                             type: array
+                        type: object
+                      secretMount:
+                        properties:
+                          enabled:
+                            type: boolean
                         type: object
                     type: object
                   executionEntries:
@@ -3476,21 +3479,12 @@ spec:
                         required:
                         - containers
                         type: object
-                    type: object
-                  workloadType:
-                    properties:
-                      apiVersion:
-                        type: string
-                      kind:
-                        type: string
                     type: object
                 type: object
               master:
                 properties:
                   dependencies:
                     properties:
-                      encryptOption:
-                        type: object
                       extraResources:
                         properties:
                           configMaps:
@@ -3502,6 +3496,11 @@ spec:
                                   type: string
                               type: object
                             type: array
+                        type: object
+                      secretMount:
+                        properties:
+                          enabled:
+                            type: boolean
                         type: object
                     type: object
                   executionEntries:
@@ -6893,21 +6892,12 @@ spec:
                         required:
                         - containers
                         type: object
-                    type: object
-                  workloadType:
-                    properties:
-                      apiVersion:
-                        type: string
-                      kind:
-                        type: string
                     type: object
                 type: object
               worker:
                 properties:
                   dependencies:
                     properties:
-                      encryptOption:
-                        type: object
                       extraResources:
                         properties:
                           configMaps:
@@ -6919,6 +6909,11 @@ spec:
                                   type: string
                               type: object
                             type: array
+                        type: object
+                      secretMount:
+                        properties:
+                          enabled:
+                            type: boolean
                         type: object
                     type: object
                   executionEntries:
@@ -10310,13 +10305,6 @@ spec:
                         required:
                         - containers
                         type: object
-                    type: object
-                  workloadType:
-                    properties:
-                      apiVersion:
-                        type: string
-                      kind:
-                        type: string
                     type: object
                 type: object
             type: object

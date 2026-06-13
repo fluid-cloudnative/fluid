@@ -14,6 +14,7 @@
 + 入门
   - [安装](userguide/install.md)
   - [快速开始](userguide/get_started.md)
+  - [配置最佳实践](userguide/config_best_practices.md)
   - [问题诊断](userguide/troubleshooting.md)
 + 数据集使用
   + 创建
@@ -25,6 +26,7 @@
     - [跨namespace共享数据(sidecar模式)](samples/dataset_across_namespace_with_sidecar.md)
   + 操作
     - [数据预加载](samples/data_warmup.md)
+    - [CacheRuntime 数据操作](samples/cacheruntime_data_operations.md)
     - [Cache Runtime手动扩缩容](samples/dataset_scaling.md)
     - [数据操作自动清理](samples/automatic_clean_up_data_operation.md)
   + 安全
@@ -40,6 +42,7 @@
 + 进阶使用
   - [使用内存加速和SSD加速配置](samples/accelerate_data_by_mem_or_ssd.md)
   - [AlluxioRuntime分层存储配置](samples/tieredstore_config.md)
+  - [Alluxio S3 高并发读调优](samples/alluxio_s3_high_concurrency.md)
   - [通过Webhook机制优化Pod调度](operation/pod_schedule_optimization.md)
   - [基于Runtime分层位置信息的应用Pod调度](operation/tiered_locality_schedule.md)
   - [如何开启 FUSE 自动恢复能力](samples/fuse_recover.md)
@@ -66,6 +69,7 @@
   - [Dashboard 可视化管理](dashboard/overview.md)
 + 运维指南
   - [运行时监控](operation/monitoring.md)
+  - [CacheRuntime Spec 字段更新能力说明](cacheruntime/cacheruntime_spec_update.md)
   - [JVM性能分析](dev/profiling.md)
   - [自动弹性伸缩](operation/dataset_auto_scaling.md)
   - [定时弹性伸缩](operation/dataset_cron_scaling.md)
@@ -82,4 +86,3 @@
     - [如何使用Go客户端创建、删除fluid资源](dev/use_go_create_resource.md)
     - [如何使用其他客户端（非GO语言）](dev/multiple-client-support.md)
     - [通过REST API访问](samples/api_proxy.md)
-

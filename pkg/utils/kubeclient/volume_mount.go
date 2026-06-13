@@ -78,7 +78,6 @@ func GetFuseMountInContainer(mountType string, container corev1.Container) (volu
 		common.JindoRuntime:     common.JindoChartName,
 		common.AlluxioMountType: common.AlluxioChart,
 		common.AlluxioRuntime:   common.AlluxioChart,
-		common.GooseFSMountType: common.GooseFSChart,
 		common.JuiceFSMountType: common.JuiceFSChart,
 		common.JuiceFSRuntime:   common.JuiceFSChart,
 	}
@@ -114,7 +113,6 @@ func GetMountPathInContainer(container corev1.Container) (string, error) {
 	kv := map[string]string{
 		common.JindoChartName: "jindofs-fuse",
 		common.AlluxioChart:   "alluxio-fuse",
-		common.GooseFSChart:   "goosefs-fuse",
 		common.JuiceFSChart:   "juicefs-fuse",
 	}
 	// consider the env FLUID_FUSE_MOUNTPOINT

@@ -346,7 +346,6 @@ var _ = Describe("OperationReconciler getRuntimeObjectAndEngineImpl", func() {
 		},
 		Entry("alluxio", common.AlluxioRuntime),
 		Entry("jindo", common.JindoRuntime),
-		Entry("goosefs", common.GooseFSRuntime),
 		Entry("juicefs", common.JuiceFSRuntime),
 		Entry("efc", common.EFCRuntime),
 		Entry("thin", common.ThinRuntime),
@@ -372,9 +371,6 @@ var _ = Describe("OperationReconciler getRuntimeObjectAndEngineImpl", func() {
 			Expect(obj).NotTo(BeNil())
 			Expect(engineImpl).To(Equal(expectedEngineImpl))
 		},
-		Entry("goosefs", common.GooseFSRuntime, &datav1alpha1.GooseFSRuntime{
-			ObjectMeta: metav1.ObjectMeta{Name: testRuntimeName, Namespace: "default"},
-		}, common.GooseFSEngineImpl),
 		Entry("jindo", common.JindoRuntime, &datav1alpha1.JindoRuntime{
 			ObjectMeta: metav1.ObjectMeta{Name: testRuntimeName, Namespace: "default"},
 		}, jindoutils.GetDefaultEngineImpl()),

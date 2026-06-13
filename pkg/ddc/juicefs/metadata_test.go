@@ -51,6 +51,10 @@ const (
 	metadataTestRestoreNode      = "test-node"
 )
 
+func waitForMetadataSync(engine *JuiceFSEngine) {
+	Eventually(engine.MetadataSyncDoneCh).Should(Receive())
+}
+
 var _ = Describe("ShouldSyncMetadata", Label("pkg.ddc.juicefs.metadata_test.go"), func() {
 	var (
 		testClient client.Client
@@ -297,6 +301,7 @@ var _ = Describe("SyncMetadata", Label("pkg.ddc.juicefs.metadata_test.go"), func
 
 			err := engine.SyncMetadata()
 			Expect(err).NotTo(HaveOccurred())
+			waitForMetadataSync(&engine)
 		})
 	})
 
@@ -317,6 +322,7 @@ var _ = Describe("SyncMetadata", Label("pkg.ddc.juicefs.metadata_test.go"), func
 
 			err := engine.SyncMetadata()
 			Expect(err).NotTo(HaveOccurred())
+			waitForMetadataSync(&engine)
 		})
 	})
 
@@ -415,6 +421,7 @@ var _ = Describe("SyncMetadataInternal", Label("pkg.ddc.juicefs.metadata_test.go
 
 			err := engine.syncMetadataInternal()
 			Expect(err).NotTo(HaveOccurred())
+			waitForMetadataSync(&engine)
 		})
 	})
 })

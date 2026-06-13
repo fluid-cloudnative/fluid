@@ -127,10 +127,10 @@ func reconcileDataProcess(ctx reconcileRequestContext) (needRequeue bool, err er
 	dataProcess, err := utils.GetDataProcess(ctx.Client, ctx.Name, ctx.Namespace)
 	if err != nil {
 		if utils.IgnoreNotFound(err) == nil {
-			ctx.Log.V(1).Info("DataMigrate not found, skip reconciling")
+			ctx.Log.V(1).Info("DataProcess not found, skip reconciling")
 			return false, nil
 		}
-		return true, errors.Wrap(err, "failed to get datamigrate")
+		return true, errors.Wrap(err, "failed to get dataprocess")
 	}
 
 	updateStatusFn := func() error {

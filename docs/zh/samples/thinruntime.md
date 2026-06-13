@@ -2,6 +2,9 @@
 
 除了Fluid原生集成的存储/缓存系统外，Fluid提供了ThinRuntime CRD。ThinRuntime CRD允许用户描述任何自定义的存储系统，并将其对接到Fluid中。本文档以[Minio](https://github.com/minio/minio)为例，展示如何通过Fluid管理并访问Minio存储中的数据。
 
+⚠️ **注意**：
+- ThinRuntime支持两种使用模式：**普通模式**（通过指定`profileName`字段，用于挂载外部存储系统）和**引用数据集模式**（不指定`profileName`字段，用于引用其他Dataset）
+
 ## 前提条件
 
 - [Fluid](https://github.com/fluid-cloudnative/fluid)版本需至少为0.9.0

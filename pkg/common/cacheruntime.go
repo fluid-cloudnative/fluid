@@ -17,8 +17,9 @@
 package common
 
 import (
+	"fmt"
+
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type ComponentType string
@@ -36,12 +37,9 @@ const (
 )
 
 type CacheRuntimeValue struct {
-	// RuntimeIdentity is used to identify the runtime (name/namespace)
-	RuntimeIdentity RuntimeIdentity `json:"runtimeIdentity"`
-
-	Master *CacheRuntimeComponentValue `json:"master,omitempty"`
-	Worker *CacheRuntimeComponentValue `json:"worker,omitempty"`
-	Client *CacheRuntimeComponentValue `json:"client,omitempty"`
+	Master *CacheRuntimeComponentValue
+	Worker *CacheRuntimeComponentValue
+	Client *CacheRuntimeComponentValue
 }
 
 // CacheRuntimeComponentValue is the common value for building CacheRuntimeValue.
@@ -50,14 +48,32 @@ type CacheRuntimeComponentValue struct {
 	Name            string
 	Namespace       string
 	Enabled         bool
-	WorkloadType    metav1.TypeMeta
 	Replicas        int32
 	PodTemplateSpec corev1.PodTemplateSpec
 	Owner           *OwnerReference
-	ComponentType   ComponentType `json:"componentType,omitempty"`
+	ComponentType   ComponentType
 
 	// Service name, can be not same as Component name
 	Service *CacheRuntimeComponentServiceConfig
+}
+
+// CacheRuntimeStatusValue contains only the fields needed for status update
+type CacheRuntimeStatusValue struct {
+	Master *ComponentStatusInfo
+	Worker *ComponentStatusInfo
+	Client *ComponentStatusInfo
+}
+
+// ComponentIdentity contains minimal identity information for component status queries
+type ComponentIdentity struct {
+	Name      string
+	Namespace string
+}
+
+// ComponentStatusInfo contains the minimal information needed for status updates
+type ComponentStatusInfo struct {
+	ComponentIdentity
+	Enabled bool
 }
 
 // CacheRuntimeConfig defines the config of runtime, will be auto mounted by configmap in the component pod.
@@ -77,12 +93,14 @@ type CacheRuntimeConfig struct {
 // MountConfig defines the mount config about dataset Mounts
 type MountConfig struct {
 	MountPoint string `json:"mountPoint"`
-	// TODO: separate encrypt options with mount files for security
-	Options  map[string]string `json:"options,omitempty"`
-	Name     string            `json:"name,omitempty"`
-	Path     string            `json:"path,omitempty"`
-	ReadOnly bool              `json:"readOnly,omitempty"`
-	Shared   bool              `json:"shared,omitempty"`
+	// Non-encrypted mount options, key is the option name, value is the option value.
+	Options map[string]string `json:"options,omitempty"`
+	// Encrypted mount options, key is the option name, value is the secret mount path in container.
+	EncryptOptions map[string]string `json:"encryptOptions,omitempty"`
+	Name           string            `json:"name,omitempty"`
+	Path           string            `json:"path,omitempty"`
+	ReadOnly       bool              `json:"readOnly,omitempty"`
+	Shared         bool              `json:"shared,omitempty"`
 }
 
 type CacheRuntimeComponentConfig struct {
@@ -96,4 +114,14 @@ type CacheRuntimeComponentConfig struct {
 
 type CacheRuntimeComponentServiceConfig struct {
 	Name string `json:"name"`
+}
+
+// GetCacheComponentName gets the component name using runtime name and component type.
+func GetCacheComponentName(runtimeName string, componentType ComponentType) string {
+	return fmt.Sprintf("%s-%s", runtimeName, componentType)
+}
+
+// GetCacheRuntimeConfigConfigMapName get the configmap name of the runtime config.
+func GetCacheRuntimeConfigConfigMapName(name string) string {
+	return fmt.Sprintf("fluid-runtime-config-%s", name)
 }

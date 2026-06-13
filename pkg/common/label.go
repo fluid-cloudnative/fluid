@@ -32,7 +32,8 @@ const (
 
 	// The dataset annotation
 	// i.e. fluid.io/dataset
-	LabelAnnotationDataset = LabelAnnotationPrefix + "dataset"
+	LabelAnnotationDataset          = LabelAnnotationPrefix + "dataset"
+	LabelAnnotationDatasetPlacement = LabelAnnotationPrefix + "dataset-placement"
 
 	// LabelAnnotationDatasetId indicates the uuid of the dataset
 	// i.e. fluid.io/dataset-uuid

@@ -50,10 +50,7 @@ dataOperationSpecs:
         done
 topology:
   master:
-    workloadType: # 以StatefulSet workload创建master
-      apiVersion: apps/v1
-      kind: StatefulSet
-    service: #需要为master创建Headless Service，仅当 workloadType 为 Statefulset 时支持
+    service: #需要为master创建Headless Service
       headless: { }
     dependencies:
       extraResources:
@@ -115,11 +112,8 @@ topology:
             name: curvine-mount
             defaultMode: 0755
   worker:
-    workloadType: #以StatefulSet workload创建worker
-      apiVersion: apps/v1
-      kind: StatefulSet
     service:
-      headless: { } #需要为worker创建Headless Service，仅当workloadType为Statefulset时支持
+      headless: { } #需要为worker创建Headless Service
     dependencies:
       extraResources:
         # 使用 extraResources 时，需要定义其挂载路径
@@ -166,10 +160,10 @@ topology:
           - name: shared-config-volume
             emptyDir: { }
   client:
-    workloadType: #DaemonSet workload创建client
-      apiVersion: apps/v1
-      kind: DaemonSet
     dependencies:
+      # Uncomment to enable secret mount for client (e.g., for JuiceFS FUSE pods)
+      # secretMount:
+      #   enabled: true
       extraResources:
         # 使用 extraResources 时，需要定义其挂载路径
         configMaps:

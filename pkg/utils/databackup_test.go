@@ -223,25 +223,6 @@ func TestGetRpcPortFromMasterContainer(t *testing.T) {
 			},
 			wantRpcPort: 34,
 		},
-		{
-			name: "goosefs-test",
-			args: args{
-				container: &corev1.Container{
-					Name: "goosefs-master",
-					Ports: []corev1.ContainerPort{
-						{
-							Name:     "rpc",
-							HostPort: 44,
-						},
-						{
-							Name:     "rpc-test",
-							HostPort: 5202,
-						},
-					},
-				},
-			},
-			wantRpcPort: 44,
-		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

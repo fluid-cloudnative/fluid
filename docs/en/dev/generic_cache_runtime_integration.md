@@ -81,9 +81,8 @@ The component in Topology mainly contains the following content:
 | Options | Default options, will be overridden by user settings |                                                                                                                                                                                                                         |
 | Template | PodTemplateSpec native field   |                                                                                                                                                                                                                         |
 | Service | Currently only supports Headless      |                                                                                                                                                                                                                         |
-| Dependencies | EncryptOption      | Whether this component needs Fluid to mount the access keys defined in Dataset for accessing data sources [Not supported in current version], using the keys defined in Dataset for access.                                                                                                                                               |
-|  | ExtraResources     | Whether this component needs to mount additional ConfigMaps (the dependent ConfigMap information is defined in the ExtraResources field of CacheRuntimeClass).                                                                                                                                     |
-| ExecutionEntries| MountUFS           | For Master-Worker architecture, when Master is Ready, the underlying file system mount operation needs to be executed.                                                                                                                                                                       |
+| Dependencies | ExtraResources     | Whether this component needs to mount additional ConfigMaps (the dependent ConfigMap information is defined in the ExtraResources field of CacheRuntimeClass).                                                                                                                                     |
+| ExecutionEntries| MountUFS           | For Master-Worker architecture, when Master is Ready, the underlying file system mount operation needs to be executed. The MountUFS script must output JSON in `CacheRuntimeMountUfsOutput` struct format, containing the list of mounted UFS paths. See Step 2.7 for details.                                                                                                                                      |
 | ExecutionEntries| ReportSummary      | How the cache system defines operations to obtain cache information metrics [Not supported in current version].                                                                                                                                                                                            |
 
 ### Step 2.1 Prepare K8s-adapted Native Images and Define Component workloadType and PodTemplate
@@ -260,7 +259,7 @@ spec:
 In cacheruntime, all control plane processes are handled by Fluid. However, as a data caching engine, when providing services, the entire cache system requires **topology**, **data source**, **authentication**, and **cache information**. Fluid will provide this information to components through configuration files based on different Component roles. The component's internal process is responsible for parsing this configuration to perform environment variable configuration, data engine configuration file generation, and other operations. After preparation is complete, the data engine process can be started. For specific parsing details, please refer to the table below:
 
 *   Taking the above resources as an example, the Config examples mounted by Master/Worker/Client and maintained by Fluid are as follows:
-
+the `mounts`, `accessModes`, and `targetPath` fields in the JSON are all derived from the Dataset's Spec definition.
 
 ```json
 {
@@ -273,6 +272,10 @@ In cacheruntime, all control plane processes are handled by Fluid. However, as a
         "path_style": "true",
         "region_name": "us-east-1",
         "secret": "minioadmin"
+      },
+      "encryptOptions": {
+        "access-key": "/etc/fluid/secrets/minio-secret/access-key",
+        "secret-key": "/etc/fluid/secrets/minio-secret/secret-key"
       },
       "name": "minio",
       "path": "/minio"
@@ -316,3 +319,55 @@ In cacheruntime, all control plane processes are handled by Fluid. However, as a
   }
 }
 ```
+
+### Step 2.7 MountUFS Script Output Format Requirements
+
+For cache systems with Master-Worker architecture, after the Master component is Ready, Fluid will execute the MountUFS script to mount the underlying file system (UFS). **The MountUFS script must output JSON in `CacheRuntimeMountUfsOutput` struct format**, so that Fluid can correctly parse the mounted paths and synchronize the Dataset status.
+
+#### Optional Configuration Note
+
+If the underlying cache system's image has the following capabilities, you can **omit the MountUFS configuration**:
+
+1. **Automatic RuntimeConfig Monitoring**: The process inside the container can monitor changes to the "$FLUID_RUNTIME_CONFIG_PATH" file
+2. **Automatic Mount Execution**: When changes to the mounts configuration are detected, automatically execute the underlying file system mount operations
+3. **Ready State Control**: Ensure that the Master component's Pod starting status only becomes Ready after all UFS mounts are completed
+
+In this case, Fluid will confirm whether the Master component is ready through Kubernetes' Ready probe, without needing to execute the MountUFS script additionally.
+
+#### Use Cases
+
+The output of the MountUFS script is mainly used for the following scenarios:
+
+1. **Mount Status Synchronization**: Fluid parses the script output to confirm which UFS paths have been successfully mounted
+2. **Dataset Status Update**: Updates the Dataset's mount status and Phase based on the mount results
+3. **Dynamic Mount Management**: When the Dataset's mounts configuration changes, Fluid re-executes the MountUFS script and verifies whether the mount operation completed successfully through the output
+4. **Remount Detection**: In scenarios such as Master Pod restarts, Fluid determines whether remounting is necessary based on the output
+
+#### Output Format Specification
+
+The standard output of the MountUFS script must be in the following JSON format:
+
+```json
+{
+  "mounted": ["/path1", "/path2", "/path3"]
+}
+```
+
+Where:
+- `mounted`: A string array containing the list of all successfully mounted UFS paths
+- If no paths are mounted, output: `{"mounted": []}`
+
+#### Go Struct Definition
+
+```go
+type CacheRuntimeMountUfsOutput struct {
+    // Mounted are the ufs paths that have been mounted.
+    Mounted []string `json:"mounted,omitempty"`
+}
+```
+
+#### Important Notes
+
+1. **Must output to standard output (stdout)**: Fluid reads JSON data from the script's standard output
+2. **Error messages to standard error (stderr)**: Use `>&2` to output error messages to stderr to avoid polluting stdout
+3. **JSON format must strictly comply with requirements**: Otherwise, Fluid cannot parse it, leading to mount failure

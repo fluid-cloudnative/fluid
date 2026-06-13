@@ -10,7 +10,8 @@
 + Get Started
   - [Quick Start](userguide/get_started.md)
   - [Installation](userguide/install.md)
-  - [Trubleshooting](userguide/troubleshooting.md)
+  - [Configuration Best Practices](userguide/config_best_practices.md)
+  - [Troubleshooting](userguide/troubleshooting.md)
 + Dataset
   + Creation
     - [Accelerate Data Accessing(via POSIX)](samples/accelerate_data_accessing.md)
@@ -20,6 +21,7 @@
     - [Share data across namespace (Sidecar mode)](samples/dataset_across_namespace_with_sidecar.md)
   + Operation
     - [Data Preloading](samples/data_warmup.md)
+    - [CacheRuntime Data Operations](samples/cacheruntime_data_operations.md)
     - [Cache Runtime Manually Scaling](samples/dataset_scaling.md)
     - [Automatic Cleanup Data Operation](samples/automatic_clean_up_data_operation.md)
   + Security
@@ -35,6 +37,7 @@
 + Advanced   
   - [Accelerate Data Access by MEM or SSD](samples/accelerate_data_by_mem_or_ssd.md)
   - [Alluxio Tieredstore Configuration](samples/tieredstore_config.md)
+  - [Alluxio S3 High-Concurrency Read Tuning](samples/alluxio_s3_high_concurrency.md)
   - [Pod Scheduling Optimization](operation/pod_schedule_optimization.md)
   - [Pod Scheduling Base on Runtime Tiered Locality](operation/tiered_locality_schedule.md)
   - [Set FUSE clean policy](samples/fuse_clean_policy.md)

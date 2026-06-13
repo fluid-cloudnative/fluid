@@ -25,6 +25,9 @@ import (
 	"os"
 )
 
+// IsMountWithConfigMap checks if the mount configuration is stored in a ConfigMap.
+// It looks up the environment variable MountConfigStorage and compares it to ConfigmapStorageName.
+// If the environment variable is set and matches, it returns true; otherwise, it returns the default value true.
 func IsMountWithConfigMap() bool {
 	if envVal, exists := os.LookupEnv(MountConfigStorage); exists {
 		return envVal == ConfigmapStorageName
@@ -134,6 +137,16 @@ func (e *AlluxioEngine) ShouldUpdateUFS() (ufsToUpdate *utils.UFSToUpdate) {
 	return
 }
 
+// UpdateOnUFSChange handles the updates when the Underlying File System (UFS) changes.
+// It checks if an update is required, sets the dataset status to Updating, and processes
+// the added or removed mount points for the Alluxio engine.
+//
+// Parameters:
+// - ufsToUpdate (*utils.UFSToUpdate): The object containing information about which UFS paths need to be updated.
+//
+// Returns:
+// - updateReady (bool): Returns true when the update process has completed.
+// - err (error): Returns an error if the status update or UFS processing fails, otherwise returns nil.
 func (e *AlluxioEngine) UpdateOnUFSChange(ufsToUpdate *utils.UFSToUpdate) (updateReady bool, err error) {
 	// 1. check if need to update ufs
 	if !ufsToUpdate.ShouldUpdate() {

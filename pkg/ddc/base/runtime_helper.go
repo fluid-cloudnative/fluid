@@ -84,13 +84,7 @@ func (info *RuntimeInfo) getFuseDaemonset() (ds *appsv1.DaemonSet, err error) {
 		return
 	}
 
-	var fuseName string
-	switch info.runtimeType {
-	case common.JindoRuntime:
-		fuseName = info.name + "-" + common.JindoChartName + "-fuse"
-	default:
-		fuseName = info.name + "-fuse"
-	}
+	fuseName := info.GetFuseName()
 	return kubeclient.GetDaemonset(info.apiReader, fuseName, info.GetNamespace())
 }
 

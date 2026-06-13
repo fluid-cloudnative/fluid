@@ -50,20 +50,6 @@ func TransformQuantityToJindoUnit(q *resource.Quantity) (value string) {
 	return
 }
 
-// TransformQuantityToGooseFSUnit transform a given input quantity to another one
-// that can be recognized by GooseFS. This is necessary because GooseFS takes decimal byte units(e.g. KB, MB, GB, etc.)
-// as binary byte units(e.g. Ki, Mi, Gi)
-func TransformQuantityToGooseFSUnit(q *resource.Quantity) (value string) {
-	value = q.String()
-
-	if strings.HasSuffix(value, "i") {
-		value = strings.ReplaceAll(value, "i", "B")
-	}
-	return
-	// return units.BytesSize(units.BytesSize(float64(q.Value())))
-
-}
-
 // TransformQuantityToEFCUnit transform a given input quantity to another one
 // that can be recognized by EFC. This is necessary because EFC takes decimal byte units(e.g. KB, MB, GB, etc.)
 // as binary byte units(e.g. Ki, Mi, Gi)
