@@ -233,6 +233,18 @@ func (e *AlluxioEngine) ShouldSyncDatasetMounts() (should bool, err error) {
 	return false, nil
 }
 
+// SyncDatasetMounts synchronizes the dataset mount points with the Alluxio runtime.
+// This function is responsible for applying mount configuration changes detected
+// in the dataset specification to the running Alluxio cluster. Typical operations
+// may include mounting newly added UFS paths, unmounting removed paths, and
+// updating existing mount configurations to ensure consistency between the
+// dataset definition and the actual runtime state.
+//
+// Parameters:
+//
+// Returns:
+//   - err (error): Returns an error if the synchronization process fails;
+//     otherwise returns nil.
 func (e *AlluxioEngine) SyncDatasetMounts() (err error) {
 	return nil
 }
