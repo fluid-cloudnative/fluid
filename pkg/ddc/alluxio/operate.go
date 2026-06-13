@@ -23,6 +23,17 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
+// GetDataOperationValueFile generates the value file for a data operation in the AlluxioEngine.
+// It dispatches the request to the corresponding generator based on the operation type,
+// including data backup, data load, and data process operations.
+//
+// Parameters:
+//   - ctx: The reconciliation request context.
+//   - operation: The data operation whose value file should be generated.
+//
+// Returns:
+//   - valueFileName: The generated value file name.
+//   - err: An error if value file generation fails or the operation type is not supported.
 func (e *AlluxioEngine) GetDataOperationValueFile(ctx cruntime.ReconcileRequestContext, operation dataoperation.OperationInterface) (valueFileName string, err error) {
 	operationType := operation.GetOperationType()
 	object := operation.GetOperationObject()
