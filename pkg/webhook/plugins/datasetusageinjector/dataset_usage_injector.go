@@ -51,7 +51,10 @@ func (injector *DatasetUsageInjector) Mutate(pod *corev1.Pod, runtimeInfos map[s
 	if existingVal, exists := pod.Annotations[annotationKey]; exists && len(existingVal) > 0 {
 		existingDatasets := strings.Split(existingVal, ",")
 		for _, ds := range existingDatasets {
-			datasetsInUseMap[strings.TrimSpace(ds)] = struct{}{}
+			trimmed := strings.TrimSpace(ds)
+			if trimmed != "" {
+				datasetsInUseMap[trimmed] = struct{}{}
+			}
 		}
 	}
 
