@@ -17,6 +17,7 @@ limitations under the License.
 package jindo
 
 import (
+	"context"
 	"testing"
 
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
@@ -37,7 +38,9 @@ func TestJindoEngine_SyncRuntime(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			e := &JindoEngine{}
-			ctx := cruntime.ReconcileRequestContext{}
+			ctx := cruntime.ReconcileRequestContext{
+				Context: context.TODO(),
+			}
 			
 			gotChanged, err := e.SyncRuntime(ctx)
 			
