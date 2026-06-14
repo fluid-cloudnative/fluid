@@ -229,7 +229,6 @@ func GetMetadataListFromAnnotation(accessor metav1.ObjectMetaAccessor) (ret []da
 	return
 }
 
-
 // WithMetadataList returns a RuntimeInfoOption that sets the metadataList field
 // on a RuntimeInfo instance.
 //

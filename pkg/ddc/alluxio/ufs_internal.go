@@ -62,8 +62,8 @@ func (e *AlluxioEngine) totalStorageBytesInternal() (total int64, err error) {
 }
 
 // totalFileNumsInternal returns the total number of files managed by the Alluxio filesystem.
-// This method is intended for internal use by the AlluxioEngine.                                                            
-// It queries the Alluxio master pod to retrieve the file count across all mounted UFS paths. 
+// This method is intended for internal use by the AlluxioEngine.
+// It queries the Alluxio master pod to retrieve the file count across all mounted UFS paths.
 func (e *AlluxioEngine) totalFileNumsInternal() (fileCount int64, err error) {
 	podName, containerName := e.getMasterPodInfo()
 
