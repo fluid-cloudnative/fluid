@@ -58,7 +58,7 @@ func (e *CacheEngine) shouldSetupMaster() (bool, error) {
 }
 
 func (e *CacheEngine) setupMasterInternal(masterValue *common.CacheRuntimeComponentValue) error {
-	manager := component.NewComponentHelper(masterValue.WorkloadType, e.Client)
+	manager := component.NewComponentHelper(masterValue.ComponentType, e.Client)
 	err := manager.Reconciler(context.TODO(), masterValue)
 	if err != nil {
 		return err
@@ -71,7 +71,11 @@ func (e *CacheEngine) setupMasterInternal(masterValue *common.CacheRuntimeCompon
 			return err
 		}
 
-		masterStatus, err := manager.ConstructComponentStatus(context.TODO(), masterValue)
+		identity := &common.ComponentIdentity{
+			Name:      masterValue.Name,
+			Namespace: masterValue.Namespace,
+		}
+		masterStatus, err := manager.ConstructComponentStatus(context.TODO(), identity)
 		if err != nil {
 			return err
 		}
@@ -107,14 +111,14 @@ func (e *CacheEngine) setupMasterInternal(masterValue *common.CacheRuntimeCompon
 	return nil
 }
 
-func (e *CacheEngine) getMasterPodInfo(value *common.CacheRuntimeValue) (podName string, containerName string, err error) {
+func (e *CacheEngine) getMasterPodInfo(runtimeClass *datav1alpha1.CacheRuntimeClass) (podName string, containerName string, err error) {
 	// pod name is auto generated
-	podName = GetComponentName(e.name, common.ComponentTypeMaster) + "-0"
+	podName = common.GetCacheComponentName(e.name, common.ComponentTypeMaster) + "-0"
 	// container name, use the first container name
-	if value.Master == nil || len(value.Master.PodTemplateSpec.Spec.Containers) == 0 {
+	if runtimeClass.Topology == nil || runtimeClass.Topology.Master == nil ||
+		len(runtimeClass.Topology.Master.Template.Spec.Containers) == 0 {
 		return "", "", errors.New("no container in master pod template")
 	}
-	containerName = value.Master.PodTemplateSpec.Spec.Containers[0].Name
-
+	containerName = runtimeClass.Topology.Master.Template.Spec.Containers[0].Name
 	return
 }

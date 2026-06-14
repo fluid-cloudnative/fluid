@@ -40,10 +40,6 @@ type RuntimeTopology struct {
 
 // RuntimeComponentDefinition defines the configuration for a CacheRuntime component
 type RuntimeComponentDefinition struct {
-	// WorkloadType is the default workload type of the component
-	// +optional
-	WorkloadType metav1.TypeMeta `json:"workloadType,omitempty"`
-
 	// Options is a set of key-value pairs that provide additional configuration for the component
 	// +optional
 	Options map[string]string `json:"options,omitempty"`
@@ -67,7 +63,7 @@ type RuntimeComponentDefinition struct {
 }
 
 type ExecutionEntries struct {
-	// MountUFS defines the operations for mounting UFS
+	// MountUFS defines the operations for mounting UFS. The command's stdout must be JSON matching CacheRuntimeMountUfsOutput.
 	MountUFS *ExecutionCommonEntry `json:"mountUFS,omitempty"`
 
 	// ReportSummary it defines the operation how to get cache status like capacity, hit ratio etc.

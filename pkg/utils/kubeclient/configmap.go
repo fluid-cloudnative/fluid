@@ -195,6 +195,10 @@ func CreateConfigMapWithContext(ctx context.Context, client client.Client, name 
 }
 
 func CreateConfigMapWithOwner(client client.Client, name string, namespace string, data map[string]string, ownerReference []metav1.OwnerReference) (err error) {
+	return CreateConfigMapWithOwnerWithContext(context.TODO(), client, name, namespace, data, ownerReference)
+}
+
+func CreateConfigMapWithOwnerWithContext(ctx context.Context, client client.Client, name, namespace string, data map[string]string, ownerReference []metav1.OwnerReference) (err error) {
 	configMap := &v1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:            name,
@@ -204,5 +208,5 @@ func CreateConfigMapWithOwner(client client.Client, name string, namespace strin
 		Data: data,
 	}
 
-	return client.Create(context.TODO(), configMap)
+	return client.Create(ctx, configMap)
 }

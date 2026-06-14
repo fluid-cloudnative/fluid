@@ -385,6 +385,16 @@ var _ = Describe("AlluxioEngine UFS related tests", func() {
 	})
 })
 
+// mockExecCommandInContainerForTotalStorageBytes mocks command execution output for total storage bytes.
+// This helper returns a fixed stdout payload that mimics the "du"-style summary used by tests.
+//
+// Parameters:
+//   - none
+//
+// Returns:
+//   - stdout (string): Mocked command output including file count, folder count, and folder size.
+//   - stderr (string): Empty string because this mock simulates successful execution.
+//   - err (error): Always nil for the success-path test scenario.
 func mockExecCommandInContainerForTotalStorageBytes() (stdout string, stderr string, err error) {
 	r := `File Count               Folder Count             Folder Size
 	50000                    1000                     6706560319`

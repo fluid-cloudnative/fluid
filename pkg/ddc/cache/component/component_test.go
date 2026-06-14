@@ -19,6 +19,7 @@ package component
 import (
 	"context"
 
+	workloadv1alpha1 "github.com/fluid-cloudnative/advanced-statefulset/api/workload/v1alpha1"
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
@@ -34,59 +35,43 @@ import (
 
 var _ = Describe("ComponentManager", func() {
 	Describe("NewComponentHelper", func() {
-		It("should return StatefulSetManager for StatefulSet workload", func() {
-			workloadType := metav1.TypeMeta{
-				APIVersion: "apps/v1",
-				Kind:       "StatefulSet",
-			}
+		It("should return AdvancedStatefulSetManager for Master component", func() {
 			scheme := runtime.NewScheme()
 			client := fake.NewFakeClientWithScheme(scheme)
 
-			manager := NewComponentHelper(workloadType, client)
+			manager := NewComponentHelper(common.ComponentTypeMaster, client)
 			Expect(manager).NotTo(BeNil())
-			_, ok := manager.(*StatefulSetManager)
+			_, ok := manager.(*AdvancedStatefulSetManager)
 			Expect(ok).To(BeTrue())
 		})
 
-		It("should return DaemonSetManager for DaemonSet workload", func() {
-			workloadType := metav1.TypeMeta{
-				APIVersion: "apps/v1",
-				Kind:       "DaemonSet",
-			}
+		It("should return AdvancedStatefulSetManager for Worker component", func() {
 			scheme := runtime.NewScheme()
 			client := fake.NewFakeClientWithScheme(scheme)
 
-			manager := NewComponentHelper(workloadType, client)
+			manager := NewComponentHelper(common.ComponentTypeWorker, client)
+			Expect(manager).NotTo(BeNil())
+			_, ok := manager.(*AdvancedStatefulSetManager)
+			Expect(ok).To(BeTrue())
+		})
+
+		It("should return DaemonSetManager for Client component", func() {
+			scheme := runtime.NewScheme()
+			client := fake.NewFakeClientWithScheme(scheme)
+
+			manager := NewComponentHelper(common.ComponentTypeClient, client)
 			Expect(manager).NotTo(BeNil())
 			_, ok := manager.(*DaemonSetManager)
 			Expect(ok).To(BeTrue())
 		})
 
-		It("should return StatefulSetManager as default for unknown kind", func() {
-			workloadType := metav1.TypeMeta{
-				APIVersion: "apps/v1",
-				Kind:       "Unknown",
-			}
+		It("should return AdvancedStatefulSetManager as default for unknown type", func() {
 			scheme := runtime.NewScheme()
 			client := fake.NewFakeClientWithScheme(scheme)
 
-			manager := NewComponentHelper(workloadType, client)
+			manager := NewComponentHelper("Unknown", client)
 			Expect(manager).NotTo(BeNil())
-			_, ok := manager.(*StatefulSetManager)
-			Expect(ok).To(BeTrue())
-		})
-
-		It("should return StatefulSetManager as default for wrong APIVersion", func() {
-			workloadType := metav1.TypeMeta{
-				APIVersion: "v1",
-				Kind:       "StatefulSet",
-			}
-			scheme := runtime.NewScheme()
-			client := fake.NewFakeClientWithScheme(scheme)
-
-			manager := NewComponentHelper(workloadType, client)
-			Expect(manager).NotTo(BeNil())
-			_, ok := manager.(*StatefulSetManager)
+			_, ok := manager.(*AdvancedStatefulSetManager)
 			Expect(ok).To(BeTrue())
 		})
 	})
@@ -113,21 +98,22 @@ var _ = Describe("ComponentManager", func() {
 // setupTestClient creates a fake client with the necessary schemes registered
 func setupTestClient() client.Client {
 	scheme := runtime.NewScheme()
+	_ = workloadv1alpha1.AddToScheme(scheme)
 	_ = appsv1.AddToScheme(scheme)
 	_ = corev1.AddToScheme(scheme)
 	return fake.NewFakeClientWithScheme(scheme)
 }
 
-var _ = Describe("StatefulSetManager", func() {
+var _ = Describe("AdvancedStatefulSetManager", func() {
 	var (
-		manager   *StatefulSetManager
+		manager   *AdvancedStatefulSetManager
 		ctx       context.Context
 		component *common.CacheRuntimeComponentValue
 	)
 
 	BeforeEach(func() {
 		client := setupTestClient()
-		manager = newStatefulSetManager(client)
+		manager = newAdvancedStatefulSetManager(client)
 		ctx = context.Background()
 
 		replicas := int32(3)
@@ -154,28 +140,24 @@ var _ = Describe("StatefulSetManager", func() {
 			Service: &common.CacheRuntimeComponentServiceConfig{
 				Name: "test-runtime-master-svc",
 			},
-			WorkloadType: metav1.TypeMeta{
-				APIVersion: "apps/v1",
-				Kind:       "StatefulSet",
-			},
 		}
 	})
 
 	Describe("Reconciler", func() {
-		It("should create StatefulSet and Service successfully", func() {
+		It("should create AdvancedStatefulSet and Service successfully", func() {
 			err := manager.Reconciler(ctx, component)
 			Expect(err).NotTo(HaveOccurred())
 
-			sts := &appsv1.StatefulSet{}
+			asts := &workloadv1alpha1.AdvancedStatefulSet{}
 			err = manager.client.Get(ctx, types.NamespacedName{
 				Name:      "test-runtime-master",
 				Namespace: "fluid",
-			}, sts)
+			}, asts)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(sts.Name).To(Equal("test-runtime-master"))
-			Expect(*sts.Spec.Replicas).To(Equal(int32(3)))
-			Expect(sts.Spec.PodManagementPolicy).To(Equal(appsv1.ParallelPodManagement))
-			Expect(sts.Spec.ServiceName).To(Equal("test-runtime-master-svc"))
+			Expect(asts.Name).To(Equal("test-runtime-master"))
+			Expect(*asts.Spec.Replicas).To(Equal(int32(3)))
+			Expect(asts.Spec.PodManagementPolicy).To(Equal(appsv1.ParallelPodManagement))
+			Expect(asts.Spec.ServiceName).To(Equal("test-runtime-master-svc"))
 
 			svc := &corev1.Service{}
 			err = manager.client.Get(ctx, types.NamespacedName{
@@ -188,7 +170,7 @@ var _ = Describe("StatefulSetManager", func() {
 			Expect(svc.Spec.PublishNotReadyAddresses).To(BeTrue())
 		})
 
-		It("should not recreate if StatefulSet already exists", func() {
+		It("should not recreate if AdvancedStatefulSet already exists", func() {
 			// First reconciliation
 			err := manager.Reconciler(ctx, component)
 			Expect(err).NotTo(HaveOccurred())
@@ -203,37 +185,40 @@ var _ = Describe("StatefulSetManager", func() {
 			err := manager.Reconciler(ctx, component)
 			Expect(err).NotTo(HaveOccurred())
 
-			// Verify StatefulSet was created without ServiceName
-			sts := &appsv1.StatefulSet{}
+			// Verify AdvancedStatefulSet was created without ServiceName
+			asts := &workloadv1alpha1.AdvancedStatefulSet{}
 			err = manager.client.Get(ctx, types.NamespacedName{
 				Name:      "test-runtime-master",
 				Namespace: "fluid",
-			}, sts)
+			}, asts)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(sts.Spec.ServiceName).To(BeEmpty())
+			Expect(asts.Spec.ServiceName).To(BeEmpty())
 		})
 	})
 
 	Describe("ConstructComponentStatus", func() {
 		It("should return Ready phase when all replicas are ready", func() {
 			replicas := int32(3)
-			sts := &appsv1.StatefulSet{
+			asts := &workloadv1alpha1.AdvancedStatefulSet{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-runtime-master",
 					Namespace: "fluid",
 				},
-				Spec: appsv1.StatefulSetSpec{
+				Spec: workloadv1alpha1.AdvancedStatefulSetSpec{
 					Replicas: &replicas,
 				},
-				Status: appsv1.StatefulSetStatus{
+				Status: workloadv1alpha1.AdvancedStatefulSetStatus{
 					ReadyReplicas:     3,
 					CurrentReplicas:   3,
 					AvailableReplicas: 3,
 				},
 			}
-			Expect(manager.client.Create(ctx, sts)).To(Succeed())
+			Expect(manager.client.Create(ctx, asts)).To(Succeed())
 
-			status, err := manager.ConstructComponentStatus(ctx, component)
+			status, err := manager.ConstructComponentStatus(ctx, &common.ComponentIdentity{
+				Name:      component.Name,
+				Namespace: component.Namespace,
+			})
 			Expect(err).NotTo(HaveOccurred())
 			Expect(status.DesiredReplicas).To(Equal(int32(3)))
 			Expect(status.ReadyReplicas).To(Equal(int32(3)))
@@ -245,23 +230,26 @@ var _ = Describe("StatefulSetManager", func() {
 
 		It("should return NotReady phase when replicas are partially ready", func() {
 			replicas := int32(3)
-			sts := &appsv1.StatefulSet{
+			asts := &workloadv1alpha1.AdvancedStatefulSet{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-runtime-master",
 					Namespace: "fluid",
 				},
-				Spec: appsv1.StatefulSetSpec{
+				Spec: workloadv1alpha1.AdvancedStatefulSetSpec{
 					Replicas: &replicas,
 				},
-				Status: appsv1.StatefulSetStatus{
+				Status: workloadv1alpha1.AdvancedStatefulSetStatus{
 					ReadyReplicas:     2,
 					CurrentReplicas:   3,
 					AvailableReplicas: 2,
 				},
 			}
-			Expect(manager.client.Create(ctx, sts)).To(Succeed())
+			Expect(manager.client.Create(ctx, asts)).To(Succeed())
 
-			status, err := manager.ConstructComponentStatus(ctx, component)
+			status, err := manager.ConstructComponentStatus(ctx, &common.ComponentIdentity{
+				Name:      component.Name,
+				Namespace: component.Namespace,
+			})
 			Expect(err).NotTo(HaveOccurred())
 			Expect(status.DesiredReplicas).To(Equal(int32(3)))
 			Expect(status.ReadyReplicas).To(Equal(int32(2)))
@@ -271,30 +259,36 @@ var _ = Describe("StatefulSetManager", func() {
 
 		It("should return NotReady phase when no replicas are ready", func() {
 			replicas := int32(3)
-			sts := &appsv1.StatefulSet{
+			asts := &workloadv1alpha1.AdvancedStatefulSet{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-runtime-master",
 					Namespace: "fluid",
 				},
-				Spec: appsv1.StatefulSetSpec{
+				Spec: workloadv1alpha1.AdvancedStatefulSetSpec{
 					Replicas: &replicas,
 				},
-				Status: appsv1.StatefulSetStatus{
+				Status: workloadv1alpha1.AdvancedStatefulSetStatus{
 					ReadyReplicas:     0,
 					CurrentReplicas:   3,
 					AvailableReplicas: 0,
 				},
 			}
-			Expect(manager.client.Create(ctx, sts)).To(Succeed())
+			Expect(manager.client.Create(ctx, asts)).To(Succeed())
 
-			status, err := manager.ConstructComponentStatus(ctx, component)
+			status, err := manager.ConstructComponentStatus(ctx, &common.ComponentIdentity{
+				Name:      component.Name,
+				Namespace: component.Namespace,
+			})
 			Expect(err).NotTo(HaveOccurred())
 			Expect(status.ReadyReplicas).To(Equal(int32(0)))
 			Expect(status.Phase).To(Equal(datav1alpha1.RuntimePhaseNotReady))
 		})
 
-		It("should return error when StatefulSet doesn't exist", func() {
-			_, err := manager.ConstructComponentStatus(ctx, component)
+		It("should return error when AdvancedStatefulSet doesn't exist", func() {
+			_, err := manager.ConstructComponentStatus(ctx, &common.ComponentIdentity{
+				Name:      component.Name,
+				Namespace: component.Namespace,
+			})
 			Expect(err).To(HaveOccurred())
 		})
 	})
@@ -333,10 +327,6 @@ var _ = Describe("DaemonSetManager", func() {
 			},
 			Service: &common.CacheRuntimeComponentServiceConfig{
 				Name: "test-runtime-worker-svc",
-			},
-			WorkloadType: metav1.TypeMeta{
-				APIVersion: "apps/v1",
-				Kind:       "DaemonSet",
 			},
 		}
 	})
@@ -397,7 +387,10 @@ var _ = Describe("DaemonSetManager", func() {
 			}
 			Expect(manager.client.Create(ctx, ds)).To(Succeed())
 
-			status, err := manager.ConstructComponentStatus(ctx, component)
+			status, err := manager.ConstructComponentStatus(ctx, &common.ComponentIdentity{
+				Name:      component.Name,
+				Namespace: component.Namespace,
+			})
 			Expect(err).NotTo(HaveOccurred())
 			Expect(status.DesiredReplicas).To(Equal(int32(3)))
 			Expect(status.ReadyReplicas).To(Equal(int32(3)))
@@ -422,7 +415,10 @@ var _ = Describe("DaemonSetManager", func() {
 			}
 			Expect(manager.client.Create(ctx, ds)).To(Succeed())
 
-			status, err := manager.ConstructComponentStatus(ctx, component)
+			status, err := manager.ConstructComponentStatus(ctx, &common.ComponentIdentity{
+				Name:      component.Name,
+				Namespace: component.Namespace,
+			})
 			Expect(err).NotTo(HaveOccurred())
 			Expect(status.DesiredReplicas).To(Equal(int32(3)))
 			Expect(status.ReadyReplicas).To(Equal(int32(2)))
@@ -448,7 +444,10 @@ var _ = Describe("DaemonSetManager", func() {
 			}
 			Expect(manager.client.Create(ctx, ds)).To(Succeed())
 
-			status, err := manager.ConstructComponentStatus(ctx, component)
+			status, err := manager.ConstructComponentStatus(ctx, &common.ComponentIdentity{
+				Name:      component.Name,
+				Namespace: component.Namespace,
+			})
 			Expect(err).NotTo(HaveOccurred())
 			Expect(status.DesiredReplicas).To(Equal(int32(3)))
 			Expect(status.ReadyReplicas).To(Equal(int32(0)))
@@ -458,7 +457,10 @@ var _ = Describe("DaemonSetManager", func() {
 		})
 
 		It("should return error when DaemonSet doesn't exist", func() {
-			_, err := manager.ConstructComponentStatus(ctx, component)
+			_, err := manager.ConstructComponentStatus(ctx, &common.ComponentIdentity{
+				Name:      component.Name,
+				Namespace: component.Namespace,
+			})
 			Expect(err).To(HaveOccurred())
 		})
 	})

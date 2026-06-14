@@ -138,6 +138,8 @@ var _ = Describe("RandomRuntimePortAllocator", func() {
 	})
 })
 
+// containsAny checks whether any element in dst also exists in ports.
+// It builds a hash map from ports for efficient lookup, then iterates over dst to check for any overlap.
 func containsAny(ports []int, dst []int) bool {
 	m := map[int]bool{}
 	for _, v := range ports {

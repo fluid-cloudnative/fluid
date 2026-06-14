@@ -104,33 +104,56 @@ var _ = Describe("RuntimeReconciler", func() {
 		It("allows a normal dataset for cache runtimes", func() {
 			r := &RuntimeReconciler{}
 
-			supported, reason := r.CheckIfReferenceDatasetIsSupported(cruntime.ReconcileRequestContext{
+			supported, err := r.CheckIfReferenceDatasetIsSupported(cruntime.ReconcileRequestContext{
 				Dataset:     newTestDataset(defaultNamespace, demoDatasetName),
 				RuntimeType: common.AlluxioRuntime,
 			})
 
 			Expect(supported).To(BeTrue())
-			Expect(reason).To(BeEmpty())
+			Expect(err).NotTo(HaveOccurred())
 		})
 
 		It("allows a reference dataset for thin runtimes", func() {
-			r := &RuntimeReconciler{}
+			dataset := newTestDatasetWithMounts(defaultNamespace, demoDatasetName, []datav1alpha1.Mount{{
+				MountPoint: demoPhysicalDatasetMount,
+			}})
+			physicalDataset := &datav1alpha1.Dataset{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "physical-dataset",
+					Namespace: "demo",
+				},
+				Status: datav1alpha1.DatasetStatus{
+					Runtimes: []datav1alpha1.Runtime{{
+						Name:      "physical-dataset",
+						Namespace: "demo",
+						Type:      common.AlluxioRuntime,
+					}},
+				},
+			}
+			alluxioRuntime := &datav1alpha1.AlluxioRuntime{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "physical-dataset",
+					Namespace: "demo",
+				},
+			}
+			r := newTestRuntimeReconciler(dataset, physicalDataset, alluxioRuntime)
 
-			supported, reason := r.CheckIfReferenceDatasetIsSupported(cruntime.ReconcileRequestContext{
-				Dataset: newTestDatasetWithMounts(defaultNamespace, demoDatasetName, []datav1alpha1.Mount{{
-					MountPoint: demoPhysicalDatasetMount,
-				}}),
+			supported, err := r.CheckIfReferenceDatasetIsSupported(cruntime.ReconcileRequestContext{
+				Dataset:     dataset,
 				RuntimeType: common.ThinRuntime,
+				Client:      r.Client,
 			})
 
+			if err != nil {
+				Fail(fmt.Sprintf("Unexpected error: %v", err))
+			}
 			Expect(supported).To(BeTrue())
-			Expect(reason).To(BeEmpty())
 		})
 
 		It("rejects a reference dataset for non-thin runtimes", func() {
 			r := &RuntimeReconciler{}
 
-			supported, reason := r.CheckIfReferenceDatasetIsSupported(cruntime.ReconcileRequestContext{
+			supported, err := r.CheckIfReferenceDatasetIsSupported(cruntime.ReconcileRequestContext{
 				Dataset: newTestDatasetWithMounts(defaultNamespace, demoDatasetName, []datav1alpha1.Mount{{
 					MountPoint: demoPhysicalDatasetMount,
 				}}),
@@ -138,7 +161,71 @@ var _ = Describe("RuntimeReconciler", func() {
 			})
 
 			Expect(supported).To(BeFalse())
-			Expect(reason).NotTo(BeEmpty())
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("can only use thin runtime"))
+		})
+
+		It("allows a reference dataset when physical runtime is AlluxioRuntime", func() {
+			dataset := newTestDatasetWithMounts(defaultNamespace, demoDatasetName, []datav1alpha1.Mount{{
+				MountPoint: demoPhysicalDatasetMount,
+			}})
+			physicalDataset := &datav1alpha1.Dataset{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "physical-dataset",
+					Namespace: "demo",
+				},
+				Status: datav1alpha1.DatasetStatus{
+					Runtimes: []datav1alpha1.Runtime{{
+						Name:      "physical-dataset",
+						Namespace: "demo",
+						Type:      common.AlluxioRuntime,
+					}},
+				},
+			}
+			alluxioRuntime := &datav1alpha1.AlluxioRuntime{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "physical-dataset",
+					Namespace: "demo",
+				},
+			}
+			r := newTestRuntimeReconciler(dataset, physicalDataset, alluxioRuntime)
+
+			supported, err := r.CheckIfReferenceDatasetIsSupported(cruntime.ReconcileRequestContext{
+				Dataset:     dataset,
+				RuntimeType: common.ThinRuntime,
+				Client:      r.Client,
+			})
+
+			if err != nil {
+				Fail(fmt.Sprintf("Unexpected error: %v", err))
+			}
+			Expect(supported).To(BeTrue())
+		})
+
+		It("not reject a reference dataset when physical dataset is not bound (Runtimes is empty)", func() {
+			dataset := newTestDatasetWithMounts(defaultNamespace, demoDatasetName, []datav1alpha1.Mount{{
+				MountPoint: demoPhysicalDatasetMount,
+			}})
+			// Physical dataset exists but Status.Runtimes is empty (not bound yet)
+			physicalDataset := &datav1alpha1.Dataset{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "physical-dataset",
+					Namespace: "demo",
+				},
+				Status: datav1alpha1.DatasetStatus{
+					Runtimes: []datav1alpha1.Runtime{}, // Empty - not bound to any runtime
+				},
+			}
+			r := newTestRuntimeReconciler(dataset, physicalDataset)
+
+			supported, err := r.CheckIfReferenceDatasetIsSupported(cruntime.ReconcileRequestContext{
+				Dataset:     dataset,
+				RuntimeType: common.ThinRuntime,
+				Client:      r.Client,
+			})
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(supported).To(BeTrue())
 		})
 	})
 

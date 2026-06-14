@@ -61,6 +61,7 @@ worker:
   annotations: {}
   volumes: []
   volumeMounts: []
+  volumeClaimTemplates: []
 
 
 configs:

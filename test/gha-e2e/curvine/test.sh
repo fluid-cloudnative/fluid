@@ -3,8 +3,10 @@
 testname="curvine cache runtime basic e2e"
 
 dataset_name="curvine-demo"
+ref_dataset_name="curvine-demo-ref"
 write_job_name="write-job"
 read_job_name="read-job"
+read_ref_job_name="read-ref-job"
 bucket_create_job_name="minio-bucket-create"
 
 function syslog() {
@@ -163,6 +165,41 @@ function wait_cache_worker_ready() {
     syslog "Found ready cache worker pod for $dataset_name"
 }
 
+function create_reference_dataset() {
+    # Note: ThinRuntime will be automatically created by Dataset Controller
+    # when a reference dataset (mountPoint: dataset://...) is created
+    kubectl create -f test/gha-e2e/curvine/ref-dataset.yaml
+
+    if [[ -z "$(kubectl get dataset $ref_dataset_name -oname)" ]]; then
+        panic "failed to create reference dataset $ref_dataset_name"
+    fi
+}
+
+function wait_reference_dataset_bound() {
+    local deadline=600 # 10 minutes
+    local last_state=""
+    local log_interval=0
+    local log_times=0
+    while true; do
+        last_state=$(kubectl get dataset $ref_dataset_name -ojsonpath='{@.status.phase}')
+        if [[ $log_interval -eq 3 ]]; then
+            log_times=$((log_times + 1))
+            syslog "checking reference dataset.status.phase==Bound (already $((log_times * log_interval * 5))s, last state: $last_state)"
+            if [[ $((log_times * log_interval * 5)) -ge $deadline ]]; then
+                panic "timeout for ${deadline}s!"
+            fi
+            log_interval=0
+        fi
+
+        if [[ "$last_state" == "Bound" ]]; then
+            break
+        fi
+        log_interval=$((log_interval + 1))
+        sleep 5
+    done
+    syslog "Found reference dataset $ref_dataset_name status.phase==Bound"
+}
+
 function create_job() {
     local job_file=$1
     local job_name=$2
@@ -194,9 +231,12 @@ function wait_job_completed() {
 function dump_env_and_clean_up() {
     bash tools/diagnose-fluid-curvine.sh collect --name $dataset_name --namespace default --collect-path ./e2e-tmp/testcase-curvine.tgz
     syslog "Cleaning up resources for testcase $testname"
+    kubectl delete --ignore-not-found -f test/gha-e2e/curvine/read_ref_job.yaml
     kubectl delete --ignore-not-found -f test/gha-e2e/curvine/read_job.yaml
     kubectl delete --ignore-not-found -f test/gha-e2e/curvine/write_job.yaml
     kubectl delete --ignore-not-found -f test/gha-e2e/curvine/dataload.yaml
+    kubectl delete --ignore-not-found -f test/gha-e2e/curvine/ref-dataset.yaml
+    # ThinRuntime will be automatically deleted when reference dataset is deleted
     kubectl delete --ignore-not-found -f test/gha-e2e/curvine/dataset.yaml
     kubectl delete --ignore-not-found -f test/gha-e2e/curvine/cacheruntime.yaml
     kubectl delete --ignore-not-found -f test/gha-e2e/curvine/cacheruntimeclass.yaml
@@ -234,6 +274,8 @@ function main() {
     setup
     create_dataset
     wait_dataset_bound
+    create_reference_dataset
+    wait_reference_dataset_bound
     wait_cache_worker_ready
     create_job test/gha-e2e/curvine/write_job.yaml $write_job_name
     wait_job_completed $write_job_name
@@ -242,6 +284,8 @@ function main() {
     wait_cache_client_ready
     create_job test/gha-e2e/curvine/read_job.yaml $read_job_name
     wait_job_completed $read_job_name
+    create_job test/gha-e2e/curvine/read_ref_job.yaml $read_ref_job_name
+    wait_job_completed $read_ref_job_name
 
     syslog "[TESTCASE $testname SUCCEEDED AT $(date)]"
 }

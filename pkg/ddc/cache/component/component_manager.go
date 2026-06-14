@@ -19,29 +19,45 @@ package component
 import (
 	"context"
 
-	"github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 type ComponentManager interface {
+	// Reconciler reconciles the component, used in Engine Setup
 	Reconciler(ctx context.Context, component *common.CacheRuntimeComponentValue) error
-	ConstructComponentStatus(todo context.Context, value *common.CacheRuntimeComponentValue) (v1alpha1.RuntimeComponentStatus, error)
-	GetNodeAffinity(value *common.CacheRuntimeComponentValue) (*corev1.NodeAffinity, error)
+	// ConstructComponentStatus constructs the component status, used for updating component status
+	ConstructComponentStatus(todo context.Context, identity *common.ComponentIdentity) (datav1alpha1.RuntimeComponentStatus, error)
+	// GetNodeAffinity gets the node affinity for the component, for app pod cache affinity
+	GetNodeAffinity(identity *common.ComponentIdentity) (*corev1.NodeAffinity, error)
+	// SyncComponentSpec synchronizes component specification changes to the workload
+	SyncComponentSpec(ctx context.Context, identity *common.ComponentIdentity, newSpec ComponentSpec) error
 }
 
-func NewComponentHelper(workloadType metav1.TypeMeta, client client.Client) ComponentManager {
-	if workloadType.APIVersion == "apps/v1" {
-		if workloadType.Kind == "StatefulSet" {
-			return newStatefulSetManager(client)
-		} else if workloadType.Kind == "DaemonSet" {
-			return newDaemonSetManager(client)
-		}
-	}
+// ComponentSpec represents the specification that can be synchronized to a component
+// This structure groups all fields that support in-place update
+type ComponentSpec struct {
+	// Replicas is the desired number of replicas (optional, nil means no change)
+	Replicas *int32
+	// Version contains image and pull policy information
+	Version datav1alpha1.VersionSpec
+	// Resources contains CPU and memory resource requirements
+	Resources corev1.ResourceRequirements
+}
 
-	return newStatefulSetManager(client)
+func NewComponentHelper(componentType common.ComponentType, client client.Client) ComponentManager {
+	// Master and Worker use AdvancedStatefulSet, Client uses DaemonSet
+	switch componentType {
+	case common.ComponentTypeMaster, common.ComponentTypeWorker:
+		return newAdvancedStatefulSetManager(client)
+	case common.ComponentTypeClient:
+		return newDaemonSetManager(client)
+	default:
+		// Default to AdvancedStatefulSetManager for unknown types
+		return newAdvancedStatefulSetManager(client)
+	}
 }
 
 // getCommonLabelsFromComponent returns the common labels for component used for stateful

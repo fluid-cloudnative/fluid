@@ -27,7 +27,7 @@ github.com/docker/go-units
 ## explicit; go 1.13
 github.com/emicklei/go-restful/v3
 github.com/emicklei/go-restful/v3/log
-# github.com/evanphx/json-patch v4.12.0+incompatible
+# github.com/evanphx/json-patch v5.6.0+incompatible
 ## explicit
 github.com/evanphx/json-patch
 # github.com/evanphx/json-patch/v5 v5.8.0
@@ -37,6 +37,27 @@ github.com/evanphx/json-patch/v5/internal/json
 # github.com/felixge/fgprof v0.9.5
 ## explicit; go 1.14
 github.com/felixge/fgprof
+# github.com/fluid-cloudnative/advanced-statefulset v0.0.0-20260518081011-ad1ab7583915
+## explicit; go 1.21
+github.com/fluid-cloudnative/advanced-statefulset/api/workload/v1alpha1
+github.com/fluid-cloudnative/advanced-statefulset/pkg/workload/advancedstatefulset
+github.com/fluid-cloudnative/advanced-statefulset/pkg/workload/utils/api
+github.com/fluid-cloudnative/advanced-statefulset/pkg/workload/utils/containermeta
+github.com/fluid-cloudnative/advanced-statefulset/pkg/workload/utils/controllerhistory
+github.com/fluid-cloudnative/advanced-statefulset/pkg/workload/utils/discovery
+github.com/fluid-cloudnative/advanced-statefulset/pkg/workload/utils/expectations
+github.com/fluid-cloudnative/advanced-statefulset/pkg/workload/utils/inplaceupdate
+github.com/fluid-cloudnative/advanced-statefulset/pkg/workload/utils/kubecontroller
+github.com/fluid-cloudnative/advanced-statefulset/pkg/workload/utils/lifecycle
+github.com/fluid-cloudnative/advanced-statefulset/pkg/workload/utils/podadapter
+github.com/fluid-cloudnative/advanced-statefulset/pkg/workload/utils/podreadiness
+github.com/fluid-cloudnative/advanced-statefulset/pkg/workload/utils/ratelimiter
+github.com/fluid-cloudnative/advanced-statefulset/pkg/workload/utils/requeueduration
+github.com/fluid-cloudnative/advanced-statefulset/pkg/workload/utils/revision
+github.com/fluid-cloudnative/advanced-statefulset/pkg/workload/utils/revisionadapter
+github.com/fluid-cloudnative/advanced-statefulset/pkg/workload/utils/specifieddelete
+github.com/fluid-cloudnative/advanced-statefulset/pkg/workload/utils/updatesort
+github.com/fluid-cloudnative/advanced-statefulset/pkg/workload/utils/util
 # github.com/fsnotify/fsnotify v1.7.0
 ## explicit; go 1.17
 github.com/fsnotify/fsnotify
@@ -657,6 +678,8 @@ k8s.io/client-go/applyconfigurations/storage/v1alpha1
 k8s.io/client-go/applyconfigurations/storage/v1beta1
 k8s.io/client-go/discovery
 k8s.io/client-go/dynamic
+k8s.io/client-go/informers/core/v1
+k8s.io/client-go/informers/internalinterfaces
 k8s.io/client-go/kubernetes
 k8s.io/client-go/kubernetes/scheme
 k8s.io/client-go/kubernetes/typed/admissionregistration/v1
@@ -710,6 +733,8 @@ k8s.io/client-go/kubernetes/typed/scheduling/v1beta1
 k8s.io/client-go/kubernetes/typed/storage/v1
 k8s.io/client-go/kubernetes/typed/storage/v1alpha1
 k8s.io/client-go/kubernetes/typed/storage/v1beta1
+k8s.io/client-go/listers/apps/v1
+k8s.io/client-go/listers/core/v1
 k8s.io/client-go/metadata
 k8s.io/client-go/openapi
 k8s.io/client-go/pkg/apis/clientauthentication
@@ -785,8 +810,11 @@ k8s.io/kube-openapi/pkg/validation/spec
 k8s.io/kubernetes/pkg/api/v1/pod
 k8s.io/kubernetes/pkg/apis/core
 k8s.io/kubernetes/pkg/features
+k8s.io/kubernetes/pkg/fieldpath
 k8s.io/kubernetes/pkg/registry/core/service/allocator
 k8s.io/kubernetes/pkg/registry/core/service/portallocator
+k8s.io/kubernetes/pkg/util/hash
+k8s.io/kubernetes/pkg/util/slice
 # k8s.io/utils v0.0.0-20230726121419-3b25d923346b
 ## explicit; go 1.18
 k8s.io/utils/buffer

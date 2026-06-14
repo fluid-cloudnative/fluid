@@ -49,8 +49,8 @@ func (s *DaemonSetManager) Reconciler(ctx context.Context, component *common.Cac
 	return reconcileService(ctx, s.client, component)
 }
 
-func (s *DaemonSetManager) GetNodeAffinity(component *common.CacheRuntimeComponentValue) (*corev1.NodeAffinity, error) {
-	ds, err := kubeclient.GetDaemonset(s.client, component.Name, component.Namespace)
+func (s *DaemonSetManager) GetNodeAffinity(identity *common.ComponentIdentity) (*corev1.NodeAffinity, error) {
+	ds, err := kubeclient.GetDaemonset(s.client, identity.Name, identity.Namespace)
 	if err != nil {
 		return nil, err
 	}
@@ -114,14 +114,14 @@ func (s *DaemonSetManager) constructDaemonSet(component *common.CacheRuntimeComp
 	return ds
 }
 
-func (s *DaemonSetManager) ConstructComponentStatus(ctx context.Context, component *common.CacheRuntimeComponentValue) (datav1alpha1.RuntimeComponentStatus, error) {
+func (s *DaemonSetManager) ConstructComponentStatus(ctx context.Context, identity *common.ComponentIdentity) (datav1alpha1.RuntimeComponentStatus, error) {
 	logger := log.FromContext(ctx)
 	logger.Info("start to ConstructComponentStatus")
 
 	ds := &appsv1.DaemonSet{}
-	err := s.client.Get(ctx, types.NamespacedName{Name: component.Name, Namespace: component.Namespace}, ds)
+	err := s.client.Get(ctx, types.NamespacedName{Name: identity.Name, Namespace: identity.Namespace}, ds)
 	if err != nil {
-		logger.Error(err, fmt.Sprintf("failed to get component: %s/%s", component.Namespace, component.Name))
+		logger.Error(err, fmt.Sprintf("failed to get component: %s/%s", identity.Namespace, identity.Name))
 		return datav1alpha1.RuntimeComponentStatus{}, err
 	}
 
@@ -141,4 +141,9 @@ func (s *DaemonSetManager) ConstructComponentStatus(ctx context.Context, compone
 		UnavailableReplicas: ds.Status.NumberUnavailable,
 		ReadyReplicas:       readyReplicas,
 	}, nil
+}
+
+// SyncComponentSpec is not supported for DaemonSet, Client Component does not support to be modified after created.
+func (s *DaemonSetManager) SyncComponentSpec(ctx context.Context, identity *common.ComponentIdentity, spec ComponentSpec) error {
+	return fmt.Errorf("SyncComponentSpec is not supported for DaemonSet component %s/%s, client component does not support to be modified after created", identity.Namespace, identity.Name)
 }

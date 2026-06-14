@@ -27,10 +27,3 @@ spec:
   client:
     options:
       key1: value1
-    volumeMounts: 		#可配置volume和对应的volumeMounts
-      - name: demo
-        mountPath: /mnt
-  volumes:
-    - name: demo
-      persistentVolumeClaim:
-        claimName: curvine-demo

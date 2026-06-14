@@ -35,6 +35,10 @@ import (
 	"github.com/fluid-cloudnative/fluid"
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	cachectl "github.com/fluid-cloudnative/fluid/pkg/controllers/v1alpha1/cacheruntime"
+
+	"github.com/fluid-cloudnative/advanced-statefulset/pkg/workload/advancedstatefulset"
+
+	workloadv1alpha1 "github.com/fluid-cloudnative/advanced-statefulset/api/workload/v1alpha1"
 )
 
 var (
@@ -72,6 +76,7 @@ var startCmd = &cobra.Command{
 func init() {
 	_ = clientgoscheme.AddToScheme(scheme)
 	_ = datav1alpha1.AddToScheme(scheme)
+	_ = workloadv1alpha1.AddToScheme(scheme)
 
 	startCmd.Flags().StringVarP(&metricsAddr, "metrics-addr", "", ":8080", "The address the metric endpoint binds to.")
 	startCmd.Flags().BoolVarP(&enableLeaderElection, "enable-leader-election", "", false, "Enable leader election for controller manager. Enabling this will ensure there is only one active controller manager.")
@@ -129,6 +134,13 @@ func handle() {
 		setupLog.Error(err, "unable to start cacheruntime manager")
 		os.Exit(1)
 	}
+
+	// Add AdvancedStatefulSet controller
+	if err := advancedstatefulset.Add(mgr); err != nil {
+		setupLog.Error(err, "unable to add AdvancedStatefulSet controller")
+		os.Exit(1)
+	}
+	setupLog.Info("AdvancedStatefulSet controller added successfully")
 
 	defaultSyncBackoff, err := time.ParseDuration(controllerWorkqueueDefaultSyncBackoffStr)
 	if err != nil {

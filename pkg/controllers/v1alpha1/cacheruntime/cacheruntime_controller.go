@@ -123,7 +123,7 @@ func (r *CacheRuntimeReconciler) Reconcile(context context.Context, req ctrl.Req
 // SetupWithManager sets up the controller with the Manager.
 func (r *CacheRuntimeReconciler) SetupWithManager(mgr ctrl.Manager, options controller.Options, eventDriven bool) error {
 	if eventDriven {
-		return watch.SetupWatcherForReconciler(mgr, options, r)
+		return watch.SetupWatcherForCacheRuntimeReconciler(mgr, options, r)
 	} else {
 		return ctrl.NewControllerManagedBy(mgr).
 			WithOptions(options).

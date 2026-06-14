@@ -172,6 +172,18 @@ type CachePath struct {
 	Quota *resource.Quantity
 }
 
+// BuildRuntimeInfo creates and initializes a RuntimeInfoInterface instance with the specified name, namespace, and runtime type.
+// It applies any number of optional configuration functions (opts) to customize the runtime information before returning.
+//
+// Parameters:
+// - name (string): The name of the runtime.
+// - namespace (string): The namespace of the runtime.
+// - runtimeType (string): The type of the runtime (e.g., Alluxio, JuiceFS).
+// - opts (...RuntimeInfoOption): Optional configuration functions that modify the RuntimeInfo struct.
+//
+// Returns:
+// - runtime (RuntimeInfoInterface): A fully configured runtime information object.
+// - err (error): Returns an error if any of the provided options fails to apply.
 func BuildRuntimeInfo(name string,
 	namespace string,
 	runtimeType string,
@@ -217,13 +229,25 @@ func GetMetadataListFromAnnotation(accessor metav1.ObjectMetaAccessor) (ret []da
 	return
 }
 
+
+// WithMetadataList returns a RuntimeInfoOption that sets the metadataList field
+// on a RuntimeInfo instance.
+//
+// Parameters:
+//   - metadataList: a slice of Metadata objects to associate with the RuntimeInfo.
+//
+// Returns:
+//   - A RuntimeInfoOption function that, when applied, assigns the provided
+//     metadataList to info.metadataList and returns nil (no error).
 func WithMetadataList(metadataList []datav1alpha1.Metadata) RuntimeInfoOption {
 	return func(info *RuntimeInfo) error {
+		// Assign the provided metadataList to the RuntimeInfo instance.
 		info.metadataList = metadataList
 		return nil
 	}
 }
 
+// GetMetadataList returns the metadata list of the runtime
 func (info *RuntimeInfo) GetMetadataList() []datav1alpha1.Metadata {
 	return info.metadataList
 }
@@ -248,6 +272,16 @@ func WithAnnotations(annotations map[string]string) RuntimeInfoOption {
 	}
 }
 
+// GetAnnotations returns the annotations map associated with the runtime.
+//
+// The annotations are typically copied from the underlying Kubernetes runtime
+// object (for example, AlluxioRuntime, JindoRuntime, etc.) via the
+// `WithAnnotations` option when building the `RuntimeInfo`.
+//
+// Returns:
+//   - map[string]string: the annotations map stored on `RuntimeInfo`. The
+//     returned map is not deep-copied; callers should avoid modifying it if
+//     it may be shared.
 func (info *RuntimeInfo) GetAnnotations() map[string]string {
 	return info.annotations
 }
@@ -329,6 +363,9 @@ func (info *RuntimeInfo) GetRuntimeType() string {
 	return info.runtimeType
 }
 
+// IsPlacementModeSet reports whether the placement mode has been explicitly configured
+// on the RuntimeInfo. It returns true if the internal placementMode pointer is not nil,
+// indicating that a placement mode (e.g., ExclusiveMode) has been set; otherwise, it returns false.
 func (info *RuntimeInfo) IsPlacementModeSet() bool {
 	return info.placementMode != nil
 }
@@ -411,6 +448,7 @@ func (info *RuntimeInfo) GetFuseCleanPolicy() datav1alpha1.FuseCleanPolicy {
 	return info.fuse.CleanPolicy
 }
 
+// SetAPIReader sets the API reader for the runtime information.
 func (info *RuntimeInfo) SetAPIReader(apiReader client.Reader) {
 	info.apiReader = apiReader
 }
@@ -520,22 +558,6 @@ func GetRuntimeInfo(reader client.Reader, name, namespace string) (runtimeInfo R
 		}
 		runtimeInfo.SetFuseNodeSelector(jindoRuntime.Spec.Fuse.NodeSelector)
 		runtimeInfo.SetupFuseCleanPolicy(jindoRuntime.Spec.Fuse.CleanPolicy)
-	case common.GooseFSRuntime:
-		goosefsRuntime, err := utils.GetGooseFSRuntime(reader, name, namespace)
-		if err != nil {
-			return runtimeInfo, err
-		}
-		opts := []RuntimeInfoOption{
-			WithTieredStore(datav1alpha1.TieredStore{}),
-			WithMetadataList(GetMetadataListFromAnnotation(goosefsRuntime)),
-			WithAnnotations(goosefsRuntime.Annotations),
-		}
-		runtimeInfo, err = BuildRuntimeInfo(name, namespace, common.GooseFSRuntime, opts...)
-		if err != nil {
-			return runtimeInfo, err
-		}
-		runtimeInfo.SetFuseNodeSelector(goosefsRuntime.Spec.Fuse.NodeSelector)
-		runtimeInfo.SetupFuseCleanPolicy(goosefsRuntime.Spec.Fuse.CleanPolicy)
 	case common.JuiceFSRuntime:
 		juicefsRuntime, err := utils.GetJuiceFSRuntime(reader, name, namespace)
 		if err != nil {
@@ -623,9 +645,21 @@ func GetRuntimeInfo(reader client.Reader, name, namespace string) (runtimeInfo R
 		return
 	}
 
+	// set fuse name
+	var fuseName string
+	switch runtimeType {
+	case common.JindoRuntime:
+		fuseName = name + "-" + common.JindoChartName + "-fuse"
+	case common.CacheRuntime:
+		fuseName = common.GetCacheComponentName(name, common.ComponentTypeClient)
+	default:
+		fuseName = name + "-fuse"
+	}
+
 	if runtimeInfo != nil {
 		runtimeInfo.SetAPIReader(reader)
 		runtimeInfo.SetOwnerDatasetUID(dataset.UID)
+		runtimeInfo.SetFuseName(fuseName)
 	}
 	return runtimeInfo, err
 }
@@ -639,7 +673,7 @@ type RuntimeStatusAccessor interface {
 // GetRuntimeStatusAccessor returns a unified status accessor for the given runtime
 func GetRuntimeStatusAccessor(client client.Client, runtimeType, name, namespace string) (RuntimeStatusAccessor, error) {
 	switch runtimeType {
-	case common.AlluxioRuntime, common.JindoRuntime, common.GooseFSRuntime,
+	case common.AlluxioRuntime, common.JindoRuntime,
 		common.JuiceFSRuntime, common.EFCRuntime, common.ThinRuntime, common.VineyardRuntime:
 		status, err := GetDDCRuntimeStatus(client, runtimeType, name, namespace)
 		if err != nil {
@@ -668,12 +702,6 @@ func GetDDCRuntimeStatus(client client.Client, runtimeType, name, namespace stri
 		return &runtime.Status, nil
 	case common.JindoRuntime:
 		runtime, err := utils.GetJindoRuntime(client, name, namespace)
-		if err != nil {
-			return nil, err
-		}
-		return &runtime.Status, nil
-	case common.GooseFSRuntime:
-		runtime, err := utils.GetGooseFSRuntime(client, name, namespace)
 		if err != nil {
 			return nil, err
 		}

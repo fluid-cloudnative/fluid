@@ -34,6 +34,10 @@ spec:
       release: {{ .Release.Name }}
       heritage: {{ .Release.Service }}
       role: juicefs-worker
+  {{- if .Values.worker.volumeClaimTemplates }}
+  volumeClaimTemplates:
+{{ toYaml .Values.worker.volumeClaimTemplates | indent 4 }}
+  {{- end }}
   template:
     metadata:
       annotations:
