@@ -220,6 +220,9 @@ func TestAlluxioFileUtils_LoadMetaData(t *testing.T) {
 	}
 }
 
+// TestAlluxioFileUtils_QueryMetaDataInfoIntoFile tests the QueryMetaDataInfoIntoFile method.
+// It uses gomonkey to mock the internal exec method, verifying that an error is returned when exec fails
+// and that no error occurs when exec succeeds. The test covers all defined KeyOfMetaDataFile types.
 func TestAlluxioFileUtils_QueryMetaDataInfoIntoFile(t *testing.T) {
 	ExecCommon := func(a AlluxioFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
 		return "Alluxio cluster summary", "", nil
