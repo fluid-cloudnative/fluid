@@ -21,7 +21,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/runtime"
 )
 
-func (e *ReferenceDatasetEngine) Validate(runtime.ReconcileRequestContext) (err error) {
+func (e *ReferenceDatasetEngine) Validate(ctx runtime.ReconcileRequestContext) (err error) {
 	// XXXEngine.runtimeInfo must have full information about the bound dataset for further reconcilation.
 	// getRuntimeInfo() here is a refresh to make sure the information is correctly set
 	runtimeInfo, err := e.getRuntimeInfo()
@@ -34,7 +34,7 @@ func (e *ReferenceDatasetEngine) Validate(runtime.ReconcileRequestContext) (err 
 		return err
 	}
 
-	err = e.checkDatasetMountSupport()
+	err = e.checkDatasetMountSupport(ctx.Dataset)
 	if err != nil {
 		return err
 	}
