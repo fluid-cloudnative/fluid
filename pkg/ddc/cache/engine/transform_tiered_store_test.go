@@ -163,6 +163,27 @@ var _ = Describe("CacheEngine TransformRuntimeTieredStore Tests", Label("pkg.ddc
 				Expect(podSpec.Containers[0].Resources.Requests).To(BeNil())
 				Expect(podSpec.Containers[0].Resources.Limits).To(BeNil())
 			})
+
+			It("should return error when multiple processMemory levels are specified", func() {
+				tieredStore := &datav1alpha1.RuntimeTieredStore{
+					Levels: []datav1alpha1.RuntimeTieredStoreLevel{
+						{
+							ProcessMemory: &datav1alpha1.ProcessMemoryMediumSource{
+								Quota: resource.MustParse("4Gi"),
+							},
+						},
+						{
+							ProcessMemory: &datav1alpha1.ProcessMemoryMediumSource{
+								Quota: resource.MustParse("2Gi"),
+							},
+						},
+					},
+				}
+
+				err := engine.TransformRuntimeTieredStore(tieredStore, podSpec)
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("only one ProcessMemoryMediumSource"))
+			})
 		})
 
 		Context("when using HostPath medium", func() {

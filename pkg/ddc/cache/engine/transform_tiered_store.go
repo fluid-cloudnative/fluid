@@ -36,15 +36,36 @@ func (e *CacheEngine) TransformRuntimeTieredStore(tieredStore *datav1alpha1.Runt
 
 	container := &podSpec.Containers[0]
 
-	// Process each tier level
-	for i, level := range tieredStore.Levels {
+	// validate then set
+	memoryLevelCount := 0
+	for idx, level := range tieredStore.Levels {
 		// order: memory, host path, empty. only one can be specified per level
 		mediaCount := 0
-
-		// Process memory: add resource requests and limits
 		if level.ProcessMemory != nil {
 			mediaCount++
-			err := e.handleProcessMemory(podSpec, container, level.ProcessMemory, i)
+			memoryLevelCount++
+			if memoryLevelCount > 1 {
+				return fmt.Errorf("RuntimeTieredStore should have only one ProcessMemoryMediumSource for all levels")
+			}
+		}
+
+		if level.HostPath != nil {
+			mediaCount++
+		}
+
+		if level.EmptyDir != nil {
+			mediaCount++
+		}
+		if mediaCount > 1 {
+			return fmt.Errorf("only one storage medium can be specified per level at index %d, but found %d", idx, mediaCount)
+		}
+	}
+
+	// Process each tier level
+	for idx, level := range tieredStore.Levels {
+		// Process memory: add resource requests and limits
+		if level.ProcessMemory != nil {
+			err := e.handleProcessMemory(podSpec, container, level.ProcessMemory, idx)
 			if err != nil {
 				return err
 			}
@@ -52,8 +73,7 @@ func (e *CacheEngine) TransformRuntimeTieredStore(tieredStore *datav1alpha1.Runt
 
 		// Volume-based storage: create volumes and volume mounts
 		if level.HostPath != nil {
-			mediaCount++
-			err := e.handleHostPath(podSpec, container, level.HostPath, i)
+			err := e.handleHostPath(podSpec, container, level.HostPath, idx)
 			if err != nil {
 				return err
 			}
@@ -61,15 +81,10 @@ func (e *CacheEngine) TransformRuntimeTieredStore(tieredStore *datav1alpha1.Runt
 
 		// EmptyDir: add volume and volume mount
 		if level.EmptyDir != nil {
-			mediaCount++
-			err := e.handleEmptyDir(podSpec, container, level.EmptyDir, i)
+			err := e.handleEmptyDir(podSpec, container, level.EmptyDir, idx)
 			if err != nil {
 				return err
 			}
-		}
-
-		if mediaCount > 1 {
-			return fmt.Errorf("only one storage medium can be specified per level at index %d, but found %d", i, mediaCount)
 		}
 	}
 
@@ -83,7 +98,7 @@ func (e *CacheEngine) handleProcessMemory(podSpec *corev1.PodSpec, container *co
 	}
 
 	// Calculate total memory quota across all paths
-	totalQuota := memoryMediumSource.Quota
+	totalQuota := memoryMediumSource.Quota.DeepCopy()
 
 	// add totalQuota to memory resources only when memory is restricted.
 	if container.Resources.Requests != nil {
@@ -172,12 +187,13 @@ func (e *CacheEngine) handleEmptyDir(podSpec *corev1.PodSpec, container *corev1.
 	volumeName := fmt.Sprintf("tiered-store-level-%d-index-%d", levelIndex, 0)
 	mountPath := GetEmptyDirTieredStoreMountPath(levelIndex)
 
+	quota := emptyDirMediumSource.Quota.DeepCopy()
 	volume := corev1.Volume{
 		Name: volumeName,
 		VolumeSource: corev1.VolumeSource{
 			EmptyDir: &corev1.EmptyDirVolumeSource{
 				Medium:    emptyDirMediumSource.Medium,
-				SizeLimit: &emptyDirMediumSource.Quota,
+				SizeLimit: &quota,
 			},
 		},
 	}
@@ -199,13 +215,13 @@ func (e *CacheEngine) handleEmptyDir(podSpec *corev1.PodSpec, container *corev1.
 		// If no memory resources are set, the container is unconstrained and we don't need to add
 		if container.Resources.Requests != nil {
 			if currentRequest, exists := container.Resources.Requests[corev1.ResourceMemory]; exists && !currentRequest.IsZero() {
-				currentRequest.Add(emptyDirMediumSource.Quota)
+				currentRequest.Add(quota)
 				container.Resources.Requests[corev1.ResourceMemory] = currentRequest
 			}
 		}
 		if container.Resources.Limits != nil {
 			if currentLimit, exists := container.Resources.Limits[corev1.ResourceMemory]; exists && !currentLimit.IsZero() {
-				currentLimit.Add(emptyDirMediumSource.Quota)
+				currentLimit.Add(quota)
 				container.Resources.Limits[corev1.ResourceMemory] = currentLimit
 			}
 		}
