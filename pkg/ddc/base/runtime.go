@@ -310,6 +310,7 @@ func WithClientMetrics(clientMetrics datav1alpha1.ClientMetrics) RuntimeInfoOpti
 		return nil
 	}
 }
+
 // GetFuseMetricsScrapeTarget returns the configured metrics scrape target for the Fuse client.
 // The returned selector indicates which mount modes should expose Fuse metrics for scraping.
 func (info *RuntimeInfo) GetFuseMetricsScrapeTarget() mountModeSelector {
