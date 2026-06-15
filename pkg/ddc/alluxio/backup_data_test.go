@@ -251,6 +251,10 @@ func TestGenerateDataBackupValueFile(t *testing.T) {
 	}
 }
 
+// TestGenerateDataBackupValueFileInvalidObject verifies that AlluxioEngine.generateDataBackupValueFile
+// returns an error and no value file when the provided object is not a DataBackup instance.
+// It uses a Dataset object to simulate an invalid input type and checks that the function
+// rejects it without creating any backup value file.
 func TestGenerateDataBackupValueFileInvalidObject(t *testing.T) {
 	client := fake.NewFakeClientWithScheme(testScheme)
 	runtimeInfo, err := base.BuildRuntimeInfo("test", testDatasetNamespace, "alluxio")
