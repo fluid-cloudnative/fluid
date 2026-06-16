@@ -259,7 +259,6 @@ func (r *dataProcessOperation) GetStatusHandler() dataoperation.StatusHandler {
 }
 
 // GetTTL implements dataoperation.OperationInterface.
-// GetTTL implements dataoperation.OperationInterface.
 // Cron and OnEvent policies are recurring/event-driven operations and should
 // not be cleaned up via TTL; only Once (and the default/empty policy, which
 // behaves like Once, see GetStatusHandler) uses TTLSecondsAfterFinished.

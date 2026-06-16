@@ -1,4 +1,4 @@
-﻿{{- if eq (lower .Values.dataProcess.policy) "cron" }}
+{{- if eq (lower .Values.dataProcess.policy) "cron" }}
 apiVersion: {{ ternary "batch/v1" "batch/v1beta1" (.Capabilities.APIVersions.Has "batch/v1/CronJob") }}
 kind: CronJob
 metadata:
