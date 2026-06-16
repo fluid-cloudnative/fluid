@@ -23,11 +23,16 @@ extraResources:
           ]
           journal_dir = "testing/journal"
 
-          # Worker configuration
+          # Worker configuration, translate Gi to GB
           [worker]
           dir_reserved = "0"
           data_dir = [
-            "[DISK]testing/data"
+          {{- range $index, $level := (ds "config").worker.tieredStoreLevels }}
+          {{- range $pathIndex, $mountPath := $level.mountPaths }}
+          {{- if or $index $pathIndex }},{{ end }}
+          "[{{$level.mediumType}}:{{ index $level.quotas $pathIndex | strings.ReplaceAll "i" "B"}}]{{ $mountPath }}"
+          {{- end }}
+          {{- end }}
           ]
 dataOperationSpecs:
   - name: DataLoad

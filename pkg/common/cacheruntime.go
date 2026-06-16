@@ -110,6 +110,10 @@ type CacheRuntimeComponentConfig struct {
 	Replicas int32             `json:"replicas,omitempty"`
 
 	Service CacheRuntimeComponentServiceConfig `json:"service,omitempty"`
+
+	// TieredStoreLevels contains the tiered storage configuration for worker
+	// This field is primarily used by Worker component to configure cache storage tiers
+	TieredStoreLevels []TieredStoreLevelConfig `json:"tieredStoreLevels,omitempty"`
 }
 
 type CacheRuntimeComponentServiceConfig struct {
@@ -124,4 +128,32 @@ func GetCacheComponentName(runtimeName string, componentType ComponentType) stri
 // GetCacheRuntimeConfigConfigMapName get the configmap name of the runtime config.
 func GetCacheRuntimeConfigConfigMapName(name string) string {
 	return fmt.Sprintf("fluid-runtime-config-%s", name)
+}
+
+// TieredStoreLevelConfig defines the configuration for a single tier in the tiered storage.
+// This config will be mounted into the worker container via ConfigMap.
+type TieredStoreLevelConfig struct {
+	// MountPaths contains the mount paths inside the container for this tier
+	// For processMemory: single element array with the mount path (e.g. ["/dev/shm"])
+	// For emptyDir: single element array with the mount path
+	// For hostPath: array of mount paths corresponding to each host path
+	MountPaths []string `json:"mountPaths,omitempty"`
+
+	// MediumType indicates the storage medium type: "MEM", "SSD", "HDD", etc.
+	// This represents the performance characteristics of the storage medium
+	MediumType MediumType `json:"mediumType,omitempty"`
+
+	// Quotas is the storage capacity for this tier (e.g., ["100Gi"])
+	// The length of Quotas matches the length of MountPaths
+	// For processMemory/emptyDir: single element array with the quota
+	// For hostPath: array of quotas corresponding to each mount path
+	Quotas []string `json:"quotas,omitempty"`
+
+	// High is the high watermark ratio (e.g., "0.9")
+	// When cache usage exceeds this ratio, eviction will be triggered
+	High string `json:"high,omitempty"`
+
+	// Low is the low watermark ratio (e.g., "0.7")
+	// Eviction will continue until cache usage falls below this ratio
+	Low string `json:"low,omitempty"`
 }

@@ -112,3 +112,20 @@ func getSecretMountPath(secretName string) string {
 func getSecretFilePath(secretName, secretKey string) string {
 	return fmt.Sprintf("%s/%s", getSecretMountPath(secretName), secretKey)
 }
+
+func GetMemoryTieredStoreMountPath(_ int) string {
+	return "/dev/shm"
+}
+
+func GetHostPathTieredStoreMountPath(levelIndex int, pathIndex int) string {
+	return getTieredStoreMountPath(levelIndex, pathIndex, "hostpath")
+}
+
+func GetEmptyDirTieredStoreMountPath(levelIndex int) string {
+	return getTieredStoreMountPath(levelIndex, 0, "emptydir")
+}
+
+// getTieredStoreMountPath generates the mount path for a tiered store medium
+func getTieredStoreMountPath(levelIndex int, pathIndex int, mediumType string) string {
+	return fmt.Sprintf("/etc/fluid/mount/tiered-store/level-%d-index-%d-%s", levelIndex, pathIndex, mediumType)
+}
