@@ -344,7 +344,15 @@ func TestAlluxioFIleUtils_Mount(t *testing.T) {
 		}
 	}
 }
-
+// TestAlluxioFileUtils_IsMounted tests the IsMounted method of AlluxioFileUtils.
+// It verifies the method's ability to correctly determine whether a given Alluxio
+// path is mounted by parsing the output of the underlying alluxio fs mount command.
+//
+// Test cases:
+// - ExecErr: Tests handling of command execution errors, ensuring an error is
+//   returned when the exec command fails.
+// - /spark: Tests a non-existent mount path, expecting false.
+// - /hbase: Tests an existing mount path, expecting true.
 func TestAlluxioFileUtils_IsMounted(t *testing.T) {
 	ExecCommon := func(a AlluxioFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
 		return "https://mirrors.bit.edu.cn/apache/hbase/stable  on  /hbase (web, capacity=-1B, used=-1B, read-only, not shared, properties={}) \n /underFSStorage  on  /  (local, capacity=0B, used=0B, not read-only, not shared, properties={})", "", nil
