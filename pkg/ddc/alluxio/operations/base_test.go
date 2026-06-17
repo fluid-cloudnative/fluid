@@ -479,6 +479,16 @@ func TestAlluxioFileUtils_Ready(t *testing.T) {
 	}
 }
 
+// TestAlluxioFIleUtils_Du tests the Du method of AlluxioFileUtils.
+// This function verifies that the Du method returns an error when the underlying
+// command execution fails, and correctly parses the file size, cached size,
+// and cached percentage when the command succeeds.
+//
+// Parameters:
+//   - t (*testing.T): The testing object used to report test failures.
+//
+// Returns:
+//   - None: This test reports failures through the testing object.
 func TestAlluxioFIleUtils_Du(t *testing.T) {
 	ExecCommon := func(a AlluxioFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
 		return "File Size     In Alluxio       Path\n577575561     0 (0%)           /hbase", "", nil
