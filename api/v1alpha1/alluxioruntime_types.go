@@ -285,9 +285,15 @@ func init() {
 
 // Replicas gets the replicas of runtime worker
 func (runtime *AlluxioRuntime) Replicas() int32 {
+	if runtime == nil {
+		return 0
+	}
 	return runtime.Spec.Replicas
 }
 
 func (runtime *AlluxioRuntime) GetStatus() *RuntimeStatus {
+	if runtime == nil {
+		return &RuntimeStatus{}
+	}
 	return &runtime.Status
 }
