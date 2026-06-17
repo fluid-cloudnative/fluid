@@ -650,6 +650,10 @@ func TestAlluxioFIleUtils_ReportCapacity(t *testing.T) {
 	}
 }
 
+// TestAlluxioFileUtils_exec tests the private exec method of AlluxioFileUtils.
+// It mocks the exec implementation to verify that an error is returned when
+// command execution fails and that no error is returned when execution succeeds.
+// The test also covers calls with both disabled and enabled verbose output.
 func TestAlluxioFileUtils_exec(t *testing.T) {
 	ExecWithoutTimeoutCommon := func(a AlluxioFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
 		return "Type: COUNTER, Value: 6,367,897", "", nil
