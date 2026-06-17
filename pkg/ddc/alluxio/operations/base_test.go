@@ -391,6 +391,19 @@ func TestAlluxioFileUtils_IsMounted(t *testing.T) {
 	}
 }
 
+// TestAlluxioFileUtils_FindUnmountedAlluxioPaths tests the FindUnmountedAlluxioPaths method
+// of AlluxioFileUtils. It mocks the internal exec command to simulate the output of
+// `alluxio fs mount` and verifies that paths not currently mounted are correctly
+// identified from the given alluxioPaths slice.
+//
+// Test cases cover:
+// - all provided paths are already mounted (expect empty result)
+// - a mix of mounted and unmounted paths (expect only unmounted ones)
+// - an empty input slice (expect empty result)
+// - all provided paths are unmounted (expect all paths returned)
+//
+// Parameters:
+// - t (*testing.T): the test context used for reporting failures.
 func TestAlluxioFileUtils_FindUnmountedAlluxioPaths(t *testing.T) {
 	const returnMessage = `s3://bucket/path/train on /cache (s3, capacity=-1B, used=-1B, not read-only, not shared, properties={alluxio.underfs.s3.inherit.acl=false, alluxio.underfs.s3.endpoint=s3endpoint, aws.secretKey=, aws.accessKeyId=})
 /underFSStorage on / (local, capacity=0B, used=0B, not read-only, not shared, properties={})`
