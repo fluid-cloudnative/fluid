@@ -19,13 +19,11 @@ package dataprocess
 import (
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
-	"github.com/fluid-cloudnative/fluid/pkg/dataflow"
 	"github.com/fluid-cloudnative/fluid/pkg/dataoperation"
 	"github.com/fluid-cloudnative/fluid/pkg/runtime"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/helm"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
-	"github.com/pkg/errors"
 	batchv1 "k8s.io/api/batch/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -69,14 +67,6 @@ func (handler *OnceStatusHandler) GetOperationStatus(ctx runtime.ReconcileReques
 		return
 	}
 	isJobSucceed := finishedJobCondition.Type == batchv1.JobComplete
-
-	// set the node labels in status when job succeed
-	if result.NodeAffinity == nil && isJobSucceed {
-		result.NodeAffinity, err = dataflow.GenerateNodeAffinity(job)
-		if err != nil {
-			return nil, errors.Wrap(err, "error to generate the node labels")
-		}
-	}
 
 	// job either failed or complete, update DataLoad's phase status
 	jobCondition := job.Status.Conditions[0]
