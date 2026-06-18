@@ -315,6 +315,13 @@ func (a AlluxioFileUtils) IsMounted(alluxioPath string) (mounted bool, err error
 	return mounted, err
 }
 
+// GetMountedAlluxioPaths returns all Alluxio paths that are currently mounted.
+// It executes the `alluxio fs mount` command in the Alluxio container, parses
+// the command output, and collects the Alluxio path field from each mount entry.
+//
+// Returns:
+// - []string: A list of mounted Alluxio paths.
+// - error: Non-nil if the mount command fails.
 func (a AlluxioFileUtils) GetMountedAlluxioPaths() ([]string, error) {
 	var (
 		command = []string{"alluxio", "fs", "mount"}
