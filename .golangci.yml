@@ -1,0 +1,18 @@
+version: "2"
+
+linters:
+  settings:
+    staticcheck:
+      checks:
+        - all
+        # Disable all quickfix suggestions (refactoring hints, not bugs)
+        - "-QF*"
+        # Disable all style checks (pre-existing naming/comment conventions)
+        - "-ST*"
+
+  exclusions:
+    rules:
+      # Ignore unchecked errors in test files (common Go test pattern for setup/cleanup)
+      - path: "_test\\.go"
+        linters:
+          - errcheck

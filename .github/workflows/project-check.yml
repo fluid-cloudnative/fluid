@@ -47,10 +47,11 @@ jobs:
           path: ${{ env.GOPATH }}/src/github.com/fluid-cloudnative/fluid
 
       - name: Lint golang code
-        uses: golangci/golangci-lint-action@55c2c1448f86e01eaae002a5a3a9624417608d84 # v6.5.2
+        uses: golangci/golangci-lint-action@82606bf257cbaff209d206a39f5134f0cfbfd2ee # v9.2.1
         with:
           version: latest
           args: --timeout 10m --verbose
+          working-directory: ${{ env.GOPATH }}/src/github.com/fluid-cloudnative/fluid
 
       - name: Lint preparation
         run: |
