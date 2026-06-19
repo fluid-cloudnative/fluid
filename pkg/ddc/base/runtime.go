@@ -445,6 +445,7 @@ func (info *RuntimeInfo) GetWorkerPods(client client.Client) ([]corev1.Pod, erro
 	return workerPods, err
 }
 
+// GetFuseCleanPolicy returns the FUSE clean policy from the runtime information
 func (info *RuntimeInfo) GetFuseCleanPolicy() datav1alpha1.FuseCleanPolicy {
 	return info.fuse.CleanPolicy
 }
