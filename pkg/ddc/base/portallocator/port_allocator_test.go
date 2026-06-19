@@ -163,6 +163,8 @@ func hasDuplicatedElement(ports []int) bool {
 	return len(m) != len(ports)
 }
 
+// between checks whether all elements in slice a fall within the half-open interval [min, max).
+// It returns false if any element is less than min or greater than or equal to max.
 func between(a []int, min int, max int) bool {
 	for _, value := range a {
 		if value < min || value >= max {
