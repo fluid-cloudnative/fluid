@@ -155,6 +155,10 @@ func containsAny(ports []int, dst []int) bool {
 	return false
 }
 
+// hasDuplicatedElement reports whether the given slice of integers contains
+// any duplicate values. It creates a map to record each unique element and
+// then compares the map's length with the slice's length. If they differ,
+// at least one duplicate exists.
 func hasDuplicatedElement(ports []int) bool {
 	m := map[int]bool{}
 	for _, v := range ports {
