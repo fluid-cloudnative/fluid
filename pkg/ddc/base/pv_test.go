@@ -22,6 +22,20 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 )
 
+// TestGetPersistentVolumeName tests the GetPersistentVolumeName method of RuntimeInfo.
+// This function primarily verifies that the persistent volume name is correctly generated
+// based on the runtime namespace and runtime name with a hyphen separator.
+//
+// Parameters:
+// - t (*testing.T): The testing context used for reporting test failures.
+//
+// Returns:
+// - None (void function): Test results are reported directly via the testing.T instance.
+//
+// The test validates that:
+//  1. RuntimeInfo can be built successfully for different runtime configurations.
+//  2. The generated PV name follows the format: {namespace}-{runtimeName}.
+//  3. The method handles various namespace and runtime name combinations correctly.
 func TestGetPersistentVolumeName(t *testing.T) {
 	var testCases = []struct {
 		runtimeName      string
