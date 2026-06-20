@@ -140,6 +140,12 @@ func TestSetupMasterInternal(t *testing.T) {
 	}
 }
 
+// TestGenerateEFCValueFile tests the generateEFCValueFile method to verify it can correctly
+// generate the Helm Values configuration file for EFC Runtime.
+// It creates mock EFCRuntime and Dataset objects with Aliyun NAS NFS mount point,
+// initializes a fake K8s client, constructs an EFCEngine instance, sets up the runtime
+// port allocator, and then calls the generateEFCValueFile method to generate the
+// configuration file, validating that the process completes without errors.
 func TestGenerateEFCValueFile(t *testing.T) {
 	testObjs := []runtime.Object{}
 	efcruntime := &datav1alpha1.EFCRuntime{

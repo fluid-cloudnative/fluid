@@ -118,6 +118,12 @@ func (j *JuiceFSEngine) syncWorkerSpec(ctx cruntime.ReconcileRequestContext, run
 		return
 	}
 
+	if claimTemplatesChanged, newVolumeClaimTemplates := j.isVolumeClaimTemplatesChanged(oldValue.Worker.VolumeClaimTemplates, latestValue.Worker.VolumeClaimTemplates); claimTemplatesChanged {
+		err = fmt.Errorf("worker volumeClaimTemplates are immutable after the worker StatefulSet is created; recreate the JuiceFSRuntime to apply the new volumeClaimTemplates")
+		j.Log.Error(err, "syncWorkerSpec: volumeClaimTemplates changed", "old", oldValue.Worker.VolumeClaimTemplates, "new", newVolumeClaimTemplates)
+		return
+	}
+
 	if workers.Spec.UpdateStrategy.Type != appsv1.OnDeleteStatefulSetStrategyType {
 		j.Log.V(1).Info("Worker Sts's update strategy is not safe to sync worker spec", "updateStrategy", workers.Spec.UpdateStrategy.Type)
 		err = kubeclient.UpdateStatefulSetUpdateStrategy(j.Client, workers.Name, workers.Namespace, appsv1.StatefulSetUpdateStrategy{Type: appsv1.OnDeleteStatefulSetStrategyType})
@@ -537,6 +543,20 @@ func (j JuiceFSEngine) isVolumesChanged(crtVolumes, runtimeVolumes []corev1.Volu
 	}
 
 	if !reflect.DeepEqual(crtVolumes, runtimeVolumes) {
+		changed = true
+	}
+	return
+}
+
+func (j JuiceFSEngine) isVolumeClaimTemplatesChanged(crtVolumeClaimTemplates, runtimeVolumeClaimTemplates []corev1.PersistentVolumeClaim) (changed bool, newVolumeClaimTemplates []corev1.PersistentVolumeClaim) {
+	newVolumeClaimTemplates = runtimeVolumeClaimTemplates
+
+	// handle cases where nil slice equals to empty slice
+	if len(crtVolumeClaimTemplates) == 0 && len(runtimeVolumeClaimTemplates) == 0 {
+		return
+	}
+
+	if !reflect.DeepEqual(crtVolumeClaimTemplates, runtimeVolumeClaimTemplates) {
 		changed = true
 	}
 	return

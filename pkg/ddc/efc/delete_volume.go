@@ -16,9 +16,13 @@
 
 package efc
 
-import volumehelper "github.com/fluid-cloudnative/fluid/pkg/utils/dataset/volume"
+import (
+	"context"
 
-func (e *EFCEngine) DeleteVolume() (err error) {
+	volumehelper "github.com/fluid-cloudnative/fluid/pkg/utils/dataset/volume"
+)
+
+func (e *EFCEngine) DeleteVolume(ctx context.Context) (err error) {
 	if e.runtime == nil {
 		e.runtime, err = e.getRuntime()
 		if err != nil {
@@ -26,12 +30,12 @@ func (e *EFCEngine) DeleteVolume() (err error) {
 		}
 	}
 
-	err = e.deleteFusePersistentVolumeClaim()
+	err = e.deleteFusePersistentVolumeClaim(ctx)
 	if err != nil {
 		return
 	}
 
-	err = e.deleteFusePersistentVolume()
+	err = e.deleteFusePersistentVolume(ctx)
 	if err != nil {
 		return
 	}
@@ -40,21 +44,21 @@ func (e *EFCEngine) DeleteVolume() (err error) {
 }
 
 // deleteFusePersistentVolume
-func (e *EFCEngine) deleteFusePersistentVolume() (err error) {
+func (e *EFCEngine) deleteFusePersistentVolume(ctx context.Context) (err error) {
 	runtimeInfo, err := e.getRuntimeInfo()
 	if err != nil {
 		return err
 	}
 
-	return volumehelper.DeleteFusePersistentVolume(e.Client, runtimeInfo, e.Log)
+	return volumehelper.DeleteFusePersistentVolume(ctx, e.Client, runtimeInfo, e.Log)
 }
 
 // deleteFusePersistentVolume
-func (e *EFCEngine) deleteFusePersistentVolumeClaim() (err error) {
+func (e *EFCEngine) deleteFusePersistentVolumeClaim(ctx context.Context) (err error) {
 	runtimeInfo, err := e.getRuntimeInfo()
 	if err != nil {
 		return err
 	}
 
-	return volumehelper.DeleteFusePersistentVolumeClaim(e.Client, runtimeInfo, e.Log)
+	return volumehelper.DeleteFusePersistentVolumeClaim(ctx, e.Client, runtimeInfo, e.Log)
 }

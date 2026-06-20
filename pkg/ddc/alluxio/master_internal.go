@@ -109,10 +109,14 @@ func (e *AlluxioEngine) generateAlluxioValueFile(runtime *datav1alpha1.AlluxioRu
 	return valueFileName, err
 }
 
+// getHelmValuesConfigMapName returns the name of the ConfigMap that stores Helm values for the Alluxio engine.
+// It uses the engine's name concatenated with the engine implementation and "-values" as the ConfigMap name.
 func (e *AlluxioEngine) getHelmValuesConfigMapName() string {
 	return e.name + "-" + e.engineImpl + "-values"
 }
 
+// getMountConfigmapName returns the name of the ConfigMap that stores mount-related configurations for the Alluxio engine.
+// It uses the engine's name concatenated with "-mount-config" as the ConfigMap name.
 func (e *AlluxioEngine) getMountConfigmapName() string {
 	return e.name + "-mount-config"
 }

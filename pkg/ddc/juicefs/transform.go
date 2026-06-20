@@ -160,7 +160,7 @@ func (j *JuiceFSEngine) transformWorkers(runtime *datav1alpha1.JuiceFSRuntime, d
 		// send an event in runtime
 		msg := "cache-size & cache-dir in worker.options will be deprecated in the future, please use tieredStore.levels instead"
 		j.Log.Info(msg)
-		j.Recorder.Eventf(runtime, corev1.EventTypeWarning, common.RuntimeDeprecated, msg)
+		j.Recorder.Eventf(runtime, corev1.EventTypeWarning, common.RuntimeDeprecated, "%s", msg)
 	}
 
 	// transform mount cmd & stat cmd
@@ -177,6 +177,7 @@ func (j *JuiceFSEngine) transformWorkers(runtime *datav1alpha1.JuiceFSRuntime, d
 	err = j.transformWorkerVolumes(runtime, value)
 	if err != nil {
 		j.Log.Error(err, "failed to transform volumes for worker")
+		return err
 	}
 	// transform cache volumes for worker
 	err = j.transformWorkerCacheVolumes(runtime, value, option)

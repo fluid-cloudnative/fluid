@@ -41,6 +41,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.CacheRuntimeClientSpec":            schema_fluid_cloudnative_fluid_api_v1alpha1_CacheRuntimeClientSpec(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.CacheRuntimeList":                  schema_fluid_cloudnative_fluid_api_v1alpha1_CacheRuntimeList(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.CacheRuntimeMasterSpec":            schema_fluid_cloudnative_fluid_api_v1alpha1_CacheRuntimeMasterSpec(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.CacheRuntimeMountUfsOutput":        schema_fluid_cloudnative_fluid_api_v1alpha1_CacheRuntimeMountUfsOutput(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.CacheRuntimeSpec":                  schema_fluid_cloudnative_fluid_api_v1alpha1_CacheRuntimeSpec(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.CacheRuntimeStatus":                schema_fluid_cloudnative_fluid_api_v1alpha1_CacheRuntimeStatus(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.CacheRuntimeWorkerSpec":            schema_fluid_cloudnative_fluid_api_v1alpha1_CacheRuntimeWorkerSpec(ref),
@@ -61,6 +62,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.DataMigrate":                       schema_fluid_cloudnative_fluid_api_v1alpha1_DataMigrate(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.DataMigrateList":                   schema_fluid_cloudnative_fluid_api_v1alpha1_DataMigrateList(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.DataMigrateSpec":                   schema_fluid_cloudnative_fluid_api_v1alpha1_DataMigrateSpec(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.DataOperationSpec":                 schema_fluid_cloudnative_fluid_api_v1alpha1_DataOperationSpec(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.DataProcess":                       schema_fluid_cloudnative_fluid_api_v1alpha1_DataProcess(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.DataProcessList":                   schema_fluid_cloudnative_fluid_api_v1alpha1_DataProcessList(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.DataProcessSpec":                   schema_fluid_cloudnative_fluid_api_v1alpha1_DataProcessSpec(ref),
@@ -77,19 +79,17 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.EFCRuntime":                        schema_fluid_cloudnative_fluid_api_v1alpha1_EFCRuntime(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.EFCRuntimeList":                    schema_fluid_cloudnative_fluid_api_v1alpha1_EFCRuntimeList(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.EFCRuntimeSpec":                    schema_fluid_cloudnative_fluid_api_v1alpha1_EFCRuntimeSpec(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.EmptyDirMediumSource":              schema_fluid_cloudnative_fluid_api_v1alpha1_EmptyDirMediumSource(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.EncryptOption":                     schema_fluid_cloudnative_fluid_api_v1alpha1_EncryptOption(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.EncryptOptionComponentDependency":  schema_fluid_cloudnative_fluid_api_v1alpha1_EncryptOptionComponentDependency(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.EncryptOptionSource":               schema_fluid_cloudnative_fluid_api_v1alpha1_EncryptOptionSource(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.ExecutionCommonEntry":              schema_fluid_cloudnative_fluid_api_v1alpha1_ExecutionCommonEntry(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.ExecutionEntries":                  schema_fluid_cloudnative_fluid_api_v1alpha1_ExecutionEntries(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.ExternalEndpointSpec":              schema_fluid_cloudnative_fluid_api_v1alpha1_ExternalEndpointSpec(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.ExternalStorage":                   schema_fluid_cloudnative_fluid_api_v1alpha1_ExternalStorage(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.ExtraResourcesComponentDependency": schema_fluid_cloudnative_fluid_api_v1alpha1_ExtraResourcesComponentDependency(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.GooseFSCompTemplateSpec":           schema_fluid_cloudnative_fluid_api_v1alpha1_GooseFSCompTemplateSpec(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.GooseFSFuseSpec":                   schema_fluid_cloudnative_fluid_api_v1alpha1_GooseFSFuseSpec(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.GooseFSRuntime":                    schema_fluid_cloudnative_fluid_api_v1alpha1_GooseFSRuntime(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.GooseFSRuntimeList":                schema_fluid_cloudnative_fluid_api_v1alpha1_GooseFSRuntimeList(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.GooseFSRuntimeSpec":                schema_fluid_cloudnative_fluid_api_v1alpha1_GooseFSRuntimeSpec(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.HCFSStatus":                        schema_fluid_cloudnative_fluid_api_v1alpha1_HCFSStatus(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.HeadlessRuntimeComponentService":   schema_fluid_cloudnative_fluid_api_v1alpha1_HeadlessRuntimeComponentService(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.HostPathMediumSource":              schema_fluid_cloudnative_fluid_api_v1alpha1_HostPathMediumSource(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.InitFuseSpec":                      schema_fluid_cloudnative_fluid_api_v1alpha1_InitFuseSpec(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.InitUsersSpec":                     schema_fluid_cloudnative_fluid_api_v1alpha1_InitUsersSpec(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.JindoCompTemplateSpec":             schema_fluid_cloudnative_fluid_api_v1alpha1_JindoCompTemplateSpec(ref),
@@ -105,11 +105,9 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.JuiceFSRuntimeSpec":                schema_fluid_cloudnative_fluid_api_v1alpha1_JuiceFSRuntimeSpec(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.Level":                             schema_fluid_cloudnative_fluid_api_v1alpha1_Level(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.MasterSpec":                        schema_fluid_cloudnative_fluid_api_v1alpha1_MasterSpec(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.MediumSource":                      schema_fluid_cloudnative_fluid_api_v1alpha1_MediumSource(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.Metadata":                          schema_fluid_cloudnative_fluid_api_v1alpha1_Metadata(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.MetadataSyncPolicy":                schema_fluid_cloudnative_fluid_api_v1alpha1_MetadataSyncPolicy(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.Mount":                             schema_fluid_cloudnative_fluid_api_v1alpha1_Mount(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.MountPointStatus":                  schema_fluid_cloudnative_fluid_api_v1alpha1_MountPointStatus(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.OSAdvise":                          schema_fluid_cloudnative_fluid_api_v1alpha1_OSAdvise(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.ObjectRef":                         schema_fluid_cloudnative_fluid_api_v1alpha1_ObjectRef(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.OperationRef":                      schema_fluid_cloudnative_fluid_api_v1alpha1_OperationRef(ref),
@@ -135,6 +133,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.RuntimeTopology":                   schema_fluid_cloudnative_fluid_api_v1alpha1_RuntimeTopology(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.ScriptProcessor":                   schema_fluid_cloudnative_fluid_api_v1alpha1_ScriptProcessor(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.SecretKeySelector":                 schema_fluid_cloudnative_fluid_api_v1alpha1_SecretKeySelector(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.SecretMountComponentDependency":    schema_fluid_cloudnative_fluid_api_v1alpha1_SecretMountComponentDependency(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.TargetDataset":                     schema_fluid_cloudnative_fluid_api_v1alpha1_TargetDataset(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.TargetDatasetWithMountPath":        schema_fluid_cloudnative_fluid_api_v1alpha1_TargetDatasetWithMountPath(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.TargetPath":                        schema_fluid_cloudnative_fluid_api_v1alpha1_TargetPath(ref),
@@ -155,7 +154,6 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.VineyardRuntime":                   schema_fluid_cloudnative_fluid_api_v1alpha1_VineyardRuntime(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.VineyardRuntimeList":               schema_fluid_cloudnative_fluid_api_v1alpha1_VineyardRuntimeList(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.VineyardRuntimeSpec":               schema_fluid_cloudnative_fluid_api_v1alpha1_VineyardRuntimeSpec(ref),
-		"github.com/fluid-cloudnative/fluid/api/v1alpha1.VolumeMediumSource":                schema_fluid_cloudnative_fluid_api_v1alpha1_VolumeMediumSource(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.VolumeSource":                      schema_fluid_cloudnative_fluid_api_v1alpha1_VolumeSource(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.WaitingStatus":                     schema_fluid_cloudnative_fluid_api_v1alpha1_WaitingStatus(ref),
 	}
@@ -937,12 +935,26 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_CacheRuntimeClass(ref common.Re
 							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.RuntimeExtraResources"),
 						},
 					},
+					"dataOperationSpecs": {
+						SchemaProps: spec.SchemaProps{
+							Description: "DataOperationSpecs specifies the data operation spec",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.DataOperationSpec"),
+									},
+								},
+							},
+						},
+					},
 				},
 				Required: []string{"fileSystemType"},
 			},
 		},
 		Dependencies: []string{
-			"github.com/fluid-cloudnative/fluid/api/v1alpha1.RuntimeExtraResources", "github.com/fluid-cloudnative/fluid/api/v1alpha1.RuntimeTopology", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
+			"github.com/fluid-cloudnative/fluid/api/v1alpha1.DataOperationSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.RuntimeExtraResources", "github.com/fluid-cloudnative/fluid/api/v1alpha1.RuntimeTopology", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
 	}
 }
 
@@ -1373,6 +1385,33 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_CacheRuntimeMasterSpec(ref comm
 	}
 }
 
+func schema_fluid_cloudnative_fluid_api_v1alpha1_CacheRuntimeMountUfsOutput(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"mounted": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Mounted are the ufs paths that have been mounted.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: "",
+										Type:    []string{"string"},
+										Format:  "",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+}
+
 func schema_fluid_cloudnative_fluid_api_v1alpha1_CacheRuntimeSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
@@ -1567,25 +1606,31 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_CacheRuntimeStatus(ref common.R
 							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.RuntimeComponentStatus"),
 						},
 					},
-					"mountPoints": {
+					"mounts": {
 						SchemaProps: spec.SchemaProps{
-							Description: "MountPoints represents the status of mount points specified in the bound dataset. Each entry tracks the mount configuration and the time of the last successful mount.",
+							Description: "Mounts contains the mount point configurations from the bound dataset. Currently not used, may be used when integrating thin runtime.",
 							Type:        []string{"array"},
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
 										Default: map[string]interface{}{},
-										Ref:     ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.MountPointStatus"),
+										Ref:     ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.Mount"),
 									},
 								},
 							},
+						},
+					},
+					"mountTime": {
+						SchemaProps: spec.SchemaProps{
+							Description: "MountTime is the timestamp of the last successful mount operation. If MountTime is earlier than the master component's start time, a remount will be required.",
+							Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.Time"),
 						},
 					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/fluid-cloudnative/fluid/api/v1alpha1.MountPointStatus", "github.com/fluid-cloudnative/fluid/api/v1alpha1.RuntimeComponentStatus", "github.com/fluid-cloudnative/fluid/api/v1alpha1.RuntimeCondition", "k8s.io/api/core/v1.NodeAffinity"},
+			"github.com/fluid-cloudnative/fluid/api/v1alpha1.Mount", "github.com/fluid-cloudnative/fluid/api/v1alpha1.RuntimeComponentStatus", "github.com/fluid-cloudnative/fluid/api/v1alpha1.RuntimeCondition", "k8s.io/api/core/v1.NodeAffinity", "k8s.io/apimachinery/pkg/apis/meta/v1.Time"},
 	}
 }
 
@@ -2669,6 +2714,64 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_DataMigrateSpec(ref common.Refe
 	}
 }
 
+func schema_fluid_cloudnative_fluid_api_v1alpha1_DataOperationSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"name": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Name is the data operation name like DataLoad, DataBackup, DataMigrate etc.",
+							Default:     "",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"image": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Image the image for data operation, if not existed, use the runtime/runtimeclass defined worker image.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"command": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Command for data operation Pod container",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: "",
+										Type:    []string{"string"},
+										Format:  "",
+									},
+								},
+							},
+						},
+					},
+					"args": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Args for data operation Pod container",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: "",
+										Type:    []string{"string"},
+										Format:  "",
+									},
+								},
+							},
+						},
+					},
+				},
+				Required: []string{"name"},
+			},
+		},
+	}
+}
+
 func schema_fluid_cloudnative_fluid_api_v1alpha1_DataProcess(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
@@ -3685,6 +3788,35 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_EFCRuntimeSpec(ref common.Refer
 	}
 }
 
+func schema_fluid_cloudnative_fluid_api_v1alpha1_EmptyDirMediumSource(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "EmptyDirMediumSource describes emptyDir volume as a storage medium. Can be backed by node's default storage or memory (tmpfs).",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"quota": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Quota specifies the maximum storage capacity for the emptyDir volume. For Memory medium, this limit is also constrained by the sum of container memory limits. The actual limit = min(Quota, sum of container memory limits). Example: \"100Gi\" limits the emptyDir to 100GiB.",
+							Ref:         ref("k8s.io/apimachinery/pkg/api/resource.Quantity"),
+						},
+					},
+					"medium": {
+						SchemaProps: spec.SchemaProps{
+							Description: "medium represents what type of storage medium should back this directory. The default is \"\" which means to use the node's default medium. Must be an empty string (default) or Memory. More info: https://kubernetes.io/docs/concepts/storage/volumes#emptydir",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+				},
+				Required: []string{"quota"},
+			},
+		},
+		Dependencies: []string{
+			"k8s.io/apimachinery/pkg/api/resource.Quantity"},
+	}
+}
+
 func schema_fluid_cloudnative_fluid_api_v1alpha1_EncryptOption(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
@@ -3715,17 +3847,6 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_EncryptOption(ref common.Refere
 	}
 }
 
-func schema_fluid_cloudnative_fluid_api_v1alpha1_EncryptOptionComponentDependency(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Description: "EncryptOptionComponentDependency defines the configuration for encrypt option dependency",
-				Type:        []string{"object"},
-			},
-		},
-	}
-}
-
 func schema_fluid_cloudnative_fluid_api_v1alpha1_EncryptOptionSource(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
@@ -3744,6 +3865,66 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_EncryptOptionSource(ref common.
 		},
 		Dependencies: []string{
 			"github.com/fluid-cloudnative/fluid/api/v1alpha1.SecretKeySelector"},
+	}
+}
+
+func schema_fluid_cloudnative_fluid_api_v1alpha1_ExecutionCommonEntry(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"command": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: "",
+										Type:    []string{"string"},
+										Format:  "",
+									},
+								},
+							},
+						},
+					},
+					"timeout": {
+						SchemaProps: spec.SchemaProps{
+							Description: "TimeoutSeconds is the timeout(seconds) for the execution entry, at least(default) 20 seconds.",
+							Type:        []string{"integer"},
+							Format:      "int32",
+						},
+					},
+				},
+				Required: []string{"command"},
+			},
+		},
+	}
+}
+
+func schema_fluid_cloudnative_fluid_api_v1alpha1_ExecutionEntries(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type: []string{"object"},
+				Properties: map[string]spec.Schema{
+					"mountUFS": {
+						SchemaProps: spec.SchemaProps{
+							Description: "MountUFS defines the operations for mounting UFS. The command's stdout must be JSON matching CacheRuntimeMountUfsOutput.",
+							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.ExecutionCommonEntry"),
+						},
+					},
+					"reportSummary": {
+						SchemaProps: spec.SchemaProps{
+							Description: "ReportSummary it defines the operation how to get cache status like capacity, hit ratio etc.",
+							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.ExecutionCommonEntry"),
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/fluid-cloudnative/fluid/api/v1alpha1.ExecutionCommonEntry"},
 	}
 }
 
@@ -3866,527 +4047,6 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_ExtraResourcesComponentDependen
 	}
 }
 
-func schema_fluid_cloudnative_fluid_api_v1alpha1_GooseFSCompTemplateSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Description: "GooseFSCompTemplateSpec is a description of the GooseFS commponents",
-				Type:        []string{"object"},
-				Properties: map[string]spec.Schema{
-					"replicas": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Replicas is the desired number of replicas of the given template. If unspecified, defaults to 1. replicas is the min replicas of dataset in the cluster",
-							Type:        []string{"integer"},
-							Format:      "int32",
-						},
-					},
-					"jvmOptions": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Options for JVM",
-							Type:        []string{"array"},
-							Items: &spec.SchemaOrArray{
-								Schema: &spec.Schema{
-									SchemaProps: spec.SchemaProps{
-										Default: "",
-										Type:    []string{"string"},
-										Format:  "",
-									},
-								},
-							},
-						},
-					},
-					"properties": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Configurable properties for the GOOSEFS component. <br> Refer to <a href=\"https://cloud.tencent.com/document/product/436/56415\">GOOSEFS Configuration Properties</a> for more info",
-							Type:        []string{"object"},
-							AdditionalProperties: &spec.SchemaOrBool{
-								Allows: true,
-								Schema: &spec.Schema{
-									SchemaProps: spec.SchemaProps{
-										Default: "",
-										Type:    []string{"string"},
-										Format:  "",
-									},
-								},
-							},
-						},
-					},
-					"ports": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Ports used by GooseFS(e.g. rpc: 19998 for master)",
-							Type:        []string{"object"},
-							AdditionalProperties: &spec.SchemaOrBool{
-								Allows: true,
-								Schema: &spec.Schema{
-									SchemaProps: spec.SchemaProps{
-										Default: 0,
-										Type:    []string{"integer"},
-										Format:  "int32",
-									},
-								},
-							},
-						},
-					},
-					"resources": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Resources that will be requested by the GooseFS component. <br> <br> Resources are not allowed for ephemeral containers. Ephemeral containers use spare resources already allocated to the pod.",
-							Default:     map[string]interface{}{},
-							Ref:         ref("k8s.io/api/core/v1.ResourceRequirements"),
-						},
-					},
-					"env": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Environment variables that will be used by GooseFS component. <br>",
-							Type:        []string{"object"},
-							AdditionalProperties: &spec.SchemaOrBool{
-								Allows: true,
-								Schema: &spec.Schema{
-									SchemaProps: spec.SchemaProps{
-										Default: "",
-										Type:    []string{"string"},
-										Format:  "",
-									},
-								},
-							},
-						},
-					},
-					"enabled": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Enabled or Disabled for the components. For now, only  API Gateway is enabled or disabled.",
-							Type:        []string{"boolean"},
-							Format:      "",
-						},
-					},
-					"nodeSelector": {
-						SchemaProps: spec.SchemaProps{
-							Description: "NodeSelector is a selector which must be true for the master to fit on a node",
-							Type:        []string{"object"},
-							AdditionalProperties: &spec.SchemaOrBool{
-								Allows: true,
-								Schema: &spec.Schema{
-									SchemaProps: spec.SchemaProps{
-										Default: "",
-										Type:    []string{"string"},
-										Format:  "",
-									},
-								},
-							},
-						},
-					},
-					"annotations": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Annotations is an unstructured key value map stored with a resource that may be set by external tools to store and retrieve arbitrary metadata. They are not queryable and should be preserved when modifying objects. More info: http://kubernetes.io/docs/user-guide/annotations",
-							Type:        []string{"object"},
-							AdditionalProperties: &spec.SchemaOrBool{
-								Allows: true,
-								Schema: &spec.Schema{
-									SchemaProps: spec.SchemaProps{
-										Default: "",
-										Type:    []string{"string"},
-										Format:  "",
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-		},
-		Dependencies: []string{
-			"k8s.io/api/core/v1.ResourceRequirements"},
-	}
-}
-
-func schema_fluid_cloudnative_fluid_api_v1alpha1_GooseFSFuseSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Description: "GooseFSFuseSpec is a description of the GooseFS Fuse",
-				Type:        []string{"object"},
-				Properties: map[string]spec.Schema{
-					"image": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Image for GooseFS Fuse(e.g. goosefs/goosefs-fuse)",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"imageTag": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Image Tag for GooseFS Fuse(e.g. v1.0.1)",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"imagePullPolicy": {
-						SchemaProps: spec.SchemaProps{
-							Description: "One of the three policies: `Always`, `IfNotPresent`, `Never`",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"jvmOptions": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Options for JVM",
-							Type:        []string{"array"},
-							Items: &spec.SchemaOrArray{
-								Schema: &spec.Schema{
-									SchemaProps: spec.SchemaProps{
-										Default: "",
-										Type:    []string{"string"},
-										Format:  "",
-									},
-								},
-							},
-						},
-					},
-					"properties": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Configurable properties for the GOOSEFS component. <br> Refer to <a href=\"https://cloud.tencent.com/document/product/436/56415\">GOOSEFS Configuration Properties</a> for more info",
-							Type:        []string{"object"},
-							AdditionalProperties: &spec.SchemaOrBool{
-								Allows: true,
-								Schema: &spec.Schema{
-									SchemaProps: spec.SchemaProps{
-										Default: "",
-										Type:    []string{"string"},
-										Format:  "",
-									},
-								},
-							},
-						},
-					},
-					"env": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Environment variables that will be used by GooseFS Fuse",
-							Type:        []string{"object"},
-							AdditionalProperties: &spec.SchemaOrBool{
-								Allows: true,
-								Schema: &spec.Schema{
-									SchemaProps: spec.SchemaProps{
-										Default: "",
-										Type:    []string{"string"},
-										Format:  "",
-									},
-								},
-							},
-						},
-					},
-					"resources": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Resources that will be requested by GooseFS Fuse. <br> <br> Resources are not allowed for ephemeral containers. Ephemeral containers use spare resources already allocated to the pod.",
-							Default:     map[string]interface{}{},
-							Ref:         ref("k8s.io/api/core/v1.ResourceRequirements"),
-						},
-					},
-					"args": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Arguments that will be passed to GooseFS Fuse",
-							Type:        []string{"array"},
-							Items: &spec.SchemaOrArray{
-								Schema: &spec.Schema{
-									SchemaProps: spec.SchemaProps{
-										Default: "",
-										Type:    []string{"string"},
-										Format:  "",
-									},
-								},
-							},
-						},
-					},
-					"nodeSelector": {
-						SchemaProps: spec.SchemaProps{
-							Description: "NodeSelector is a selector which must be true for the fuse client to fit on a node, this option only effect when global is enabled",
-							Type:        []string{"object"},
-							AdditionalProperties: &spec.SchemaOrBool{
-								Allows: true,
-								Schema: &spec.Schema{
-									SchemaProps: spec.SchemaProps{
-										Default: "",
-										Type:    []string{"string"},
-										Format:  "",
-									},
-								},
-							},
-						},
-					},
-					"cleanPolicy": {
-						SchemaProps: spec.SchemaProps{
-							Description: "CleanPolicy decides when to clean GooseFS Fuse pods. Currently Fluid supports two policies: OnDemand and OnRuntimeDeleted OnDemand cleans fuse pod once th fuse pod on some node is not needed OnRuntimeDeleted cleans fuse pod only when the cache runtime is deleted Defaults to OnRuntimeDeleted",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"annotations": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Annotations is an unstructured key value map stored with a resource that may be set by external tools to store and retrieve arbitrary metadata. They are not queryable and should be preserved when modifying objects. More info: http://kubernetes.io/docs/user-guide/annotations",
-							Type:        []string{"object"},
-							AdditionalProperties: &spec.SchemaOrBool{
-								Allows: true,
-								Schema: &spec.Schema{
-									SchemaProps: spec.SchemaProps{
-										Default: "",
-										Type:    []string{"string"},
-										Format:  "",
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-		},
-		Dependencies: []string{
-			"k8s.io/api/core/v1.ResourceRequirements"},
-	}
-}
-
-func schema_fluid_cloudnative_fluid_api_v1alpha1_GooseFSRuntime(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Description: "GooseFSRuntime is the Schema for the goosefsruntimes API",
-				Type:        []string{"object"},
-				Properties: map[string]spec.Schema{
-					"kind": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"apiVersion": {
-						SchemaProps: spec.SchemaProps{
-							Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"metadata": {
-						SchemaProps: spec.SchemaProps{
-							Default: map[string]interface{}{},
-							Ref:     ref("k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"),
-						},
-					},
-					"spec": {
-						SchemaProps: spec.SchemaProps{
-							Default: map[string]interface{}{},
-							Ref:     ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.GooseFSRuntimeSpec"),
-						},
-					},
-					"status": {
-						SchemaProps: spec.SchemaProps{
-							Default: map[string]interface{}{},
-							Ref:     ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.RuntimeStatus"),
-						},
-					},
-				},
-			},
-		},
-		Dependencies: []string{
-			"github.com/fluid-cloudnative/fluid/api/v1alpha1.GooseFSRuntimeSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.RuntimeStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
-	}
-}
-
-func schema_fluid_cloudnative_fluid_api_v1alpha1_GooseFSRuntimeList(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Description: "GooseFSRuntimeList contains a list of GooseFSRuntime",
-				Type:        []string{"object"},
-				Properties: map[string]spec.Schema{
-					"kind": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"apiVersion": {
-						SchemaProps: spec.SchemaProps{
-							Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"metadata": {
-						SchemaProps: spec.SchemaProps{
-							Default: map[string]interface{}{},
-							Ref:     ref("k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"),
-						},
-					},
-					"items": {
-						SchemaProps: spec.SchemaProps{
-							Type: []string{"array"},
-							Items: &spec.SchemaOrArray{
-								Schema: &spec.Schema{
-									SchemaProps: spec.SchemaProps{
-										Default: map[string]interface{}{},
-										Ref:     ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.GooseFSRuntime"),
-									},
-								},
-							},
-						},
-					},
-				},
-				Required: []string{"items"},
-			},
-		},
-		Dependencies: []string{
-			"github.com/fluid-cloudnative/fluid/api/v1alpha1.GooseFSRuntime", "k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"},
-	}
-}
-
-func schema_fluid_cloudnative_fluid_api_v1alpha1_GooseFSRuntimeSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Description: "GooseFSRuntimeSpec defines the desired state of GooseFSRuntime",
-				Type:        []string{"object"},
-				Properties: map[string]spec.Schema{
-					"goosefsVersion": {
-						SchemaProps: spec.SchemaProps{
-							Description: "The version information that instructs fluid to orchestrate a particular version of GooseFS.",
-							Default:     map[string]interface{}{},
-							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.VersionSpec"),
-						},
-					},
-					"master": {
-						SchemaProps: spec.SchemaProps{
-							Description: "The component spec of GooseFS master",
-							Default:     map[string]interface{}{},
-							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.GooseFSCompTemplateSpec"),
-						},
-					},
-					"jobMaster": {
-						SchemaProps: spec.SchemaProps{
-							Description: "The component spec of GooseFS job master",
-							Default:     map[string]interface{}{},
-							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.GooseFSCompTemplateSpec"),
-						},
-					},
-					"worker": {
-						SchemaProps: spec.SchemaProps{
-							Description: "The component spec of GooseFS worker",
-							Default:     map[string]interface{}{},
-							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.GooseFSCompTemplateSpec"),
-						},
-					},
-					"jobWorker": {
-						SchemaProps: spec.SchemaProps{
-							Description: "The component spec of GooseFS job Worker",
-							Default:     map[string]interface{}{},
-							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.GooseFSCompTemplateSpec"),
-						},
-					},
-					"apiGateway": {
-						SchemaProps: spec.SchemaProps{
-							Description: "The component spec of GooseFS API Gateway",
-							Default:     map[string]interface{}{},
-							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.GooseFSCompTemplateSpec"),
-						},
-					},
-					"initUsers": {
-						SchemaProps: spec.SchemaProps{
-							Description: "The spec of init users",
-							Default:     map[string]interface{}{},
-							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.InitUsersSpec"),
-						},
-					},
-					"fuse": {
-						SchemaProps: spec.SchemaProps{
-							Description: "The component spec of GooseFS Fuse",
-							Default:     map[string]interface{}{},
-							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.GooseFSFuseSpec"),
-						},
-					},
-					"properties": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Configurable properties for the GOOSEFS component. <br> Refer to <a href=\"https://cloud.tencent.com/document/product/436/56415\">GOOSEFS Configuration Properties</a> for more info",
-							Type:        []string{"object"},
-							AdditionalProperties: &spec.SchemaOrBool{
-								Allows: true,
-								Schema: &spec.Schema{
-									SchemaProps: spec.SchemaProps{
-										Default: "",
-										Type:    []string{"string"},
-										Format:  "",
-									},
-								},
-							},
-						},
-					},
-					"jvmOptions": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Options for JVM",
-							Type:        []string{"array"},
-							Items: &spec.SchemaOrArray{
-								Schema: &spec.Schema{
-									SchemaProps: spec.SchemaProps{
-										Default: "",
-										Type:    []string{"string"},
-										Format:  "",
-									},
-								},
-							},
-						},
-					},
-					"tieredstore": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Tiered storage used by GooseFS",
-							Default:     map[string]interface{}{},
-							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.TieredStore"),
-						},
-					},
-					"data": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Management strategies for the dataset to which the runtime is bound",
-							Default:     map[string]interface{}{},
-							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.Data"),
-						},
-					},
-					"replicas": {
-						SchemaProps: spec.SchemaProps{
-							Description: "The replicas of the worker, need to be specified",
-							Type:        []string{"integer"},
-							Format:      "int32",
-						},
-					},
-					"runAs": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Manage the user to run GooseFS Runtime GooseFS support POSIX-ACL and Apache Ranger to manager authorization",
-							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.User"),
-						},
-					},
-					"disablePrometheus": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Disable monitoring for GooseFS Runtime Prometheus is enabled by default",
-							Type:        []string{"boolean"},
-							Format:      "",
-						},
-					},
-					"hadoopConfig": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Name of the configMap used to support HDFS configurations when using HDFS as GooseFS's UFS. The configMap must be in the same namespace with the GooseFSRuntime. The configMap should contain user-specific HDFS conf files in it. For now, only \"hdfs-site.xml\" and \"core-site.xml\" are supported. It must take the filename of the conf file as the key and content of the file as the value.",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
-					"cleanCachePolicy": {
-						SchemaProps: spec.SchemaProps{
-							Description: "CleanCachePolicy defines cleanCache Policy",
-							Default:     map[string]interface{}{},
-							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.CleanCachePolicy"),
-						},
-					},
-				},
-			},
-		},
-		Dependencies: []string{
-			"github.com/fluid-cloudnative/fluid/api/v1alpha1.CleanCachePolicy", "github.com/fluid-cloudnative/fluid/api/v1alpha1.Data", "github.com/fluid-cloudnative/fluid/api/v1alpha1.GooseFSCompTemplateSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.GooseFSFuseSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.InitUsersSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.TieredStore", "github.com/fluid-cloudnative/fluid/api/v1alpha1.User", "github.com/fluid-cloudnative/fluid/api/v1alpha1.VersionSpec"},
-	}
-}
-
 func schema_fluid_cloudnative_fluid_api_v1alpha1_HCFSStatus(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
@@ -4422,6 +4082,57 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_HeadlessRuntimeComponentService
 				Type:        []string{"object"},
 			},
 		},
+	}
+}
+
+func schema_fluid_cloudnative_fluid_api_v1alpha1_HostPathMediumSource(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "HostPathMediumSource describes hostPath volumes as a storage medium. Multiple paths can be configured to distribute cache across different disks.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"paths": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Paths is a list of file paths on the host machine to be used for caching. Multiple paths allow distributing cache across different mount points or disks. Example: [\"/mnt/cache1\", \"/mnt/cache2\"]",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: "",
+										Type:    []string{"string"},
+										Format:  "",
+									},
+								},
+							},
+						},
+					},
+					"quotas": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Quotas is a list of storage quotas corresponding to each path. The length of Quotas must match the length of Paths. Each quota defines the maximum cache size for the corresponding path. Example: [\"100Gi\", \"50Gi\"] allocates 100GiB to the first path and 50GiB to the second.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Ref: ref("k8s.io/apimachinery/pkg/api/resource.Quantity"),
+									},
+								},
+							},
+						},
+					},
+					"type": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Type specifies the type of hostPath volume. Defaults to empty string (no validation). More info: https://kubernetes.io/docs/concepts/storage/volumes#hostpath",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+				},
+				Required: []string{"paths", "quotas"},
+			},
+		},
+		Dependencies: []string{
+			"k8s.io/apimachinery/pkg/api/resource.Quantity"},
 	}
 }
 
@@ -5593,13 +5304,32 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_JuiceFSRuntimeSpec(ref common.R
 					},
 					"volumes": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Volumes is the list of Kubernetes volumes that can be mounted by the alluxio runtime components and/or fuses.",
+							Description: "Volumes is the list of Kubernetes volumes that can be mounted by the JuiceFS runtime components and/or fuses.",
 							Type:        []string{"array"},
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
 									SchemaProps: spec.SchemaProps{
 										Default: map[string]interface{}{},
 										Ref:     ref("k8s.io/api/core/v1.Volume"),
+									},
+								},
+							},
+						},
+					},
+					"volumeClaimTemplates": {
+						VendorExtensible: spec.VendorExtensible{
+							Extensions: spec.Extensions{
+								"x-kubernetes-list-type": "atomic",
+							},
+						},
+						SchemaProps: spec.SchemaProps{
+							Description: "VolumeClaimTemplates is the list of Kubernetes persistent volume claim templates used by the JuiceFS worker StatefulSet.",
+							Type:        []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Default: map[string]interface{}{},
+										Ref:     ref("k8s.io/api/core/v1.PersistentVolumeClaim"),
 									},
 								},
 							},
@@ -5623,7 +5353,7 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_JuiceFSRuntimeSpec(ref common.R
 			},
 		},
 		Dependencies: []string{
-			"github.com/fluid-cloudnative/fluid/api/v1alpha1.InitUsersSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.JuiceFSCompTemplateSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.JuiceFSFuseSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.PodMetadata", "github.com/fluid-cloudnative/fluid/api/v1alpha1.RuntimeManagement", "github.com/fluid-cloudnative/fluid/api/v1alpha1.TieredStore", "github.com/fluid-cloudnative/fluid/api/v1alpha1.User", "github.com/fluid-cloudnative/fluid/api/v1alpha1.VersionSpec", "k8s.io/api/core/v1.Volume"},
+			"github.com/fluid-cloudnative/fluid/api/v1alpha1.InitUsersSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.JuiceFSCompTemplateSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.JuiceFSFuseSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.PodMetadata", "github.com/fluid-cloudnative/fluid/api/v1alpha1.RuntimeManagement", "github.com/fluid-cloudnative/fluid/api/v1alpha1.TieredStore", "github.com/fluid-cloudnative/fluid/api/v1alpha1.User", "github.com/fluid-cloudnative/fluid/api/v1alpha1.VersionSpec", "k8s.io/api/core/v1.PersistentVolumeClaim", "k8s.io/api/core/v1.Volume"},
 	}
 }
 
@@ -5849,33 +5579,6 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_MasterSpec(ref common.Reference
 	}
 }
 
-func schema_fluid_cloudnative_fluid_api_v1alpha1_MediumSource(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Description: "MediumSource describes the storage medium type for tiered store. Only one of its members may be specified.",
-				Type:        []string{"object"},
-				Properties: map[string]spec.Schema{
-					"processMemory": {
-						SchemaProps: spec.SchemaProps{
-							Description: "ProcessMemory indicates that process memory should be used as the storage medium. The cache will be stored in the process's memory space.",
-							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.ProcessMemoryMediumSource"),
-						},
-					},
-					"volume": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Volume indicates that a Kubernetes volume should be used as the storage medium. Supported volume types include hostPath, emptyDir, and ephemeral volumes.",
-							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.VolumeMediumSource"),
-						},
-					},
-				},
-			},
-		},
-		Dependencies: []string{
-			"github.com/fluid-cloudnative/fluid/api/v1alpha1.ProcessMemoryMediumSource", "github.com/fluid-cloudnative/fluid/api/v1alpha1.VolumeMediumSource"},
-	}
-}
-
 func schema_fluid_cloudnative_fluid_api_v1alpha1_Metadata(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
@@ -6028,34 +5731,6 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_Mount(ref common.ReferenceCallb
 		},
 		Dependencies: []string{
 			"github.com/fluid-cloudnative/fluid/api/v1alpha1.EncryptOption"},
-	}
-}
-
-func schema_fluid_cloudnative_fluid_api_v1alpha1_MountPointStatus(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Description: "MountPointStatus describes the status of a single mount point in the dataset",
-				Type:        []string{"object"},
-				Properties: map[string]spec.Schema{
-					"mount": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Mount contains the mount point configuration from the bound dataset. This includes the remote path, mount options, and other mount-specific settings.",
-							Default:     map[string]interface{}{},
-							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.Mount"),
-						},
-					},
-					"mountTime": {
-						SchemaProps: spec.SchemaProps{
-							Description: "MountTime is the timestamp of the last successful mount operation. If MountTime is earlier than the master component's start time, a remount will be required.",
-							Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.Time"),
-						},
-					},
-				},
-			},
-		},
-		Dependencies: []string{
-			"github.com/fluid-cloudnative/fluid/api/v1alpha1.Mount", "k8s.io/apimachinery/pkg/apis/meta/v1.Time"},
 	}
 }
 
@@ -6345,10 +6020,21 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_ProcessMemoryMediumSource(ref c
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
-				Description: "ProcessMemoryMediumSource describes process memory as a storage medium. When specified, cache data will be stored in the process's memory space, and the quota will be added to the container's resource requests and limits.",
+				Description: "ProcessMemoryMediumSource describes process memory as a storage medium. Cache data will be stored in the process's memory space.",
 				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"quota": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Quota specifies the amount of memory to allocate for caching. This value will be added to the container's resource requests and limits. Example: \"4Gi\" allocates 4GiB memory for cache.",
+							Ref:         ref("k8s.io/apimachinery/pkg/api/resource.Quantity"),
+						},
+					},
+				},
+				Required: []string{"quota"},
 			},
 		},
+		Dependencies: []string{
+			"k8s.io/apimachinery/pkg/api/resource.Quantity"},
 	}
 }
 
@@ -6623,13 +6309,6 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_RuntimeComponentDefinition(ref 
 				Description: "RuntimeComponentDefinition defines the configuration for a CacheRuntime component",
 				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
-					"workloadType": {
-						SchemaProps: spec.SchemaProps{
-							Description: "WorkloadType is the default workload type of the component",
-							Default:     map[string]interface{}{},
-							Ref:         ref("k8s.io/apimachinery/pkg/apis/meta/v1.TypeMeta"),
-						},
-					},
 					"options": {
 						SchemaProps: spec.SchemaProps{
 							Description: "Options is a set of key-value pairs that provide additional configuration for the component",
@@ -6667,11 +6346,17 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_RuntimeComponentDefinition(ref 
 							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.RuntimeComponentDependencies"),
 						},
 					},
+					"executionEntries": {
+						SchemaProps: spec.SchemaProps{
+							Description: "ExecutionEntries entries to support out-of-tree integration.",
+							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.ExecutionEntries"),
+						},
+					},
 				},
 			},
 		},
 		Dependencies: []string{
-			"github.com/fluid-cloudnative/fluid/api/v1alpha1.RuntimeComponentDependencies", "github.com/fluid-cloudnative/fluid/api/v1alpha1.RuntimeComponentService", "k8s.io/api/core/v1.PodTemplateSpec", "k8s.io/apimachinery/pkg/apis/meta/v1.TypeMeta"},
+			"github.com/fluid-cloudnative/fluid/api/v1alpha1.ExecutionEntries", "github.com/fluid-cloudnative/fluid/api/v1alpha1.RuntimeComponentDependencies", "github.com/fluid-cloudnative/fluid/api/v1alpha1.RuntimeComponentService", "k8s.io/api/core/v1.PodTemplateSpec"},
 	}
 }
 
@@ -6682,10 +6367,10 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_RuntimeComponentDependencies(re
 				Description: "RuntimeComponentDependencies defines the dependencies required by a CacheRuntime component",
 				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
-					"encryptOption": {
+					"secretMount": {
 						SchemaProps: spec.SchemaProps{
-							Description: "EncryptOption is the configuration for encrypt option secret mount",
-							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.EncryptOptionComponentDependency"),
+							Description: "SecretMount controls whether dataset encrypt-option secrets are mounted into this component pod. Defaults to true for Master/Worker, false for Client unless explicitly enabled.",
+							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.SecretMountComponentDependency"),
 						},
 					},
 					"extraResources": {
@@ -6698,7 +6383,7 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_RuntimeComponentDependencies(re
 			},
 		},
 		Dependencies: []string{
-			"github.com/fluid-cloudnative/fluid/api/v1alpha1.EncryptOptionComponentDependency", "github.com/fluid-cloudnative/fluid/api/v1alpha1.ExtraResourcesComponentDependency"},
+			"github.com/fluid-cloudnative/fluid/api/v1alpha1.ExtraResourcesComponentDependency", "github.com/fluid-cloudnative/fluid/api/v1alpha1.SecretMountComponentDependency"},
 	}
 }
 
@@ -7170,7 +6855,7 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_RuntimeStatus(ref common.Refere
 					},
 					"mounts": {
 						SchemaProps: spec.SchemaProps{
-							Description: "MountPoints represents the mount points specified in the bounded dataset",
+							Description: "Mounts represents the mount points specified in the bounded dataset. Currently only set and used in thin runtime, see pr #2257.",
 							Type:        []string{"array"},
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{
@@ -7230,42 +6915,25 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_RuntimeTieredStoreLevel(ref com
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
-				Description: "RuntimeTieredStoreLevel describes the configuration for a single tier in the tiered storage",
+				Description: "RuntimeTieredStoreLevel describes the configuration for a single tier in the tiered storage. Each tier can use different storage media (e.g., memory, SSD, HDD). Only one of ProcessMemory, EmptyDir, or HostPath should be specified.",
 				Type:        []string{"object"},
 				Properties: map[string]spec.Schema{
-					"medium": {
+					"processMemory": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Medium describes the storage medium type for this tier. Supported types include process memory and various volume types.",
-							Default:     map[string]interface{}{},
-							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.MediumSource"),
+							Description: "ProcessMemory indicates that process memory should be used as one storage medium. When specified, cache data will be stored in the process's memory space, and the quota will be added to the container's resource requests and limits.",
+							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.ProcessMemoryMediumSource"),
 						},
 					},
-					"path": {
+					"emptyDir": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Path is a list of file paths to be used for the cache tier. Multiple paths can be specified to distribute cache across different mount points. For example: [\"/mnt/cache1\", \"/mnt/cache2\"].",
-							Type:        []string{"array"},
-							Items: &spec.SchemaOrArray{
-								Schema: &spec.Schema{
-									SchemaProps: spec.SchemaProps{
-										Default: "",
-										Type:    []string{"string"},
-										Format:  "",
-									},
-								},
-							},
+							Description: "EmptyDir indicates that an emptyDir volume should be used as the storage medium.",
+							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.EmptyDirMediumSource"),
 						},
 					},
-					"quota": {
+					"hostPath": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Quota is a list of storage quotas for each path in the tier. The length of Quota should match the length of Path. Each quota corresponds to the path at the same index. For example: [\"100Gi\", \"50Gi\"] allocates 100GiB to the first path and 50GiB to the second path.",
-							Type:        []string{"array"},
-							Items: &spec.SchemaOrArray{
-								Schema: &spec.Schema{
-									SchemaProps: spec.SchemaProps{
-										Ref: ref("k8s.io/apimachinery/pkg/api/resource.Quantity"),
-									},
-								},
-							},
+							Description: "HostPath indicates that one or more hostPath volumes should be used as a storage medium.",
+							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.HostPathMediumSource"),
 						},
 					},
 					"high": {
@@ -7286,7 +6954,7 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_RuntimeTieredStoreLevel(ref com
 			},
 		},
 		Dependencies: []string{
-			"github.com/fluid-cloudnative/fluid/api/v1alpha1.MediumSource", "k8s.io/apimachinery/pkg/api/resource.Quantity"},
+			"github.com/fluid-cloudnative/fluid/api/v1alpha1.EmptyDirMediumSource", "github.com/fluid-cloudnative/fluid/api/v1alpha1.HostPathMediumSource", "github.com/fluid-cloudnative/fluid/api/v1alpha1.ProcessMemoryMediumSource"},
 	}
 }
 
@@ -7461,6 +7129,26 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_SecretKeySelector(ref common.Re
 					},
 				},
 				Required: []string{"name"},
+			},
+		},
+	}
+}
+
+func schema_fluid_cloudnative_fluid_api_v1alpha1_SecretMountComponentDependency(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "SecretMountComponentDependency defines the secret mount configuration for component dependencies",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"enabled": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Enabled indicates whether dataset encrypt-option secrets should be mounted into this component pod.",
+							Type:        []string{"boolean"},
+							Format:      "",
+						},
+					},
+				},
 			},
 		},
 	}
@@ -8805,39 +8493,6 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_VineyardRuntimeSpec(ref common.
 		},
 		Dependencies: []string{
 			"github.com/fluid-cloudnative/fluid/api/v1alpha1.MasterSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.PodMetadata", "github.com/fluid-cloudnative/fluid/api/v1alpha1.TieredStore", "github.com/fluid-cloudnative/fluid/api/v1alpha1.VineyardClientSocketSpec", "github.com/fluid-cloudnative/fluid/api/v1alpha1.VineyardCompTemplateSpec", "k8s.io/api/core/v1.Volume"},
-	}
-}
-
-func schema_fluid_cloudnative_fluid_api_v1alpha1_VolumeMediumSource(ref common.ReferenceCallback) common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Description: "VolumeMediumSource describes a Kubernetes volume as a storage medium. Only one of its members may be specified.",
-				Type:        []string{"object"},
-				Properties: map[string]spec.Schema{
-					"hostPath": {
-						SchemaProps: spec.SchemaProps{
-							Description: "HostPath represents a pre-existing file or directory on the host machine that is directly exposed to the container. More info: https://kubernetes.io/docs/concepts/storage/volumes#hostpath",
-							Ref:         ref("k8s.io/api/core/v1.HostPathVolumeSource"),
-						},
-					},
-					"emptyDir": {
-						SchemaProps: spec.SchemaProps{
-							Description: "EmptyDir represents a temporary directory that shares a pod's lifetime. More info: https://kubernetes.io/docs/concepts/storage/volumes#emptydir",
-							Ref:         ref("k8s.io/api/core/v1.EmptyDirVolumeSource"),
-						},
-					},
-					"ephemeral": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Ephemeral represents a volume that is handled by a cluster storage driver. The volume's lifecycle is tied to the pod that defines it. More info: https://kubernetes.io/docs/concepts/storage/ephemeral-volumes/",
-							Ref:         ref("k8s.io/api/core/v1.EphemeralVolumeSource"),
-						},
-					},
-				},
-			},
-		},
-		Dependencies: []string{
-			"k8s.io/api/core/v1.EmptyDirVolumeSource", "k8s.io/api/core/v1.EphemeralVolumeSource", "k8s.io/api/core/v1.HostPathVolumeSource"},
 	}
 }
 

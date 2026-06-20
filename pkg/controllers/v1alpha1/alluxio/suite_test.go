@@ -17,9 +17,9 @@ limitations under the License.
 package alluxio
 
 import (
-	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -40,7 +40,6 @@ import (
 var cfg *rest.Config
 var k8sClient client.Client
 var testEnv *envtest.Environment
-var useExistingCluster = false
 
 func TestAPIs(t *testing.T) {
 	RegisterFailHandler(Fail)
@@ -49,11 +48,8 @@ func TestAPIs(t *testing.T) {
 		"Controller Suite")
 }
 
-var _ = BeforeSuite(func(done Done) {
+var _ = BeforeSuite(NodeTimeout(60*time.Second), func() {
 	logf.SetLogger(zap.New(zap.WriteTo(GinkgoWriter), zap.UseDevMode(true)))
-	if env := os.Getenv("USE_EXISTING_CLUSTER"); env == "true" {
-		useExistingCluster = true
-	}
 
 	By("bootstrapping test environment")
 	testEnv = &envtest.Environment{
@@ -73,9 +69,7 @@ var _ = BeforeSuite(func(done Done) {
 	k8sClient, err = client.New(cfg, client.Options{Scheme: scheme.Scheme})
 	Expect(err).ToNot(HaveOccurred())
 	Expect(k8sClient).ToNot(BeNil())
-
-	close(done)
-}, 60)
+})
 
 var _ = AfterSuite(func() {
 	By("tearing down the test environment")

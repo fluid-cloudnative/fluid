@@ -181,15 +181,15 @@ var _ = Describe("TemplateEngine", func() {
 
 	Describe("CreateVolume", func() {
 		It("Should create volume successfully", func() {
-			impl.EXPECT().CreateVolume().Return(nil).Times(1)
-			Expect(t.CreateVolume()).To(BeNil())
+			impl.EXPECT().CreateVolume(gomock.Any()).Return(nil).Times(1)
+			Expect(t.CreateVolume(context.Background())).To(BeNil())
 		})
 	})
 
 	Describe("DeleteVolume", func() {
 		It("Should delete  volume successfully", func() {
-			impl.EXPECT().DeleteVolume().Return(nil).Times(1)
-			Expect(t.DeleteVolume()).To(BeNil())
+			impl.EXPECT().DeleteVolume(gomock.Any()).Return(nil).Times(1)
+			Expect(t.DeleteVolume(context.Background())).To(BeNil())
 		})
 	})
 

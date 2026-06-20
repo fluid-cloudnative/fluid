@@ -1,0 +1,210 @@
+apiVersion: data.fluid.io/v1alpha1
+kind: CacheRuntimeClass
+metadata:
+  name: curvine-demo
+fileSystemType: curvinefs
+extraResources:
+  configMaps:
+    - name: curvine-config
+      data:
+        # TOML格式配置模板， 使用 hairyhenderson/gomplate 镜像要求的模板格式
+        cluster.toml: |
+          # master configuration
+          [master]
+          meta_dir = "testing/meta"
+
+          # masta ha raft configuration.
+          [journal]
+          journal_addrs = [
+            {{ range $index := seq 0 (sub (ds "config").master.replicas 1) }}
+            {{- if $index }},{{ end }}
+            {id = {{ add $index 1 }}, hostname = "{{(ds "config").master.name}}-{{$index}}.{{(ds "config").master.service.name}}", port = 8996}
+            {{- end }}
+          ]
+          journal_dir = "testing/journal"
+
+          # Worker configuration, translate Gi to GB
+          [worker]
+          dir_reserved = "0"
+          data_dir = [
+          {{- range $index, $level := (ds "config").worker.tieredStoreLevels }}
+          {{- range $pathIndex, $mountPath := $level.mountPaths }}
+          {{- if or $index $pathIndex }},{{ end }}
+          "[{{$level.mediumType}}:{{ index $level.quotas $pathIndex | strings.ReplaceAll "i" "B"}}]{{ $mountPath }}"
+          {{- end }}
+          {{- end }}
+          ]
+dataOperationSpecs:
+  - name: DataLoad
+    command:
+      - "/bin/bash"
+      - "-c"
+    args:
+      # Actually, the cache runtime image should use $(FLUID_RUNTIME_CONFIG_PATH) to generate the config file, and
+      # use $(FLUID_DATALOAD_DATA_PATH) to execute data load.
+      - |
+        # currently we have no customized image supporting dataload for curvine, so we write the curvine.toml with fixed journal address for test case.
+        echo -e '[journal]\njournal_addrs = [\n{id=1, hostname="curvine-demo-master-0.svc-curvine-demo-master"}\n]' > /etc/curvine.toml
+        
+        IFS=: read -ra paths <<< "$FLUID_DATALOAD_DATA_PATH"
+        for p in "${paths[@]}"; do
+          /app/curvine/bin/cv load "$p" --watch --conf /etc/curvine.toml || {
+            echo "Error: load $p failed."
+            exit 1
+          }
+        done
+topology:
+  master:
+    service: #需要为master创建Headless Service
+      headless: { }
+    dependencies:
+      extraResources:
+        # 使用 extraResources 时，需要定义其挂载路径
+        configMaps:
+          - name: curvine-config
+            mountPath: "/templates"
+    executionEntries:
+      mountUFS:
+        command: 
+        - bash
+        - "-c"
+        - "/etc/curvine/mount/mountUfs.sh"
+        timeout: 30
+    template:
+      spec:
+        restartPolicy: Always
+        # 根据 runtime 生成的配置文件
+        initContainers:
+          - name: init-curvine
+            image: hairyhenderson/gomplate:alpine
+            # 挂载共享卷到容器内路径
+            volumeMounts:
+              - name: shared-config-volume
+                mountPath: /etc/curvine  # 配置文件存放目录
+            command: [ "gomplate" ]
+            args: [ "-d", "config=$(FLUID_RUNTIME_CONFIG_PATH)", "-f", "/templates/cluster.toml", "-o", "/etc/curvine/curvine.toml" ]
+        containers:
+          - name: master
+            image: "curvine/curvine:latest"
+            command:
+              - /entrypoint.sh
+            args:
+              - master
+              - start
+            env:
+              # /entrypoint.sh 不支持参数指定配置文件，支撑环境变量配置，默认/app/curvine/conf/curvine-cluster.toml
+              - name: CURVINE_CONF_FILE
+                value: "/etc/curvine/curvine.toml"
+              - name: POD_NAME
+                valueFrom:
+                  fieldRef:
+                    fieldPath: metadata.name
+              # curvine checks master hostname which should be one of journal_addrs
+              - name: CURVINE_MASTER_HOSTNAME
+                value: "$(POD_NAME).$(FLUID_RUNTIME_COMPONENT_SVC_NAME)"
+            volumeMounts:
+              - name: shared-config-volume
+                mountPath: /etc/curvine  # 配置文件存放目录
+              - name: curvine-mount-volume
+                mountPath: /etc/curvine/mount  # 配置文件存放目录
+            imagePullPolicy: IfNotPresent
+        volumes:
+        # emptyDir 共享存储（init容器和主容器互通）
+        - name: shared-config-volume
+          emptyDir: { }
+        - name: curvine-mount-volume
+          configMap:
+            name: curvine-mount
+            defaultMode: 0755
+  worker:
+    service:
+      headless: { } #需要为worker创建Headless Service
+    dependencies:
+      extraResources:
+        # 使用 extraResources 时，需要定义其挂载路径
+        configMaps:
+          - name: curvine-config
+            mountPath: "/templates"
+    template:
+      spec:
+        restartPolicy: Always
+        # 根据 runtime 生成的配置文件
+        initContainers:
+          - name: init-curvine
+            image: hairyhenderson/gomplate:alpine
+            # 挂载共享卷到容器内路径
+            volumeMounts:
+              - name: shared-config-volume
+                mountPath: /etc/curvine  # 配置文件存放目录
+            command: [ "gomplate" ]
+            args: [ "-d", "config=$(FLUID_RUNTIME_CONFIG_PATH)", "-f", "/templates/cluster.toml", "-o", "/etc/curvine/curvine.toml" ]
+        containers:
+          - name: worker
+            image: "curvine/curvine:latest"
+            command:
+              - /entrypoint.sh
+            args:
+              - worker
+              - start
+            env:
+              # /entrypoint.sh 不支持参数指定配置文件，支撑环境变量配置，默认/app/curvine/conf/curvine-cluster.toml
+              - name: CURVINE_CONF_FILE
+                value: "/etc/curvine/curvine.toml"
+              - name: POD_NAME
+                valueFrom:
+                  fieldRef:
+                    fieldPath: metadata.name
+              - name: CURVINE_WORKER_HOSTNAME
+                value: "$(POD_NAME).$(FLUID_RUNTIME_COMPONENT_SVC_NAME)"
+            volumeMounts:
+              - name: shared-config-volume
+                mountPath: /etc/curvine  # 配置文件存放目录
+            imagePullPolicy: IfNotPresent
+        volumes:
+          # emptyDir 共享存储（init容器和主容器互通）
+          - name: shared-config-volume
+            emptyDir: { }
+  client:
+    dependencies:
+      # Uncomment to enable secret mount for client (e.g., for JuiceFS FUSE pods)
+      # secretMount:
+      #   enabled: true
+      extraResources:
+        # 使用 extraResources 时，需要定义其挂载路径
+        configMaps:
+          - name: curvine-config
+            mountPath: "/templates"
+    template:
+      spec:
+        restartPolicy: Always
+        # 根据 runtime 生成的配置文件
+        initContainers:
+          - name: init-curvine
+            image: hairyhenderson/gomplate:alpine
+            # 挂载共享卷到容器内路径
+            volumeMounts:
+              - name: shared-config-volume
+                mountPath: /etc/curvine  # 配置文件存放目录
+            command: [ "gomplate" ]
+            args: [ "-d", "config=$(FLUID_RUNTIME_CONFIG_PATH)", "-f", "/templates/cluster.toml", "-o", "/etc/curvine/curvine.toml" ]
+        containers:
+          - name: client
+            image: "curvine/curvine:latest"
+            securityContext: #通常client需要配置privileged，用于操作fuse设备
+              privileged: true
+              runAsUser: 0
+            command:
+              - /app/curvine/lib/curvine-fuse
+            args:
+              - "--mnt-path"
+              - "$(FLUID_RUNTIME_MOUNT_PATH)"
+              - "--conf"
+              - "/etc/curvine/curvine.toml"
+            volumeMounts:
+              - name: shared-config-volume
+                mountPath: /etc/curvine  # 配置文件存放目录
+            imagePullPolicy: IfNotPresent
+        volumes:
+          # emptyDir 共享存储（init容器和主容器互通）
+          - name: shared-config-volume
+            emptyDir: { }

@@ -162,6 +162,47 @@ var _ = Describe("JuiceFS Sync Runtime Related Tests", Label("pkg.ddc.juicefs.sy
 			})
 		})
 
+		When("worker volumeClaimTemplates changed after the StatefulSet was created", func() {
+			BeforeEach(func() {
+				mockedObjects.WorkerSts.Spec.UpdateStrategy.Type = appsv1.OnDeleteStatefulSetStrategyType
+			})
+
+			It("should reject the change before updating the worker StatefulSet", func() {
+				oldValue := mockJuiceFSValue(dataset, juicefsruntime)
+				latestValue := mockJuiceFSValue(dataset, juicefsruntime)
+				latestValue.Worker.Labels = map[string]string{"should-not": "sync"}
+				latestValue.Worker.VolumeMounts = append(latestValue.Worker.VolumeMounts, corev1.VolumeMount{Name: "worker-cache", MountPath: "/worker-cache"})
+				latestValue.Worker.VolumeClaimTemplates = []corev1.PersistentVolumeClaim{
+					{
+						ObjectMeta: metav1.ObjectMeta{
+							Name: "worker-cache",
+						},
+						Spec: corev1.PersistentVolumeClaimSpec{
+							AccessModes: []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce},
+							Resources: corev1.VolumeResourceRequirements{
+								Requests: corev1.ResourceList{
+									corev1.ResourceStorage: resource.MustParse("10Gi"),
+								},
+							},
+						},
+					},
+				}
+
+				changed, err := engine.syncWorkerSpec(cruntime.ReconcileRequestContext{}, juicefsruntime, oldValue, latestValue)
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("volumeClaimTemplates are immutable"))
+				Expect(err.Error()).To(ContainSubstring("recreate the JuiceFSRuntime"))
+				Expect(err.Error()).NotTo(ContainSubstring("or worker StatefulSet"))
+				Expect(changed).To(BeFalse())
+
+				updatedSts, err := kubeclient.GetStatefulSet(client, mockedObjects.WorkerSts.Name, mockedObjects.WorkerSts.Namespace)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(updatedSts.Spec.Template.Labels).NotTo(HaveKey("should-not"))
+				Expect(updatedSts.Spec.Template.Spec.Containers[0].VolumeMounts).NotTo(ContainElement(corev1.VolumeMount{Name: "worker-cache", MountPath: "/worker-cache"}))
+				Expect(oldValue.Worker.VolumeClaimTemplates).To(BeEmpty())
+			})
+		})
+
 		When("only image changed", func() {
 			BeforeEach(func() {
 				mockedObjects.WorkerSts.Spec.UpdateStrategy.Type = appsv1.OnDeleteStatefulSetStrategyType
@@ -1038,6 +1079,67 @@ func TestJuiceFSEngine_isVolumesChanged(t *testing.T) {
 				if !got {
 					t.Errorf("isVolumesChanged() gotNewVolumes = %v, want %v", gotNewVolumes, tt.wantNewVolumes)
 				}
+			}
+		})
+	}
+}
+
+func TestJuiceFSEngine_isVolumeClaimTemplatesChanged(t *testing.T) {
+	type args struct {
+		crtVolumeClaimTemplates     []corev1.PersistentVolumeClaim
+		runtimeVolumeClaimTemplates []corev1.PersistentVolumeClaim
+	}
+	tests := []struct {
+		name                        string
+		args                        args
+		wantChanged                 bool
+		wantNewVolumeClaimTemplates []corev1.PersistentVolumeClaim
+	}{
+		{
+			name: "test-both-empty",
+			args: args{},
+		},
+		{
+			name: "test-false",
+			args: args{
+				crtVolumeClaimTemplates: []corev1.PersistentVolumeClaim{
+					{ObjectMeta: metav1.ObjectMeta{Name: "cache"}},
+				},
+				runtimeVolumeClaimTemplates: []corev1.PersistentVolumeClaim{
+					{ObjectMeta: metav1.ObjectMeta{Name: "cache"}},
+				},
+			},
+			wantNewVolumeClaimTemplates: []corev1.PersistentVolumeClaim{
+				{ObjectMeta: metav1.ObjectMeta{Name: "cache"}},
+			},
+		},
+		{
+			name: "test-changed",
+			args: args{
+				crtVolumeClaimTemplates: []corev1.PersistentVolumeClaim{
+					{ObjectMeta: metav1.ObjectMeta{Name: "cache"}},
+				},
+				runtimeVolumeClaimTemplates: []corev1.PersistentVolumeClaim{
+					{ObjectMeta: metav1.ObjectMeta{Name: "cache"}, Spec: corev1.PersistentVolumeClaimSpec{AccessModes: []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce}}},
+				},
+			},
+			wantChanged: true,
+			wantNewVolumeClaimTemplates: []corev1.PersistentVolumeClaim{
+				{ObjectMeta: metav1.ObjectMeta{Name: "cache"}, Spec: corev1.PersistentVolumeClaimSpec{AccessModes: []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce}}},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			j := JuiceFSEngine{
+				Log: fake.NullLogger(),
+			}
+			gotChanged, gotNewVolumeClaimTemplates := j.isVolumeClaimTemplatesChanged(tt.args.crtVolumeClaimTemplates, tt.args.runtimeVolumeClaimTemplates)
+			if gotChanged != tt.wantChanged {
+				t.Errorf("isVolumeClaimTemplatesChanged() gotChanged = %v, want %v", gotChanged, tt.wantChanged)
+			}
+			if !reflect.DeepEqual(gotNewVolumeClaimTemplates, tt.wantNewVolumeClaimTemplates) {
+				t.Errorf("isVolumeClaimTemplatesChanged() gotNewVolumeClaimTemplates = %v, want %v", gotNewVolumeClaimTemplates, tt.wantNewVolumeClaimTemplates)
 			}
 		})
 	}

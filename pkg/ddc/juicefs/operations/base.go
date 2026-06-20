@@ -17,6 +17,7 @@ limitations under the License.
 package operations
 
 import (
+	"context"
 	"fmt"
 	"strconv"
 	"strings"
@@ -52,7 +53,7 @@ func (j JuiceFileUtils) exec(command []string, verbose bool) (stdout string, std
 	redactedCommand := securityutils.FilterCommand(command)
 
 	j.log.V(1).Info("Exec command start", "command", redactedCommand)
-	stdout, stderr, err = kubeclient.ExecCommandInContainerWithTimeout(j.podName, j.container, j.namespace, command, common.FileUtilsExecTimeout)
+	stdout, stderr, err = kubeclient.ExecCommandInContainerWithTimeoutContext(context.TODO(), j.podName, j.container, j.namespace, command, common.FileUtilsExecTimeout)
 	if err != nil {
 		err = errors.Wrapf(err, "error when executing command %v", redactedCommand)
 		return

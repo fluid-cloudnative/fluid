@@ -17,11 +17,12 @@ limitations under the License.
 package jindocache
 
 import (
+	"context"
 	volumeHelper "github.com/fluid-cloudnative/fluid/pkg/utils/dataset/volume"
 )
 
 // DeleteVolume
-func (e *JindoCacheEngine) DeleteVolume() (err error) {
+func (e *JindoCacheEngine) DeleteVolume(ctx context.Context) (err error) {
 
 	if e.runtime == nil {
 		e.runtime, err = e.getRuntime()
@@ -30,12 +31,12 @@ func (e *JindoCacheEngine) DeleteVolume() (err error) {
 		}
 	}
 
-	err = e.deleteFusePersistentVolumeClaim()
+	err = e.deleteFusePersistentVolumeClaim(ctx)
 	if err != nil {
 		return
 	}
 
-	err = e.deleteFusePersistentVolume()
+	err = e.deleteFusePersistentVolume(ctx)
 	if err != nil {
 		return
 	}
@@ -45,21 +46,21 @@ func (e *JindoCacheEngine) DeleteVolume() (err error) {
 }
 
 // deleteFusePersistentVolume
-func (e *JindoCacheEngine) deleteFusePersistentVolume() (err error) {
+func (e *JindoCacheEngine) deleteFusePersistentVolume(ctx context.Context) (err error) {
 	runtimeInfo, err := e.getRuntimeInfo()
 	if err != nil {
 		return err
 	}
 
-	return volumeHelper.DeleteFusePersistentVolume(e.Client, runtimeInfo, e.Log)
+	return volumeHelper.DeleteFusePersistentVolume(ctx, e.Client, runtimeInfo, e.Log)
 }
 
 // deleteFusePersistentVolumeClaim
-func (e *JindoCacheEngine) deleteFusePersistentVolumeClaim() (err error) {
+func (e *JindoCacheEngine) deleteFusePersistentVolumeClaim(ctx context.Context) (err error) {
 	runtimeInfo, err := e.getRuntimeInfo()
 	if err != nil {
 		return err
 	}
 
-	return volumeHelper.DeleteFusePersistentVolumeClaim(e.Client, runtimeInfo, e.Log)
+	return volumeHelper.DeleteFusePersistentVolumeClaim(ctx, e.Client, runtimeInfo, e.Log)
 }

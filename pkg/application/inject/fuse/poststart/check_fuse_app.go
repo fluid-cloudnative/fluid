@@ -22,6 +22,8 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
+
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 )
 
 const (
@@ -30,6 +32,15 @@ const (
 	appVolName       = "check-fluid-mount-ready"
 	appConfigMapName = appVolName
 )
+
+// appScriptContentSHA256 stores the SHA256 hex of the app script content (first 63 chars for K8s label compatibility),
+// computed once at package initialization.
+var appScriptContentSHA256 string
+
+func init() {
+	// K8s label values must be <= 63 characters; SHA256 hex is 64 chars, so truncate to 63.
+	appScriptContentSHA256 = computeScriptSHA256(replacer.Replace(contentCheckMountReadyScript))
+}
 
 // The standard error returned from the execution of the postStartHook
 // will appear in the kubelet logs to clarify the reason for the PostStartHook.
@@ -114,9 +125,17 @@ func (a *ScriptGeneratorForApp) BuildConfigmap() *corev1.ConfigMap {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      a.getConfigmapName(),
 			Namespace: a.namespace,
+			Annotations: map[string]string{
+				common.AnnotationCheckMountScriptSHA256: appScriptContentSHA256,
+			},
 		},
 		Data: data,
 	}
+}
+
+// GetScriptSHA256 returns the SHA256 of the app script content computed at package init.
+func (a *ScriptGeneratorForApp) GetScriptSHA256() string {
+	return appScriptContentSHA256
 }
 
 func (a *ScriptGeneratorForApp) getConfigmapName() string {

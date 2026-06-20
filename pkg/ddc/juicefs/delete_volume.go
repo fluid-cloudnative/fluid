@@ -16,9 +16,13 @@ limitations under the License.
 
 package juicefs
 
-import volumehelper "github.com/fluid-cloudnative/fluid/pkg/utils/dataset/volume"
+import (
+	"context"
 
-func (j JuiceFSEngine) DeleteVolume() (err error) {
+	volumehelper "github.com/fluid-cloudnative/fluid/pkg/utils/dataset/volume"
+)
+
+func (j JuiceFSEngine) DeleteVolume(ctx context.Context) (err error) {
 	if j.runtime == nil {
 		j.runtime, err = j.getRuntime()
 		if err != nil {
@@ -26,12 +30,12 @@ func (j JuiceFSEngine) DeleteVolume() (err error) {
 		}
 	}
 
-	err = j.deleteFusePersistentVolumeClaim()
+	err = j.deleteFusePersistentVolumeClaim(ctx)
 	if err != nil {
 		return
 	}
 
-	err = j.deleteFusePersistentVolume()
+	err = j.deleteFusePersistentVolume(ctx)
 	if err != nil {
 		return
 	}
@@ -40,21 +44,21 @@ func (j JuiceFSEngine) DeleteVolume() (err error) {
 }
 
 // deleteFusePersistentVolume
-func (j *JuiceFSEngine) deleteFusePersistentVolume() (err error) {
+func (j *JuiceFSEngine) deleteFusePersistentVolume(ctx context.Context) (err error) {
 	runtimeInfo, err := j.getRuntimeInfo()
 	if err != nil {
 		return err
 	}
 
-	return volumehelper.DeleteFusePersistentVolume(j.Client, runtimeInfo, j.Log)
+	return volumehelper.DeleteFusePersistentVolume(ctx, j.Client, runtimeInfo, j.Log)
 }
 
 // deleteFusePersistentVolume
-func (j *JuiceFSEngine) deleteFusePersistentVolumeClaim() (err error) {
+func (j *JuiceFSEngine) deleteFusePersistentVolumeClaim(ctx context.Context) (err error) {
 	runtimeInfo, err := j.getRuntimeInfo()
 	if err != nil {
 		return err
 	}
 
-	return volumehelper.DeleteFusePersistentVolumeClaim(j.Client, runtimeInfo, j.Log)
+	return volumehelper.DeleteFusePersistentVolumeClaim(ctx, j.Client, runtimeInfo, j.Log)
 }

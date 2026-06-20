@@ -17,6 +17,7 @@
 package fluidapp
 
 import (
+	"context"
 	"strings"
 
 	"github.com/go-logr/logr"
@@ -79,7 +80,7 @@ func (i *FluidAppReconcilerImplement) umountFuseSidecar(pod *corev1.Pod, fuseCon
 	}
 
 	i.Log.Info("exec cmd in pod fuse container", "cmd", cmd, "podName", pod.Name, "namespace", pod.Namespace)
-	stdout, stderr, err := kubeclient.ExecCommandInContainer(pod.Name, fuseContainer.Name, pod.Namespace, cmd)
+	stdout, stderr, err := kubeclient.ExecCommandInContainerWithContext(context.TODO(), pod.Name, fuseContainer.Name, pod.Namespace, cmd)
 	if err != nil {
 		i.Log.Info("exec output", "stdout", stdout, "stderr", stderr)
 		if strings.Contains(stderr, "not mounted") {

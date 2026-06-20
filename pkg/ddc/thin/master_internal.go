@@ -132,7 +132,7 @@ func (t *ThinEngine) ifRuntimeHelmValueEnable() bool {
 	if err != nil {
 		return true
 	}
-	return enableRuntimeHelmValueConfig
+	return !enableRuntimeHelmValueConfig
 }
 
 func (t *ThinEngine) getHelmValuesConfigMapName() string {

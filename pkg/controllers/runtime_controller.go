@@ -157,10 +157,10 @@ func (r *RuntimeReconciler) ReconcileInternal(ctx cruntime.ReconcileRequestConte
 			return utils.RequeueAfterInterval(time.Duration(20 * time.Second))
 		}
 		// check reference dataset support
-		isSupport, reason := r.CheckIfReferenceDatasetIsSupported(ctx)
+		isSupport, err := r.CheckIfReferenceDatasetIsSupported(ctx)
 		if !isSupport {
-			ctx.Log.Info(reason, "dataset", dataset.Name)
-			r.Recorder.Eventf(runtime, corev1.EventTypeWarning, common.ErrorProcessRuntimeReason, reason)
+			ctx.Log.Info(err.Error(), "dataset", dataset.Name)
+			r.Recorder.Eventf(runtime, corev1.EventTypeWarning, common.ErrorProcessRuntimeReason, "fail to check runtime support for thin runtime, error: %s", err.Error())
 			return utils.RequeueAfterInterval(time.Duration(20 * time.Second))
 		}
 
@@ -187,7 +187,7 @@ func (r *RuntimeReconciler) ReconcileRuntimeDeletion(engine base.Engine, ctx cru
 	log.V(1).Info("process the Runtime Deletion", "Runtime", ctx.NamespacedName)
 
 	// 0. Delete the volume
-	err := engine.DeleteVolume()
+	err := engine.DeleteVolume(ctx)
 	if err != nil {
 		r.Recorder.Eventf(ctx.Runtime, corev1.EventTypeWarning, common.ErrorProcessRuntimeReason, "Failed to delete volume %v", err)
 		// return utils.RequeueIfError(errors.Wrap(err, "Failed to delete volume"))
@@ -288,7 +288,7 @@ func (r *RuntimeReconciler) ReconcileRuntime(engine base.Engine, ctx cruntime.Re
 	}
 
 	// 2.Setup the volume
-	err = engine.CreateVolume()
+	err = engine.CreateVolume(ctx)
 	if err != nil && utils.IgnoreAlreadyExists(err) != nil {
 		r.Recorder.Eventf(ctx.Runtime, corev1.EventTypeWarning, common.ErrorProcessRuntimeReason, "Failed to setup volume due to error %v", err)
 		log.Error(err, "Failed to setup the volume")
@@ -385,13 +385,20 @@ func (r *RuntimeReconciler) GetDataset(ctx cruntime.ReconcileRequestContext) (*d
 	return &dataset, nil
 }
 
-func (r *RuntimeReconciler) CheckIfReferenceDatasetIsSupported(ctx cruntime.ReconcileRequestContext) (bool, string) {
-	mounted := base.GetPhysicalDatasetFromMounts(ctx.Dataset.Spec.Mounts)
+func (r *RuntimeReconciler) CheckIfReferenceDatasetIsSupported(ctx cruntime.ReconcileRequestContext) (bool, error) {
+	physicalDatasets := base.GetPhysicalDatasetFromMounts(ctx.Dataset.Spec.Mounts)
 
-	if len(mounted) > 0 && ctx.RuntimeType != common.ThinRuntime {
-		return false, "dataset mounting another dataset can only use thin runtime"
+	// Step 1: If not a reference dataset, always support
+	if len(physicalDatasets) <= 0 {
+		return true, nil
 	}
-	return true, ""
+
+	// Step 2: Reference datasets can only use ThinRuntime
+	if ctx.RuntimeType != common.ThinRuntime {
+		return false, fmt.Errorf("dataset mounting another dataset can only use thin runtime")
+	}
+
+	return true, nil
 }
 
 func (r *RuntimeReconciler) ReportDatasetNotReadyCondition(ctx cruntime.ReconcileRequestContext, notReadyReason error) error {

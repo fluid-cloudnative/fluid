@@ -24,6 +24,15 @@ import (
 	units "github.com/docker/go-units"
 )
 
+// CachedState retrieves the current cached capacity from the Alluxio cluster.
+// It executes the "alluxio fsadmin report" command to obtain the cluster's
+// storage report, parses the output to locate the "Used Capacity:" field, and
+// converts the value to bytes.
+//
+// Returns:
+//   - cached (int64): The cached capacity in bytes parsed from the Alluxio report.
+//   - err (error): An error if the command execution fails, the output cannot
+//     be parsed, or the "Used Capacity:" field is missing.
 func (a AlluxioFileUtils) CachedState() (cached int64, err error) {
 	var (
 		command = []string{"alluxio", "fsadmin", "report"}
@@ -37,6 +46,7 @@ func (a AlluxioFileUtils) CachedState() (cached int64, err error) {
 		err = fmt.Errorf("execute command %v with expectedErr: %v stdout %s and stderr %s", command, err, stdout, stderr)
 		return
 	}
+
 	str := strings.Split(stdout, "\n")
 
 	for _, s := range str {

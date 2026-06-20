@@ -198,7 +198,7 @@ type MetadataSyncPolicy struct {
 }
 
 func (msb *MetadataSyncPolicy) AutoSyncEnabled() bool {
-	return msb.AutoSync == nil || *msb.AutoSync
+	return msb == nil || msb.AutoSync == nil || *msb.AutoSync
 }
 
 // VersionSpec represents the settings for the  version that fluid is orchestrating.
@@ -317,4 +317,9 @@ type ClientMetrics struct {
 	// It is a list separated by comma where supported items are [MountPod, Sidecar, All (indicates MountPod and Sidecar), None].
 	// Defaults to None when it is not explicitly set.
 	ScrapeTarget string `json:"scrapeTarget,omitempty"`
+}
+
+type CacheRuntimeMountUfsOutput struct {
+	// Mounted are the ufs paths that have been mounted.
+	Mounted []string `json:"mounted,omitempty"`
 }

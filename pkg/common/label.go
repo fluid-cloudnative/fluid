@@ -32,7 +32,8 @@ const (
 
 	// The dataset annotation
 	// i.e. fluid.io/dataset
-	LabelAnnotationDataset = LabelAnnotationPrefix + "dataset"
+	LabelAnnotationDataset          = LabelAnnotationPrefix + "dataset"
+	LabelAnnotationDatasetPlacement = LabelAnnotationPrefix + "dataset-placement"
 
 	// LabelAnnotationDatasetId indicates the uuid of the dataset
 	// i.e. fluid.io/dataset-uuid
@@ -76,6 +77,11 @@ const (
 	//   	"MountPod": for only mountPod to skip check mount ready,
 	//   	"Sidecar": for only sidecar to skip check mount ready,
 	AnnotationSkipCheckMountReadyTarget = LabelAnnotationPrefix + "skip-check-mount-ready-target"
+
+	// AnnotationCheckMountScriptSHA256 is an annotation key on the check-mount ConfigMap that stores
+	// the SHA256 (first 63 chars) of the script content, used to detect script updates.
+	// i.e. fluid.io/check-mount-script-sha256
+	AnnotationCheckMountScriptSHA256 = LabelAnnotationPrefix + "check-mount-script-sha256"
 
 	// AnnotationDisableRuntimeHelmValueConfig is a runtime label indicates the configmap contains helm value will not be created in setup.
 	AnnotationDisableRuntimeHelmValueConfig = "runtime." + LabelAnnotationPrefix + "disable-helm-value-config"
@@ -139,6 +145,15 @@ const (
 
 	// UpdateLabel means updating the label value of the specific node.
 	UpdateLabel OperationType = "UpdateValue"
+)
+
+// label and annotations for cacheRuntime
+const (
+	CacheRuntimeLabelAnnotationPrefix = "cacheruntime." + LabelAnnotationPrefix
+
+	LabelCacheRuntimeName = CacheRuntimeLabelAnnotationPrefix + "name"
+
+	LabelCacheRuntimeComponentName = CacheRuntimeLabelAnnotationPrefix + "component-name"
 )
 
 // LabelToModify modifies the labelKey in operationType.

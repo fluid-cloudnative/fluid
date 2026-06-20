@@ -27,7 +27,6 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/alluxio"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/efc"
-	"github.com/fluid-cloudnative/fluid/pkg/ddc/goosefs"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/jindofsx"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/juicefs"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/thin"
@@ -42,21 +41,35 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-const controllerNamespace = common.NamespaceFluidSystem
+const (
+	controllerNamespace  = common.NamespaceFluidSystem
+	customControllerName = "custom-controller"
+)
 
 var _ = Describe("runtime controller scaleout", func() {
 	var originalPodNamespace string
 	var hadOriginalPodNamespace bool
 	var originalResolveDefaultPrecheckFuncs func() map[string]CheckFunc
+	var originalCachedPrecheckFuncs map[string]CheckFunc
+	var originalPrecheckFuncs map[string]CheckFunc
 
 	BeforeEach(func() {
 		originalPodNamespace, hadOriginalPodNamespace = os.LookupEnv(common.MyPodNamespace)
+
+		precheckFuncsMu.Lock()
 		originalResolveDefaultPrecheckFuncs = resolveDefaultPrecheckFuncs
+		originalCachedPrecheckFuncs = clonePrecheckFuncs(cachedPrecheckFuncs)
+		originalPrecheckFuncs = clonePrecheckFuncs(precheckFuncs)
+		precheckFuncsMu.Unlock()
 	})
 
 	AfterEach(func() {
-		setPrecheckFunc(nil)
+		precheckFuncsMu.Lock()
 		resolveDefaultPrecheckFuncs = originalResolveDefaultPrecheckFuncs
+		cachedPrecheckFuncs = clonePrecheckFuncs(originalCachedPrecheckFuncs)
+		precheckFuncs = clonePrecheckFuncs(originalPrecheckFuncs)
+		precheckFuncsMu.Unlock()
+
 		restoreEnv(common.MyPodNamespace, originalPodNamespace, hadOriginalPodNamespace)
 	})
 
@@ -94,8 +107,6 @@ var _ = Describe("runtime controller scaleout", func() {
 			},
 			Entry("defaults zero replicas to one when no annotation exists",
 				newDeployment("unknown-controller", 0, nil), true, int32(1)),
-			Entry("uses the configured replica annotation when it is greater than one",
-				newDeployment("goosefsruntime-controller", 0, map[string]string{common.RuntimeControllerReplicas: "3"}), true, int32(3)),
 			Entry("enforces a minimum of one replica when annotation is zero",
 				newDeployment("juicefsruntime-controller", 0, map[string]string{common.RuntimeControllerReplicas: "0"}), true, int32(1)),
 			Entry("leaves already running controllers unchanged",
@@ -164,10 +175,49 @@ var _ = Describe("runtime controller scaleout", func() {
 			Expect(*stored.Spec.Replicas).To(Equal(int32(1)))
 		})
 
-		It("keeps package-global precheck functions isolated between tests", func() {
+		It("uses injected precheck funcs without resolving defaults", func() {
+			fakeClient := newFakeClient(newDeployment(customControllerName, 0, nil))
+
+			resolverCalls := 0
+			precheckCalls := 0
+
+			precheckFuncsMu.Lock()
+			resolveDefaultPrecheckFuncs = func() map[string]CheckFunc {
+				resolverCalls++
+				return map[string]CheckFunc{}
+			}
+			precheckFuncsMu.Unlock()
+
+			setPrecheckFunc(map[string]CheckFunc{
+				customControllerName: func(client.Client, types.NamespacedName) (bool, error) {
+					precheckCalls++
+					return true, nil
+				},
+			})
+
+			controllerName, scaled, err := ScaleoutRuntimeControllerOnDemand(fakeClient, types.NamespacedName{
+				Namespace: corev1.NamespaceDefault,
+				Name:      "dataset",
+			}, fake.NullLogger())
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(controllerName).To(Equal(customControllerName))
+			Expect(scaled).To(BeTrue())
+			Expect(resolverCalls).To(Equal(0))
+			Expect(precheckCalls).To(Equal(1))
+
+			stored := &appsv1.Deployment{}
+			Expect(fakeClient.Get(context.TODO(), types.NamespacedName{
+				Namespace: controllerNamespace,
+				Name:      customControllerName,
+			}, stored)).To(Succeed())
+			Expect(*stored.Spec.Replicas).To(Equal(int32(1)))
+		})
+
+		It("returns a not found error when an injected controller has no deployment", func() {
 			fakeClient := newFakeClient(controllerDeployments()...)
 			setPrecheckFunc(map[string]CheckFunc{
-				"custom-controller": func(client.Client, types.NamespacedName) (bool, error) {
+				customControllerName: func(client.Client, types.NamespacedName) (bool, error) {
 					return true, nil
 				},
 			})
@@ -178,7 +228,8 @@ var _ = Describe("runtime controller scaleout", func() {
 			}, fake.NullLogger())
 
 			Expect(err).To(HaveOccurred())
-			Expect(err).To(MatchError(ContainSubstring("custom-controller")))
+			Expect(err).To(MatchError(ContainSubstring(customControllerName)))
+			Expect(err).To(MatchError(ContainSubstring("not found")))
 			Expect(controllerName).To(BeEmpty())
 			Expect(scaled).To(BeFalse())
 		})
@@ -203,7 +254,36 @@ var _ = Describe("runtime controller scaleout", func() {
 			Expect(getPrecheckFuncs()).To(HaveKey("alluxioruntime-controller"))
 		})
 
-		It("does not pin discovery-filtered defaults into package-global state", func() {
+		It("resolves defaults lazily and caches the result", func() {
+			const lazyControllerName = "lazy-controller"
+
+			calls := 0
+			check := func(client.Client, types.NamespacedName) (bool, error) {
+				return false, nil
+			}
+
+			precheckFuncsMu.Lock()
+			cachedPrecheckFuncs = nil
+			precheckFuncs = nil
+			resolveDefaultPrecheckFuncs = func() map[string]CheckFunc {
+				calls++
+				return map[string]CheckFunc{lazyControllerName: check}
+			}
+			precheckFuncsMu.Unlock()
+
+			checks := getPrecheckFuncs()
+			Expect(calls).To(Equal(1))
+			Expect(checks[lazyControllerName]).NotTo(BeNil())
+
+			checksAgain := getPrecheckFuncs()
+			Expect(calls).To(Equal(1))
+			Expect(checksAgain[lazyControllerName]).NotTo(BeNil())
+
+			delete(checks, lazyControllerName)
+			Expect(getPrecheckFuncs()[lazyControllerName]).NotTo(BeNil())
+		})
+
+		It("does not pin resolved defaults into package-global state", func() {
 			resolveDefaultPrecheckFuncs = func() map[string]CheckFunc {
 				return runtimePrecheckFuncs()
 			}
@@ -242,7 +322,6 @@ func controllerDeployments() []runtime.Object {
 		newDeployment("alluxioruntime-controller", 0, nil),
 		newDeployment("jindoruntime-controller", 1, nil),
 		newDeployment("juicefsruntime-controller", 0, map[string]string{common.RuntimeControllerReplicas: "0"}),
-		newDeployment("goosefsruntime-controller", 0, map[string]string{common.RuntimeControllerReplicas: "3"}),
 		newDeployment("unknown-controller", 0, nil),
 	}
 }
@@ -250,7 +329,6 @@ func controllerDeployments() []runtime.Object {
 func runtimeObjects() []runtime.Object {
 	return []runtime.Object{
 		&datav1alpha1.AlluxioRuntime{ObjectMeta: metav1.ObjectMeta{Name: "alluxio", Namespace: corev1.NamespaceDefault}},
-		&datav1alpha1.GooseFSRuntime{ObjectMeta: metav1.ObjectMeta{Name: "goosefs", Namespace: corev1.NamespaceDefault}},
 		&datav1alpha1.JindoRuntime{ObjectMeta: metav1.ObjectMeta{Name: "jindo", Namespace: corev1.NamespaceDefault}},
 		&datav1alpha1.JuiceFSRuntime{ObjectMeta: metav1.ObjectMeta{Name: "juicefs", Namespace: corev1.NamespaceDefault}},
 	}
@@ -261,7 +339,6 @@ func runtimePrecheckFuncs() map[string]CheckFunc {
 		"alluxioruntime-controller":  alluxio.Precheck,
 		"jindoruntime-controller":    jindofsx.Precheck,
 		"juicefsruntime-controller":  juicefs.Precheck,
-		"goosefsruntime-controller":  goosefs.Precheck,
 		"thinruntime-controller":     thin.Precheck,
 		"efcruntime-controller":      efc.Precheck,
 		"vineyardruntime-controller": vineyard.Precheck,

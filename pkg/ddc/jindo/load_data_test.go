@@ -17,7 +17,6 @@ limitations under the License.
 package jindo
 
 import (
-	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -29,9 +28,9 @@ import (
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	cdataload "github.com/fluid-cloudnative/fluid/pkg/dataload"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/jindo/operations"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -670,27 +669,22 @@ func TestGenerateDataLoadValueFileWithRuntimeHDD(t *testing.T) {
 // TestCheckRuntimeReady tests the CheckRuntimeReady function of the JindoEngine.
 // It verifies the behavior of the function by mocking the execution of commands in a Kubernetes container
 func TestCheckRuntimeReady(t *testing.T) {
-	mockExecCommon := func(podName string, containerName string, namespace string, cmd []string) (stdout string, stderr string, e error) {
-		return "", "", nil
-	}
-	mockExecErr := func(podName string, containerName string, namespace string, cmd []string) (stdout string, stderr string, e error) {
-		return "err", "", errors.New("error")
-	}
-
 	engine := JindoEngine{
 		namespace: "fluid",
 		name:      "hbase",
 		Log:       fake.NullLogger(),
 	}
 
-	patches := gomonkey.ApplyFunc(kubeclient.ExecCommandInContainer, mockExecCommon)
-	defer patches.Reset()
+	ready := true
+	patch := gomonkey.ApplyMethod(reflect.TypeOf(operations.JindoFileUtils{}), "Ready", func(_ operations.JindoFileUtils) bool {
+		return ready
+	})
+	defer patch.Reset()
 	if ready := engine.CheckRuntimeReady(); ready != true {
 		fmt.Println(ready)
 		t.Errorf("fail to exec the function CheckRuntimeReady")
 	}
-
-	patches.ApplyFunc(kubeclient.ExecCommandInContainer, mockExecErr)
+	ready = false
 	if ready := engine.CheckRuntimeReady(); ready != false {
 		fmt.Println(ready)
 		t.Errorf("fail to exec the function CheckRuntimeReady")

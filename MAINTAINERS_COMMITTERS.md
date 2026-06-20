@@ -6,7 +6,7 @@ This file lists the maintainers and committers of the Fluid project. More descri
 | Name | GitHub ID | Affiliation |
 | ---- | --------- | ----------- |
 | [Rong Gu](mailto:gurong@nju.edu.cn) | [RongGu](https://github.com/RongGu) | Nanjing University |
-| [Yang Che](mailto:cheyagn52@gmail.com) | [cheyang](https://github.com/cheyang) | Alibaba |
+| [Yang Che](mailto:cheyang52@gmail.com) | [cheyang](https://github.com/cheyang) | Alibaba |
 | [Bin Fan](mailto:binfan@alluxio.com) | [apc999](https://github.com/apc999) | Alluxio |
 | [Zhihao Xu](mailto:trafalgarz@outlook.com) | [TrafalgarZZZ](https://github.com/TrafalgarZZZ) | Nanjing University |
 | [Kai Zhang](mailto:wsxiaozhang@gmail.com) | [wsxiaozhang](https://github.com/wsxiaozhang) | Alibaba |

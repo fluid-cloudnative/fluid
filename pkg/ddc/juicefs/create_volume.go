@@ -17,11 +17,12 @@ limitations under the License.
 package juicefs
 
 import (
+	"context"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	volumehelper "github.com/fluid-cloudnative/fluid/pkg/utils/dataset/volume"
 )
 
-func (j *JuiceFSEngine) CreateVolume() (err error) {
+func (j *JuiceFSEngine) CreateVolume(ctx context.Context) (err error) {
 	if j.runtime == nil {
 		j.runtime, err = j.getRuntime()
 		if err != nil {
@@ -29,12 +30,12 @@ func (j *JuiceFSEngine) CreateVolume() (err error) {
 		}
 	}
 
-	err = j.createFusePersistentVolume()
+	err = j.createFusePersistentVolume(ctx)
 	if err != nil {
 		return err
 	}
 
-	err = j.createFusePersistentVolumeClaim()
+	err = j.createFusePersistentVolumeClaim(ctx)
 	if err != nil {
 		return err
 	}
@@ -42,13 +43,13 @@ func (j *JuiceFSEngine) CreateVolume() (err error) {
 }
 
 // createFusePersistentVolume
-func (j *JuiceFSEngine) createFusePersistentVolume() (err error) {
+func (j *JuiceFSEngine) createFusePersistentVolume(ctx context.Context) (err error) {
 	runtimeInfo, err := j.getRuntimeInfo()
 	if err != nil {
 		return err
 	}
 
-	return volumehelper.CreatePersistentVolumeForRuntime(j.Client,
+	return volumehelper.CreatePersistentVolumeForRuntime(ctx, j.Client,
 		runtimeInfo,
 		j.getMountPoint(),
 		common.JuiceFSMountType,
@@ -56,11 +57,11 @@ func (j *JuiceFSEngine) createFusePersistentVolume() (err error) {
 }
 
 // createFusePersistentVolume
-func (j *JuiceFSEngine) createFusePersistentVolumeClaim() (err error) {
+func (j *JuiceFSEngine) createFusePersistentVolumeClaim(ctx context.Context) (err error) {
 	runtimeInfo, err := j.getRuntimeInfo()
 	if err != nil {
 		return err
 	}
 
-	return volumehelper.CreatePersistentVolumeClaimForRuntime(j.Client, runtimeInfo, j.Log)
+	return volumehelper.CreatePersistentVolumeClaimForRuntime(ctx, j.Client, runtimeInfo, j.Log)
 }

@@ -318,6 +318,7 @@ var _ = Describe("Application Injector Related Tests", Label("pkg.application.in
 			for _, dataset := range testCtx.datasets {
 				info, err := base.BuildRuntimeInfo(dataset.Name, dataset.Namespace, common.ThinRuntime)
 				info.SetAPIReader(client)
+				info.SetFuseName(dataset.Name + "-fuse")
 				Expect(err).NotTo(HaveOccurred())
 				runtimeInfos[dataset.Name] = info
 			}
@@ -346,6 +347,7 @@ var _ = Describe("Application Injector Related Tests", Label("pkg.application.in
 				for _, dataset := range testCtx.datasets {
 					info, err := base.BuildRuntimeInfo(dataset.Name, dataset.Namespace, common.ThinRuntime)
 					info.SetAPIReader(client)
+					info.SetFuseName(dataset.Name + "-fuse")
 					Expect(err).NotTo(HaveOccurred())
 					runtimeInfos[dataset.Name] = info
 				}
@@ -372,6 +374,7 @@ var _ = Describe("Application Injector Related Tests", Label("pkg.application.in
 				for _, dataset := range testCtx.datasets {
 					info, err := base.BuildRuntimeInfo(dataset.Name, dataset.Namespace, common.ThinRuntime)
 					info.SetAPIReader(client)
+					info.SetFuseName(dataset.Name + "-fuse")
 					Expect(err).NotTo(HaveOccurred())
 					runtimeInfos[dataset.Name] = info
 				}
@@ -403,6 +406,7 @@ var _ = Describe("Application Injector Related Tests", Label("pkg.application.in
 				for _, dataset := range testCtx.datasets {
 					info, err := base.BuildRuntimeInfo(dataset.Name, dataset.Namespace, common.ThinRuntime)
 					info.SetAPIReader(client)
+					info.SetFuseName(dataset.Name + "-fuse")
 					Expect(err).NotTo(HaveOccurred())
 					runtimeInfos[dataset.Name] = info
 				}
@@ -442,6 +446,7 @@ var _ = Describe("Application Injector Related Tests", Label("pkg.application.in
 				for _, dataset := range testCtx.datasets {
 					info, err := base.BuildRuntimeInfo(dataset.Name, dataset.Namespace, common.ThinRuntime)
 					info.SetAPIReader(client)
+					info.SetFuseName(dataset.Name + "-fuse")
 					Expect(err).NotTo(HaveOccurred())
 					runtimeInfos[dataset.Name] = info
 				}
@@ -488,6 +493,7 @@ var _ = Describe("Application Injector Related Tests", Label("pkg.application.in
 				for _, dataset := range testCtx.datasets {
 					info, err := base.BuildRuntimeInfo(dataset.Name, dataset.Namespace, common.ThinRuntime)
 					info.SetAPIReader(client)
+					info.SetFuseName(dataset.Name + "-fuse")
 					Expect(err).NotTo(HaveOccurred())
 					runtimeInfos[dataset.Name] = info
 				}
@@ -522,6 +528,7 @@ var _ = Describe("Application Injector Related Tests", Label("pkg.application.in
 			for _, dataset := range testCtx.datasets {
 				info, err := base.BuildRuntimeInfo(dataset.Name, dataset.Namespace, common.ThinRuntime)
 				info.SetAPIReader(client)
+				info.SetFuseName(dataset.Name + "-fuse")
 				Expect(err).NotTo(HaveOccurred())
 				runtimeInfos[dataset.Name] = info
 			}
@@ -617,6 +624,7 @@ var _ = Describe("Application Injector Related Tests", Label("pkg.application.in
 			info, err := base.BuildRuntimeInfo(testCtx.datasets[1].Name, testCtx.datasets[1].Namespace, common.ThinRuntime)
 			Expect(err).NotTo(HaveOccurred())
 			info.SetAPIReader(client)
+			info.SetFuseName(testCtx.datasets[1].Name + "-fuse")
 			runtimeInfos[testCtx.datasets[1].Name] = info
 			out, err := injector.InjectPod(testCtx.in, runtimeInfos)
 
@@ -676,6 +684,7 @@ var _ = Describe("Application Injector Related Tests", Label("pkg.application.in
 					}))
 					Expect(err).NotTo(HaveOccurred())
 					info.SetAPIReader(client)
+					info.SetFuseName(dataset.Name + "-fuse")
 					runtimeInfos[dataset.Name] = info
 				}
 
@@ -719,6 +728,7 @@ var _ = Describe("Application Injector Related Tests", Label("pkg.application.in
 					}))
 					Expect(err).NotTo(HaveOccurred())
 					info.SetAPIReader(client)
+					info.SetFuseName(dataset.Name + "-fuse")
 					runtimeInfos[dataset.Name] = info
 				}
 
@@ -763,6 +773,7 @@ var _ = Describe("Application Injector Related Tests", Label("pkg.application.in
 					}))
 					Expect(err).NotTo(HaveOccurred())
 					info.SetAPIReader(client)
+					info.SetFuseName(dataset.Name + "-fuse")
 					runtimeInfos[dataset.Name] = info
 				}
 

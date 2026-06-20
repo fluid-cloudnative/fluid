@@ -6,7 +6,9 @@
 *.so
 *.dylib
 *.jar
-bin
+/bin/*
+!/bin/helm/
+!/bin/helm/**
 
 # Test binary, build with `go test -c`
 *.test

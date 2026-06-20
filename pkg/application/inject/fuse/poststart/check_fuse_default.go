@@ -102,6 +102,14 @@ log "succeed in checking mount point $ConditionPathIsMountPoint after $count att
 `
 )
 
+// defaultPrivilegedSidecarScriptSHA256 stores the SHA256 (first 63 chars) of the privileged
+// sidecar script content, computed once at package initialization.
+var defaultPrivilegedSidecarScriptSHA256 string
+
+func init() {
+	defaultPrivilegedSidecarScriptSHA256 = computeScriptSHA256(replacer.Replace(contentPrivilegedSidecar))
+}
+
 // DefaultMountCheckScriptGenerator is a generator to render resources and specs related to post start mount-check script for the DefaultMutator
 type defaultPostStartScriptGenerator struct {
 	scriptGeneratorHelper
@@ -114,6 +122,7 @@ func NewDefaultPostStartScriptGenerator() *defaultPostStartScriptGenerator {
 			scriptFileName:  "check-mount.sh",
 			scriptMountPath: "/check-mount.sh",
 			scriptContent:   replacer.Replace(contentPrivilegedSidecar),
+			scriptSHA256:    defaultPrivilegedSidecarScriptSHA256,
 		},
 	}
 }

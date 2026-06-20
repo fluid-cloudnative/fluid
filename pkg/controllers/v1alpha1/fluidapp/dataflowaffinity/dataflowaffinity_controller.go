@@ -76,7 +76,7 @@ func (f *DataOpJobReconciler) Reconcile(ctx context.Context, request reconcile.R
 		Log:            f.Log.WithValues("namespacedName", request.NamespacedName),
 		NamespacedName: request.NamespacedName,
 	}
-	job, err := kubeclient.GetJob(f.Client, request.Name, request.Namespace)
+	job, err := kubeclient.GetJobWithContext(ctx, f.Client, request.Name, request.Namespace)
 	if err != nil {
 		requestCtx.Log.Error(err, "fetch job error")
 		return utils.RequeueIfError(err)
@@ -106,7 +106,7 @@ func (f *DataOpJobReconciler) Reconcile(ctx context.Context, request reconcile.R
 	// get job' status, if succeed, add label to job.
 	condition := kubeclient.GetFinishedJobCondition(job)
 	if condition != nil && condition.Type == batchv1.JobComplete {
-		err = f.injectPodNodeLabelsToJob(job)
+		err = f.injectPodNodeLabelsToJob(ctx, job)
 		if err != nil {
 			requestCtx.Log.Error(err, "update labels for job failed")
 			return utils.RequeueIfError(err)
@@ -120,8 +120,8 @@ func (f *DataOpJobReconciler) SetupWithManager(mgr ctrl.Manager, options control
 	return watch.SetupDataOpJobWatcherWithReconciler(mgr, options, f)
 }
 
-func (f *DataOpJobReconciler) injectPodNodeLabelsToJob(job *batchv1.Job) error {
-	pod, err := kubeclient.GetSucceedPodForJob(f.Client, job)
+func (f *DataOpJobReconciler) injectPodNodeLabelsToJob(ctx context.Context, job *batchv1.Job) error {
+	pod, err := kubeclient.GetSucceedPodForJobWithContext(ctx, f.Client, job)
 	if err != nil {
 		return err
 	}
@@ -134,9 +134,9 @@ func (f *DataOpJobReconciler) injectPodNodeLabelsToJob(job *batchv1.Job) error {
 		return fmt.Errorf("succeed job has no node name, podNamespace: %s, podName: %s", pod.Namespace, pod.Name)
 	}
 
-	node, err := kubeclient.GetNode(f.Client, nodeName)
+	node, err := kubeclient.GetNodeWithContext(ctx, f.Client, nodeName)
 	if err != nil {
-		return fmt.Errorf("error to get node %s: %v", nodeName, err)
+		return fmt.Errorf("error to get node %s: %w", nodeName, err)
 	}
 
 	annotationsToInject := map[string]string{}
@@ -159,7 +159,7 @@ func (f *DataOpJobReconciler) injectPodNodeLabelsToJob(job *batchv1.Job) error {
 		}
 	}
 
-	if err = f.Client.Update(context.TODO(), job); err != nil {
+	if err = f.Client.Update(ctx, job); err != nil {
 		return err
 	}
 

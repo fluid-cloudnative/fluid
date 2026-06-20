@@ -38,6 +38,9 @@ const (
 	testDatasetNamespace = "default"
 )
 
+// TestGenerateDataBackupValueFile is a table-driven test that verifies AlluxioEngine.generateDataBackupValueFile
+// generates a valid backup value file for well-formed DataBackup objects. It covers the default user
+// configuration and the RunAs UID/GID configuration scenarios.
 func TestGenerateDataBackupValueFile(t *testing.T) {
 	testCases := []struct {
 		name             string

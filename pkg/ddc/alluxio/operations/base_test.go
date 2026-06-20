@@ -84,6 +84,17 @@ func TestLoadMetaData(t *testing.T) {
 	}
 }
 
+// TestAlluxioFileUtils_Du tests the Du method of AlluxioFileUtils.
+// It verifies the method's ability to parse the output of the alluxio fs du command
+// and handle various error scenarios such as execution errors, too many lines,
+// data number mismatches, and parse errors.
+//
+// Test cases:
+// - EXEC_ERR: Tests handling of command execution errors.
+// - TOO_MANY_LINES: Tests handling of output with too many lines.
+// - DATA_NUM: Tests handling of mismatched data numbers.
+// - PARSE_ERR: Tests handling of parse errors.
+// - FINE: Tests successful parsing of du output.
 func TestAlluxioFileUtils_Du(t *testing.T) {
 	out1, out2, out3 := 111, 222, "%233"
 	mockExec := func(ctx context.Context, p1, p2, p3 string, p4 []string) (stdout string, stderr string, e error) {
@@ -154,6 +165,8 @@ func TestAlluxioFileUtils_ReportSummary(t *testing.T) {
 	}
 }
 
+// TestAlluxioFileUtils_LoadMetadataWithoutTimeout tests LoadMetadataWithoutTimeout
+// by mocking the internal exec behavior to cover both failure and success cases.
 func TestAlluxioFileUtils_LoadMetadataWithoutTimeout(t *testing.T) {
 	ExecWithoutTimeoutCommon := func(a AlluxioFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
 		return "Alluxio cluster summary", "", nil
@@ -178,6 +191,9 @@ func TestAlluxioFileUtils_LoadMetadataWithoutTimeout(t *testing.T) {
 	}
 }
 
+// TestAlluxioFileUtils_LoadMetaData tests the AlluxioFileUtils.LoadMetaData method
+// for both failure and success cases by mocking the internal exec command.
+// It accepts a *testing.T and has no return value.
 func TestAlluxioFileUtils_LoadMetaData(t *testing.T) {
 	ExecCommon := func(a AlluxioFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
 		return "Alluxio cluster summary", "", nil
@@ -204,6 +220,9 @@ func TestAlluxioFileUtils_LoadMetaData(t *testing.T) {
 	}
 }
 
+// TestAlluxioFileUtils_QueryMetaDataInfoIntoFile tests the QueryMetaDataInfoIntoFile method.
+// It uses gomonkey to mock the internal exec method, verifying that an error is returned when exec fails
+// and that no error occurs when exec succeeds. The test covers all defined KeyOfMetaDataFile types.
 func TestAlluxioFileUtils_QueryMetaDataInfoIntoFile(t *testing.T) {
 	ExecCommon := func(a AlluxioFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
 		return "Alluxio cluster summary", "", nil
@@ -236,6 +255,9 @@ func TestAlluxioFileUtils_QueryMetaDataInfoIntoFile(t *testing.T) {
 	}
 }
 
+// TestAlluxioFIleUtils_MKdir verifies AlluxioFileUtils.Mkdir by stubbing the private exec method with gomonkey:
+// when exec returns an error, Mkdir should return a non-nil error; when exec succeeds, Mkdir should return nil.
+// patches.Reset in defer restores the original behavior after the test.
 func TestAlluxioFIleUtils_MKdir(t *testing.T) {
 	ExecCommon := func(a AlluxioFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
 		return "alluxio mkdir success", "", nil
@@ -261,6 +283,12 @@ func TestAlluxioFIleUtils_MKdir(t *testing.T) {
 	}
 }
 
+// TestAlluxioFIleUtils_Mount verifies that AlluxioFileUtils.Mount returns the expected result
+// when mounting an Alluxio path to a UFS path with different read-only and shared flag combinations.
+// Parameters:
+// - t (*testing.T): The testing object used to report test failures.
+// Returns:
+// - None: This test reports failures through the testing object.
 func TestAlluxioFIleUtils_Mount(t *testing.T) {
 	ExecCommon := func(a AlluxioFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
 		return "alluxio mkdir success", "", nil
@@ -363,6 +391,19 @@ func TestAlluxioFileUtils_IsMounted(t *testing.T) {
 	}
 }
 
+// TestAlluxioFileUtils_FindUnmountedAlluxioPaths tests the FindUnmountedAlluxioPaths method
+// of AlluxioFileUtils. It mocks the internal exec command to simulate the output of
+// `alluxio fs mount` and verifies that paths not currently mounted are correctly
+// identified from the given alluxioPaths slice.
+//
+// Test cases cover:
+// - all provided paths are already mounted (expect empty result)
+// - a mix of mounted and unmounted paths (expect only unmounted ones)
+// - an empty input slice (expect empty result)
+// - all provided paths are unmounted (expect all paths returned)
+//
+// Parameters:
+// - t (*testing.T): the test context used for reporting failures.
 func TestAlluxioFileUtils_FindUnmountedAlluxioPaths(t *testing.T) {
 	const returnMessage = `s3://bucket/path/train on /cache (s3, capacity=-1B, used=-1B, not read-only, not shared, properties={alluxio.underfs.s3.inherit.acl=false, alluxio.underfs.s3.endpoint=s3endpoint, aws.secretKey=, aws.accessKeyId=})
 /underFSStorage on / (local, capacity=0B, used=0B, not read-only, not shared, properties={})`
@@ -411,6 +452,10 @@ func TestAlluxioFileUtils_FindUnmountedAlluxioPaths(t *testing.T) {
 	}
 }
 
+// TestAlluxioFileUtils_Ready verifies the Ready behavior of AlluxioFileUtils under
+// both failure and success conditions by mocking the internal exec command.
+// It confirms that Ready returns false when the readiness probe fails and true
+// when the probe returns a valid Alluxio cluster summary.
 func TestAlluxioFileUtils_Ready(t *testing.T) {
 	ExecCommon := func(a AlluxioFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
 		return "Alluxio cluster summary: ", "", nil
@@ -466,6 +511,18 @@ func TestAlluxioFIleUtils_Du(t *testing.T) {
 	}
 }
 
+// TestAlluxioFileUtils_Count tests the Count method of AlluxioFileUtils.
+// This function verifies the Count method's ability to parse the output of the alluxio fs count command
+// and handle various error scenarios such as execution errors, negative results, too many lines,
+// data number mismatches, and parse errors.
+//
+// Test cases:
+// - EXEC_ERR: Tests handling of command execution errors.
+// - NEGATIVE_RES: Tests handling of negative result values.
+// - TOO_MANY_LINES: Tests handling of output with too many lines.
+// - DATA_NUM: Tests handling of mismatched data numbers.
+// - PARSE_ERR: Tests handling of parse errors.
+// - FINE: Tests successful parsing of count output.
 func TestAlluxioFileUtils_Count(t *testing.T) {
 	out1, out2, out3 := 111, 222, 333
 	mockExec := func(ctx context.Context, p1, p2, p3 string, p4 []string) (stdout string, stderr string, e error) {
@@ -566,6 +623,9 @@ func TestAlluxioFIleUtils_ReportMetrics(t *testing.T) {
 	}
 }
 
+// TestAlluxioFIleUtils_ReportCapacity tests the ReportCapacity method of AlluxioFileUtils.
+// This test verifies both the error handling when the underlying command execution fails
+// and the successful path when the command returns valid cluster capacity information.
 func TestAlluxioFIleUtils_ReportCapacity(t *testing.T) {
 	ExecCommon := func(a AlluxioFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
 		return "report [category] [category args]\nReport Alluxio running cluster information.\n", "", nil
@@ -642,6 +702,7 @@ func TestAlluxioFileUtils_MasterPodName(t *testing.T) {
 }
 
 func TestAlluxioFileUtils_ExecMountScripts(t *testing.T) {
+	// Mock exec to avoid invoking the mounted script during the unit test.
 	ExecCommon := func(command []string, verbose bool) (stdout string, stderr string, err error) {
 		return strings.Join(command, " "), "", nil
 	}
@@ -652,6 +713,7 @@ func TestAlluxioFileUtils_ExecMountScripts(t *testing.T) {
 	a := &AlluxioFileUtils{log: fake.NullLogger()}
 	patch1 := gomonkey.ApplyPrivateMethod(*a, "exec", ExecErr)
 
+	// ExecMountScripts should return the error reported by exec.
 	err := a.ExecMountScripts()
 	if err == nil {
 		t.Error("check failure, want err, got nil")
@@ -659,6 +721,7 @@ func TestAlluxioFileUtils_ExecMountScripts(t *testing.T) {
 	patch1.Reset()
 
 	patch2 := gomonkey.ApplyPrivateMethod(*a, "exec", ExecCommon)
+	// ExecMountScripts should complete without error when exec succeeds.
 	err = a.ExecMountScripts()
 	if err != nil {
 		t.Errorf("check failure, want nil, got err: %v", err)

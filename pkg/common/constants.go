@@ -43,6 +43,8 @@ const (
 	RuntimeDeprecated = "RuntimeDeprecated"
 
 	RuntimeWithSecretNotSupported = "RuntimeWithSecretNotSupported"
+
+	RuntimeMountUfsFailed = "RuntimeMountUfsFailed"
 )
 
 // Events related to all type of Data Operations

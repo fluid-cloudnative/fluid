@@ -14,11 +14,12 @@ limitations under the License.
 package vineyard
 
 import (
+	"context"
 	volumeHelper "github.com/fluid-cloudnative/fluid/pkg/utils/dataset/volume"
 )
 
-// DeleteVolume creates volume
-func (e *VineyardEngine) DeleteVolume() (err error) {
+// DeleteVolume deletes volume
+func (e *VineyardEngine) DeleteVolume(ctx context.Context) (err error) {
 
 	if e.runtime == nil {
 		e.runtime, err = e.getRuntime()
@@ -27,12 +28,12 @@ func (e *VineyardEngine) DeleteVolume() (err error) {
 		}
 	}
 
-	err = e.deleteFusePersistentVolumeClaim()
+	err = e.deleteFusePersistentVolumeClaim(ctx)
 	if err != nil {
 		return
 	}
 
-	err = e.deleteFusePersistentVolume()
+	err = e.deleteFusePersistentVolume(ctx)
 	if err != nil {
 		return
 	}
@@ -42,21 +43,21 @@ func (e *VineyardEngine) DeleteVolume() (err error) {
 }
 
 // deleteFusePersistentVolume
-func (e *VineyardEngine) deleteFusePersistentVolume() (err error) {
+func (e *VineyardEngine) deleteFusePersistentVolume(ctx context.Context) (err error) {
 	runtimeInfo, err := e.getRuntimeInfo()
 	if err != nil {
 		return err
 	}
 
-	return volumeHelper.DeleteFusePersistentVolume(e.Client, runtimeInfo, e.Log)
+	return volumeHelper.DeleteFusePersistentVolume(ctx, e.Client, runtimeInfo, e.Log)
 }
 
 // deleteFusePersistentVolume
-func (e *VineyardEngine) deleteFusePersistentVolumeClaim() (err error) {
+func (e *VineyardEngine) deleteFusePersistentVolumeClaim(ctx context.Context) (err error) {
 	runtimeInfo, err := e.getRuntimeInfo()
 	if err != nil {
 		return err
 	}
 
-	return volumeHelper.DeleteFusePersistentVolumeClaim(e.Client, runtimeInfo, e.Log)
+	return volumeHelper.DeleteFusePersistentVolumeClaim(ctx, e.Client, runtimeInfo, e.Log)
 }

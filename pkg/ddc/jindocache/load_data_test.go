@@ -17,7 +17,6 @@ limitations under the License.
 package jindocache
 
 import (
-	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -29,9 +28,9 @@ import (
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	cdataload "github.com/fluid-cloudnative/fluid/pkg/dataload"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/jindocache/operations"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -654,28 +653,23 @@ func TestGenerateDataLoadValueFileWithRuntimeHDD(t *testing.T) {
 }
 
 func TestCheckRuntimeReady(t *testing.T) {
-	mockExecCommon := func(podName string, containerName string, namespace string, cmd []string) (stdout string, stderr string, e error) {
-		return "", "", nil
-	}
-	mockExecErr := func(podName string, containerName string, namespace string, cmd []string) (stdout string, stderr string, e error) {
-		return "err", "", errors.New("error")
-	}
-
 	engine := JindoCacheEngine{
 		namespace: "fluid",
 		name:      "hbase",
 		Log:       fake.NullLogger(),
 	}
 
-	patches := gomonkey.ApplyFunc(kubeclient.ExecCommandInContainerWithTimeout, mockExecCommon)
-	defer patches.Reset()
+	ready := true
+	patch := gomonkey.ApplyMethod(reflect.TypeOf(operations.JindoFileUtils{}), "Ready", func(_ operations.JindoFileUtils) bool {
+		return ready
+	})
+	defer patch.Reset()
 
 	if ready := engine.CheckRuntimeReady(); ready != true {
 		fmt.Println(ready)
 		t.Errorf("fail to exec the function CheckRuntimeReady")
 	}
-
-	patches.ApplyFunc(kubeclient.ExecCommandInContainerWithTimeout, mockExecErr)
+	ready = false
 
 	if ready := engine.CheckRuntimeReady(); ready != false {
 		fmt.Println(ready)

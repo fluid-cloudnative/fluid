@@ -115,6 +115,10 @@ func (e *AlluxioEngine) PrepareUFS() (err error) {
 	return
 }
 
+// ShouldUpdateUFS determines whether the UFS configuration needs to be updated.
+// It retrieves the current dataset, analyzes the path differences to identify
+// which UFS entries require updates, and checks whether remounting is needed
+// for hostpath UFS mounts before returning the update result.
 func (e *AlluxioEngine) ShouldUpdateUFS() (ufsToUpdate *utils.UFSToUpdate) {
 	// 1. get the dataset
 	dataset, err := utils.GetDataset(e.Client, e.name, e.namespace)
@@ -133,6 +137,16 @@ func (e *AlluxioEngine) ShouldUpdateUFS() (ufsToUpdate *utils.UFSToUpdate) {
 	return
 }
 
+// UpdateOnUFSChange handles the updates when the Underlying File System (UFS) changes.
+// It checks if an update is required, sets the dataset status to Updating, and processes
+// the added or removed mount points for the Alluxio engine.
+//
+// Parameters:
+// - ufsToUpdate (*utils.UFSToUpdate): The object containing information about which UFS paths need to be updated.
+//
+// Returns:
+// - updateReady (bool): Returns true when the update process has completed.
+// - err (error): Returns an error if the status update or UFS processing fails, otherwise returns nil.
 func (e *AlluxioEngine) UpdateOnUFSChange(ufsToUpdate *utils.UFSToUpdate) (updateReady bool, err error) {
 	// 1. check if need to update ufs
 	if !ufsToUpdate.ShouldUpdate() {
@@ -205,6 +219,16 @@ func (e *AlluxioEngine) checkIfRemountRequired(ufsToUpdate *utils.UFSToUpdate) {
 	}
 }
 
+// ShouldSyncDatasetMounts checks whether the dataset mounts need to be synchronized in the AlluxioEngine.
+// This function is primarily responsible for determining if there are any changes to the dataset's mount points
+// that require synchronization with the underlying Alluxio runtime, such as new mounts, removed mounts, or updates
+// to existing mount configurations.
+//
+// Parameters:
+//
+// Returns:
+//   - should (bool): A boolean indicating whether a synchronization of dataset mounts is necessary.
+//   - err (error): Returns an error if the check process fails, otherwise returns nil.
 func (e *AlluxioEngine) ShouldSyncDatasetMounts() (should bool, err error) {
 	return false, nil
 }

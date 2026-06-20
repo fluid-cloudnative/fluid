@@ -37,6 +37,10 @@ import (
 	"k8s.io/client-go/util/retry"
 )
 
+// usedStorageBytesInternal returns the number of bytes currently used by Alluxio storage.
+// This method is intended for internal use by the AlluxioEngine.
+// It currently returns (0, nil) as a placeholder; the actual implementation should query
+// the Alluxio cluster to compute the used storage capacity.
 func (e *AlluxioEngine) usedStorageBytesInternal() (value int64, err error) {
 	return
 }
@@ -57,6 +61,9 @@ func (e *AlluxioEngine) totalStorageBytesInternal() (total int64, err error) {
 	return
 }
 
+// totalFileNumsInternal returns the total number of files managed by the Alluxio filesystem.
+// This method is intended for internal use by the AlluxioEngine.
+// It queries the Alluxio master pod to retrieve the file count across all mounted UFS paths.
 func (e *AlluxioEngine) totalFileNumsInternal() (fileCount int64, err error) {
 	podName, containerName := e.getMasterPodInfo()
 
@@ -188,6 +195,24 @@ func (e *AlluxioEngine) processUpdatingUFS(ufsToUpdate *utils.UFSToUpdate) (upda
 	return
 }
 
+// updatingUFSWithMountCommand updates the Alluxio UFS mount points based on the differences identified in ufsToUpdate.
+// It performs mount operations for new UFS paths specified in ufsToUpdate.ToAdd() and unmount operations for paths
+// listed in ufsToUpdate.ToRemove(). The function skips mount points using Fluid native schemes as they are not editable.
+// For each mount to be added, it merges dataset-level SharedOptions with mount-specific Options (with latter taking precedence),
+// then applies encryption configurations from both SharedEncryptOptions and mount-level EncryptOptions. Note that
+// any key conflicts in EncryptOptions will result in an error. The function first verifies that the Alluxio master is ready before executing any mount/unmount
+
+// commands via AlluxioFileUtils.
+//
+// Parameters:
+//   - dataset: the Dataset custom resource containing mount specifications and configuration options
+//   - ufsToUpdate: a utility struct holding lists of UFS paths to add or remove
+//
+// Returns:
+//   - updateReady: true if all mount/unmount operations completed successfully, false otherwise
+//   - err: any error encountered during readiness check, option processing, or mount/unmount execution
+//
+// Note: Mount operations are idempotent; however, concurrent modifications to the same Alluxio path may cause conflicts.
 func (e *AlluxioEngine) updatingUFSWithMountCommand(dataset *datav1alpha1.Dataset, ufsToUpdate *utils.UFSToUpdate) (updateReady bool, err error) {
 
 	podName, containerName := e.getMasterPodInfo()
@@ -431,6 +456,7 @@ func (e *AlluxioEngine) genEncryptOptions(EncryptOptions []datav1alpha1.EncryptO
 	return mOptions, nil
 }
 
+// updateMountTime updates the runtime status MountTime to the current time.
 func (e *AlluxioEngine) updateMountTime() {
 	err := retry.RetryOnConflict(retry.DefaultBackoff, func() error {
 		runtime, err := e.getRuntime()

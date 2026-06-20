@@ -21,6 +21,7 @@ limitations under the License.
 package base
 
 import (
+	context "context"
 	reflect "reflect"
 
 	dataoperation "github.com/fluid-cloudnative/fluid/pkg/dataoperation"
@@ -96,31 +97,31 @@ func (mr *MockEngineMockRecorder) CheckRuntimeReady() *gomock.Call {
 }
 
 // CreateVolume mocks base method.
-func (m *MockEngine) CreateVolume() error {
+func (m *MockEngine) CreateVolume(ctx context.Context) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreateVolume")
+	ret := m.ctrl.Call(m, "CreateVolume", ctx)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // CreateVolume indicates an expected call of CreateVolume.
-func (mr *MockEngineMockRecorder) CreateVolume() *gomock.Call {
+func (mr *MockEngineMockRecorder) CreateVolume(ctx interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateVolume", reflect.TypeOf((*MockEngine)(nil).CreateVolume))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateVolume", reflect.TypeOf((*MockEngine)(nil).CreateVolume), ctx)
 }
 
 // DeleteVolume mocks base method.
-func (m *MockEngine) DeleteVolume() error {
+func (m *MockEngine) DeleteVolume(ctx context.Context) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeleteVolume")
+	ret := m.ctrl.Call(m, "DeleteVolume", ctx)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // DeleteVolume indicates an expected call of DeleteVolume.
-func (mr *MockEngineMockRecorder) DeleteVolume() *gomock.Call {
+func (mr *MockEngineMockRecorder) DeleteVolume(ctx interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteVolume", reflect.TypeOf((*MockEngine)(nil).DeleteVolume))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteVolume", reflect.TypeOf((*MockEngine)(nil).DeleteVolume), ctx)
 }
 
 // ID mocks base method.
@@ -393,31 +394,31 @@ func (mr *MockImplementMockRecorder) GetDataOperationValueFile(ctx, operation in
 }
 
 // CreateVolume mocks base method.
-func (m *MockImplement) CreateVolume() error {
+func (m *MockImplement) CreateVolume(ctx context.Context) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreateVolume")
+	ret := m.ctrl.Call(m, "CreateVolume", ctx)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // CreateVolume indicates an expected call of CreateVolume.
-func (mr *MockImplementMockRecorder) CreateVolume() *gomock.Call {
+func (mr *MockImplementMockRecorder) CreateVolume(ctx interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateVolume", reflect.TypeOf((*MockImplement)(nil).CreateVolume))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateVolume", reflect.TypeOf((*MockImplement)(nil).CreateVolume), ctx)
 }
 
 // DeleteVolume mocks base method.
-func (m *MockImplement) DeleteVolume() error {
+func (m *MockImplement) DeleteVolume(ctx context.Context) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeleteVolume")
+	ret := m.ctrl.Call(m, "DeleteVolume", ctx)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // DeleteVolume indicates an expected call of DeleteVolume.
-func (mr *MockImplementMockRecorder) DeleteVolume() *gomock.Call {
+func (mr *MockImplementMockRecorder) DeleteVolume(ctx interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteVolume", reflect.TypeOf((*MockImplement)(nil).DeleteVolume))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteVolume", reflect.TypeOf((*MockImplement)(nil).DeleteVolume), ctx)
 }
 
 // FreeStorageBytes mocks base method.

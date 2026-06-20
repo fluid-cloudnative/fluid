@@ -60,21 +60,12 @@ type CacheRuntimeStatus struct {
 	// RuntimeComponentStatusCollection contains the status of runtime components (master, worker, client).
 	RuntimeComponentStatusCollection `json:",inline"`
 
-	// MountPoints represents the status of mount points specified in the bound dataset.
-	// Each entry tracks the mount configuration and the time of the last successful mount.
-	// +optional
-	MountPoints []MountPointStatus `json:"mountPoints,omitempty"`
-}
-
-// MountPointStatus describes the status of a single mount point in the dataset
-type MountPointStatus struct {
-	// Mount contains the mount point configuration from the bound dataset.
-	// This includes the remote path, mount options, and other mount-specific settings.
-	Mount `json:"mount,omitempty"`
+	// Mounts contains the mount point configurations from the bound dataset.
+	// Currently not used, may be used when integrating thin runtime.
+	Mounts []Mount `json:"mounts,omitempty"`
 
 	// MountTime is the timestamp of the last successful mount operation.
 	// If MountTime is earlier than the master component's start time, a remount will be required.
-	// +optional
 	MountTime *metav1.Time `json:"mountTime,omitempty"`
 }
 

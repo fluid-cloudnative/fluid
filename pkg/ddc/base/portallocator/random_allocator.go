@@ -54,11 +54,26 @@ func (r *RandomAllocator) Allocate(port int) error {
 
 }
 
+// Release releases the resource associated with the given index.
+// For the RandomAllocator, no actual resource is allocated per index,
+// so this method does nothing and always returns a nil error.
+//
+// Parameters:
+//   - i: the index of the resource to release (unused).
+//
+// Returns:
+//   - error: always nil, indicating success with no action.
 func (r *RandomAllocator) Release(i int) error {
 	// no need to release
 	return nil
 }
 
+// AllocateBatch attempts to allocate a batch of unique random ports from the allocator's port range.
+// The number of ports to allocate is specified by portNum.
+// It returns a slice of allocated port numbers and an error if allocation fails.
+// An error is returned when portNum exceeds the total size of the port range.
+// This method is concurrency-safe as it acquires a lock before modifying the port allocation state.
+// Note: The allocated ports are not persisted; they are only stored in the local map to avoid duplicates within the same batch.
 func (r *RandomAllocator) AllocateBatch(portNum int) (ports []int, err error) {
 	var availPort int
 	var allocatedPorts = map[int]bool{}

@@ -26,52 +26,30 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+// expectedNoDatasetTerm is the canonical PreferredSchedulingTerm asserted across
+// multiple specs for getPreferredSchedulingTermForPodWithoutCache.
+func expectedNoDatasetTerm() corev1.PreferredSchedulingTerm {
+	return corev1.PreferredSchedulingTerm{
+		Weight: 100,
+		Preference: corev1.NodeSelectorTerm{
+			MatchExpressions: []corev1.NodeSelectorRequirement{
+				{
+					Key:      common.GetDatasetNumLabelName(),
+					Operator: corev1.NodeSelectorOpDoesNotExist,
+				},
+			},
+		},
+	}
+}
+
 var _ = Describe("PreferNodesWithoutCache Plugin", func() {
 	Describe("getPreferredSchedulingTermForPodWithoutCache", func() {
-		It("should return correct PreferredSchedulingTerm with selector enabled and disabled", func() {
-			runtimeInfo, err := base.BuildRuntimeInfo("test", "fluid", "alluxio")
-			Expect(err).NotTo(HaveOccurred())
-
-			runtimeInfo.SetFuseNodeSelector(map[string]string{"test1": "test1"})
+		It("should return the same PreferredSchedulingTerm on repeated calls", func() {
 			term := getPreferredSchedulingTermForPodWithoutCache()
+			Expect(term).To(Equal(expectedNoDatasetTerm()))
 
-			expectTerm := corev1.PreferredSchedulingTerm{
-				Weight: 100,
-				Preference: corev1.NodeSelectorTerm{
-					MatchExpressions: []corev1.NodeSelectorRequirement{
-						{
-							Key:      common.GetDatasetNumLabelName(),
-							Operator: corev1.NodeSelectorOpDoesNotExist,
-						},
-					},
-				},
-			}
-			Expect(term).To(Equal(expectTerm))
-
-			runtimeInfo.SetFuseNodeSelector(map[string]string{})
 			term = getPreferredSchedulingTermForPodWithoutCache()
-			Expect(term).To(Equal(expectTerm))
-		})
-
-		It("should return correct PreferredSchedulingTerm with default mode", func() {
-			runtimeInfo, err := base.BuildRuntimeInfo("test", "fluid", "alluxio")
-			Expect(err).NotTo(HaveOccurred())
-
-			runtimeInfo.SetFuseNodeSelector(map[string]string{})
-			term := getPreferredSchedulingTermForPodWithoutCache()
-
-			expectTerm := corev1.PreferredSchedulingTerm{
-				Weight: 100,
-				Preference: corev1.NodeSelectorTerm{
-					MatchExpressions: []corev1.NodeSelectorRequirement{
-						{
-							Key:      common.GetDatasetNumLabelName(),
-							Operator: corev1.NodeSelectorOpDoesNotExist,
-						},
-					},
-				},
-			}
-			Expect(term).To(Equal(expectTerm))
+			Expect(term).To(Equal(expectedNoDatasetTerm()))
 		})
 	})
 
@@ -102,12 +80,21 @@ var _ = Describe("PreferNodesWithoutCache Plugin", func() {
 			shouldStop, err := plugin.Mutate(pod, map[string]base.RuntimeInfoInterface{"test": runtimeInfo})
 			Expect(err).NotTo(HaveOccurred())
 			Expect(shouldStop).To(BeTrue())
+			Expect(pod.Spec.Affinity).To(BeNil())
 
-			_, err = plugin.Mutate(pod, map[string]base.RuntimeInfoInterface{})
+			shouldStop, err = plugin.Mutate(pod, map[string]base.RuntimeInfoInterface{})
 			Expect(err).NotTo(HaveOccurred())
+			Expect(shouldStop).To(BeTrue())
+			Expect(pod.Spec.Affinity).NotTo(BeNil())
+			Expect(pod.Spec.Affinity.NodeAffinity).NotTo(BeNil())
+			Expect(pod.Spec.Affinity.NodeAffinity.PreferredDuringSchedulingIgnoredDuringExecution).To(Equal([]corev1.PreferredSchedulingTerm{expectedNoDatasetTerm()}))
 
-			_, err = plugin.Mutate(pod, map[string]base.RuntimeInfoInterface{"test": nil})
+			pod.Spec.Affinity = nil
+
+			shouldStop, err = plugin.Mutate(pod, map[string]base.RuntimeInfoInterface{"test": nil})
 			Expect(err).NotTo(HaveOccurred())
+			Expect(shouldStop).To(BeTrue())
+			Expect(pod.Spec.Affinity).To(BeNil())
 		})
 	})
 })

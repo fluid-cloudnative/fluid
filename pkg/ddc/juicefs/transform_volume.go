@@ -31,31 +31,44 @@ import (
 
 // transform worker volumes
 func (j *JuiceFSEngine) transformWorkerVolumes(runtime *datav1alpha1.JuiceFSRuntime, value *JuiceFS) (err error) {
-	if len(runtime.Spec.Worker.VolumeMounts) > 0 {
-		for _, volumeMount := range runtime.Spec.Worker.VolumeMounts {
-			var volume *corev1.Volume
+	volumes := map[string]corev1.Volume{}
+	for _, v := range runtime.Spec.Volumes {
+		volumes[v.Name] = v
+	}
 
-			for _, v := range runtime.Spec.Volumes {
-				if v.Name == volumeMount.Name {
-					volume = &v
-					break
-				}
-			}
-
-			if volume == nil {
-				return fmt.Errorf("failed to find the volume for volumeMount %s", volumeMount.Name)
-			}
-
-			if len(value.Worker.VolumeMounts) == 0 {
-				value.Worker.VolumeMounts = []corev1.VolumeMount{}
-			}
-			value.Worker.VolumeMounts = append(value.Worker.VolumeMounts, volumeMount)
-
-			if len(value.Worker.Volumes) == 0 {
-				value.Worker.Volumes = []corev1.Volume{}
-			}
-			value.Worker.Volumes = append(value.Worker.Volumes, *volume)
+	volumeClaimTemplates := map[string]corev1.PersistentVolumeClaim{}
+	for _, pvc := range runtime.Spec.VolumeClaimTemplates {
+		if _, ok := volumes[pvc.Name]; ok {
+			return fmt.Errorf("worker volume name %s is ambiguous because it is defined in both volumes and volumeClaimTemplates", pvc.Name)
 		}
+		volumeClaimTemplates[pvc.Name] = pvc
+	}
+	usedVolumeClaimTemplates := map[string]bool{}
+
+	addedVolumes := map[string]bool{}
+	for _, volumeMount := range runtime.Spec.Worker.VolumeMounts {
+		if _, ok := volumeClaimTemplates[volumeMount.Name]; ok {
+			usedVolumeClaimTemplates[volumeMount.Name] = true
+		} else {
+			volume, ok := volumes[volumeMount.Name]
+			if !ok {
+				return fmt.Errorf("failed to find volume or volumeClaimTemplate for worker volumeMount %s", volumeMount.Name)
+			}
+
+			if !addedVolumes[volumeMount.Name] {
+				value.Worker.Volumes = append(value.Worker.Volumes, volume)
+				addedVolumes[volumeMount.Name] = true
+			}
+		}
+
+		value.Worker.VolumeMounts = append(value.Worker.VolumeMounts, volumeMount)
+	}
+
+	for _, pvc := range runtime.Spec.VolumeClaimTemplates {
+		if !usedVolumeClaimTemplates[pvc.Name] {
+			return fmt.Errorf("volumeClaimTemplate %s must be mounted by worker volumeMounts", pvc.Name)
+		}
+		value.Worker.VolumeClaimTemplates = append(value.Worker.VolumeClaimTemplates, pvc)
 	}
 
 	return err

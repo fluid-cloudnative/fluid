@@ -14,7 +14,7 @@ spec:
     listKind: CacheRuntimeClassList
     plural: cacheruntimeclasses
     singular: cacheruntimeclass
-  scope: Namespaced
+  scope: Cluster
   versions:
   - name: v1alpha1
     schema:
@@ -22,6 +22,30 @@ spec:
         properties:
           apiVersion:
             type: string
+          dataOperationSpecs:
+            items:
+              properties:
+                args:
+                  items:
+                    type: string
+                  type: array
+                command:
+                  items:
+                    type: string
+                  type: array
+                image:
+                  type: string
+                name:
+                  enum:
+                  - DataLoad
+                  - DataBackup
+                  - DataMigrate
+                  - DataProcess
+                  type: string
+              required:
+              - name
+              type: object
+            type: array
           extraResources:
             properties:
               configMaps:
@@ -48,8 +72,6 @@ spec:
                 properties:
                   dependencies:
                     properties:
-                      encryptOption:
-                        type: object
                       extraResources:
                         properties:
                           configMaps:
@@ -61,6 +83,38 @@ spec:
                                   type: string
                               type: object
                             type: array
+                        type: object
+                      secretMount:
+                        properties:
+                          enabled:
+                            type: boolean
+                        type: object
+                    type: object
+                  executionEntries:
+                    properties:
+                      mountUFS:
+                        properties:
+                          command:
+                            items:
+                              type: string
+                            type: array
+                          timeout:
+                            format: int32
+                            type: integer
+                        required:
+                        - command
+                        type: object
+                      reportSummary:
+                        properties:
+                          command:
+                            items:
+                              type: string
+                            type: array
+                          timeout:
+                            format: int32
+                            type: integer
+                        required:
+                        - command
                         type: object
                     type: object
                   options:
@@ -3425,21 +3479,12 @@ spec:
                         required:
                         - containers
                         type: object
-                    type: object
-                  workloadType:
-                    properties:
-                      apiVersion:
-                        type: string
-                      kind:
-                        type: string
                     type: object
                 type: object
               master:
                 properties:
                   dependencies:
                     properties:
-                      encryptOption:
-                        type: object
                       extraResources:
                         properties:
                           configMaps:
@@ -3451,6 +3496,38 @@ spec:
                                   type: string
                               type: object
                             type: array
+                        type: object
+                      secretMount:
+                        properties:
+                          enabled:
+                            type: boolean
+                        type: object
+                    type: object
+                  executionEntries:
+                    properties:
+                      mountUFS:
+                        properties:
+                          command:
+                            items:
+                              type: string
+                            type: array
+                          timeout:
+                            format: int32
+                            type: integer
+                        required:
+                        - command
+                        type: object
+                      reportSummary:
+                        properties:
+                          command:
+                            items:
+                              type: string
+                            type: array
+                          timeout:
+                            format: int32
+                            type: integer
+                        required:
+                        - command
                         type: object
                     type: object
                   options:
@@ -6815,21 +6892,12 @@ spec:
                         required:
                         - containers
                         type: object
-                    type: object
-                  workloadType:
-                    properties:
-                      apiVersion:
-                        type: string
-                      kind:
-                        type: string
                     type: object
                 type: object
               worker:
                 properties:
                   dependencies:
                     properties:
-                      encryptOption:
-                        type: object
                       extraResources:
                         properties:
                           configMaps:
@@ -6841,6 +6909,38 @@ spec:
                                   type: string
                               type: object
                             type: array
+                        type: object
+                      secretMount:
+                        properties:
+                          enabled:
+                            type: boolean
+                        type: object
+                    type: object
+                  executionEntries:
+                    properties:
+                      mountUFS:
+                        properties:
+                          command:
+                            items:
+                              type: string
+                            type: array
+                          timeout:
+                            format: int32
+                            type: integer
+                        required:
+                        - command
+                        type: object
+                      reportSummary:
+                        properties:
+                          command:
+                            items:
+                              type: string
+                            type: array
+                          timeout:
+                            format: int32
+                            type: integer
+                        required:
+                        - command
                         type: object
                     type: object
                   options:
@@ -10205,13 +10305,6 @@ spec:
                         required:
                         - containers
                         type: object
-                    type: object
-                  workloadType:
-                    properties:
-                      apiVersion:
-                        type: string
-                      kind:
-                        type: string
                     type: object
                 type: object
             type: object

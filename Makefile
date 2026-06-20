@@ -36,9 +36,9 @@ DATASET_CONTROLLER_IMG ?= ${IMG_REPO}/dataset-controller
 APPLICATION_CONTROLLER_IMG ?= ${IMG_REPO}/application-controller
 ALLUXIORUNTIME_CONTROLLER_IMG ?= ${IMG_REPO}/alluxioruntime-controller
 JINDORUNTIME_CONTROLLER_IMG ?= ${IMG_REPO}/jindoruntime-controller
-GOOSEFSRUNTIME_CONTROLLER_IMG ?= ${IMG_REPO}/goosefsruntime-controller
 JUICEFSRUNTIME_CONTROLLER_IMG ?= ${IMG_REPO}/juicefsruntime-controller
 THINRUNTIME_CONTROLLER_IMG ?= ${IMG_REPO}/thinruntime-controller
+CACHERUNTIME_CONTROLLER_IMG ?= ${IMG_REPO}/cacheruntime-controller
 EFCRUNTIME_CONTROLLER_IMG ?= ${IMG_REPO}/efcruntime-controller
 VINEYARDRUNTIME_CONTROLLER_IMG ?= ${IMG_REPO}/vineyardruntime-controller
 CSI_IMG ?= ${IMG_REPO}/fluid-csi
@@ -52,9 +52,9 @@ DATASET_DOCKERFILE ?= docker/Dockerfile.dataset
 APPLICATION_DOCKERFILE ?= docker/Dockerfile.application
 ALLUXIORUNTIME_DOCKERFILE ?= docker/Dockerfile.alluxioruntime
 JINDORUNTIME_DOCKERFILE ?= docker/Dockerfile.jindoruntime
-GOOSEFSRUNTIME_DOCKERFILE ?= docker/Dockerfile.goosefsruntime
 JUICEFSRUNTIME_DOCKERFILE ?= docker/Dockerfile.juicefsruntime
 THINRUNTIME_DOCKERFILE ?= docker/Dockerfile.thinruntime
+CACHERUNTIME_DOCKERFILE ?= docker/Dockerfile.cacheruntime
 EFCRUNTIME_DOCKERFILE ?= docker/Dockerfile.efcruntime
 VINEYARDRUNTIME_DOCKERFILE ?= docker/Dockerfile.vineyardruntime
 CSI_DOCKERFILE ?= docker/Dockerfile.csi
@@ -69,9 +69,9 @@ DATASET_BINARY ?= bin/dataset-controller
 APPLICATION_BINARY ?= bin/fluidapp-controller
 ALLUXIORUNTIME_BINARY ?= bin/alluxioruntime-controller
 JINDORUNTIME_BINARY ?= bin/jindoruntime-controller
-GOOSEFSRUNTIME_BINARY ?= bin/goosefsruntime-controller
 JUICEFSRUNTIME_BINARY ?= bin/juicefsruntime-controller
 THINRUNTIME_BINARY ?= bin/thinruntime-controller
+CACHERUNTIME_BINARY ?= bin/cacheruntime-controller
 EFCRUNTIME_BINARY ?= bin/efcruntime-controller
 VINEYARDRUNTIME_BINARY ?= bin/vineyardruntime-controller
 WEBHOOK_BINARY ?= bin/fluid-webhook
@@ -87,6 +87,7 @@ BINARY_BUILD += alluxioruntime-controller-build
 BINARY_BUILD += jindoruntime-controller-build
 BINARY_BUILD += juicefsruntime-controller-build
 BINARY_BUILD += thinruntime-controller-build
+BINARY_BUILD += cacheruntime-controller-build
 BINARY_BUILD += efcruntime-controller-build
 BINARY_BUILD += vineyardruntime-controller-build
 BINARY_BUILD += csi-build
@@ -99,11 +100,11 @@ DOCKER_BUILD := docker-build-dataset-controller
 DOCKER_BUILD += docker-build-application-controller
 DOCKER_BUILD += docker-build-alluxioruntime-controller
 DOCKER_BUILD += docker-build-jindoruntime-controller
-DOCKER_BUILD += docker-build-goosefsruntime-controller
 DOCKER_BUILD += docker-build-csi
 DOCKER_BUILD += docker-build-webhook
 DOCKER_BUILD += docker-build-juicefsruntime-controller
 DOCKER_BUILD += docker-build-thinruntime-controller
+DOCKER_BUILD += docker-build-cacheruntime-controller
 DOCKER_BUILD += docker-build-efcruntime-controller
 DOCKER_BUILD += docker-build-vineyardruntime-controller
 DOCKER_BUILD += docker-build-init-users
@@ -117,9 +118,9 @@ DOCKER_PUSH += docker-push-alluxioruntime-controller
 DOCKER_PUSH += docker-push-jindoruntime-controller
 DOCKER_PUSH += docker-push-csi
 DOCKER_PUSH += docker-push-webhook
-DOCKER_PUSH += docker-push-goosefsruntime-controller
 DOCKER_PUSH += docker-push-juicefsruntime-controller
 DOCKER_PUSH += docker-push-thinruntime-controller
+DOCKER_PUSH += docker-push-cacheruntime-controller
 DOCKER_PUSH += docker-push-efcruntime-controller
 DOCKER_PUSH += docker-push-vineyardruntime-controller
 # Not need to push init-users image by default
@@ -132,11 +133,11 @@ DOCKER_BUILDX_PUSH := docker-buildx-push-dataset-controller
 DOCKER_BUILDX_PUSH += docker-buildx-push-application-controller
 DOCKER_BUILDX_PUSH += docker-buildx-push-alluxioruntime-controller
 DOCKER_BUILDX_PUSH += docker-buildx-push-jindoruntime-controller
-DOCKER_BUILDX_PUSH += docker-buildx-push-goosefsruntime-controller
 DOCKER_BUILDX_PUSH += docker-buildx-push-csi
 DOCKER_BUILDX_PUSH += docker-buildx-push-webhook
 DOCKER_BUILDX_PUSH += docker-buildx-push-juicefsruntime-controller
 DOCKER_BUILDX_PUSH += docker-buildx-push-thinruntime-controller
+DOCKER_BUILDX_PUSH += docker-buildx-push-cacheruntime-controller
 DOCKER_BUILDX_PUSH += docker-buildx-push-efcruntime-controller
 DOCKER_BUILDX_PUSH += docker-buildx-push-vineyardruntime-controller
 # Not need to push init-users image by default
@@ -226,10 +227,6 @@ alluxioruntime-controller-build:
 jindoruntime-controller-build:
 	CGO_ENABLED=${CGO_ENABLED} GOOS=${GOOS} GOARCH=${ARCH} GO111MODULE=${GO_MODULE}  go build ${GC_FLAGS} -a -o ${JINDORUNTIME_BINARY} -ldflags '${LDFLAGS}' cmd/jindo/main.go
 
-.PHONY: goosefsruntime-controller-build
-goosefsruntime-controller-build:
-	CGO_ENABLED=${CGO_ENABLED} GOOS=${GOOS} GOARCH=${ARCH} GO111MODULE=${GO_MODULE}  go build ${GC_FLAGS} -a -o ${GOOSEFSRUNTIME_BINARY} -ldflags '${LDFLAGS}' cmd/goosefs/main.go
-
 .PHONY: juicefsruntime-controller-build
 juicefsruntime-controller-build:
 	CGO_ENABLED=${CGO_ENABLED} GOOS=${GOOS} GOARCH=${ARCH} GO111MODULE=${GO_MODULE}  go build ${GC_FLAGS} -a -o ${JUICEFSRUNTIME_BINARY} -ldflags '-s -w ${LDFLAGS}' cmd/juicefs/main.go
@@ -237,6 +234,10 @@ juicefsruntime-controller-build:
 .PHONY: thinruntime-controller-build
 thinruntime-controller-build:
 	CGO_ENABLED=${CGO_ENABLED} GOOS=${GOOS} GOARCH=${ARCH} GO111MODULE=${GO_MODULE}  go build ${GC_FLAGS} -a -o ${THINRUNTIME_BINARY} -ldflags '-s -w ${LDFLAGS}' cmd/thin/main.go
+
+.PHONY: cacheruntime-controller-build
+cacheruntime-controller-build:
+	CGO_ENABLED=${CGO_ENABLED} GOOS=${GOOS} GOARCH=${ARCH} GO111MODULE=${GO_MODULE}  go build ${GC_FLAGS} -a -o ${CACHERUNTIME_BINARY} -ldflags '-s -w ${LDFLAGS}' cmd/cache/main.go
 
 .PHONY: vineyardruntime-controller-build
 vineyardruntime-controller-build:
@@ -271,10 +272,6 @@ docker-build-alluxioruntime-controller:
 docker-build-jindoruntime-controller:
 	docker build ${DOCKER_NO_CACHE_OPTION} --build-arg TARGETARCH=${ARCH} ${DOCKER_BUILD_ARGS} . -f ${JINDORUNTIME_DOCKERFILE} -t ${JINDORUNTIME_CONTROLLER_IMG}:${GIT_VERSION}
 
-.PHONY: docker-build-goosefsruntime-controller
-docker-build-goosefsruntime-controller:
-	docker build ${DOCKER_NO_CACHE_OPTION} --build-arg TARGETARCH=${ARCH} ${DOCKER_BUILD_ARGS} . -f ${GOOSEFSRUNTIME_DOCKERFILE} -t ${GOOSEFSRUNTIME_CONTROLLER_IMG}:${GIT_VERSION}
-
 .PHONY: docker-build-juicefsruntime-controller
 docker-build-juicefsruntime-controller:
 	docker build ${DOCKER_NO_CACHE_OPTION} --build-arg TARGETARCH=${ARCH} ${DOCKER_BUILD_ARGS} . -f ${JUICEFSRUNTIME_DOCKERFILE} -t ${JUICEFSRUNTIME_CONTROLLER_IMG}:${GIT_VERSION}
@@ -282,6 +279,10 @@ docker-build-juicefsruntime-controller:
 .PHONY: docker-build-thinruntime-controller
 docker-build-thinruntime-controller:
 	docker build ${DOCKER_NO_CACHE_OPTION} --build-arg TARGETARCH=${ARCH} ${DOCKER_BUILD_ARGS} . -f ${THINRUNTIME_DOCKERFILE} -t ${THINRUNTIME_CONTROLLER_IMG}:${GIT_VERSION}
+
+.PHONY: docker-build-cacheruntime-controller
+docker-build-cacheruntime-controller:
+	docker build ${DOCKER_NO_CACHE_OPTION} --build-arg TARGETARCH=${ARCH} ${DOCKER_BUILD_ARGS} . -f ${CACHERUNTIME_DOCKERFILE} -t ${CACHERUNTIME_CONTROLLER_IMG}:${GIT_VERSION}
 
 .PHONY: docker-build-efcruntime-controller
 docker-build-efcruntime-controller:
@@ -328,10 +329,6 @@ docker-push-alluxioruntime-controller: docker-build-alluxioruntime-controller
 docker-push-jindoruntime-controller: docker-build-jindoruntime-controller
 	docker push ${JINDORUNTIME_CONTROLLER_IMG}:${GIT_VERSION}
 
-.PHONY: docker-push-goosefsruntime-controller
-docker-push-goosefsruntime-controller: docker-build-goosefsruntime-controller
-	docker push ${GOOSEFSRUNTIME_CONTROLLER_IMG}:${GIT_VERSION}
-
 .PHONY: docker-push-juicefsruntime-controller
 docker-push-juicefsruntime-controller: docker-build-juicefsruntime-controller
 	docker push ${JUICEFSRUNTIME_CONTROLLER_IMG}:${GIT_VERSION}
@@ -339,6 +336,10 @@ docker-push-juicefsruntime-controller: docker-build-juicefsruntime-controller
 .PHONY: docker-push-thinruntime-controller
 docker-push-thinruntime-controller: docker-build-thinruntime-controller
 	docker push ${THINRUNTIME_CONTROLLER_IMG}:${GIT_VERSION}
+
+.PHONY: docker-push-cacheruntime-controller
+docker-push-cacheruntime-controller: docker-build-cacheruntime-controller
+	docker push ${CACHERUNTIME_CONTROLLER_IMG}:${GIT_VERSION}
 
 .PHONY: docker-push-efcruntime-controller
 docker-push-efcruntime-controller: docker-build-efcruntime-controller
@@ -385,10 +386,6 @@ docker-buildx-push-alluxioruntime-controller:
 docker-buildx-push-jindoruntime-controller:
 	docker buildx build --push ${DOCKER_BUILD_ARGS} --platform ${DOCKER_PLATFORM} ${DOCKER_NO_CACHE_OPTION} . -f ${JINDORUNTIME_DOCKERFILE} -t ${JINDORUNTIME_CONTROLLER_IMG}:${GIT_VERSION}
 
-.PHONY: docker-buildx-push-goosefsruntime-controller
-docker-buildx-push-goosefsruntime-controller:
-	docker buildx build --push ${DOCKER_BUILD_ARGS} --platform ${DOCKER_PLATFORM} ${DOCKER_NO_CACHE_OPTION} . -f ${GOOSEFSRUNTIME_DOCKERFILE} -t ${GOOSEFSRUNTIME_CONTROLLER_IMG}:${GIT_VERSION}
-
 .PHONY: docker-buildx-push-juicefsruntime-controller
 docker-buildx-push-juicefsruntime-controller:
 	docker buildx build --push ${DOCKER_BUILD_ARGS} --platform ${DOCKER_PLATFORM} ${DOCKER_NO_CACHE_OPTION} . -f ${JUICEFSRUNTIME_DOCKERFILE} -t ${JUICEFSRUNTIME_CONTROLLER_IMG}:${GIT_VERSION}
@@ -396,6 +393,11 @@ docker-buildx-push-juicefsruntime-controller:
 .PHONY: docker-buildx-push-thinruntime-controller
 docker-buildx-push-thinruntime-controller:
 	docker buildx build --push ${DOCKER_BUILD_ARGS} --platform ${DOCKER_PLATFORM} ${DOCKER_NO_CACHE_OPTION} . -f ${THINRUNTIME_DOCKERFILE} -t ${THINRUNTIME_CONTROLLER_IMG}:${GIT_VERSION}
+
+.PHONY: docker-buildx-push-cacheruntime-controller
+docker-buildx-push-cacheruntime-controller:
+	docker buildx build --push ${DOCKER_BUILD_ARGS} --platform ${DOCKER_PLATFORM} ${DOCKER_NO_CACHE_OPTION} . -f ${CACHERUNTIME_DOCKERFILE} -t ${CACHERUNTIME_CONTROLLER_IMG}:${GIT_VERSION}
+
 
 .PHONY: docker-buildx-push-efcruntime-controller
 docker-buildx-push-efcruntime-controller:
@@ -433,6 +435,28 @@ docker-push-all: pre-setup ${DOCKER_PUSH}
 
 .PHONY: docker-buildx-all-push
 docker-buildx-all-push: pre-setup ${DOCKER_BUILDX_PUSH}
+
+##@ Helm Binary
+
+HELM_BINARY_DIR := $(shell pwd)/bin/helm/$(HELM_VERSION)
+
+# Download helm binaries for linux/amd64 and linux/arm64 to bin/helm/<version>/
+# Run this target when upgrading HELM_VERSION or on a fresh checkout.
+.PHONY: download-helm
+download-helm:
+	mkdir -p $(HELM_BINARY_DIR)
+	@for arch in amd64 arm64; do \
+	  target=$(HELM_BINARY_DIR)/helm-linux-$${arch}; \
+	  if [ ! -f "$${target}" ]; then \
+	    echo "Downloading helm $(HELM_VERSION) linux/$${arch} ..."; \
+	    curl -fsSL https://github.com/fluid-cloudnative/helm/releases/download/$(HELM_VERSION)/helm-$(HELM_VERSION)-linux-$${arch}.tar.gz \
+	      | tar -xz --strip-components=1 -C $(HELM_BINARY_DIR) linux-$${arch}/helm; \
+	    mv $(HELM_BINARY_DIR)/helm $${target}; \
+	    chmod +x $${target}; \
+	  else \
+	    echo "helm $(HELM_VERSION) linux/$${arch} already exists, skipping."; \
+	  fi; \
+	done
 
 ##@ Dependencies
 

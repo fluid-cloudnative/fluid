@@ -22,6 +22,7 @@ import (
 	fluiderrs "github.com/fluid-cloudnative/fluid/pkg/errors"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -75,21 +76,26 @@ type mockRuntimeInfoForValidate struct {
 	placementModeSet bool
 }
 
+func (m *mockRuntimeInfoForValidate) GetWorkerPods(client client.Client) ([]corev1.Pod, error) {
+	return nil, nil
+}
+
 // Methods used by ValidateRuntimeInfo
 func (m *mockRuntimeInfoForValidate) GetOwnerDatasetUID() string { return m.ownerDatasetUID }
 func (m *mockRuntimeInfoForValidate) IsPlacementModeSet() bool   { return m.placementModeSet }
 
 // Conventions interface methods (stub implementations)
-func (m *mockRuntimeInfoForValidate) GetPersistentVolumeName() string  { return "" }
-func (m *mockRuntimeInfoForValidate) GetLabelNameForMemory() string    { return "" }
-func (m *mockRuntimeInfoForValidate) GetLabelNameForDisk() string      { return "" }
-func (m *mockRuntimeInfoForValidate) GetLabelNameForTotal() string     { return "" }
-func (m *mockRuntimeInfoForValidate) GetCommonLabelName() string       { return "" }
-func (m *mockRuntimeInfoForValidate) GetFuseLabelName() string         { return "" }
-func (m *mockRuntimeInfoForValidate) GetRuntimeLabelName() string      { return "" }
-func (m *mockRuntimeInfoForValidate) GetDatasetNumLabelName() string   { return "" }
-func (m *mockRuntimeInfoForValidate) GetWorkerStatefulsetName() string { return "" }
-func (m *mockRuntimeInfoForValidate) GetExclusiveLabelValue() string   { return "" }
+func (m *mockRuntimeInfoForValidate) GetPersistentVolumeName() string { return "" }
+func (m *mockRuntimeInfoForValidate) GetLabelNameForMemory() string   { return "" }
+func (m *mockRuntimeInfoForValidate) GetLabelNameForDisk() string     { return "" }
+func (m *mockRuntimeInfoForValidate) GetLabelNameForTotal() string    { return "" }
+
+// GetCommonLabelName returns the common label name.
+func (m *mockRuntimeInfoForValidate) GetCommonLabelName() string     { return "" }
+func (m *mockRuntimeInfoForValidate) GetFuseLabelName() string       { return "" }
+func (m *mockRuntimeInfoForValidate) GetRuntimeLabelName() string    { return "" }
+func (m *mockRuntimeInfoForValidate) GetDatasetNumLabelName() string { return "" }
+func (m *mockRuntimeInfoForValidate) GetExclusiveLabelValue() string { return "" }
 
 // RuntimeInfoInterface methods (stub implementations)
 func (m *mockRuntimeInfoForValidate) GetTieredStoreInfo() TieredStoreInfo { return TieredStoreInfo{} }

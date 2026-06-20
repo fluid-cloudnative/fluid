@@ -17,11 +17,12 @@ limitations under the License.
 package controllers
 
 import (
-	ctrl "sigs.k8s.io/controller-runtime"
+	"context"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/dataoperation"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
+	ctrl "sigs.k8s.io/controller-runtime"
 )
 
 type fakeEngineCore struct {
@@ -36,9 +37,9 @@ func (e *fakeEngineCore) Setup(ctx cruntime.ReconcileRequestContext) (bool, erro
 	return true, nil
 }
 
-func (e *fakeEngineCore) CreateVolume() error { return nil }
+func (e *fakeEngineCore) CreateVolume(ctx context.Context) error { return nil }
 
-func (e *fakeEngineCore) DeleteVolume() error { return nil }
+func (e *fakeEngineCore) DeleteVolume(ctx context.Context) error { return nil }
 
 func (e *fakeEngineCore) Sync(ctx cruntime.ReconcileRequestContext) error { return nil }
 

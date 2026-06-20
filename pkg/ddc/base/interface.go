@@ -31,3 +31,11 @@ type RuntimeInterface interface {
 
 	client.Object
 }
+
+type CacheRuntimeInterface interface {
+
+	// GetStatus gets the status of runtime
+	GetStatus() *datav1alpha1.CacheRuntimeStatus
+
+	client.Object
+}

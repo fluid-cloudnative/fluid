@@ -78,7 +78,7 @@ var _ = Describe("AlluxioEngine Volume Deletion Tests", Label("pkg.ddc.alluxio.d
 		})
 		When("given AlluxioEngine works as expected", func() {
 			It("should delete volume successfully", func() {
-				err := engine.DeleteVolume()
+				err := engine.DeleteVolume(context.Background())
 				Expect(err).To(BeNil())
 
 				err = client.Get(context.TODO(), types.NamespacedName{Namespace: engine.namespace, Name: engine.name}, &corev1.PersistentVolumeClaim{})
@@ -103,19 +103,19 @@ var _ = Describe("AlluxioEngine Volume Deletion Tests", Label("pkg.ddc.alluxio.d
 			})
 
 			It("don't need to do anything", func() {
-				err := engine.DeleteVolume()
+				err := engine.DeleteVolume(context.Background())
 				Expect(err).To(BeNil())
 			})
 		})
 	})
 
-	Describe("Test AlluxioEngine.deleteFusePersistentVolume()", func() {
+	Describe("Test AlluxioEngine.deleteFusePersistentVolume(context.Background())", func() {
 		When("given AlluxioEngine works as expected", func() {
 			BeforeEach(func() {
 				mockedObjects.PersistentVolume.Namespace = ""
 			})
 			It("should delete fuse PV successfully", func() {
-				err := engine.deleteFusePersistentVolume()
+				err := engine.deleteFusePersistentVolume(context.Background())
 				Expect(err).To(BeNil())
 
 				err = client.Get(context.TODO(), types.NamespacedName{Name: engine.runtimeInfo.GetPersistentVolumeName()}, &corev1.PersistentVolumeClaim{})
@@ -137,7 +137,7 @@ var _ = Describe("AlluxioEngine Volume Deletion Tests", Label("pkg.ddc.alluxio.d
 
 			})
 			It("don't need to do anything", func() {
-				err := engine.deleteFusePersistentVolume()
+				err := engine.deleteFusePersistentVolume(context.Background())
 				Expect(err).To(BeNil())
 			})
 		})
@@ -148,7 +148,7 @@ var _ = Describe("AlluxioEngine Volume Deletion Tests", Label("pkg.ddc.alluxio.d
 				mockedObjects.PersistentVolume.Annotations = map[string]string{}
 			})
 			It("should not delete the PV", func() {
-				err := engine.deleteFusePersistentVolume()
+				err := engine.deleteFusePersistentVolume(context.Background())
 				Expect(err).To(BeNil())
 
 				err = client.Get(context.TODO(), types.NamespacedName{Name: engine.runtimeInfo.GetPersistentVolumeName()}, &corev1.PersistentVolume{})
@@ -157,10 +157,10 @@ var _ = Describe("AlluxioEngine Volume Deletion Tests", Label("pkg.ddc.alluxio.d
 		})
 	})
 
-	Describe("Test AlluxioEngine.deleteFusePersistentVolumeClaim()", func() {
+	Describe("Test AlluxioEngine.deleteFusePersistentVolumeClaim(context.Background())", func() {
 		When("given AlluxioEngine works as expected", func() {
 			It("should delete the fuse PVC successfully", func() {
-				err := engine.deleteFusePersistentVolumeClaim()
+				err := engine.deleteFusePersistentVolumeClaim(context.Background())
 				Expect(err).To(BeNil())
 
 				err = client.Get(context.TODO(), types.NamespacedName{Name: engine.name, Namespace: engine.namespace}, &corev1.PersistentVolumeClaim{})
@@ -182,7 +182,7 @@ var _ = Describe("AlluxioEngine Volume Deletion Tests", Label("pkg.ddc.alluxio.d
 			})
 
 			It("don't need to do anything", func() {
-				err := engine.deleteFusePersistentVolumeClaim()
+				err := engine.deleteFusePersistentVolumeClaim(context.Background())
 				Expect(err).To(BeNil())
 			})
 		})
@@ -193,7 +193,7 @@ var _ = Describe("AlluxioEngine Volume Deletion Tests", Label("pkg.ddc.alluxio.d
 			})
 
 			It("should not delete the pvc", func() {
-				err := engine.deleteFusePersistentVolumeClaim()
+				err := engine.deleteFusePersistentVolumeClaim(context.Background())
 				Expect(err).To(BeNil())
 
 				err = client.Get(context.TODO(), types.NamespacedName{Name: engine.name, Namespace: engine.namespace}, &corev1.PersistentVolumeClaim{})

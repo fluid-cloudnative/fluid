@@ -17,44 +17,55 @@ limitations under the License.
 package options
 
 import (
-	"testing"
+	"os"
+
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 )
 
-func TestPortCheckEnabled(t *testing.T) {
-	type testCase struct {
-		name   string
-		env    map[string]string
-		expect bool
-	}
+var _ = Describe("PortCheckEnabled", func() {
 
-	testCases := []testCase{
-		{
-			name:   "not_set",
-			env:    map[string]string{},
-			expect: false,
-		}, {
-			name: "set_true",
-			env: map[string]string{
-				EnvPortCheckEnabled: "true",
-			},
-			expect: true,
-		}, {
-			name: "set_false",
-			env: map[string]string{
-				EnvPortCheckEnabled: "false",
-			},
-			expect: false,
-		},
-	}
+	Context("when environment variable is not set", func() {
+		BeforeEach(func() {
+			os.Unsetenv(EnvPortCheckEnabled)
+		})
 
-	for _, test := range testCases {
-		for k, v := range test.env {
-			t.Setenv(k, v)
-		}
-		setPortCheckOption()
-		got := PortCheckEnabled()
-		if got != test.expect {
-			t.Errorf("testcase %s is failed due to expect %v, but got %v", test.name, test.expect, got)
-		}
-	}
-}
+		It("should return false", func() {
+			setPortCheckOption()
+			got := PortCheckEnabled()
+			Expect(got).To(BeFalse())
+		})
+	})
+
+	Context("when environment variable is set to true", func() {
+		BeforeEach(func() {
+			os.Setenv(EnvPortCheckEnabled, "true")
+		})
+
+		AfterEach(func() {
+			os.Unsetenv(EnvPortCheckEnabled)
+		})
+
+		It("should return true", func() {
+			setPortCheckOption()
+			got := PortCheckEnabled()
+			Expect(got).To(BeTrue())
+		})
+	})
+
+	Context("when environment variable is set to false", func() {
+		BeforeEach(func() {
+			os.Setenv(EnvPortCheckEnabled, "false")
+		})
+
+		AfterEach(func() {
+			os.Unsetenv(EnvPortCheckEnabled)
+		})
+
+		It("should return false", func() {
+			setPortCheckOption()
+			got := PortCheckEnabled()
+			Expect(got).To(BeFalse())
+		})
+	})
+})

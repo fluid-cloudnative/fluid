@@ -33,6 +33,8 @@ const (
 	BitMap AllocatePolicy = "bitmap"
 )
 
+// ValidateEnum validates the given allocate policy string and converts it to an AllocatePolicy.
+// It returns an error if the policy is not one of the supported values: "random" or "bitmap".
 func ValidateEnum(allocatePolicyStr string) (AllocatePolicy, error) {
 	switch AllocatePolicy(allocatePolicyStr) {
 	case Random, BitMap:

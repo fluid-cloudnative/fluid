@@ -14,17 +14,17 @@ rules:
     resources:
       - alluxioruntimes
       - jindoruntimes
-      - goosefsruntimes
       - juicefsruntimes
       - thinruntimes
+      - cacheruntimes
       - efcruntimes
       - datasets
       - vineyardruntimes
       - alluxioruntimes/status
       - jindoruntimes/status
-      - goosefsruntimes/status
       - juicefsruntimes/status
       - thinruntimes/status
+      - cacheruntimes/status
       - efcruntimes/status
       - datasets/status
       - vineyardruntimes/status

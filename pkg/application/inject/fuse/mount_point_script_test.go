@@ -21,6 +21,7 @@ import (
 
 	"github.com/fluid-cloudnative/fluid/pkg/application/inject/fuse/mutator"
 	"github.com/fluid-cloudnative/fluid/pkg/application/inject/fuse/poststart"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/go-logr/logr"
 	. "github.com/onsi/ginkgo/v2"
@@ -266,17 +267,64 @@ var _ = Describe("Fuse Injector", func() {
 			})
 		})
 
-		Context("when configmap already exists", func() {
-			It("should not return an error", func() {
-				// Create configmap first
+		Context("when configmap already exists with matching SHA256 annotation", func() {
+			It("should skip update and return without error", func() {
 				appScriptGen := poststart.NewScriptGeneratorForApp(namespace)
 				cm := appScriptGen.BuildConfigmap()
 				err := fakeClient.Create(context.TODO(), cm)
 				Expect(err).To(BeNil())
 
-				// Try to ensure it exists again
 				_, err = injector.ensureScriptConfigMapExists(namespace)
 				Expect(err).To(BeNil())
+
+				// Verify configmap is unchanged (no extra update)
+				retrievedCM := &corev1.ConfigMap{}
+				err = fakeClient.Get(context.TODO(), client.ObjectKey{Name: cm.Name, Namespace: cm.Namespace}, retrievedCM)
+				Expect(err).To(BeNil())
+				Expect(retrievedCM.Annotations).To(HaveKey(common.AnnotationCheckMountScriptSHA256))
+				Expect(retrievedCM.Annotations[common.AnnotationCheckMountScriptSHA256]).To(Equal(appScriptGen.GetScriptSHA256()))
+			})
+		})
+
+		Context("when configmap already exists with stale SHA256 annotation", func() {
+			It("should update the configmap with the latest script and annotation", func() {
+				appScriptGen := poststart.NewScriptGeneratorForApp(namespace)
+				cm := appScriptGen.BuildConfigmap()
+				// Tamper the annotation to simulate an outdated configmap
+				cm.Annotations[common.AnnotationCheckMountScriptSHA256] = "stale-sha256"
+				cm.Data["check-fluid-mount-ready.sh"] = "old script content"
+				err := fakeClient.Create(context.TODO(), cm)
+				Expect(err).To(BeNil())
+
+				_, err = injector.ensureScriptConfigMapExists(namespace)
+				Expect(err).To(BeNil())
+
+				// Verify configmap was updated
+				retrievedCM := &corev1.ConfigMap{}
+				err = fakeClient.Get(context.TODO(), client.ObjectKey{Name: cm.Name, Namespace: cm.Namespace}, retrievedCM)
+				Expect(err).To(BeNil())
+				Expect(retrievedCM.Annotations[common.AnnotationCheckMountScriptSHA256]).To(Equal(appScriptGen.GetScriptSHA256()))
+				Expect(retrievedCM.Data["check-fluid-mount-ready.sh"]).NotTo(Equal("old script content"))
+			})
+		})
+
+		Context("when configmap already exists without SHA256 annotation", func() {
+			It("should update the configmap to add the annotation", func() {
+				appScriptGen := poststart.NewScriptGeneratorForApp(namespace)
+				cm := appScriptGen.BuildConfigmap()
+				// Remove the annotation to simulate a legacy configmap
+				delete(cm.Annotations, common.AnnotationCheckMountScriptSHA256)
+				err := fakeClient.Create(context.TODO(), cm)
+				Expect(err).To(BeNil())
+
+				_, err = injector.ensureScriptConfigMapExists(namespace)
+				Expect(err).To(BeNil())
+
+				retrievedCM := &corev1.ConfigMap{}
+				err = fakeClient.Get(context.TODO(), client.ObjectKey{Name: cm.Name, Namespace: cm.Namespace}, retrievedCM)
+				Expect(err).To(BeNil())
+				Expect(retrievedCM.Annotations).To(HaveKey(common.AnnotationCheckMountScriptSHA256))
+				Expect(retrievedCM.Annotations[common.AnnotationCheckMountScriptSHA256]).To(Equal(appScriptGen.GetScriptSHA256()))
 			})
 		})
 	})

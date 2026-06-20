@@ -71,22 +71,32 @@ func (info *RuntimeInfo) GetFuseContainerTemplate() (template *common.FuseInject
 	return template, nil
 }
 
+// getFuseDaemonset retrieves the FUSE DaemonSet associated with the given runtime.
+// It constructs the DaemonSet name based on the runtime type and then queries the
+// Kubernetes API to fetch the corresponding DaemonSet object.
+//
+// Returns:
+//   - *appsv1.DaemonSet: The FUSE DaemonSet object if found
+//   - error: An error if the API reader is not set, or if the DaemonSet cannot be retrieved
 func (info *RuntimeInfo) getFuseDaemonset() (ds *appsv1.DaemonSet, err error) {
 	if info.apiReader == nil {
 		err = fmt.Errorf("client is not set")
 		return
 	}
 
-	var fuseName string
-	switch info.runtimeType {
-	case common.JindoRuntime:
-		fuseName = info.name + "-" + common.JindoChartName + "-fuse"
-	default:
-		fuseName = info.name + "-fuse"
-	}
+	fuseName := info.GetFuseName()
 	return kubeclient.GetDaemonset(info.apiReader, fuseName, info.GetNamespace())
 }
 
+// getMountInfo fetches the PersistentVolume associated with the RuntimeInfo and
+// extracts mounting configurations.
+//
+// It expects the PV to be provisioned by Fluid with valid CSI VolumeAttributes.
+// Returns:
+//   - path: The Fluid volume path.
+//   - mountType: The storage protocol/type (e.g., oss, hdfs).
+//   - subpath: The specific sub-directory within the volume.
+//   - err: Error if the PV lookup fails or if the PV is not managed by Fluid.
 func (info *RuntimeInfo) getMountInfo() (path, mountType, subpath string, err error) {
 	pv, err := kubeclient.GetPersistentVolume(info.apiReader, info.GetPersistentVolumeName())
 	if err != nil {

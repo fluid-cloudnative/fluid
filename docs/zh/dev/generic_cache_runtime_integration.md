@@ -1,0 +1,384 @@
+# CacheRuntime 对接社区文档
+
+# 安装
+
+*   安装支持cacheRutnime版本Fluid。
+
+
+```shell
+helm repo add fluid https://fluid-cloudnative.github.io/charts
+
+helm repo update
+
+helm search repo fluid --devel
+
+helm install fluid fluid/fluid --devel --version xxx -nfluid-system
+```
+
+# 对接
+
+## 步骤 1. 规划集群拓扑
+
+首先需要规划一个集群拓扑：：
+
+*   确定拓扑类型，包含哪些组件：
+
+
+*   MasterSlave：Master/Worker/Client
+
+*   P2P/DHT：Worker/Client
+
+*   ClientOnly：Client
+
+
+*   每个组件是什么形态以及组件的配置：
+
+
+*   有状态/无状态 - 决定了工作负载类型
+
+*   单机版/主备版/集群版
+
+
+下表中展示了部署几个主要缓存拓扑类型所需要的基本信息示例。
+
+*   MasterSlave：CubeFS/Alluxio
+
+
+| 拓扑 |  | 设置                                                                                                                                                                    |
+| --- | --- |-----------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Master |  | *   workLoadType：apps/v1/StatefulSet<br>    <br>*   镜像配置<br>   <br>*   启动命令<br>  <br>*   UFS挂载命令<br>   <br>*   需要创建HeadlessService<br>    <br>*   需要挂载认证密钥             |
+| Woker：用于单一worker角色定义 |  | *   workLoadType：apps/v1/StatefulSet<br>    <br>*   镜像配置<br>    <br>*   启动命令<br>    <br>*   需要创建HeadlessService<br>    <br>*   不需要挂载认证密钥<br>    <br>*   需要配置TieredStore |
+| Client | Fuse | *   角色：Posix客户端<br>    <br>*   workLoadType：apps/v1/Daemonset<br>    <br>*   镜像配置<br>    <br>*   启动命令<br>    <br>*   不需要挂载认证参数<br>    <br>*   不支持TieredStore            |
+
+*   P2P Worker：JuiceFS
+
+
+| 拓扑 | 设置                                                                                                                                                                                 |
+| --- |------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Woker：用于单一worker角色定义 | *   workLoadType：apps/v1/StatefulSet<br>    <br>*   镜像配置<br>    <br>*   启动命令<br>    <br>*   HeadlessService<br>    <br>*   需要挂载认证参数<br>    <br>*   支持TieredStore                    |
+| Client | *   角色：Fuse客户端<br>    <br>*   workLoadType：apps/v1/Daemonset<br>    <br>*   镜像配置<br>    <br>*   启动命令<br>    <br>*   无需Service<br>    <br>*   需要挂载认证参数<br>    <br>*   支持TieredStore |
+
+## 步骤 2. 准备缓存系统模板
+
+一个缓存系统在Fluid中的缓存模板，包含以下几个部分
+
+```yaml
+├── Name #runtimeClassName由CacheRuntime中指定
+├── FileSystemType #文件系统类型，用于做挂载就绪校验
+├── Topology
+│   ├── Master[component]
+│   ├── Worker[component]
+│   └── client[component]
+└── ExtraResources
+    └── ConfigMaps
+```
+
+Topology中comopent主要包含以下内容
+
+| 内容 | 说明                 | 建议                                                                                                                                                                                                                       |
+| --- |--------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| WorkloadType | 该组件的负载类型           | Master/Worker作为有状态应用，采取StatefulSet是最为常见的选择，好处在于可以更方便的配合Headless Service提供的格式化DNS域名进行访问<br>Client如果为Fuse客户端，需要负责为节点上的pod提供Posix访问能力，一般采取DaemonSet<br>Client如果为SDK proxy，作为中心化的无状态应用，一般采用Deployment配合ClusterIP类型的Service使用 |
+| Options | 默认options，会被用户设置覆盖 |                                                                                                                                                                                                                          |
+| Template | PodTemplateSpec 原生字段   |                                                                                                                                                                                                                          |
+| Service | 目前仅支持Headless      |                                                                                                                                                                                                                          |
+| Dependencies | ExtraResources     | 该组件是否需要挂载额外的 ConfigMap （其依赖的ConfigMap 信息定义于 CacheRuntimeClass 的 ExtraResources 字段）。                                                                                                                                      |
+| ExecutionEntries| MountUFS           | 对于Master-Worker架构，当Master Ready时，需要执行底层文件系统的挂载操作。MountUFS 脚本必须输出符合 `CacheRuntimeMountUfsOutput` 结构体格式的 JSON，包含已挂载的 UFS 路径列表。详见步骤 2.7。                                                                                                                                      |
+| ExecutionEntries| ReportSummary      | 缓存系统定义如何获取缓存信息指标的操作 【当前版本暂未支持】。                                                                                                                                                                                          |
+
+### 步骤2.1 准备K8s适配的原生镜像及明确组件workloadType和PodTemplate
+
+可以先利用原生镜像，配置组件**workloadType**和**PodTemplate**，在k8s集群中手动拉起一个固定的缓存系统，在pod里把缓存系统手动拉起，本地可访问。此步骤主要用于明确需要哪些K8s资源，以及准备基础镜像。
+
+### 步骤2.2 明确组件需要哪些由CacheRuntime为其提供哪些配置
+
+主要明确以下内容设置
+
+*   Service
+
+*   Dependencies
+
+
+### 步骤2.3 确认Fluid CacheRuntime为组件提供的默认ENV，可被容器内脚本所应用
+
+| ENV | 说明                               |
+| --- |----------------------------------|
+| FLUID\_DATASET\_NAME | dataset名称，一般用于缓存组概念中用于group间的隔离  |
+| FLUID\_DATASET\_NAMESPACE | dataset所在namespace               |
+| FLUID\_RUNTIME\_CONFIG\_PATH | 由fluid提供的runtime配置路径             |
+| FLUID\_RUNTIME\_MOUNT\_PATH | 常被Client所使用，client执行mount动作的目标路径 |
+| FLUID\_RUNTIME\_COMPONENT\_TYPE | 表明当前组件是master，worker，还是client    |
+| FLUID_RUNTIME_COMPONENT_SVC_NAME | 组件如果定义service，其值为 service 的名称    |
+
+### 步骤2.4 创建RuntimeClass示例及字段说明：
+
+```yaml
+apiVersion: data.fluid.io/v1alpha1
+kind: CacheRuntimeClass
+metadata:
+  name: demofs
+fileSystemType: $fsType
+topology:
+  master:
+    workloadType: #以StatefulSet workload创建master
+      apiVersion: apps/v1
+      kind: StatefulSet
+    service: #需要为master创建Headless Service，仅当workloadType为Statefulset时支持
+      headless: {}
+    dependencies:
+      encryptOption: {} # 当前暂未支持
+    podTemplateSpec:
+      spec:
+        restartPolicy: Always
+        containers:
+        - name: master
+          image: $image
+          args:
+          - /bin/sh
+          - -c
+          - custom-endpoint.sh
+          imagePullPolicy: IfNotPresent
+  worker:
+    workloadType: #以StatefulSet workload创建worker
+      apiVersion: apps/v1
+      kind: StatefulSet
+    service:
+      headless: {} #需要为worker创建Headless Service，仅当workloadType为Statefulset时支持
+    dependencies: {} 
+    podTemplateSpec:
+      spec:
+        restartPolicy: Always
+        containers:
+        - name: worker
+          image: $image
+          args:
+          - /bin/sh
+          - -c
+          - custom-endpoint.sh
+          imagePullPolicy: IfNotPresent
+  client:
+    workloadType: #DaemonSet workload创建client
+      apiVersion: apps/v1
+      kind: DaemonSet
+    dependencies:
+      encryptOption: {} #需要为client提供用户在dataset中声明的encryptOption
+    podTemplateSpec:
+      spec:
+        restartPolicy: Always
+        containers:
+        - name: client
+          image: $image 
+          securityContext: #通常client需要配置privileged，用于操作fuse设备
+            privileged: true
+            runAsUser: 0
+          args:
+          - /bin/sh
+          - -c
+          - custom-endpoint.sh
+          imagePullPolicy: IfNotPresent
+```
+
+### 步骤2.5 用户创建Runtime
+
+```yaml
+apiVersion: data.fluid.io/v1alpha1
+kind: Dataset
+metadata:
+  name: demofs
+  namespace: default
+spec:
+  placement: Shared
+  accessModes:
+  - ReadWriteMany
+  mounts:
+  - name: demo
+    mountPoint: "demofs:///"
+    options:
+      key1: value1
+      key2: value2
+    encryptOptions:
+    - name: token
+      valueFrom:
+        secretKeyRef:
+          name: jfs-secret
+          key: token
+    - name: access-key
+      valueFrom:
+        secretKeyRef:
+          name: jfs-secret
+          key: access-key
+    - name: secret-key
+      valueFrom:
+        secretKeyRef:
+          name: jfs-secret
+          key: secret-key
+---
+apiVersion: data.fluid.io/v1alpha1
+kind: CacheRuntime
+metadata:
+  name: demofs
+  namespace: default
+spec:
+  runtimeClassName: demofs
+  master:
+    options: #master option
+      key1: value1
+      key2: value2
+    replicas: 2 #master副本数
+  worker:
+    options: #worker option
+      key1: value1
+      key2: value2
+    replicas: 2 #worker
+    tieredStore:
+      levels: #worker缓存配置
+      - emptyDir:
+          quota: 1Gi
+        high: "0.8"
+        low: "0.5"
+  client:
+    options:
+      key1: value1
+      key2: value2
+    volumeMounts: #可配置volume和对应的volumeMounts
+    - name: demo
+      mountPath: /mnt
+  volumes:
+  - name: demo
+    persistentVolumeClaim:
+      claimName: test
+
+```
+
+关于分层存储的详细配置说明，请参考 [CacheRuntime TieredStore 配置示例](../userguide/cache_runtime_tieredstore.md)。
+
+### 步骤2.6 确认 Fluid CacheRuntime为组件提供的 RuntimeConfig，进行参数解析启动容器
+> 可以基于原生镜像改造 entryPoint 脚本，先解析 RuntimeConfig，并生成对应的配置文件，后再启动容器。
+> 可以参考官方仓库中的 test/gha-e2e/curvine 的集成示例。
+
+在cacheruntime中，控制面的所有流程全都有Fluid来负责，但作为数据缓存引擎，提供服务时，需要整个缓存系统中的**拓扑**、**数据源、认证、缓存信息，**Fluid会根据不同的Component角色来通过配置文件的方式提供至组件内部，由组件内部进程负责解析该配置，来进行环境变量配置、数据引擎配置文件生成等操作，准备就绪后，可拉起数据引擎进程，解析过程中具体可参考下表：
+
+*   以上述资源为例，Master/Worker/Client挂载的由Fluid维护的Config示例如下： 其中，json中的"mounts", "accessModes", "targetPath" 字段信息均是来自于 DataSet 的 Spec 定义。
+
+```json
+{
+  "mounts": [
+    {
+      "mountPoint": "s3://test",
+      "options": {
+        "access": "minioadmin",
+        "endpoint_url": "http://minio:9000",
+        "path_style": "true",
+        "region_name": "us-east-1",
+        "secret": "minioadmin"
+      },
+      "encryptOptions": {
+        "access-key": "/etc/fluid/secrets/minio-secret/access-key",
+        "secret-key": "/etc/fluid/secrets/minio-secret/secret-key"
+      },
+      "name": "minio",
+      "path": "/minio"
+    }
+  ],
+  "accessModes": [
+    "ReadWriteMany"
+  ],
+  "targetPath": "/runtime-mnt/cache/default/curvine-demo/cache-fuse",
+  "master": {
+    "enabled": true,
+    "name": "curvine-demo-master",
+    "options": {
+      "key1": "master-value1"
+    },
+    "replicas": 1,
+    "service": {
+      "name": "svc-curvine-demo-master"
+    }
+  },
+  "worker": {
+    "enabled": true,
+    "name": "curvine-demo-worker",
+    "options": {
+      "key1": "worker-value1"
+    },
+    "replicas": 1,
+    "service": {
+      "name": "svc-curvine-demo-worker"
+    },
+    "tieredStoreLevels": [
+      {
+        "mountPaths": [
+          "/etc/fluid/mount/tiered-store/level-0-index-0-emptydir"
+        ],
+        "mediumType": "HDD",
+        "quotas": [
+          "1Gi"
+        ],
+        "high": "0.8",
+        "low": "0.5"
+      }
+    ]
+  },
+  "client": {
+    "enabled": true,
+    "name": "curvine-demo-client",
+    "options": {
+      "key1": "value1"
+    },
+    "service": {
+      "name": ""
+    }
+  }
+}
+```
+
+### 步骤2.7 MountUFS 脚本输出格式要求
+
+对于 Master-Worker 架构的缓存系统，当 Master 组件 Ready 后，Fluid 会执行 MountUFS 脚本来挂载底层文件系统（UFS）。**MountUFS 脚本必须输出符合 `CacheRuntimeMountUfsOutput` 结构体格式的 JSON**，以便 Fluid 能够正确解析已挂载的路径并同步 Dataset 状态。
+
+#### 可选配置说明
+
+如果底层缓存系统的镜像具备以下能力，可以**不设置 MountUFS**：
+
+1. **自动监控 RuntimeConfig 变化**：容器内的进程能够监听 "$FLUID_RUNTIME_CONFIG_PATH" 文件的变化
+2. **自动执行挂载操作**：当检测到 mounts 配置变化时，自动执行底层文件系统的挂载
+3. **Ready 状态控制**：确保只有在所有 UFS 挂载完成后，Master 组件的 Pod 启动时 Ready 状态才变为 true
+
+在这种情况下，Fluid 会通过 Kubernetes 的 Ready 探针来确认 Master 组件是否就绪，而无需额外执行 MountUFS 脚本。
+
+#### 使用场景
+
+MountUFS 脚本的输出主要用于以下场景：
+
+1. **挂载状态同步**：Fluid 通过解析脚本输出，确认哪些 UFS 路径已成功挂载
+2. **Dataset 状态更新**：根据挂载结果更新 Dataset 的挂载状态和 Phase
+3. **动态挂载管理**：当 Dataset 的 mounts 配置发生变化时，Fluid 会重新执行 MountUFS 脚本，并通过输出来验证挂载操作是否成功完成
+4. **重挂载检测**：在 Master Pod 重启等场景下，Fluid 会根据输出判断是否需要重新挂载
+
+#### 输出格式规范
+
+MountUFS 脚本的标准输出必须是以下 JSON 格式：
+
+```json
+{
+  "mounted": ["/path1", "/path2", "/path3"]
+}
+```
+
+其中：
+- `mounted`：字符串数组，包含所有已成功挂载的 UFS 路径列表
+- 如果没有挂载任何路径，应输出：`{"mounted": []}`
+
+#### Go 结构体定义
+
+```go
+type CacheRuntimeMountUfsOutput struct {
+    // Mounted are the ufs paths that have been mounted.
+    Mounted []string `json:"mounted,omitempty"`
+}
+```
+
+#### 注意事项
+
+1. **必须输出到标准输出（stdout）**：Fluid 会从脚本的标准输出读取 JSON 数据
+2. **错误信息输出到标准错误（stderr）**：使用 `>&2` 将错误信息输出到 stderr，避免污染 stdout
+3. **JSON 格式必须严格符合要求**：否则 Fluid 无法解析，会导致挂载失败

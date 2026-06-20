@@ -1,6 +1,7 @@
 package mutator
 
 import (
+	"context"
 	"fmt"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
@@ -616,6 +617,129 @@ var _ = Describe("Default mutator related unit tests", Label("pkg.application.in
 				err := mutator.PostMutate()
 				Expect(err).To(BeNil())
 			})
+		})
+	})
+})
+
+var _ = Describe("prepareFuseContainerPostStartScript ConfigMap update logic", Label("pkg.application.inject.fuse.mutator.mutator_default_test.go"), func() {
+	var (
+		testScheme       *runtime.Scheme
+		datasetName      string
+		datasetNamespace string
+		dataset          *datav1alpha1.Dataset
+		thinRuntime      *datav1alpha1.ThinRuntime
+		daemonSet        *appsv1.DaemonSet
+		pv               *corev1.PersistentVolume
+		podToMutate      *corev1.Pod
+	)
+
+	BeforeEach(func() {
+		testScheme = runtime.NewScheme()
+		_ = datav1alpha1.AddToScheme(testScheme)
+		_ = corev1.AddToScheme(testScheme)
+		_ = appsv1.AddToScheme(testScheme)
+
+		datasetName = "test-dataset"
+		datasetNamespace = "fluid"
+		dataset, thinRuntime, daemonSet, pv = test_buildFluidResources(datasetName, datasetNamespace)
+		podToMutate = test_buildPodToMutate([]string{datasetName})
+	})
+
+	When("the configmap already exists with a matching SHA256 annotation", func() {
+		It("should skip the update and not return an error", func() {
+			c := fake.NewFakeClientWithScheme(testScheme, dataset, thinRuntime, daemonSet, pv)
+			pod, err := applicationspod.NewApplication(podToMutate).GetPodSpecs()
+			Expect(err).ShouldNot(HaveOccurred())
+			specs, err := CollectFluidObjectSpecs(pod[0])
+			Expect(err).NotTo(HaveOccurred())
+
+			args := MutatorBuildArgs{
+				Client: c,
+				Log:    fake.NullLogger(),
+				Options: common.FuseSidecarInjectOption{
+					EnableCacheDir:             false,
+					SkipSidecarPostStartInject: false,
+				},
+				Specs: specs,
+			}
+			// First mutate: creates the ConfigMap
+			mut := NewDefaultMutator(args)
+			runtimeInfo, err := base.GetRuntimeInfo(c, datasetName, datasetNamespace)
+			Expect(err).NotTo(HaveOccurred())
+			err = mut.MutateWithRuntimeInfo(datasetName, runtimeInfo, "-0")
+			Expect(err).To(BeNil())
+
+			// Re-build fresh args/mutator to simulate a second webhook call
+			pod2, _ := applicationspod.NewApplication(podToMutate).GetPodSpecs()
+			specs2, _ := CollectFluidObjectSpecs(pod2[0])
+			args2 := MutatorBuildArgs{Client: c, Log: fake.NullLogger(), Options: args.Options, Specs: specs2}
+			mut2 := NewDefaultMutator(args2)
+			runtimeInfo2, err := base.GetRuntimeInfo(c, datasetName, datasetNamespace)
+			Expect(err).NotTo(HaveOccurred())
+
+			// Second mutate: SHA256 matches, should not error
+			err = mut2.MutateWithRuntimeInfo(datasetName, runtimeInfo2, "-0")
+			Expect(err).To(BeNil())
+		})
+	})
+
+	When("the configmap already exists with a stale SHA256 annotation", func() {
+		It("should refresh the configmap Data and annotation", func() {
+			c := fake.NewFakeClientWithScheme(testScheme, dataset, thinRuntime, daemonSet, pv)
+			pod, err := applicationspod.NewApplication(podToMutate).GetPodSpecs()
+			Expect(err).ShouldNot(HaveOccurred())
+			specs, err := CollectFluidObjectSpecs(pod[0])
+			Expect(err).NotTo(HaveOccurred())
+
+			args := MutatorBuildArgs{
+				Client: c,
+				Log:    fake.NullLogger(),
+				Options: common.FuseSidecarInjectOption{
+					EnableCacheDir:             false,
+					SkipSidecarPostStartInject: false,
+				},
+				Specs: specs,
+			}
+			// First mutate: creates the ConfigMap
+			mut := NewDefaultMutator(args)
+			runtimeInfo, err := base.GetRuntimeInfo(c, datasetName, datasetNamespace)
+			Expect(err).NotTo(HaveOccurred())
+			err = mut.MutateWithRuntimeInfo(datasetName, runtimeInfo, "-0")
+			Expect(err).To(BeNil())
+
+			// Deliberately corrupt the SHA256 annotation to simulate a stale configmap
+			cmList := &corev1.ConfigMapList{}
+			Expect(c.List(context.TODO(), cmList)).To(Succeed())
+			for i := range cmList.Items {
+				cm := &cmList.Items[i]
+				if cm.Annotations != nil {
+					if _, ok := cm.Annotations[common.AnnotationCheckMountScriptSHA256]; ok {
+						cm.Annotations[common.AnnotationCheckMountScriptSHA256] = "deliberately-stale-sha"
+						Expect(c.Update(context.TODO(), cm)).To(Succeed())
+					}
+				}
+			}
+
+			// Second mutate: SHA256 mismatch → should trigger update
+			pod2, _ := applicationspod.NewApplication(podToMutate).GetPodSpecs()
+			specs2, _ := CollectFluidObjectSpecs(pod2[0])
+			args2 := MutatorBuildArgs{Client: c, Log: fake.NullLogger(), Options: args.Options, Specs: specs2}
+			mut2 := NewDefaultMutator(args2)
+			runtimeInfo2, err := base.GetRuntimeInfo(c, datasetName, datasetNamespace)
+			Expect(err).NotTo(HaveOccurred())
+			err = mut2.MutateWithRuntimeInfo(datasetName, runtimeInfo2, "-0")
+			Expect(err).To(BeNil())
+
+			// Verify the SHA256 annotation was refreshed
+			updatedCmList := &corev1.ConfigMapList{}
+			Expect(c.List(context.TODO(), updatedCmList)).To(Succeed())
+			for _, cm := range updatedCmList.Items {
+				if cm.Annotations != nil {
+					if sha, ok := cm.Annotations[common.AnnotationCheckMountScriptSHA256]; ok {
+						Expect(sha).NotTo(Equal("deliberately-stale-sha"))
+					}
+				}
+			}
 		})
 	})
 })

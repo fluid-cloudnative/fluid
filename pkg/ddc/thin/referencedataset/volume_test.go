@@ -156,7 +156,7 @@ func TestReferenceDatasetEngine_CreateVolume(t *testing.T) {
 			name:      tt.fields.name,
 			namespace: tt.fields.namespace,
 		}
-		if err := e.CreateVolume(); (err != nil) != tt.wantErr {
+		if err := e.CreateVolume(context.Background()); (err != nil) != tt.wantErr {
 			t.Errorf("CreateVolume() error = %v, wantErr %v", err, tt.wantErr)
 			return
 		}
@@ -267,7 +267,7 @@ func TestReferenceDatasetEngine_DeleteVolume(t *testing.T) {
 		}
 		kubeclient.SetPVCDeleteTimeout(0)
 		// pvc is designed to delete until timeout, so ignore the error
-		_ = e.DeleteVolume()
+		_ = e.DeleteVolume(context.Background())
 		var pvs corev1.PersistentVolumeList
 		err = fakeClient.List(context.TODO(), &pvs)
 		if err != nil {
