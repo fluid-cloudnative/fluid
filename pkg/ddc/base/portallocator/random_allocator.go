@@ -38,6 +38,16 @@ func (r *RandomAllocator) needResetReservedPorts() bool {
 	return false
 }
 
+// newRandomAllocator creates and initializes a RandomAllocator with the given port range and logger.
+// It initializes a new random number generator using the current Unix timestamp as the seed.
+//
+// Parameters:
+// - pr (*net.PortRange): The port range used by the allocator.
+// - log (logr.Logger): The logger used to record allocator-related information.
+//
+// Returns:
+// - *RandomAllocator: A newly initialized random port allocator.
+// - error: Returns nil if the allocator is created successfully.
 func newRandomAllocator(pr *net.PortRange, log logr.Logger) (*RandomAllocator, error) {
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
 
