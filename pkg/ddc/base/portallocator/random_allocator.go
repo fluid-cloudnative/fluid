@@ -48,7 +48,8 @@ func newRandomAllocator(pr *net.PortRange, log logr.Logger) (*RandomAllocator, e
 	}, nil
 }
 
-// Allocate accepts the given port without performing allocation checks.
+// Allocate is a no-op for RandomAllocator.
+// Individual port allocation checks are not currently required by this allocator.
 func (r *RandomAllocator) Allocate(port int) error {
 	// not judge whether port can be allocated or not
 	return nil
