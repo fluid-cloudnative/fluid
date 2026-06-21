@@ -18,12 +18,11 @@ package base
 
 import (
 	"testing"
-
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 )
 
 // TestGetPersistentVolumeName tests that GetPersistentVolumeName correctly generates
-// the persistent volume name based on the runtime namespace and name.
+// the persistent volume name based on the runtime namespace and name
 func TestGetPersistentVolumeName(t *testing.T) {
 	var testCases = []struct {
 		runtimeName      string
