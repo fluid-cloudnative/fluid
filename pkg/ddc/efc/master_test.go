@@ -199,6 +199,12 @@ func TestCheckMasterReady(t *testing.T) {
 	}
 }
 
+// TestShouldSetupMaster tests the ShouldSetupMaster function, which determines whether
+// the master component of an EFC runtime needs to be set up. It verifies that:
+//   - When the master phase is RuntimePhaseNotReady, ShouldSetupMaster returns false
+//     (the master already exists but is not ready yet, no need to set up again).
+//   - When the master phase is RuntimePhaseNone, ShouldSetupMaster returns true
+//     (the master has not been created yet and needs to be set up).
 func TestShouldSetupMaster(t *testing.T) {
 	EFCRuntimeInputs := []datav1alpha1.EFCRuntime{
 		{
