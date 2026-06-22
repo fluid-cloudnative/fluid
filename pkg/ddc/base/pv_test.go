@@ -18,7 +18,7 @@ package base
 
 import (
 	"testing"
-	
+
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 )
 
