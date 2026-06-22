@@ -29,6 +29,9 @@ import (
 	"k8s.io/utils/ptr"
 )
 
+// TestCheckMasterReady verifies that EFCEngine.CheckMasterReady returns the
+// expected master readiness result and records the corresponding EFCRuntime
+// conditions for the covered master states.
 func TestCheckMasterReady(t *testing.T) {
 	statefulsetInputs := []v1.StatefulSet{
 		{
