@@ -93,19 +93,18 @@ func (e *CacheEngine) Setup(ctx cruntime.ReconcileRequestContext) (ready bool, e
 		return
 	}
 
-	// dataset mount after runtime ready to ensure master pod is ready for executing commands.
-	// currently only support mount ufs for master in master-worker architecture
-	if runtimeValue.Master.Enabled {
+	// Mount ufs if supported
+	archApi := resolveArchitectureApi(e.name, e.namespace, runtime, runtimeClass)
+	if archApi.IsMountUFSSupported() {
 		// ignore the output for mount command, if executing succeed, all ufs mount will be ready.
 		// Even if dataset changes the mount info concurrently, the `sync` phase will make it correct eventually.
-		_, err = e.PrepareUFS(runtimeClass)
+		_, err = e.PrepareUFS(archApi)
 		if err != nil {
 			e.Recorder.Eventf(runtime, corev1.EventTypeWarning, common.RuntimeMountUfsFailed, "Failed to execute mount ufs command")
 			return false, err
 		}
 	}
-
-	if err = e.BindToDataset(); err != nil {
+	if err = e.BindToDataset(runtime, runtimeClass); err != nil {
 		_ = utils.LoggingErrorExceptConflict(e.Log, err, "Failed to bind the dataset", types.NamespacedName{Namespace: e.namespace, Name: e.name})
 		return false, err
 	}

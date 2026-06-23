@@ -81,12 +81,10 @@ var _ = Describe("CacheEngine UpdateOnUFSChange Tests", Label("pkg.ddc.cache.eng
 
 	Describe("PrepareUFS Tests (Public Method)", func() {
 		var (
-			runtimeClass *datav1alpha1.CacheRuntimeClass
-			patches      *gomonkey.Patches
+			patches *gomonkey.Patches
 		)
 
 		BeforeEach(func() {
-			// Reset patches before each test
 			if patches != nil {
 				patches.Reset()
 			}
@@ -99,65 +97,108 @@ var _ = Describe("CacheEngine UpdateOnUFSChange Tests", Label("pkg.ddc.cache.eng
 		})
 
 		Context("when no mount ufs command found", func() {
-			It("should return empty string and no error when topology is nil", func() {
-				runtimeClass = &datav1alpha1.CacheRuntimeClass{
+			It("should return nil and no error when runtime class has no topology", func() {
+				runtimeClass := &datav1alpha1.CacheRuntimeClass{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "test-runtime-class",
 					},
 					FileSystemType: "cache",
 				}
-				stdout, err := engine.PrepareUFS(runtimeClass)
-				Expect(err).NotTo(HaveOccurred())
-				Expect(stdout).To(BeEmpty())
-			})
-
-			It("should return empty string and no error when master is nil", func() {
-				runtimeClass = &datav1alpha1.CacheRuntimeClass{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "test-runtime-class",
-					},
-					FileSystemType: "cache",
-					Topology:       &datav1alpha1.RuntimeTopology{},
+				archApi := &masterWorkerArchApi{
+					name:         "test-runtime",
+					namespace:    "default",
+					runtimeClass: runtimeClass,
 				}
-				stdout, err := engine.PrepareUFS(runtimeClass)
+				mountOutput, err := engine.PrepareUFS(archApi)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(stdout).To(BeEmpty())
+				Expect(mountOutput).To(BeNil())
 			})
 
-			It("should return empty string and no error when execution entries is nil", func() {
-				runtimeClass = &datav1alpha1.CacheRuntimeClass{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "test-runtime-class",
-					},
-					FileSystemType: "cache",
-					Topology: &datav1alpha1.RuntimeTopology{
-						Master: &datav1alpha1.RuntimeComponentDefinition{},
-					},
-				}
-				stdout, err := engine.PrepareUFS(runtimeClass)
-				Expect(err).NotTo(HaveOccurred())
-				Expect(stdout).To(BeEmpty())
-			})
-
-			It("should return empty string and no error when MountUFS is nil", func() {
-				runtimeClass = &datav1alpha1.CacheRuntimeClass{
+			It("should return nil and no error when master has no execution entries", func() {
+				runtimeClass := &datav1alpha1.CacheRuntimeClass{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "test-runtime-class",
 					},
 					FileSystemType: "cache",
 					Topology: &datav1alpha1.RuntimeTopology{
 						Master: &datav1alpha1.RuntimeComponentDefinition{
+							Template: corev1.PodTemplateSpec{
+								Spec: corev1.PodSpec{
+									Containers: []corev1.Container{{Name: "master"}},
+								},
+							},
+						},
+					},
+				}
+				archApi := &masterWorkerArchApi{
+					name:         "test-runtime",
+					namespace:    "default",
+					runtimeClass: runtimeClass,
+				}
+				mountOutput, err := engine.PrepareUFS(archApi)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(mountOutput).To(BeNil())
+			})
+
+			It("should return nil and no error when MountUFS is nil", func() {
+				runtimeClass := &datav1alpha1.CacheRuntimeClass{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "test-runtime-class",
+					},
+					FileSystemType: "cache",
+					Topology: &datav1alpha1.RuntimeTopology{
+						Master: &datav1alpha1.RuntimeComponentDefinition{
+							Template: corev1.PodTemplateSpec{
+								Spec: corev1.PodSpec{
+									Containers: []corev1.Container{{Name: "master"}},
+								},
+							},
 							ExecutionEntries: &datav1alpha1.ExecutionEntries{},
 						},
 					},
 				}
-				stdout, err := engine.PrepareUFS(runtimeClass)
+				archApi := &masterWorkerArchApi{
+					name:         "test-runtime",
+					namespace:    "default",
+					runtimeClass: runtimeClass,
+				}
+				mountOutput, err := engine.PrepareUFS(archApi)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(stdout).To(BeEmpty())
+				Expect(mountOutput).To(BeNil())
 			})
 		})
 
-		Context("when MountUFS exists but getMasterPodInfo fails", func() {
+		Context("when MountUFS exists but GetExecutionPodInfo fails", func() {
+			It("should return error when master template has no containers", func() {
+				runtimeClass := &datav1alpha1.CacheRuntimeClass{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "test-runtime-class",
+					},
+					FileSystemType: "cache",
+					Topology: &datav1alpha1.RuntimeTopology{
+						Master: &datav1alpha1.RuntimeComponentDefinition{
+							ExecutionEntries: &datav1alpha1.ExecutionEntries{
+								MountUFS: &datav1alpha1.ExecutionCommonEntry{Command: []string{"/mount.sh"}},
+							},
+						},
+					},
+				}
+				archApi := &masterWorkerArchApi{
+					name:         "test-runtime",
+					namespace:    "default",
+					runtimeClass: runtimeClass,
+				}
+				mountOutput, err := engine.PrepareUFS(archApi)
+				Expect(err).To(HaveOccurred())
+				Expect(mountOutput).To(BeNil())
+			})
+		})
+
+		Context("when MountUFS executes successfully", func() {
+			var (
+				runtimeClass *datav1alpha1.CacheRuntimeClass
+			)
+
 			BeforeEach(func() {
 				runtimeClass = &datav1alpha1.CacheRuntimeClass{
 					ObjectMeta: metav1.ObjectMeta{
@@ -166,40 +207,9 @@ var _ = Describe("CacheEngine UpdateOnUFSChange Tests", Label("pkg.ddc.cache.eng
 					FileSystemType: "cache",
 					Topology: &datav1alpha1.RuntimeTopology{
 						Master: &datav1alpha1.RuntimeComponentDefinition{
-							ExecutionEntries: &datav1alpha1.ExecutionEntries{
-								MountUFS: &datav1alpha1.ExecutionCommonEntry{
-									Command: []string{"/mount.sh"},
-								},
-							},
-						},
-					},
-				}
-			})
-
-			It("should return error from getMasterPodInfo", func() {
-				// getMasterPodInfo will fail because Template is not set
-				stdout, err := engine.PrepareUFS(runtimeClass)
-				Expect(err).To(HaveOccurred())
-				Expect(stdout).To(BeEmpty())
-			})
-		})
-
-		Context("when MountUFS executes successfully", func() {
-			It("should return stdout from Mount command with valid JSON output", func() {
-				runtimeClass = &datav1alpha1.CacheRuntimeClass{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "test-runtime-class",
-					},
-					FileSystemType: "cache",
-					Topology: &datav1alpha1.RuntimeTopology{
-						Master: &datav1alpha1.RuntimeComponentDefinition{
 							Template: corev1.PodTemplateSpec{
 								Spec: corev1.PodSpec{
-									Containers: []corev1.Container{
-										{
-											Name: "master",
-										},
-									},
+									Containers: []corev1.Container{{Name: "master"}},
 								},
 							},
 							ExecutionEntries: &datav1alpha1.ExecutionEntries{
@@ -211,7 +221,14 @@ var _ = Describe("CacheEngine UpdateOnUFSChange Tests", Label("pkg.ddc.cache.eng
 						},
 					},
 				}
-				Expect(fakeClient.Create(context.Background(), runtimeClass)).NotTo(HaveOccurred())
+			})
+
+			It("should return parsed CacheRuntimeMountUfsOutput with valid JSON output", func() {
+				archApi := &masterWorkerArchApi{
+					name:         "test-runtime",
+					namespace:    "default",
+					runtimeClass: runtimeClass,
+				}
 
 				mockExecutions := &MockExecutions{MountFunc: func(command []string, timeout time.Duration) (stdout string, err error) {
 					return `{"mounted": ["/mount1", "/mount2"]}`, nil
@@ -220,38 +237,18 @@ var _ = Describe("CacheEngine UpdateOnUFSChange Tests", Label("pkg.ddc.cache.eng
 					return mockExecutions
 				})
 
-				stdout, err := engine.PrepareUFS(runtimeClass)
+				mountOutput, err := engine.PrepareUFS(archApi)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(stdout).To(Equal(`{"mounted": ["/mount1", "/mount2"]}`))
+				Expect(mountOutput).NotTo(BeNil())
+				Expect(mountOutput.Mounted).To(Equal([]string{"/mount1", "/mount2"}))
 			})
 
-			It("should return empty stdout when Mount returns empty output", func() {
-				runtimeClass = &datav1alpha1.CacheRuntimeClass{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "test-runtime-class",
-					},
-					FileSystemType: "cache",
-					Topology: &datav1alpha1.RuntimeTopology{
-						Master: &datav1alpha1.RuntimeComponentDefinition{
-							Template: corev1.PodTemplateSpec{
-								Spec: corev1.PodSpec{
-									Containers: []corev1.Container{
-										{
-											Name: "master",
-										},
-									},
-								},
-							},
-							ExecutionEntries: &datav1alpha1.ExecutionEntries{
-								MountUFS: &datav1alpha1.ExecutionCommonEntry{
-									Command:        []string{"/mount.sh"},
-									TimeoutSeconds: 30,
-								},
-							},
-						},
-					},
+			It("should return error when Mount returns empty output", func() {
+				archApi := &masterWorkerArchApi{
+					name:         "test-runtime",
+					namespace:    "default",
+					runtimeClass: runtimeClass,
 				}
-				Expect(fakeClient.Create(context.Background(), runtimeClass)).NotTo(HaveOccurred())
 
 				mockExecutions := &MockExecutions{MountFunc: func(command []string, timeout time.Duration) (stdout string, err error) {
 					return "", nil
@@ -260,38 +257,58 @@ var _ = Describe("CacheEngine UpdateOnUFSChange Tests", Label("pkg.ddc.cache.eng
 					return mockExecutions
 				})
 
-				stdout, err := engine.PrepareUFS(runtimeClass)
-				Expect(err).NotTo(HaveOccurred())
-				Expect(stdout).To(BeEmpty())
+				mountOutput, err := engine.PrepareUFS(archApi)
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("empty output"))
+				Expect(mountOutput).To(BeNil())
+			})
+
+			It("should return error when Mount returns whitespace-only output", func() {
+				archApi := &masterWorkerArchApi{
+					name:         "test-runtime",
+					namespace:    "default",
+					runtimeClass: runtimeClass,
+				}
+
+				mockExecutions := &MockExecutions{MountFunc: func(command []string, timeout time.Duration) (stdout string, err error) {
+					return "   ", nil
+				}}
+				patches = gomonkey.ApplyFunc(NewCacheFileUtil, func(podName, containerName, namespace string, log logr.Logger) CacheFileUtil {
+					return mockExecutions
+				})
+
+				mountOutput, err := engine.PrepareUFS(archApi)
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("empty output"))
+				Expect(mountOutput).To(BeNil())
+			})
+
+			It("should return JSON parse error when Mount returns invalid JSON", func() {
+				archApi := &masterWorkerArchApi{
+					name:         "test-runtime",
+					namespace:    "default",
+					runtimeClass: runtimeClass,
+				}
+
+				mockExecutions := &MockExecutions{MountFunc: func(command []string, timeout time.Duration) (stdout string, err error) {
+					return "invalid json output", nil
+				}}
+				patches = gomonkey.ApplyFunc(NewCacheFileUtil, func(podName, containerName, namespace string, log logr.Logger) CacheFileUtil {
+					return mockExecutions
+				})
+
+				mountOutput, err := engine.PrepareUFS(archApi)
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("failed to parse mount ufs output"))
+				Expect(mountOutput).To(BeNil())
 			})
 
 			It("should return error when Mount command fails", func() {
-				runtimeClass = &datav1alpha1.CacheRuntimeClass{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "test-runtime-class",
-					},
-					FileSystemType: "cache",
-					Topology: &datav1alpha1.RuntimeTopology{
-						Master: &datav1alpha1.RuntimeComponentDefinition{
-							Template: corev1.PodTemplateSpec{
-								Spec: corev1.PodSpec{
-									Containers: []corev1.Container{
-										{
-											Name: "master",
-										},
-									},
-								},
-							},
-							ExecutionEntries: &datav1alpha1.ExecutionEntries{
-								MountUFS: &datav1alpha1.ExecutionCommonEntry{
-									Command:        []string{"/mount.sh"},
-									TimeoutSeconds: 30,
-								},
-							},
-						},
-					},
+				archApi := &masterWorkerArchApi{
+					name:         "test-runtime",
+					namespace:    "default",
+					runtimeClass: runtimeClass,
 				}
-				Expect(fakeClient.Create(context.Background(), runtimeClass)).NotTo(HaveOccurred())
 
 				mockExecutions := &MockExecutions{MountFunc: func(command []string, timeout time.Duration) (stdout string, err error) {
 					return "", errors.New("mount command failed")
@@ -300,10 +317,10 @@ var _ = Describe("CacheEngine UpdateOnUFSChange Tests", Label("pkg.ddc.cache.eng
 					return mockExecutions
 				})
 
-				stdout, err := engine.PrepareUFS(runtimeClass)
+				mountOutput, err := engine.PrepareUFS(archApi)
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("mount command failed"))
-				Expect(stdout).To(BeEmpty())
+				Expect(mountOutput).To(BeNil())
 			})
 		})
 	})
@@ -440,7 +457,7 @@ var _ = Describe("CacheEngine UpdateOnUFSChange Tests", Label("pkg.ddc.cache.eng
 			})
 			Expect(fakeClient.Update(context.Background(), datasetToUpdate)).NotTo(HaveOccurred())
 
-			// Mock newCacheFileUtils if mountFunc is provided
+			// Mock NewCacheFileUtil if mountFunc is provided
 			if mountFunc != nil {
 				mockExecutions := &MockExecutions{MountFunc: mountFunc}
 				patches = gomonkey.ApplyFunc(NewCacheFileUtil, func(podName, containerName, namespace string, log logr.Logger) CacheFileUtil {
@@ -476,6 +493,79 @@ var _ = Describe("CacheEngine UpdateOnUFSChange Tests", Label("pkg.ddc.cache.eng
 				updatedDataset := &datav1alpha1.Dataset{}
 				Expect(fakeClient.Get(context.Background(), types.NamespacedName{Name: "test-runtime", Namespace: "default"}, updatedDataset)).NotTo(HaveOccurred())
 				Expect(updatedDataset.Status.Phase).To(Equal(datav1alpha1.BoundDatasetPhase))
+			})
+		})
+
+		Context("when architecture does not support mount UFS", func() {
+			It("should return early when IsMountUFSSupported returns false", func() {
+				// Create a runtimeClass without MountUFS (workers only architecture)
+				rc := &datav1alpha1.CacheRuntimeClass{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "test-runtime-class-no-mount",
+					},
+					FileSystemType: "cache",
+					Topology: &datav1alpha1.RuntimeTopology{
+						Worker: &datav1alpha1.RuntimeComponentDefinition{
+							Template: corev1.PodTemplateSpec{
+								Spec: corev1.PodSpec{
+									Containers: []corev1.Container{
+										{
+											Name: "worker",
+										},
+									},
+								},
+							},
+						},
+					},
+				}
+				Expect(fakeClient.Create(context.Background(), rc)).NotTo(HaveOccurred())
+
+				// Create Dataset
+				ds := &datav1alpha1.Dataset{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "test-runtime-no-mount",
+						Namespace: "default",
+					},
+					Spec: datav1alpha1.DatasetSpec{
+						Mounts: []datav1alpha1.Mount{
+							{
+								Name:       "mount1",
+								MountPoint: "s3://bucket1/path",
+							},
+						},
+					},
+					Status: datav1alpha1.DatasetStatus{
+						Phase: datav1alpha1.BoundDatasetPhase,
+					},
+				}
+				Expect(fakeClient.Create(context.Background(), ds)).NotTo(HaveOccurred())
+
+				// Create CacheRuntime referencing the class without mount support
+				rt := &datav1alpha1.CacheRuntime{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "test-runtime-no-mount",
+						Namespace: "default",
+						UID:       types.UID("test-uid-no-mount"),
+					},
+					Spec: datav1alpha1.CacheRuntimeSpec{
+						RuntimeClassName: "test-runtime-class-no-mount",
+						Master: datav1alpha1.CacheRuntimeMasterSpec{
+							Replicas: 1,
+						},
+					},
+					Status: datav1alpha1.CacheRuntimeStatus{
+						MountTime: &metav1.Time{Time: time.Now().Add(-1 * time.Hour)},
+					},
+				}
+				Expect(fakeClient.Create(context.Background(), rt)).NotTo(HaveOccurred())
+
+				// Temporarily change engine name to match this runtime
+				originalName := engine.name
+				engine.name = "test-runtime-no-mount"
+				defer func() { engine.name = originalName }()
+
+				err := engine.UpdateOnUFSChange(rt)
+				Expect(err).NotTo(HaveOccurred())
 			})
 		})
 

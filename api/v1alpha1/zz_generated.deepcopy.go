@@ -529,13 +529,6 @@ func (in *CacheRuntimeStatus) DeepCopyInto(out *CacheRuntimeStatus) {
 		(*in).DeepCopyInto(*out)
 	}
 	out.RuntimeComponentStatusCollection = in.RuntimeComponentStatusCollection
-	if in.Mounts != nil {
-		in, out := &in.Mounts, &out.Mounts
-		*out = make([]Mount, len(*in))
-		for i := range *in {
-			(*in)[i].DeepCopyInto(&(*out)[i])
-		}
-	}
 	if in.MountTime != nil {
 		in, out := &in.MountTime, &out.MountTime
 		*out = (*in).DeepCopy()

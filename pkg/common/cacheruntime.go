@@ -36,6 +36,9 @@ const (
 	ComponentTypeClient ComponentType = "client"
 )
 
+// MinExecutionTimeoutSeconds is the minimum timeout for execution in Component pods.
+const MinExecutionTimeoutSeconds = 20
+
 type CacheRuntimeValue struct {
 	Master *CacheRuntimeComponentValue
 	Worker *CacheRuntimeComponentValue

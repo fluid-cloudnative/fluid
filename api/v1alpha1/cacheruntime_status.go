@@ -28,11 +28,6 @@ type CacheRuntimeStatus struct {
 	// +optional
 	ValueFile string `json:"valueFile,omitempty"`
 
-	// ConfigFile is the path to the engine-specific configuration file.
-	// This file contains the cache engine's native configuration format.
-	// +optional
-	ConfigFile string `json:"configFile,omitempty"`
-
 	// SetupDuration is the duration spent setting up the runtime, in human-readable format (e.g., "2m30s").
 	// This helps users understand the setup time for the runtime.
 	// +optional
@@ -59,10 +54,6 @@ type CacheRuntimeStatus struct {
 
 	// RuntimeComponentStatusCollection contains the status of runtime components (master, worker, client).
 	RuntimeComponentStatusCollection `json:",inline"`
-
-	// Mounts contains the mount point configurations from the bound dataset.
-	// Currently not used, may be used when integrating thin runtime.
-	Mounts []Mount `json:"mounts,omitempty"`
 
 	// MountTime is the timestamp of the last successful mount operation.
 	// If MountTime is earlier than the master component's start time, a remount will be required.

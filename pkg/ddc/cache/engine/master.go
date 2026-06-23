@@ -18,7 +18,6 @@ package engine
 
 import (
 	"context"
-	"errors"
 	"reflect"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
@@ -109,16 +108,4 @@ func (e *CacheEngine) setupMasterInternal(masterValue *common.CacheRuntimeCompon
 	}
 
 	return nil
-}
-
-func (e *CacheEngine) getMasterPodInfo(runtimeClass *datav1alpha1.CacheRuntimeClass) (podName string, containerName string, err error) {
-	// pod name is auto generated
-	podName = common.GetCacheComponentName(e.name, common.ComponentTypeMaster) + "-0"
-	// container name, use the first container name
-	if runtimeClass.Topology == nil || runtimeClass.Topology.Master == nil ||
-		len(runtimeClass.Topology.Master.Template.Spec.Containers) == 0 {
-		return "", "", errors.New("no container in master pod template")
-	}
-	containerName = runtimeClass.Topology.Master.Template.Spec.Containers[0].Name
-	return
 }
