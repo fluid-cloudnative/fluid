@@ -571,6 +571,18 @@ func TestAlluxioFileUtils_Count(t *testing.T) {
 	}
 }
 
+// TestAlluxioFileUtils_GetFileCount tests the GetFileCount method of AlluxioFileUtils.
+// It verifies the method's ability to parse the output of the alluxio fsadmin report
+// command and handle various error scenarios.
+//
+// Test cases:
+// - exec failure: Tests handling of command execution errors.
+// - success: Tests successful parsing of file count output.
+//
+// The test uses gomonkey to mock the internal exec method:
+//   - When exec returns an error, GetFileCount should return an error.
+//   - When exec returns a valid report (e.g., "Type: COUNTER, Value: 6,367,897"),
+//     GetFileCount should successfully parse and return the correct file count.
 func TestAlluxioFileUtils_GetFileCount(t *testing.T) {
 	ExecWithoutTimeoutCommon := func(a AlluxioFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
 		return "Type: COUNTER, Value: 6,367,897", "", nil
