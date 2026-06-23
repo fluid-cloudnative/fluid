@@ -37,7 +37,7 @@ func (h *masterWorkerArchApi) GetExecutionPodInfo() (podName string, containerNa
 	podName = common.GetCacheComponentName(h.name, common.ComponentTypeMaster) + "-0"
 
 	// fluid assumes the first container is the main container.
-	if runtimeClass.Topology == nil || runtimeClass.Topology.Master == nil ||
+	if runtimeClass == nil || runtimeClass.Topology == nil || runtimeClass.Topology.Master == nil ||
 		len(runtimeClass.Topology.Master.Template.Spec.Containers) == 0 {
 		return "", "", errors.New("no container in master pod template")
 	}

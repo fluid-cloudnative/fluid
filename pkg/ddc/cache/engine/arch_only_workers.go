@@ -37,7 +37,7 @@ func (h *workersOnlyArchApi) GetExecutionPodInfo() (podName string, containerNam
 	podName = common.GetCacheComponentName(h.name, common.ComponentTypeWorker) + "-0"
 
 	// fluid assumes the first container is the main container.
-	if runtimeClass.Topology == nil || runtimeClass.Topology.Worker == nil ||
+	if runtimeClass == nil || runtimeClass.Topology == nil || runtimeClass.Topology.Worker == nil ||
 		len(runtimeClass.Topology.Worker.Template.Spec.Containers) == 0 {
 		return "", "", errors.New("no container in worker pod template")
 	}
