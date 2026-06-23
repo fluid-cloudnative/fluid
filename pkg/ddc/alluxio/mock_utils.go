@@ -141,6 +141,12 @@ func mockAlluxioEngineForTests(dataset *datav1alpha1.Dataset, runtime *datav1alp
 	return engine
 }
 
+// mockAlluxioObjectsForTests creates mocked Kubernetes resources for Alluxio unit tests.
+// It validates that the given dataset and runtime form a valid pair (matching namespace,
+// name and owner reference) and panics otherwise. Based on the provided dataset, runtime
+// and engine, it constructs master and worker StatefulSets, fuse DaemonSet, master Services,
+// ConfigMaps, PersistentVolume and PersistentVolumeClaim with labels and owner references
+// consistent with a Fluid-managed Alluxio deployment.
 func mockAlluxioObjectsForTests(dataset *datav1alpha1.Dataset, runtime *datav1alpha1.AlluxioRuntime, engine *AlluxioEngine) mockedObjects {
 	if dataset.Namespace != runtime.Namespace ||
 		dataset.Name != runtime.Name ||
