@@ -1534,13 +1534,6 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_CacheRuntimeStatus(ref common.R
 							Format:      "",
 						},
 					},
-					"configFile": {
-						SchemaProps: spec.SchemaProps{
-							Description: "ConfigFile is the path to the engine-specific configuration file. This file contains the cache engine's native configuration format.",
-							Type:        []string{"string"},
-							Format:      "",
-						},
-					},
 					"setupDuration": {
 						SchemaProps: spec.SchemaProps{
 							Description: "SetupDuration is the duration spent setting up the runtime, in human-readable format (e.g., \"2m30s\"). This helps users understand the setup time for the runtime.",
@@ -1604,20 +1597,6 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_CacheRuntimeStatus(ref common.R
 							Description: "Client is the observed state of the client (FUSE) component.",
 							Default:     map[string]interface{}{},
 							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.RuntimeComponentStatus"),
-						},
-					},
-					"mounts": {
-						SchemaProps: spec.SchemaProps{
-							Description: "Mounts contains the mount point configurations from the bound dataset. Currently not used, may be used when integrating thin runtime.",
-							Type:        []string{"array"},
-							Items: &spec.SchemaOrArray{
-								Schema: &spec.Schema{
-									SchemaProps: spec.SchemaProps{
-										Default: map[string]interface{}{},
-										Ref:     ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.Mount"),
-									},
-								},
-							},
 						},
 					},
 					"mountTime": {
