@@ -5,8 +5,9 @@ FROM golang:1.24.12-bookworm@sha256:1c64c586e1cf9dc4c394c5896ec574659c792a0840f4
 WORKDIR /go/src/github.com/fluid-cloudnative/fluid
 COPY . .
 
+ARG HELM_VERSION
 ARG FLUID_VERSION
-RUN make download-helm
+RUN make download-helm HELM_VERSION=${HELM_VERSION}
 RUN make application-controller-build && \
     cp bin/fluidapp-controller /go/bin/fluidapp-controller
 RUN bash hack/helm/pin_runtime_chart_version.sh "${FLUID_VERSION}"
