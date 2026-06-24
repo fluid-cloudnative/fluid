@@ -8,7 +8,7 @@ mkdir -p "${DEST_DIR}"
 
 for arch in amd64 arm64; do
   target="${DEST_DIR}/helm-linux-${arch}"
-  if [ ! -f "${target}" ]; then
+  if [[ ! -f "${target}" ]]; then
     echo "Downloading helm ${HELM_VERSION} linux/${arch} ..."
     curl -fsSL "https://github.com/fluid-cloudnative/helm/releases/download/${HELM_VERSION}/helm-${HELM_VERSION}-linux-${arch}.tar.gz" \
       | tar -xz --strip-components=1 -C "${DEST_DIR}" "linux-${arch}/helm"
