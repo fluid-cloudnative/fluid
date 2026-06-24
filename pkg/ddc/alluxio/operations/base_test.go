@@ -220,6 +220,9 @@ func TestAlluxioFileUtils_LoadMetaData(t *testing.T) {
 	}
 }
 
+// TestAlluxioFileUtils_QueryMetaDataInfoIntoFile tests the QueryMetaDataInfoIntoFile method.
+// It uses gomonkey to mock the internal exec method, verifying that an error is returned when exec fails
+// and that no error occurs when exec succeeds. The test covers all defined KeyOfMetaDataFile types.
 func TestAlluxioFileUtils_QueryMetaDataInfoIntoFile(t *testing.T) {
 	ExecCommon := func(a AlluxioFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
 		return "Alluxio cluster summary", "", nil
@@ -388,6 +391,19 @@ func TestAlluxioFileUtils_IsMounted(t *testing.T) {
 	}
 }
 
+// TestAlluxioFileUtils_FindUnmountedAlluxioPaths tests the FindUnmountedAlluxioPaths method
+// of AlluxioFileUtils. It mocks the internal exec command to simulate the output of
+// `alluxio fs mount` and verifies that paths not currently mounted are correctly
+// identified from the given alluxioPaths slice.
+//
+// Test cases cover:
+// - all provided paths are already mounted (expect empty result)
+// - a mix of mounted and unmounted paths (expect only unmounted ones)
+// - an empty input slice (expect empty result)
+// - all provided paths are unmounted (expect all paths returned)
+//
+// Parameters:
+// - t (*testing.T): the test context used for reporting failures.
 func TestAlluxioFileUtils_FindUnmountedAlluxioPaths(t *testing.T) {
 	const returnMessage = `s3://bucket/path/train on /cache (s3, capacity=-1B, used=-1B, not read-only, not shared, properties={alluxio.underfs.s3.inherit.acl=false, alluxio.underfs.s3.endpoint=s3endpoint, aws.secretKey=, aws.accessKeyId=})
 /underFSStorage on / (local, capacity=0B, used=0B, not read-only, not shared, properties={})`
@@ -463,6 +479,14 @@ func TestAlluxioFileUtils_Ready(t *testing.T) {
 	}
 }
 
+// TestAlluxioFIleUtils_Du tests the Du method of AlluxioFileUtils.
+// It verifies that the method returns an error when command execution fails
+// and correctly parses the file size, cached size, and cached percentage
+// when the command succeeds.
+//
+// Test cases:
+// - command execution returns an error
+// - command execution succeeds and du output is parsed correctly
 func TestAlluxioFIleUtils_Du(t *testing.T) {
 	ExecCommon := func(a AlluxioFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
 		return "File Size     In Alluxio       Path\n577575561     0 (0%)           /hbase", "", nil
@@ -555,6 +579,18 @@ func TestAlluxioFileUtils_Count(t *testing.T) {
 	}
 }
 
+// TestAlluxioFileUtils_GetFileCount tests the GetFileCount method of AlluxioFileUtils.
+// It verifies the method's ability to parse the output of the alluxio fsadmin report
+// command and handle various error scenarios.
+//
+// Test cases:
+// - exec failure: Tests handling of command execution errors.
+// - success: Tests successful parsing of file count output.
+//
+// The test uses gomonkey to mock the internal exec method:
+//   - When exec returns an error, GetFileCount should return an error.
+//   - When exec returns a valid report (e.g., "Type: COUNTER, Value: 6,367,897"),
+//     GetFileCount should successfully parse and return the correct file count.
 func TestAlluxioFileUtils_GetFileCount(t *testing.T) {
 	ExecWithoutTimeoutCommon := func(a AlluxioFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
 		return "Type: COUNTER, Value: 6,367,897", "", nil
@@ -634,6 +670,10 @@ func TestAlluxioFIleUtils_ReportCapacity(t *testing.T) {
 	}
 }
 
+// TestAlluxioFileUtils_exec tests the private exec method of AlluxioFileUtils.
+// It mocks the exec implementation to verify that an error is returned when
+// command execution fails and that no error is returned when execution succeeds.
+// The test also covers calls with both disabled and enabled verbose output.
 func TestAlluxioFileUtils_exec(t *testing.T) {
 	ExecWithoutTimeoutCommon := func(a AlluxioFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
 		return "Type: COUNTER, Value: 6,367,897", "", nil

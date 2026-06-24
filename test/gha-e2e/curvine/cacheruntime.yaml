@@ -17,13 +17,8 @@ spec:
       levels: #worker缓存配置
         - low: "0.5"
           high: "0.8"
-          path:
-          - "testing/data"
-          quota:
-          - 1Gi
-          medium:
-            volume:
-              emptyDir: {}
+          emptyDir:
+            quota: 1Gi
   client:
     options:
       key1: value1

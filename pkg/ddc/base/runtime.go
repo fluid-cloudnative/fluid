@@ -310,6 +310,8 @@ func WithClientMetrics(clientMetrics datav1alpha1.ClientMetrics) RuntimeInfoOpti
 	}
 }
 
+// GetFuseMetricsScrapeTarget returns the configured metrics scrape target for the Fuse client.
+// The returned selector indicates which mount modes should expose Fuse metrics for scraping.
 func (info *RuntimeInfo) GetFuseMetricsScrapeTarget() mountModeSelector {
 	return info.fuse.MetricsScrapeTarget
 }
@@ -333,6 +335,9 @@ func WithTieredStore(tieredStore datav1alpha1.TieredStore) RuntimeInfoOption {
 	}
 }
 
+// GetTieredStoreInfo returns the TieredStoreInfo associated with the RuntimeInfo.
+// The info is pre-converted from datav1alpha1.TieredStore for convenience (e.g., structured quotas).
+// If no levels are defined, the Levels slice in the returned struct will be nil.
 func (info *RuntimeInfo) GetTieredStoreInfo() TieredStoreInfo {
 	return info.tieredstoreInfo
 }
@@ -443,6 +448,7 @@ func (info *RuntimeInfo) GetWorkerPods(client client.Client) ([]corev1.Pod, erro
 	return workerPods, err
 }
 
+// GetFuseCleanPolicy returns the FUSE clean policy from the runtime information
 func (info *RuntimeInfo) GetFuseCleanPolicy() datav1alpha1.FuseCleanPolicy {
 	return info.fuse.CleanPolicy
 }

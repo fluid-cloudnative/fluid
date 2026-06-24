@@ -98,9 +98,18 @@ func BuildReferenceDatasetThinEngine(id string, ctx cruntime.ReconcileRequestCon
 	engine.Log = ctx.Log.WithValues("virtual engine", ctx.RuntimeType).WithValues("id", id)
 
 	// check if support the dataset mount format
-	err := engine.checkDatasetMountSupport()
+	dataset, err := utils.GetDataset(ctx.Client, ctx.Name, ctx.Namespace)
 	if err != nil {
-		return nil, err
+		if utils.IgnoreNotFound(err) == nil {
+			engine.Log.Info("The dataset is not found, pass checkDatasetMountSupport because runtime is deleting")
+		} else {
+			return nil, err
+		}
+	} else {
+		err = engine.checkDatasetMountSupport(dataset)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	// Build and setup runtime info
@@ -221,17 +230,7 @@ func (e *ReferenceDatasetEngine) Shutdown() (err error) {
 	return
 }
 
-func (e *ReferenceDatasetEngine) checkDatasetMountSupport() error {
-	dataset, err := utils.GetDataset(e.Client, e.name, e.namespace)
-	if err != nil {
-		// not found dataset error indicates the runtime is deleting, pass checkDatasetMountSupport
-		if utils.IgnoreNotFound(err) == nil {
-			e.Log.Info("The dataset is not found, pass checkDatasetMountSupport because runtime is deleting")
-			return nil
-		} else {
-			return err
-		}
-	}
+func (e *ReferenceDatasetEngine) checkDatasetMountSupport(dataset *v1alpha1.Dataset) error {
 
 	physicalDatasetNamespacedName := base.GetPhysicalDatasetFromMounts(dataset.Spec.Mounts)
 	physicalSize := len(physicalDatasetNamespacedName)

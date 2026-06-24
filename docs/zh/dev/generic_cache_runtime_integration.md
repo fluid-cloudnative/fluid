@@ -230,14 +230,11 @@ spec:
       key2: value2
     replicas: 2 #worker
     tieredStore:
-      levels: #worker缓存配置 
-      - quota: 40Gi
-        low: "0.5"
+      levels: #worker缓存配置
+      - emptyDir:
+          quota: 1Gi
         high: "0.8"
-        path: "/cache-data"
-        medium:
-          emptyDir: #使用tmpfs作为缓存介质
-            medium: Memory
+        low: "0.5"
   client:
     options:
       key1: value1
@@ -251,6 +248,8 @@ spec:
       claimName: test
 
 ```
+
+关于分层存储的详细配置说明，请参考 [CacheRuntime TieredStore 配置示例](../userguide/cache_runtime_tieredstore.md)。
 
 ### 步骤2.6 确认 Fluid CacheRuntime为组件提供的 RuntimeConfig，进行参数解析启动容器
 > 可以基于原生镜像改造 entryPoint 脚本，先解析 RuntimeConfig，并生成对应的配置文件，后再启动容器。
@@ -304,7 +303,20 @@ spec:
     "replicas": 1,
     "service": {
       "name": "svc-curvine-demo-worker"
-    }
+    },
+    "tieredStoreLevels": [
+      {
+        "mountPaths": [
+          "/etc/fluid/mount/tiered-store/level-0-index-0-emptydir"
+        ],
+        "mediumType": "HDD",
+        "quotas": [
+          "1Gi"
+        ],
+        "high": "0.8",
+        "low": "0.5"
+      }
+    ]
   },
   "client": {
     "enabled": true,

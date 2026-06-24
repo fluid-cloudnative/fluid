@@ -230,14 +230,11 @@ spec:
       key2: value2
     replicas: 2 # worker
     tieredStore:
-      levels: # worker cache configuration 
-      - quota: 40Gi
-        low: "0.5"
+      levels: # worker cache configuration
+      - emptyDir:
+          quota: 1Gi
         high: "0.8"
-        path: "/cache-data"
-        medium:
-          emptyDir: # Use tmpfs as cache medium
-            medium: Memory
+        low: "0.5"
   client:
     options:
       key1: value1
@@ -251,6 +248,8 @@ spec:
       claimName: test
 
 ```
+
+For detailed configuration instructions on tiered storage, please refer to [CacheRuntime TieredStore Configuration Example](../userguide/cache_runtime_tieredstore.md).
 
 ### Step 2.6 Confirm RuntimeConfig Provided by Fluid CacheRuntime for Components, Parse Parameters to Start Containers
 > You can modify the entryPoint script based on the native image, first parse RuntimeConfig, generate corresponding configuration files, and then start the container.
@@ -305,7 +304,20 @@ the `mounts`, `accessModes`, and `targetPath` fields in the JSON are all derived
     "replicas": 1,
     "service": {
       "name": "svc-curvine-demo-worker"
-    }
+    },
+    "tieredStoreLevels": [
+      {
+        "mountPaths": [
+          "/etc/fluid/mount/tiered-store/level-0-index-0-emptydir"
+        ],
+        "mediumType": "HDD",
+        "quotas": [
+          "1Gi"
+        ],
+        "high": "0.8",
+        "low": "0.5"
+      }
+    ]
   },
   "client": {
     "enabled": true,
