@@ -37,12 +37,12 @@ import (
 
 // MockExecutions is a mock implementation of CacheFileUtil for testing
 type MockExecutions struct {
-	MountFunc func(command []string, timeout time.Duration) (stdout string, err error)
+	MockExecute func(command []string, timeout time.Duration) (stdout string, err error)
 }
 
-func (m *MockExecutions) Mount(command []string, timeout time.Duration) (stdout string, err error) {
-	if m.MountFunc != nil {
-		return m.MountFunc(command, timeout)
+func (m *MockExecutions) Execute(command []string, timeout time.Duration) (stdout string, err error) {
+	if m.MockExecute != nil {
+		return m.MockExecute(command, timeout)
 	}
 	return "", nil
 }
@@ -230,7 +230,7 @@ var _ = Describe("CacheEngine UpdateOnUFSChange Tests", Label("pkg.ddc.cache.eng
 					runtimeClass: runtimeClass,
 				}
 
-				mockExecutions := &MockExecutions{MountFunc: func(command []string, timeout time.Duration) (stdout string, err error) {
+				mockExecutions := &MockExecutions{MockExecute: func(command []string, timeout time.Duration) (stdout string, err error) {
 					return `{"mounted": ["/mount1", "/mount2"]}`, nil
 				}}
 				patches = gomonkey.ApplyFunc(NewCacheFileUtil, func(podName, containerName, namespace string, log logr.Logger) CacheFileUtil {
@@ -250,7 +250,7 @@ var _ = Describe("CacheEngine UpdateOnUFSChange Tests", Label("pkg.ddc.cache.eng
 					runtimeClass: runtimeClass,
 				}
 
-				mockExecutions := &MockExecutions{MountFunc: func(command []string, timeout time.Duration) (stdout string, err error) {
+				mockExecutions := &MockExecutions{MockExecute: func(command []string, timeout time.Duration) (stdout string, err error) {
 					return "", nil
 				}}
 				patches = gomonkey.ApplyFunc(NewCacheFileUtil, func(podName, containerName, namespace string, log logr.Logger) CacheFileUtil {
@@ -270,7 +270,7 @@ var _ = Describe("CacheEngine UpdateOnUFSChange Tests", Label("pkg.ddc.cache.eng
 					runtimeClass: runtimeClass,
 				}
 
-				mockExecutions := &MockExecutions{MountFunc: func(command []string, timeout time.Duration) (stdout string, err error) {
+				mockExecutions := &MockExecutions{MockExecute: func(command []string, timeout time.Duration) (stdout string, err error) {
 					return "   ", nil
 				}}
 				patches = gomonkey.ApplyFunc(NewCacheFileUtil, func(podName, containerName, namespace string, log logr.Logger) CacheFileUtil {
@@ -290,7 +290,7 @@ var _ = Describe("CacheEngine UpdateOnUFSChange Tests", Label("pkg.ddc.cache.eng
 					runtimeClass: runtimeClass,
 				}
 
-				mockExecutions := &MockExecutions{MountFunc: func(command []string, timeout time.Duration) (stdout string, err error) {
+				mockExecutions := &MockExecutions{MockExecute: func(command []string, timeout time.Duration) (stdout string, err error) {
 					return "invalid json output", nil
 				}}
 				patches = gomonkey.ApplyFunc(NewCacheFileUtil, func(podName, containerName, namespace string, log logr.Logger) CacheFileUtil {
@@ -310,7 +310,7 @@ var _ = Describe("CacheEngine UpdateOnUFSChange Tests", Label("pkg.ddc.cache.eng
 					runtimeClass: runtimeClass,
 				}
 
-				mockExecutions := &MockExecutions{MountFunc: func(command []string, timeout time.Duration) (stdout string, err error) {
+				mockExecutions := &MockExecutions{MockExecute: func(command []string, timeout time.Duration) (stdout string, err error) {
 					return "", errors.New("mount command failed")
 				}}
 				patches = gomonkey.ApplyFunc(NewCacheFileUtil, func(podName, containerName, namespace string, log logr.Logger) CacheFileUtil {
@@ -459,7 +459,7 @@ var _ = Describe("CacheEngine UpdateOnUFSChange Tests", Label("pkg.ddc.cache.eng
 
 			// Mock NewCacheFileUtil if mountFunc is provided
 			if mountFunc != nil {
-				mockExecutions := &MockExecutions{MountFunc: mountFunc}
+				mockExecutions := &MockExecutions{MockExecute: mountFunc}
 				patches = gomonkey.ApplyFunc(NewCacheFileUtil, func(podName, containerName, namespace string, log logr.Logger) CacheFileUtil {
 					return mockExecutions
 				})

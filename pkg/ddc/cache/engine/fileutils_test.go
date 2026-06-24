@@ -55,7 +55,7 @@ var _ = Describe("CacheFileUtils Tests", Label("pkg.ddc.cache.engine.fileutils_t
 			})
 
 			It("should return stdout without error", func() {
-				stdout, err := fileUtil.Mount([]string{"/mount.sh"}, 30*time.Second)
+				stdout, err := fileUtil.Execute([]string{"/mount.sh"}, 30*time.Second)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(stdout).To(Equal("mount successful"))
 			})
@@ -70,7 +70,7 @@ var _ = Describe("CacheFileUtils Tests", Label("pkg.ddc.cache.engine.fileutils_t
 			})
 
 			It("should return empty stdout without error", func() {
-				stdout, err := fileUtil.Mount([]string{"/mount.sh"}, 30*time.Second)
+				stdout, err := fileUtil.Execute([]string{"/mount.sh"}, 30*time.Second)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(stdout).To(BeEmpty())
 			})
@@ -85,7 +85,7 @@ var _ = Describe("CacheFileUtils Tests", Label("pkg.ddc.cache.engine.fileutils_t
 			})
 
 			It("should return error", func() {
-				stdout, err := fileUtil.Mount([]string{"/mount.sh"}, 30*time.Second)
+				stdout, err := fileUtil.Execute([]string{"/mount.sh"}, 30*time.Second)
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("command failed"))
 				Expect(stdout).To(BeEmpty())
@@ -103,7 +103,7 @@ var _ = Describe("CacheFileUtils Tests", Label("pkg.ddc.cache.engine.fileutils_t
 
 			It("should execute command successfully", func() {
 				command := []string{"/mount.sh", "--password=secret123"}
-				stdout, err := fileUtil.Mount(command, 30*time.Second)
+				stdout, err := fileUtil.Execute(command, 30*time.Second)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(stdout).To(Equal("success"))
 			})
@@ -118,7 +118,7 @@ var _ = Describe("CacheFileUtils Tests", Label("pkg.ddc.cache.engine.fileutils_t
 			})
 
 			It("should still execute with short timeout", func() {
-				stdout, err := fileUtil.Mount([]string{"/quick-mount.sh"}, 1*time.Second)
+				stdout, err := fileUtil.Execute([]string{"/quick-mount.sh"}, 1*time.Second)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(stdout).To(Equal("completed"))
 			})
@@ -136,7 +136,7 @@ var _ = Describe("CacheFileUtils Tests", Label("pkg.ddc.cache.engine.fileutils_t
 
 			It("should pass all arguments correctly", func() {
 				command := []string{"/mount.sh", "--source=/data", "--target=/mnt", "--options=rw"}
-				stdout, err := fileUtil.Mount(command, 30*time.Second)
+				stdout, err := fileUtil.Execute(command, 30*time.Second)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(stdout).To(Equal("multi-arg success"))
 			})
@@ -151,7 +151,7 @@ var _ = Describe("CacheFileUtils Tests", Label("pkg.ddc.cache.engine.fileutils_t
 			})
 
 			It("should return success despite warnings in stderr", func() {
-				stdout, err := fileUtil.Mount([]string{"/mount.sh"}, 30*time.Second)
+				stdout, err := fileUtil.Execute([]string{"/mount.sh"}, 30*time.Second)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(stdout).To(Equal("mount ok"))
 			})
@@ -166,7 +166,7 @@ var _ = Describe("CacheFileUtils Tests", Label("pkg.ddc.cache.engine.fileutils_t
 			})
 
 			It("should wrap error with command context", func() {
-				stdout, err := fileUtil.Mount([]string{"/mount.sh"}, 30*time.Second)
+				stdout, err := fileUtil.Execute([]string{"/mount.sh"}, 30*time.Second)
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("error when executing command"))
 				Expect(err.Error()).To(ContainSubstring("connection refused"))

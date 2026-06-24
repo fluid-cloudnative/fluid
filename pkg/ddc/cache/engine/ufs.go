@@ -48,7 +48,7 @@ func (e *CacheEngine) PrepareUFS(archApi ArchitectureApi) (mountOutput *datav1al
 	fileUtil := NewCacheFileUtil(podName, containerName, e.namespace, e.Log)
 	// at least 20 seconds
 	timeoutSeconds := max(mountUfs.TimeoutSeconds, common.MinExecutionTimeoutSeconds)
-	stdout, err := fileUtil.Mount(mountUfs.Command, time.Duration(timeoutSeconds)*time.Second)
+	stdout, err := fileUtil.Execute(mountUfs.Command, time.Duration(timeoutSeconds)*time.Second)
 	if err != nil {
 		return nil, err
 	}

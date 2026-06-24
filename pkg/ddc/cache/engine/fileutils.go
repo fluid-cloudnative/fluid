@@ -27,7 +27,7 @@ import (
 
 // CacheFileUtil defines the interface for cache system operations
 type CacheFileUtil interface {
-	Mount(command []string, timeout time.Duration) (stdout string, err error)
+	Execute(command []string, timeout time.Duration) (stdout string, err error)
 }
 
 type CacheFileUtilImpl struct {
@@ -63,7 +63,7 @@ func (c *CacheFileUtilImpl) exec(command []string, timeout time.Duration) (stdou
 	return
 }
 
-func (c *CacheFileUtilImpl) Mount(command []string, timeout time.Duration) (stdout string, err error) {
+func (c *CacheFileUtilImpl) Execute(command []string, timeout time.Duration) (stdout string, err error) {
 	stdout, stderr, err := c.exec(command, timeout)
 
 	if err != nil {

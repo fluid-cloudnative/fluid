@@ -17,9 +17,18 @@ limitations under the License.
 package engine
 
 import (
+	"time"
+
+	"github.com/agiledragon/gomonkey/v2"
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
+	"github.com/go-logr/logr"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"github.com/pkg/errors"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 var _ = Describe("generateDatasetMountOptions Tests", Label("pkg.ddc.cache.engine.dataset_test.go"), func() {
@@ -396,6 +405,491 @@ var _ = Describe("generateDatasetMountOptions Tests", Label("pkg.ddc.cache.engin
 				Expect(encryptOptions).To(HaveLen(2))
 				Expect(encryptOptions["option1"]).To(Equal("/etc/fluid/secrets/same-secret/key1"))
 				Expect(encryptOptions["option2"]).To(Equal("/etc/fluid/secrets/same-secret/key2"))
+			})
+		})
+	})
+})
+
+// -----------------------------------------------------------------------------
+// GetCacheStates tests
+// -----------------------------------------------------------------------------
+
+var _ = Describe("GetCacheStates Tests", Label("pkg.ddc.cache.engine.dataset_test.go"), func() {
+	var (
+		patches *gomonkey.Patches
+		engine  *CacheEngine
+	)
+
+	BeforeEach(func() {
+		engine = &CacheEngine{
+			name:      "test-runtime",
+			namespace: "default",
+			Log:       logr.Discard(),
+		}
+	})
+
+	AfterEach(func() {
+		if patches != nil {
+			patches.Reset()
+			patches = nil
+		}
+	})
+
+	buildMasterWorkerRuntimeClass := func(reportSummary *datav1alpha1.ExecutionCommonEntry) *datav1alpha1.CacheRuntimeClass {
+		return &datav1alpha1.CacheRuntimeClass{
+			ObjectMeta: metav1.ObjectMeta{Name: "test-runtime-class"},
+			Topology: &datav1alpha1.RuntimeTopology{
+				Master: &datav1alpha1.RuntimeComponentDefinition{
+					Template: corev1.PodTemplateSpec{
+						Spec: corev1.PodSpec{
+							Containers: []corev1.Container{{Name: "master"}},
+						},
+					},
+					ExecutionEntries: &datav1alpha1.ExecutionEntries{
+						ReportSummary: reportSummary,
+					},
+				},
+			},
+		}
+	}
+
+	buildWorkersOnlyRuntimeClass := func(reportSummary *datav1alpha1.ExecutionCommonEntry) *datav1alpha1.CacheRuntimeClass {
+		return &datav1alpha1.CacheRuntimeClass{
+			ObjectMeta: metav1.ObjectMeta{Name: "test-runtime-class-workers-only"},
+			Topology: &datav1alpha1.RuntimeTopology{
+				Worker: &datav1alpha1.RuntimeComponentDefinition{
+					Template: corev1.PodTemplateSpec{
+						Spec: corev1.PodSpec{
+							Containers: []corev1.Container{{Name: "worker"}},
+						},
+					},
+					ExecutionEntries: &datav1alpha1.ExecutionEntries{
+						ReportSummary: reportSummary,
+					},
+				},
+			},
+		}
+	}
+
+	newMasterWorkerRuntime := func() *datav1alpha1.CacheRuntime {
+		return &datav1alpha1.CacheRuntime{
+			Spec: datav1alpha1.CacheRuntimeSpec{
+				RuntimeClassName: "test-runtime-class",
+				Master:           datav1alpha1.CacheRuntimeMasterSpec{Replicas: 1},
+			},
+		}
+	}
+
+	newWorkersOnlyRuntime := func() *datav1alpha1.CacheRuntime {
+		return &datav1alpha1.CacheRuntime{
+			Spec: datav1alpha1.CacheRuntimeSpec{
+				RuntimeClassName: "test-runtime-class-workers-only",
+				Master: datav1alpha1.CacheRuntimeMasterSpec{
+					RuntimeComponentCommonSpec: datav1alpha1.RuntimeComponentCommonSpec{
+						Disabled: true,
+					},
+					Replicas: 0,
+				},
+			},
+		}
+	}
+
+	Describe("GetCacheStates with Master-Worker architecture", func() {
+		Context("when ReportSummary returns valid JSON", func() {
+			It("should parse JSON and return the correct CacheStateList", func() {
+				reportSummary := &datav1alpha1.ExecutionCommonEntry{
+					Command:        []string{"/bin/sh", "-c", "report-summary"},
+					TimeoutSeconds: 30,
+				}
+				runtimeClass := buildMasterWorkerRuntimeClass(reportSummary)
+				runtime := newMasterWorkerRuntime()
+
+				patches = gomonkey.ApplyFunc(kubeclient.ExecCommandInContainerWithTimeout,
+					func(podName, containerName, namespace string, command []string, timeout time.Duration) (stdout string, stderr string, err error) {
+						return `{"cached":"1048576","cachedPercentage":"50","cacheCapacity":"2097152","cacheHitRatio":"0.85"}`, "", nil
+					})
+
+				cacheStates, err := engine.GetCacheStates(runtime, runtimeClass)
+
+				Expect(err).NotTo(HaveOccurred())
+				Expect(cacheStates).NotTo(BeNil())
+				Expect(cacheStates[common.Cached]).To(Equal("1048576"))
+				Expect(cacheStates[common.CachedPercentage]).To(Equal("50"))
+				Expect(cacheStates[common.CacheCapacity]).To(Equal("2097152"))
+				Expect(cacheStates[common.CacheHitRatio]).To(Equal("0.85"))
+			})
+
+			It("should return valid CacheStateList with partial fields when JSON has partial data", func() {
+				reportSummary := &datav1alpha1.ExecutionCommonEntry{
+					Command:        []string{"/report-summary"},
+					TimeoutSeconds: 30,
+				}
+				runtimeClass := buildMasterWorkerRuntimeClass(reportSummary)
+				runtime := newMasterWorkerRuntime()
+
+				patches = gomonkey.ApplyFunc(kubeclient.ExecCommandInContainerWithTimeout,
+					func(podName, containerName, namespace string, command []string, timeout time.Duration) (stdout string, stderr string, err error) {
+						return `{"cached":"524288","cacheCapacity":"1048576"}`, "", nil
+					})
+
+				cacheStates, err := engine.GetCacheStates(runtime, runtimeClass)
+
+				Expect(err).NotTo(HaveOccurred())
+				Expect(cacheStates).NotTo(BeNil())
+				Expect(cacheStates[common.Cached]).To(Equal("524288"))
+				Expect(cacheStates[common.CacheCapacity]).To(Equal("1048576"))
+				Expect(cacheStates[common.CachedPercentage]).To(Equal(""))
+				Expect(cacheStates[common.CacheHitRatio]).To(Equal(""))
+			})
+
+			It("should clamp timeout to MinExecutionTimeoutSeconds when configured timeout is too small", func() {
+				reportSummary := &datav1alpha1.ExecutionCommonEntry{
+					Command:        []string{"/report-summary"},
+					TimeoutSeconds: 5,
+				}
+				runtimeClass := buildMasterWorkerRuntimeClass(reportSummary)
+				runtime := newMasterWorkerRuntime()
+
+				patches = gomonkey.ApplyFunc(kubeclient.ExecCommandInContainerWithTimeout,
+					func(podName, containerName, namespace string, command []string, timeout time.Duration) (stdout string, stderr string, err error) {
+						Expect(timeout).To(Equal(time.Duration(common.MinExecutionTimeoutSeconds) * time.Second))
+						return `{"cached":"100","cachedPercentage":"10","cacheCapacity":"1000","cacheHitRatio":"0.5"}`, "", nil
+					})
+
+				cacheStates, err := engine.GetCacheStates(runtime, runtimeClass)
+
+				Expect(err).NotTo(HaveOccurred())
+				Expect(cacheStates).NotTo(BeNil())
+			})
+
+			It("should respect timeout that is larger than MinExecutionTimeoutSeconds", func() {
+				reportSummary := &datav1alpha1.ExecutionCommonEntry{
+					Command:        []string{"/report-summary"},
+					TimeoutSeconds: 60,
+				}
+				runtimeClass := buildMasterWorkerRuntimeClass(reportSummary)
+				runtime := newMasterWorkerRuntime()
+
+				patches = gomonkey.ApplyFunc(kubeclient.ExecCommandInContainerWithTimeout,
+					func(podName, containerName, namespace string, command []string, timeout time.Duration) (stdout string, stderr string, err error) {
+						Expect(timeout).To(Equal(60 * time.Second))
+						return `{"cached":"100","cachedPercentage":"10","cacheCapacity":"1000","cacheHitRatio":"0.5"}`, "", nil
+					})
+
+				cacheStates, err := engine.GetCacheStates(runtime, runtimeClass)
+
+				Expect(err).NotTo(HaveOccurred())
+				Expect(cacheStates).NotTo(BeNil())
+			})
+		})
+
+		Context("when ReportSummary returns malformed JSON", func() {
+			It("should return an error when stdout is not valid JSON", func() {
+				reportSummary := &datav1alpha1.ExecutionCommonEntry{
+					Command:        []string{"/report-summary"},
+					TimeoutSeconds: 30,
+				}
+				runtimeClass := buildMasterWorkerRuntimeClass(reportSummary)
+				runtime := newMasterWorkerRuntime()
+
+				patches = gomonkey.ApplyFunc(kubeclient.ExecCommandInContainerWithTimeout,
+					func(podName, containerName, namespace string, command []string, timeout time.Duration) (stdout string, stderr string, err error) {
+						return "this is not json {invalid}", "", nil
+					})
+
+				cacheStates, err := engine.GetCacheStates(runtime, runtimeClass)
+
+				Expect(err).To(HaveOccurred())
+				Expect(cacheStates).To(BeNil())
+			})
+
+			It("should return an error when stdout is empty", func() {
+				reportSummary := &datav1alpha1.ExecutionCommonEntry{
+					Command:        []string{"/report-summary"},
+					TimeoutSeconds: 30,
+				}
+				runtimeClass := buildMasterWorkerRuntimeClass(reportSummary)
+				runtime := newMasterWorkerRuntime()
+
+				patches = gomonkey.ApplyFunc(kubeclient.ExecCommandInContainerWithTimeout,
+					func(podName, containerName, namespace string, command []string, timeout time.Duration) (stdout string, stderr string, err error) {
+						return "", "", nil
+					})
+
+				cacheStates, err := engine.GetCacheStates(runtime, runtimeClass)
+
+				Expect(err).To(HaveOccurred())
+				Expect(cacheStates).To(BeNil())
+			})
+		})
+
+		Context("when pod exec fails", func() {
+			It("should return an error when ExecCommandInContainerWithTimeout fails", func() {
+				reportSummary := &datav1alpha1.ExecutionCommonEntry{
+					Command:        []string{"/report-summary"},
+					TimeoutSeconds: 30,
+				}
+				runtimeClass := buildMasterWorkerRuntimeClass(reportSummary)
+				runtime := newMasterWorkerRuntime()
+
+				patches = gomonkey.ApplyFunc(kubeclient.ExecCommandInContainerWithTimeout,
+					func(podName, containerName, namespace string, command []string, timeout time.Duration) (stdout string, stderr string, err error) {
+						return "", "pod not running", errors.New("pod exec failed: pod not found")
+					})
+
+				cacheStates, err := engine.GetCacheStates(runtime, runtimeClass)
+
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("error when executing command"))
+				Expect(cacheStates).To(BeNil())
+			})
+
+			It("should return an error when exec command times out", func() {
+				reportSummary := &datav1alpha1.ExecutionCommonEntry{
+					Command:        []string{"/report-summary"},
+					TimeoutSeconds: 30,
+				}
+				runtimeClass := buildMasterWorkerRuntimeClass(reportSummary)
+				runtime := newMasterWorkerRuntime()
+
+				patches = gomonkey.ApplyFunc(kubeclient.ExecCommandInContainerWithTimeout,
+					func(podName, containerName, namespace string, command []string, timeout time.Duration) (stdout string, stderr string, err error) {
+						return "", "", errors.New("command timed out")
+					})
+
+				cacheStates, err := engine.GetCacheStates(runtime, runtimeClass)
+
+				Expect(err).To(HaveOccurred())
+				Expect(cacheStates).To(BeNil())
+			})
+		})
+
+		Context("when ReportSummary entry is not configured", func() {
+			It("should return an error when ReportSummary is nil in ExecutionEntries", func() {
+				runtimeClass := &datav1alpha1.CacheRuntimeClass{
+					ObjectMeta: metav1.ObjectMeta{Name: "test-runtime-class-no-report"},
+					Topology: &datav1alpha1.RuntimeTopology{
+						Master: &datav1alpha1.RuntimeComponentDefinition{
+							Template: corev1.PodTemplateSpec{
+								Spec: corev1.PodSpec{
+									Containers: []corev1.Container{{Name: "master"}},
+								},
+							},
+							ExecutionEntries: &datav1alpha1.ExecutionEntries{
+								ReportSummary: nil,
+							},
+						},
+					},
+				}
+				runtime := &datav1alpha1.CacheRuntime{
+					Spec: datav1alpha1.CacheRuntimeSpec{
+						RuntimeClassName: "test-runtime-class-no-report",
+						Master:           datav1alpha1.CacheRuntimeMasterSpec{Replicas: 1},
+					},
+				}
+
+				cacheStates, err := engine.GetCacheStates(runtime, runtimeClass)
+
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("ReportSummary command is empty or not configured"))
+				Expect(cacheStates).To(BeNil())
+			})
+
+			It("should return an error when ExecutionEntries itself is nil", func() {
+				runtimeClass := &datav1alpha1.CacheRuntimeClass{
+					ObjectMeta: metav1.ObjectMeta{Name: "test-runtime-class-no-exec-entries"},
+					Topology: &datav1alpha1.RuntimeTopology{
+						Master: &datav1alpha1.RuntimeComponentDefinition{
+							Template: corev1.PodTemplateSpec{
+								Spec: corev1.PodSpec{
+									Containers: []corev1.Container{{Name: "master"}},
+								},
+							},
+							ExecutionEntries: nil,
+						},
+					},
+				}
+				runtime := &datav1alpha1.CacheRuntime{
+					Spec: datav1alpha1.CacheRuntimeSpec{
+						RuntimeClassName: "test-runtime-class-no-exec-entries",
+						Master:           datav1alpha1.CacheRuntimeMasterSpec{Replicas: 1},
+					},
+				}
+
+				cacheStates, err := engine.GetCacheStates(runtime, runtimeClass)
+
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("ReportSummary command is empty or not configured"))
+				Expect(cacheStates).To(BeNil())
+			})
+		})
+
+		Context("when pod info resolution fails", func() {
+			It("should return an error when master component has no containers", func() {
+				runtimeClass := &datav1alpha1.CacheRuntimeClass{
+					ObjectMeta: metav1.ObjectMeta{Name: "test-runtime-class-no-containers"},
+					Topology: &datav1alpha1.RuntimeTopology{
+						Master: &datav1alpha1.RuntimeComponentDefinition{
+							Template: corev1.PodTemplateSpec{
+								Spec: corev1.PodSpec{
+									Containers: []corev1.Container{},
+								},
+							},
+							ExecutionEntries: &datav1alpha1.ExecutionEntries{
+								ReportSummary: &datav1alpha1.ExecutionCommonEntry{
+									Command: []string{"/report-summary"},
+								},
+							},
+						},
+					},
+				}
+				runtime := &datav1alpha1.CacheRuntime{
+					Spec: datav1alpha1.CacheRuntimeSpec{
+						RuntimeClassName: "test-runtime-class-no-containers",
+						Master:           datav1alpha1.CacheRuntimeMasterSpec{Replicas: 1},
+					},
+				}
+
+				cacheStates, err := engine.GetCacheStates(runtime, runtimeClass)
+
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("no container in master pod template"))
+				Expect(cacheStates).To(BeNil())
+			})
+		})
+	})
+
+	Describe("GetCacheStates with Workers-Only architecture", func() {
+		Context("when ReportSummary returns valid JSON through worker pod", func() {
+			It("should parse JSON and return correct CacheStateList via workers-only handler", func() {
+				reportSummary := &datav1alpha1.ExecutionCommonEntry{
+					Command:        []string{"/report-summary"},
+					TimeoutSeconds: 30,
+				}
+				runtimeClass := buildWorkersOnlyRuntimeClass(reportSummary)
+				runtime := newWorkersOnlyRuntime()
+
+				patches = gomonkey.ApplyFunc(kubeclient.ExecCommandInContainerWithTimeout,
+					func(podName, containerName, namespace string, command []string, timeout time.Duration) (stdout string, stderr string, err error) {
+						Expect(podName).To(Equal(common.GetCacheComponentName("test-runtime", common.ComponentTypeWorker) + "-0"))
+						Expect(containerName).To(Equal("worker"))
+						return `{"cached":"5242880","cachedPercentage":"25","cacheCapacity":"20971520","cacheHitRatio":"0.75"}`, "", nil
+					})
+
+				cacheStates, err := engine.GetCacheStates(runtime, runtimeClass)
+
+				Expect(err).NotTo(HaveOccurred())
+				Expect(cacheStates).NotTo(BeNil())
+				Expect(cacheStates[common.Cached]).To(Equal("5242880"))
+				Expect(cacheStates[common.CachedPercentage]).To(Equal("25"))
+				Expect(cacheStates[common.CacheCapacity]).To(Equal("20971520"))
+				Expect(cacheStates[common.CacheHitRatio]).To(Equal("0.75"))
+			})
+		})
+
+		Context("when worker component pod info resolution fails", func() {
+			It("should return an error when worker component has no containers", func() {
+				runtimeClass := &datav1alpha1.CacheRuntimeClass{
+					ObjectMeta: metav1.ObjectMeta{Name: "test-runtime-class-worker-no-containers"},
+					Topology: &datav1alpha1.RuntimeTopology{
+						Worker: &datav1alpha1.RuntimeComponentDefinition{
+							Template: corev1.PodTemplateSpec{
+								Spec: corev1.PodSpec{
+									Containers: []corev1.Container{},
+								},
+							},
+							ExecutionEntries: &datav1alpha1.ExecutionEntries{
+								ReportSummary: &datav1alpha1.ExecutionCommonEntry{
+									Command: []string{"/report-summary"},
+								},
+							},
+						},
+					},
+				}
+				runtime := newWorkersOnlyRuntime()
+
+				cacheStates, err := engine.GetCacheStates(runtime, runtimeClass)
+
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("no container in worker pod template"))
+				Expect(cacheStates).To(BeNil())
+			})
+		})
+
+		Context("when runtimeClass topology is nil (workers-only default)", func() {
+			It("should return an error when topology is nil", func() {
+				runtimeClass := &datav1alpha1.CacheRuntimeClass{
+					ObjectMeta: metav1.ObjectMeta{Name: "test-runtime-class-no-topology"},
+				}
+				runtime := &datav1alpha1.CacheRuntime{
+					Spec: datav1alpha1.CacheRuntimeSpec{
+						RuntimeClassName: "test-runtime-class-no-topology",
+						Master:           datav1alpha1.CacheRuntimeMasterSpec{Replicas: 1},
+					},
+				}
+
+				cacheStates, err := engine.GetCacheStates(runtime, runtimeClass)
+
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("ReportSummary command is empty or not configured"))
+				Expect(cacheStates).To(BeNil())
+			})
+
+			It("should return an error when runtimeClass itself is nil", func() {
+				runtime := &datav1alpha1.CacheRuntime{
+					Spec: datav1alpha1.CacheRuntimeSpec{
+						RuntimeClassName: "test-runtime-class-nil",
+						Master:           datav1alpha1.CacheRuntimeMasterSpec{Replicas: 1},
+					},
+				}
+
+				cacheStates, err := engine.GetCacheStates(runtime, nil)
+
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("ReportSummary command is empty or not configured"))
+				Expect(cacheStates).To(BeNil())
+			})
+		})
+
+		Context("when ReportSummary exec fails on workers-only architecture", func() {
+			It("should propagate the exec error from worker pod", func() {
+				reportSummary := &datav1alpha1.ExecutionCommonEntry{
+					Command:        []string{"/report-summary"},
+					TimeoutSeconds: 30,
+				}
+				runtimeClass := buildWorkersOnlyRuntimeClass(reportSummary)
+				runtime := newWorkersOnlyRuntime()
+
+				patches = gomonkey.ApplyFunc(kubeclient.ExecCommandInContainerWithTimeout,
+					func(podName, containerName, namespace string, command []string, timeout time.Duration) (stdout string, stderr string, err error) {
+						return "", "worker pod unavailable", errors.New("connection refused")
+					})
+
+				cacheStates, err := engine.GetCacheStates(runtime, runtimeClass)
+
+				Expect(err).To(HaveOccurred())
+				Expect(cacheStates).To(BeNil())
+			})
+		})
+
+		Context("when malformed JSON returned from worker pod", func() {
+			It("should return JSON unmarshal error", func() {
+				reportSummary := &datav1alpha1.ExecutionCommonEntry{
+					Command:        []string{"/report-summary"},
+					TimeoutSeconds: 30,
+				}
+				runtimeClass := buildWorkersOnlyRuntimeClass(reportSummary)
+				runtime := newWorkersOnlyRuntime()
+
+				patches = gomonkey.ApplyFunc(kubeclient.ExecCommandInContainerWithTimeout,
+					func(podName, containerName, namespace string, command []string, timeout time.Duration) (stdout string, stderr string, err error) {
+						return "{invalid json}", "", nil
+					})
+
+				cacheStates, err := engine.GetCacheStates(runtime, runtimeClass)
+
+				Expect(err).To(HaveOccurred())
+				Expect(cacheStates).To(BeNil())
 			})
 		})
 	})

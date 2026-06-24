@@ -84,7 +84,12 @@ func (e *CacheEngine) UpdateDatasetStatus(phase datav1alpha1.DatasetPhase, runti
 		datasetToUpdate.Status.Conditions = utils.UpdateDatasetCondition(datasetToUpdate.Status.Conditions,
 			cond)
 
-		datasetToUpdate.Status.CacheStates = e.GetCacheStates(runtime, runtimeClass)
+		cacheStates, err := e.GetCacheStates(runtime, runtimeClass)
+		if err == nil {
+			datasetToUpdate.Status.CacheStates = cacheStates
+		} else {
+			e.Log.Error(err, "Failed to get cache states, keeping previous cache states in dataset status")
+		}
 
 		if !reflect.DeepEqual(dataset.Status, datasetToUpdate.Status) {
 			e.Log.Info("the dataset status", "status", datasetToUpdate.Status)
@@ -105,15 +110,16 @@ func (e *CacheEngine) UpdateDatasetStatus(phase datav1alpha1.DatasetPhase, runti
 	return
 }
 
-func (e *CacheEngine) GetCacheStates(runtime *datav1alpha1.CacheRuntime, runtimeClass *datav1alpha1.CacheRuntimeClass) common.CacheStateList {
+func (e *CacheEngine) GetCacheStates(runtime *datav1alpha1.CacheRuntime, runtimeClass *datav1alpha1.CacheRuntimeClass) (common.CacheStateList, error) {
 
 	handler := resolveArchitectureApi(e.name, e.namespace, runtime, runtimeClass)
 
 	executionEntries := handler.GetExecutionEntries()
 	if executionEntries == nil || executionEntries.ReportSummary == nil {
-		e.Log.Info("ReportSummary command is empty or not configured for this cache runtime",
+		err := fmt.Errorf("ReportSummary command is empty or not configured for this cache runtime")
+		e.Log.Info(err.Error(),
 			"name", e.name, "namespace", e.namespace)
-		return nil
+		return nil, err
 	}
 	reportSummaryEntry := executionEntries.ReportSummary
 
@@ -123,26 +129,27 @@ func (e *CacheEngine) GetCacheStates(runtime *datav1alpha1.CacheRuntime, runtime
 	podName, containerName, err := handler.GetExecutionPodInfo()
 	if err != nil {
 		e.Log.Error(err, "Failed to get pod info")
-		return nil
+		return nil, err
 	}
 
 	if podName == "" {
-		e.Log.Info("No pod available, can not get cache states")
-		return nil
+		err := fmt.Errorf("no pod available, can not get cache states")
+		e.Log.Info(err.Error())
+		return nil, err
 	}
 
 	cacheFileUtil := NewCacheFileUtil(podName, containerName, e.namespace, e.Log)
-	stdout, err := cacheFileUtil.Mount(reportSummaryEntry.Command, time.Duration(timeout)*time.Second)
+	stdout, err := cacheFileUtil.Execute(reportSummaryEntry.Command, time.Duration(timeout)*time.Second)
 	if err != nil {
 		e.Log.Error(err, "Failed to execute ReportSummary command", "stdout", stdout)
-		return nil
+		return nil, err
 	}
 
 	var reportSummary datav1alpha1.CacheRuntimeReportSummary
 	err = json.Unmarshal([]byte(stdout), &reportSummary)
 	if err != nil {
 		e.Log.Error(err, "Failed to unmarshal ReportSummary output", "stdout", stdout)
-		return nil
+		return nil, err
 	}
 
 	cacheStates := make(common.CacheStateList)
@@ -151,7 +158,7 @@ func (e *CacheEngine) GetCacheStates(runtime *datav1alpha1.CacheRuntime, runtime
 	cacheStates[common.CacheCapacity] = reportSummary.CacheCapacity
 	cacheStates[common.CacheHitRatio] = reportSummary.CacheHitRatio
 
-	return cacheStates
+	return cacheStates, nil
 }
 
 func (e *CacheEngine) generateDatasetMountOptions(m *datav1alpha1.Mount, sharedEncryptOptions []datav1alpha1.EncryptOption,
