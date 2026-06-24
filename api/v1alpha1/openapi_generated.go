@@ -42,6 +42,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.CacheRuntimeList":                  schema_fluid_cloudnative_fluid_api_v1alpha1_CacheRuntimeList(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.CacheRuntimeMasterSpec":            schema_fluid_cloudnative_fluid_api_v1alpha1_CacheRuntimeMasterSpec(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.CacheRuntimeMountUfsOutput":        schema_fluid_cloudnative_fluid_api_v1alpha1_CacheRuntimeMountUfsOutput(ref),
+		"github.com/fluid-cloudnative/fluid/api/v1alpha1.CacheRuntimeReportSummary":         schema_fluid_cloudnative_fluid_api_v1alpha1_CacheRuntimeReportSummary(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.CacheRuntimeSpec":                  schema_fluid_cloudnative_fluid_api_v1alpha1_CacheRuntimeSpec(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.CacheRuntimeStatus":                schema_fluid_cloudnative_fluid_api_v1alpha1_CacheRuntimeStatus(ref),
 		"github.com/fluid-cloudnative/fluid/api/v1alpha1.CacheRuntimeWorkerSpec":            schema_fluid_cloudnative_fluid_api_v1alpha1_CacheRuntimeWorkerSpec(ref),
@@ -1412,6 +1413,47 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_CacheRuntimeMountUfsOutput(ref 
 	}
 }
 
+func schema_fluid_cloudnative_fluid_api_v1alpha1_CacheRuntimeReportSummary(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "CacheRuntimeReportSummary defines the return structure for ReportSummary execution entry. It contains cache status information such as capacity, hit ratio, and cached data size.",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"cached": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Cached is the amount of data cached, in bytes. (500Gi = 500GiB = 500 * 1024 * 1024 * 1024)",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"cachedPercentage": {
+						SchemaProps: spec.SchemaProps{
+							Description: "CachedPercentage is the percentage of data cached over the total data in the underlying filesystem.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"cacheCapacity": {
+						SchemaProps: spec.SchemaProps{
+							Description: "CacheCapacity is the total cache capacity, in bytes.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"cacheHitRatio": {
+						SchemaProps: spec.SchemaProps{
+							Description: "CacheHitRatio defines the total cache hit ratio (both local hit and remote hit).",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+				},
+			},
+		},
+	}
+}
+
 func schema_fluid_cloudnative_fluid_api_v1alpha1_CacheRuntimeSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
@@ -1609,7 +1651,7 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_CacheRuntimeStatus(ref common.R
 			},
 		},
 		Dependencies: []string{
-			"github.com/fluid-cloudnative/fluid/api/v1alpha1.Mount", "github.com/fluid-cloudnative/fluid/api/v1alpha1.RuntimeComponentStatus", "github.com/fluid-cloudnative/fluid/api/v1alpha1.RuntimeCondition", "k8s.io/api/core/v1.NodeAffinity", "k8s.io/apimachinery/pkg/apis/meta/v1.Time"},
+			"github.com/fluid-cloudnative/fluid/api/v1alpha1.RuntimeComponentStatus", "github.com/fluid-cloudnative/fluid/api/v1alpha1.RuntimeCondition", "k8s.io/api/core/v1.NodeAffinity", "k8s.io/apimachinery/pkg/apis/meta/v1.Time"},
 	}
 }
 
