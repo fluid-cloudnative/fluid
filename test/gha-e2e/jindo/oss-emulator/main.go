@@ -58,7 +58,9 @@ func main() {
 
 		if r.URL.Query().Get("location") != "" {
 			w.Header().Set("Content-Type", "application/xml")
-			fmt.Fprintf(w, "<LocationConstraint>oss-cn-hangzhou</LocationConstraint>")
+			if _, err := fmt.Fprintf(w, "<LocationConstraint>oss-cn-hangzhou</LocationConstraint>"); err != nil {
+				log.Printf("failed to write location constraint response: %v", err)
+			}
 			return
 		}
 
