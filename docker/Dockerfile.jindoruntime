@@ -6,6 +6,7 @@ WORKDIR /go/src/github.com/fluid-cloudnative/fluid
 COPY . .
 
 ARG FLUID_VERSION
+RUN make download-helm
 RUN make jindoruntime-controller-build && \
     cp bin/jindoruntime-controller /go/bin/jindoruntime-controller
 RUN bash hack/helm/pin_runtime_chart_version.sh "${FLUID_VERSION}"

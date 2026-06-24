@@ -6,6 +6,7 @@ WORKDIR /go/src/github.com/fluid-cloudnative/fluid
 COPY . .
 
 ARG FLUID_VERSION
+RUN make download-helm
 RUN make juicefsruntime-controller-build && \
     cp bin/juicefsruntime-controller /go/bin/juicefsruntime-controller
 RUN bash hack/helm/pin_runtime_chart_version.sh "${FLUID_VERSION}"

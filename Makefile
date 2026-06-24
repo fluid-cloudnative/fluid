@@ -428,13 +428,13 @@ docker-buildx-push-crd-prefetcher:
 	docker buildx build --push --platform ${DOCKER_PLATFORM} ${DOCKER_NO_CACHE_OPTION} . -f ${PREFETCHER_DOCKERFILE} -t ${PREFETCHER_IMAGE}:${PREFETCHER_VERSION}
 
 .PHONY: docker-build-all
-docker-build-all: pre-setup ${DOCKER_BUILD}
+docker-build-all: pre-setup download-helm ${DOCKER_BUILD}
 
 .PHONY: docker-push-all
 docker-push-all: pre-setup ${DOCKER_PUSH}
 
 .PHONY: docker-buildx-all-push
-docker-buildx-all-push: pre-setup ${DOCKER_BUILDX_PUSH}
+docker-buildx-all-push: pre-setup download-helm ${DOCKER_BUILDX_PUSH}
 
 ##@ Helm Binary
 
