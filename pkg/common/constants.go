@@ -107,7 +107,8 @@ const (
 
 	DataProcessMultipleProcessorSpecified = "MultipleProcessorSpecified"
 
-	DataProcessConflictMountPath = "ConflictMountPath"
+	DataProcessConflictMountPath    = "ConflictMountPath"
+	DataProcessScheduleNotSpecified = "ScheduleNotSpecified"
 )
 
 type CacheStoreType string

@@ -53,6 +53,13 @@ spec:
                 - mountPath
                 - name
                 type: object
+              policy:
+                default: Once
+                enum:
+                - Once
+                - Cron
+                - OnEvent
+                type: string
               processor:
                 properties:
                   job:
@@ -4362,6 +4369,8 @@ spec:
                 - kind
                 - name
                 type: object
+              schedule:
+                type: string
               ttlSecondsAfterFinished:
                 format: int32
                 type: integer

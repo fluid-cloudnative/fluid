@@ -2923,6 +2923,20 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_DataProcessSpec(ref common.Refe
 							Format:      "int32",
 						},
 					},
+					"policy": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Policy defines the operation policy, including Once, Cron, OnEvent",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"schedule": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Schedule defines the Cron schedule, only used when Policy is Cron. See https://en.wikipedia.org/wiki/Cron.",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
 				},
 				Required: []string{"dataset", "processor"},
 			},
