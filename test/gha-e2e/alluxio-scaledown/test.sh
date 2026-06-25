@@ -53,23 +53,21 @@ function create_dataset() {
 function wait_dataset_bound() {
     local deadline=300 # 5 minutes
     local last_state=""
-    local log_interval=0
-    local log_times=0
+    local counter=0
     while true; do
         last_state=$(kubectl get dataset $dataset_name -ojsonpath='{@.status.phase}')
-        if [[ $log_interval -eq 3 ]]; then
-            log_times=$((log_times + 1))
-            syslog "checking dataset.status.phase==Bound (already $((log_times * log_interval * 5))s, last state: $last_state)"
-            if [[ $((log_times * log_interval * 5)) -ge $deadline ]]; then
-                panic "timeout for ${deadline}s!"
-            fi
-            log_interval=0
-        fi
-
         if [[ "$last_state" == "Bound" ]]; then
             break
         fi
-        log_interval=$((log_interval + 1))
+
+        if [[ $((counter % 3)) -eq 0 ]]; then
+            syslog "checking dataset.status.phase==Bound (already $((counter * 5))s, last state: $last_state)"
+        fi
+
+        counter=$((counter + 1))
+        if [[ $((counter * 5)) -ge $deadline ]]; then
+            panic "timeout for ${deadline}s!"
+        fi
         sleep 5
     done
     syslog "Found dataset $dataset_name status.phase==Bound"
@@ -123,6 +121,8 @@ function wait_job_completed() {
     local job_name=$1
     local deadline=300
     local counter=0
+    local succeed=""
+    local job_failed=""
     while true; do
         succeed=$(kubectl get job "$job_name" -ojsonpath='{@.status.succeeded}')
         [[ -z "$succeed" ]] && succeed=0
