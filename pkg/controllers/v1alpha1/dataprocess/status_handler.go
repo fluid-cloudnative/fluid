@@ -55,6 +55,7 @@ func (handler *OnceStatusHandler) GetOperationStatus(ctx runtime.ReconcileReques
 				ctx.Log.Error(err, "failed to delete dataprocess helm release", "namespace", ctx.Namespace, "releaseName", releaseName)
 				return
 			}
+			return
 		}
 
 		// In cases of other error
@@ -78,7 +79,7 @@ func (handler *OnceStatusHandler) GetOperationStatus(ctx runtime.ReconcileReques
 	}
 
 	// job either failed or complete, update DataLoad's phase status
-	jobCondition := job.Status.Conditions[0]
+	jobCondition := *finishedJobCondition
 
 	result.Conditions = []datav1alpha1.Condition{
 		{
