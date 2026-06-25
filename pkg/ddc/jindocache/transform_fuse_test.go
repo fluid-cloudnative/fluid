@@ -135,32 +135,80 @@ func TestTransformSecret(t *testing.T) {
 
 func TestTransformFuseArg(t *testing.T) {
 	var tests = []struct {
-		runtime    *datav1alpha1.JindoRuntime
-		dataset    *datav1alpha1.Dataset
-		jindoValue *Jindo
-		expect     string
+		name     string
+		runtime  *datav1alpha1.JindoRuntime
+		dataset  *datav1alpha1.Dataset
+		expect   string
+		contains bool
 	}{
-		{&datav1alpha1.JindoRuntime{
-			Spec: datav1alpha1.JindoRuntimeSpec{
-				Secret: "secret",
-				Fuse: datav1alpha1.JindoFuseSpec{
-					Args: []string{"-okernel_cache"},
+		{
+			name: "preserve explicit args",
+			runtime: &datav1alpha1.JindoRuntime{
+				Spec: datav1alpha1.JindoRuntimeSpec{
+					Secret: "secret",
+					Fuse: datav1alpha1.JindoFuseSpec{
+						Args: []string{"-okernel_cache"},
+					},
 				},
 			},
-		}, &datav1alpha1.Dataset{
-			Spec: datav1alpha1.DatasetSpec{
-				Mounts: []datav1alpha1.Mount{{
-					MountPoint: "local:///mnt/test",
-					Name:       "test",
-					Path:       "/",
-				}},
-			}}, &Jindo{}, "-okernel_cache"},
+			dataset: &datav1alpha1.Dataset{
+				Spec: datav1alpha1.DatasetSpec{
+					Mounts: []datav1alpha1.Mount{{
+						MountPoint: "local:///mnt/test",
+						Name:       "test",
+						Path:       "/",
+					}},
+				},
+			},
+			expect:   "-okernel_cache",
+			contains: true,
+		},
+		{
+			name: "default single-mount args disable symlink",
+			runtime: &datav1alpha1.JindoRuntime{
+				Spec: datav1alpha1.JindoRuntimeSpec{},
+			},
+			dataset: &datav1alpha1.Dataset{
+				Spec: datav1alpha1.DatasetSpec{
+					Mounts: []datav1alpha1.Mount{{
+						MountPoint: "oss://bucket-a/",
+						Name:       "bucketa",
+						Path:       "/bucketa",
+					}},
+				},
+			},
+			expect:   "-ono_symlink",
+			contains: true,
+		},
+		{
+			name: "default multi-mount args keep symlink support",
+			runtime: &datav1alpha1.JindoRuntime{
+				Spec: datav1alpha1.JindoRuntimeSpec{},
+			},
+			dataset: &datav1alpha1.Dataset{
+				Spec: datav1alpha1.DatasetSpec{
+					Mounts: []datav1alpha1.Mount{
+						{MountPoint: "oss://bucket-a/", Name: "bucketa", Path: "/bucketa"},
+						{MountPoint: "oss://bucket-b/", Name: "bucketb", Path: "/bucketb"},
+					},
+				},
+			},
+			expect:   "-ono_symlink",
+			contains: false,
+		},
 	}
 	for _, test := range tests {
 		engine := &JindoCacheEngine{Log: fake.NullLogger()}
 		properties := engine.transformFuseArg(test.runtime, test.dataset)
-		if properties[0] != test.expect {
-			t.Errorf("expected value %v, but got %v", test.expect, test.jindoValue.Fuse.RunAs)
+		found := false
+		for _, property := range properties {
+			if property == test.expect {
+				found = true
+				break
+			}
+		}
+		if found != test.contains {
+			t.Errorf("%s: expected contains=%v for %q, got %v in %#v", test.name, test.contains, test.expect, found, properties)
 		}
 	}
 }

@@ -38,6 +38,9 @@ apiVersion: data.fluid.io/v1alpha1
 kind: JindoRuntime
 metadata:
   name: jindo-demo
+  annotations:
+    data.fluid.io/metadataList: |
+      [{"Labels":{"fluid.io/node-publish-method":"symlink"},"selector":{"kind":"PersistentVolume"}}]
 spec:
   replicas: 1
   tieredstore:

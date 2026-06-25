@@ -10,20 +10,23 @@ get_image_tag() {
 }
 
 build_images() {
+    oss_emulator_img="${IMG_REPO}/oss-emulator:e2e"
     images=(
-        ${IMG_REPO}/dataset-controller:${IMAGE_TAG}
-        ${IMG_REPO}/application-controller:${IMAGE_TAG}
-        ${IMG_REPO}/alluxioruntime-controller:${IMAGE_TAG}
-        ${IMG_REPO}/jindoruntime-controller:${IMAGE_TAG}
-        ${IMG_REPO}/juicefsruntime-controller:${IMAGE_TAG}
-        ${IMG_REPO}/cacheruntime-controller:${IMAGE_TAG}
-        ${IMG_REPO}/thinruntime-controller:${IMAGE_TAG}
-        ${IMG_REPO}/fluid-csi:${IMAGE_TAG}
-        ${IMG_REPO}/fluid-webhook:${IMAGE_TAG}
-        ${IMG_REPO}/fluid-crd-upgrader:${IMAGE_TAG}
+        "${IMG_REPO}/dataset-controller:${IMAGE_TAG}"
+        "${IMG_REPO}/application-controller:${IMAGE_TAG}"
+        "${IMG_REPO}/alluxioruntime-controller:${IMAGE_TAG}"
+        "${IMG_REPO}/jindoruntime-controller:${IMAGE_TAG}"
+        "${IMG_REPO}/juicefsruntime-controller:${IMAGE_TAG}"
+        "${IMG_REPO}/thinruntime-controller:${IMAGE_TAG}"
+        "${IMG_REPO}/cacheruntime-controller:${IMAGE_TAG}"
+        "${IMG_REPO}/fluid-csi:${IMAGE_TAG}"
+        "${IMG_REPO}/fluid-webhook:${IMAGE_TAG}"
+        "${IMG_REPO}/fluid-crd-upgrader:${IMAGE_TAG}"
+        "${oss_emulator_img}"
     )
 
     make docker-build-all
+    docker build -t "${oss_emulator_img}" test/gha-e2e/jindo/oss-emulator
 
     for img in "${images[@]}"; do
         echo "Loading image ${img} to kind cluster..."

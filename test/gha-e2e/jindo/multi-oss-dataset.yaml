@@ -1,0 +1,88 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: access-key-a
+  namespace: default
+type: Opaque
+stringData:
+  fs.oss.accessKeyId: __ACCESS_KEY_ID_A__
+  fs.oss.accessKeySecret: __ACCESS_KEY_SECRET_A__
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: access-key-b
+  namespace: default
+type: Opaque
+stringData:
+  fs.oss.accessKeyId: __ACCESS_KEY_ID_B__
+  fs.oss.accessKeySecret: __ACCESS_KEY_SECRET_B__
+---
+apiVersion: data.fluid.io/v1alpha1
+kind: Dataset
+metadata:
+  name: jindo-multi-oss-demo
+spec:
+  sharedOptions:
+    fs.oss.endpoint: "__ENDPOINT_A__"
+  mounts:
+    - mountPoint: oss://__BUCKET_A__/
+      options:
+       fs.oss.endpoint: "__ENDPOINT_A__"
+      encryptOptions:
+        - name: fs.oss.accessKeyId
+          valueFrom:
+            secretKeyRef:
+              name: access-key-a
+              key: fs.oss.accessKeyId
+        - name: fs.oss.accessKeySecret
+          valueFrom:
+            secretKeyRef:
+              name: access-key-a
+              key: fs.oss.accessKeySecret
+      name: bucketa
+      path: /bucketa
+    - mountPoint: oss://__BUCKET_B__/
+      options:
+       fs.oss.endpoint: "__ENDPOINT_B__"
+      encryptOptions:
+        - name: fs.oss.accessKeyId
+          valueFrom:
+            secretKeyRef:
+              name: access-key-b
+              key: fs.oss.accessKeyId
+        - name: fs.oss.accessKeySecret
+          valueFrom:
+            secretKeyRef:
+              name: access-key-b
+              key: fs.oss.accessKeySecret
+      name: bucketb
+      path: /bucketb
+  accessModes:
+    - ReadWriteMany
+---
+apiVersion: data.fluid.io/v1alpha1
+kind: JindoRuntime
+metadata:
+  name: jindo-multi-oss-demo
+  annotations:
+    data.fluid.io/metadataList: |
+      [{"Labels":{"fluid.io/node-publish-method":"symlink"},"selector":{"kind":"PersistentVolume"}}]
+spec:
+  jindoVersion:
+    imagePullPolicy: IfNotPresent
+  fuse:
+    args:
+      - -oauto_cache
+      - -oattr_timeout=0
+      - -oentry_timeout=0
+      - -onegative_timeout=0
+    imagePullPolicy: IfNotPresent
+  replicas: 1
+  tieredstore:
+    levels:
+      - mediumtype: SSD
+        path: /var/lib/docker/jindo
+        quota: 1Gi
+        high: "0.99"
+        low: "0.95"

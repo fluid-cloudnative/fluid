@@ -115,6 +115,59 @@ function wait_cache_client_ready() {
     syslog "Found ready cache client pod for $dataset_name"
 }
 
+function wait_cache_worker_ready() {
+    local deadline=180 # 3 minutes
+    local worker_component_name="${dataset_name}-worker"
+    local worker_selector="cacheruntime.fluid.io/component-name=${worker_component_name}"
+    local last_phase=""
+    local runtime_ready_replicas=""
+    local runtime_desired_replicas=""
+    local asts_ready_replicas=""
+    local asts_desired_replicas=""
+    local worker_pod=""
+    local worker_registered="false"
+    local pod_states=""
+    local log_interval=0
+    local log_times=0
+
+    while true; do
+        last_phase=$(kubectl get cacheruntime "$dataset_name" -ojsonpath='{@.status.worker.phase}')
+        runtime_ready_replicas=$(kubectl get cacheruntime "$dataset_name" -ojsonpath='{@.status.worker.readyReplicas}')
+        runtime_desired_replicas=$(kubectl get cacheruntime "$dataset_name" -ojsonpath='{@.status.worker.desiredReplicas}')
+        asts_ready_replicas=$(kubectl get advancedstatefulset "$worker_component_name" -ojsonpath='{@.status.readyReplicas}' 2>/dev/null)
+        asts_desired_replicas=$(kubectl get advancedstatefulset "$worker_component_name" -ojsonpath='{@.spec.replicas}' 2>/dev/null)
+        worker_pod=$(kubectl get pod -l "$worker_selector" -ojsonpath='{.items[0].metadata.name}' 2>/dev/null)
+        worker_registered="false"
+        if [[ -n "$worker_pod" ]] && kubectl logs "$worker_pod" -c worker --tail=200 2>/dev/null | grep -q "worker register success"; then
+            worker_registered="true"
+        fi
+        pod_states=$(kubectl get pod -l "$worker_selector" -ojsonpath='{range .items[*]}{.metadata.name}:{range .status.containerStatuses[*]}{.ready}{end}:{.status.phase}{" "}{end}' 2>/dev/null)
+
+        if [[ $log_interval -eq 3 ]]; then
+            log_times=$((log_times + 1))
+            syslog "checking cache worker readiness (already $((log_times * log_interval * 5))s, runtime phase: ${last_phase:-<empty>}, runtime ready/desired: ${runtime_ready_replicas:-<empty>}/${runtime_desired_replicas:-<empty>}, advanced sts ready/desired: ${asts_ready_replicas:-<empty>}/${asts_desired_replicas:-<empty>}, registered: ${worker_registered}, pods: ${pod_states:-<empty>})"
+            if [[ $((log_times * log_interval * 5)) -ge $deadline ]]; then
+                panic "timeout waiting for cache worker pod ready after ${deadline}s"
+            fi
+            log_interval=0
+        fi
+
+        if [[ "$last_phase" == "Ready" ]] && \
+            [[ -n "$runtime_desired_replicas" ]] && \
+            [[ "$runtime_desired_replicas" != "0" ]] && \
+            [[ "$runtime_ready_replicas" == "$runtime_desired_replicas" ]] && \
+            kubectl wait --for=condition=Ready --timeout=5s pod -l "$worker_selector" >/dev/null 2>&1 && \
+            [[ "$worker_registered" == "true" ]]; then
+            break
+        fi
+
+        log_interval=$((log_interval + 1))
+        sleep 5
+    done
+
+    syslog "Found ready cache worker pod for $dataset_name"
+}
+
 function create_reference_dataset() {
     # Note: ThinRuntime will be automatically created by Dataset Controller
     # when a reference dataset (mountPoint: dataset://...) is created
@@ -162,8 +215,10 @@ function create_job() {
 
 function wait_job_completed() {
     local job_name=$1
+    local succeed=""
     local deadline=600
     local counter=0
+    local job_failed=""
     while true; do
         succeed=$(kubectl get job "$job_name" -ojsonpath='{@.status.succeeded}')
         [[ -z "$succeed" ]] && succeed=0
@@ -237,6 +292,7 @@ function main() {
     wait_dataset_bound
     create_reference_dataset
     wait_reference_dataset_bound
+    wait_cache_worker_ready
     create_job test/gha-e2e/curvine/write_job.yaml $write_job_name
     wait_job_completed $write_job_name
     create_dataload
