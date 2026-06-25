@@ -21,5 +21,6 @@ spec:
           value: "minioadmin"
         - name: MINIO_ROOT_PASSWORD
           value: "minioadmin"
+      automountServiceAccountToken: false
       restartPolicy: OnFailure
   backoffLimit: 4
