@@ -428,13 +428,13 @@ docker-buildx-push-crd-prefetcher:
 	docker buildx build --push --platform ${DOCKER_PLATFORM} ${DOCKER_NO_CACHE_OPTION} . -f ${PREFETCHER_DOCKERFILE} -t ${PREFETCHER_IMAGE}:${PREFETCHER_VERSION}
 
 .PHONY: docker-build-all
-docker-build-all: pre-setup ${DOCKER_BUILD}
+docker-build-all: pre-setup download-helm ${DOCKER_BUILD}
 
 .PHONY: docker-push-all
 docker-push-all: pre-setup ${DOCKER_PUSH}
 
 .PHONY: docker-buildx-all-push
-docker-buildx-all-push: pre-setup ${DOCKER_BUILDX_PUSH}
+docker-buildx-all-push: pre-setup download-helm ${DOCKER_BUILDX_PUSH}
 
 ##@ Helm Binary
 
@@ -444,19 +444,7 @@ HELM_BINARY_DIR := $(shell pwd)/bin/helm/$(HELM_VERSION)
 # Run this target when upgrading HELM_VERSION or on a fresh checkout.
 .PHONY: download-helm
 download-helm:
-	mkdir -p $(HELM_BINARY_DIR)
-	@for arch in amd64 arm64; do \
-	  target=$(HELM_BINARY_DIR)/helm-linux-$${arch}; \
-	  if [ ! -f "$${target}" ]; then \
-	    echo "Downloading helm $(HELM_VERSION) linux/$${arch} ..."; \
-	    curl -fsSL https://github.com/fluid-cloudnative/helm/releases/download/$(HELM_VERSION)/helm-$(HELM_VERSION)-linux-$${arch}.tar.gz \
-	      | tar -xz --strip-components=1 -C $(HELM_BINARY_DIR) linux-$${arch}/helm; \
-	    mv $(HELM_BINARY_DIR)/helm $${target}; \
-	    chmod +x $${target}; \
-	  else \
-	    echo "helm $(HELM_VERSION) linux/$${arch} already exists, skipping."; \
-	  fi; \
-	done
+	bash hack/download-helm.sh $(HELM_VERSION) $(HELM_BINARY_DIR)
 
 ##@ Dependencies
 
