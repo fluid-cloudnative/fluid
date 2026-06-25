@@ -458,6 +458,9 @@ func (info *RuntimeInfo) SetAPIReader(apiReader client.Reader) {
 	info.apiReader = apiReader
 }
 
+// convertToTieredstoreInfo converts a TieredStore specification into RuntimeInfo's
+// internal TieredStoreInfo representation, normalizing cache paths and quota
+// settings for each tier.
 func convertToTieredstoreInfo(tieredstore datav1alpha1.TieredStore) (TieredStoreInfo, error) {
 	if len(tieredstore.Levels) == 0 {
 		return TieredStoreInfo{}, nil
