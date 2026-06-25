@@ -30,13 +30,6 @@ import (
 )
 
 func (e *JindoCacheEngine) UpdateDatasetStatus(phase datav1alpha1.DatasetPhase) (err error) {
-	// 1. update the runtime status
-	runtime, err := e.getRuntime()
-	if err != nil {
-		return err
-	}
-
-	// 2.update the dataset status
 	err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
 		dataset, err := utils.GetDataset(e.Client, e.name, e.namespace)
 		if err != nil {
@@ -75,8 +68,6 @@ func (e *JindoCacheEngine) UpdateDatasetStatus(phase datav1alpha1.DatasetPhase) 
 			datasetToUpdate.Status.Conditions = utils.UpdateDatasetCondition(datasetToUpdate.Status.Conditions,
 				cond)
 		}
-		datasetToUpdate.Status.CacheStates = runtime.Status.CacheStates
-
 		e.Log.Info("the dataset status", "status", datasetToUpdate.Status)
 
 		if !reflect.DeepEqual(dataset.Status, datasetToUpdate.Status) {
