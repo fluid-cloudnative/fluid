@@ -23,7 +23,16 @@ import (
 )
 
 func (t *ThinEngine) CheckRuntimeReady() (ready bool) {
-	//TODO implement me
+	workerReady, err := t.CheckWorkersReady()
+	if err != nil || !workerReady {
+		return false
+	}
+
+	fuseReady, err := t.checkFuseHealthy()
+	if err != nil || !fuseReady {
+		return false
+	}
+
 	return true
 }
 
