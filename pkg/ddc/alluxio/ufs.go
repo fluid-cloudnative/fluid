@@ -233,6 +233,8 @@ func (e *AlluxioEngine) ShouldSyncDatasetMounts() (should bool, err error) {
 	return false, nil
 }
 
+// SyncDatasetMounts is a no-op for the Alluxio engine.
+// Mount synchronization is not currently required for Alluxio runtimes.
 func (e *AlluxioEngine) SyncDatasetMounts() (err error) {
 	return nil
 }
