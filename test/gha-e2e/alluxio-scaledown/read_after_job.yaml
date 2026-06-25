@@ -19,7 +19,7 @@ spec:
           - -c
           - |
             set -ex
-            content=$(cat /data/fixture.txt)
+            content=$(cat /data/scaledown/fixture.txt)
             [ "$content" = "fluid-alluxio-scaledown-e2e-fixture" ]
           volumeMounts:
             - mountPath: /data
