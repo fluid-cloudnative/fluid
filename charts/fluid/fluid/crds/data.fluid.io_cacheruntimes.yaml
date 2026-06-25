@@ -1590,8 +1590,6 @@ spec:
                 x-kubernetes-list-map-keys:
                 - type
                 x-kubernetes-list-type: map
-              configFile:
-                type: string
               master:
                 properties:
                   availableReplicas:
@@ -1621,50 +1619,6 @@ spec:
               mountTime:
                 format: date-time
                 type: string
-              mounts:
-                items:
-                  properties:
-                    encryptOptions:
-                      items:
-                        properties:
-                          name:
-                            type: string
-                          valueFrom:
-                            properties:
-                              secretKeyRef:
-                                properties:
-                                  key:
-                                    type: string
-                                  name:
-                                    type: string
-                                required:
-                                - name
-                                type: object
-                            type: object
-                        required:
-                        - name
-                        type: object
-                      type: array
-                    mountPoint:
-                      minLength: 5
-                      type: string
-                    name:
-                      minLength: 0
-                      type: string
-                    options:
-                      additionalProperties:
-                        type: string
-                      type: object
-                    path:
-                      type: string
-                    readOnly:
-                      type: boolean
-                    shared:
-                      type: boolean
-                  required:
-                  - mountPoint
-                  type: object
-                type: array
               selector:
                 type: string
               setupDuration:

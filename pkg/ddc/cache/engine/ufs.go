@@ -31,35 +31,40 @@ import (
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// Minimum timeout for mount operations to ensure reliability across different storage backends.
-// Some operations (e.g., large directory listings, network latency) may require more time.
-const minMountTimeoutSeconds = 20
-
-func (e *CacheEngine) PrepareUFS(runtimeClass *datav1alpha1.CacheRuntimeClass) (string, error) {
-	if runtimeClass.Topology == nil || runtimeClass.Topology.Master == nil ||
-		runtimeClass.Topology.Master.ExecutionEntries == nil || runtimeClass.Topology.Master.ExecutionEntries.MountUFS == nil {
+func (e *CacheEngine) PrepareUFS(archApi ArchitectureApi) (mountOutput *datav1alpha1.CacheRuntimeMountUfsOutput, err error) {
+	entries := archApi.GetExecutionEntries()
+	if entries == nil || entries.MountUFS == nil {
 		e.Log.Info("No mount ufs command found in runtime class")
-		return "", nil
+		return nil, nil
 	}
-	mountUfs := runtimeClass.Topology.Master.ExecutionEntries.MountUFS
+	mountUfs := entries.MountUFS
 
 	// execute mount command in master pod
-	podName, containerName, err := e.getMasterPodInfo(runtimeClass)
+	podName, containerName, err := archApi.GetExecutionPodInfo()
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	fileUtil := NewCacheFileUtil(podName, containerName, e.namespace, e.Log)
-
 	// at least 20 seconds
-	timeoutSeconds := max(mountUfs.TimeoutSeconds, minMountTimeoutSeconds)
-
-	stdout, err := fileUtil.Mount(mountUfs.Command, time.Duration(timeoutSeconds)*time.Second)
+	timeoutSeconds := max(mountUfs.TimeoutSeconds, common.MinExecutionTimeoutSeconds)
+	stdout, err := fileUtil.Execute(mountUfs.Command, time.Duration(timeoutSeconds)*time.Second)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
-	return stdout, nil
+	// parse mount output, and sync dataset mounts
+	stdout = strings.TrimSpace(stdout)
+	if stdout == "" {
+		return nil, errors.New("mount ufs command produced empty output")
+	}
+
+	mountOutput = &datav1alpha1.CacheRuntimeMountUfsOutput{}
+	err = json.Unmarshal([]byte(stdout), mountOutput)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to parse mount ufs output as CacheRuntimeMountUfsOutput, output: %q", stdout)
+	}
+	return mountOutput, nil
 }
 
 // shouldUpdateUFS determines whether the UFS configuration needs to be updated.
@@ -67,7 +72,7 @@ func (e *CacheEngine) PrepareUFS(runtimeClass *datav1alpha1.CacheRuntimeClass) (
 // which UFS entries require updates. It also checks if the master pod has restarted
 // since the last mount operation.
 // Returns true if either mount paths have changed or remount is required due to pod restart.
-func (e *CacheEngine) shouldUpdateUFS(dataset *datav1alpha1.Dataset, runtimeClass *datav1alpha1.CacheRuntimeClass,
+func (e *CacheEngine) shouldUpdateUFS(dataset *datav1alpha1.Dataset, archApi ArchitectureApi,
 	runtime *datav1alpha1.CacheRuntime) bool {
 	// whether the ufs mount paths need to update
 	ufsToUpdate := utils.NewUFSToUpdate(dataset)
@@ -78,7 +83,7 @@ func (e *CacheEngine) shouldUpdateUFS(dataset *datav1alpha1.Dataset, runtimeClas
 	}
 
 	// check if master pod restart after the latest mount time
-	restart := e.checkIfRemountRequired(runtimeClass, runtime)
+	restart := e.checkIfRemountRequired(archApi, runtime)
 	if restart {
 		e.Log.Info("Master pod restart after the latest mount time, need to remount")
 	}
@@ -94,10 +99,9 @@ func (e *CacheEngine) UpdateOnUFSChange(runtime *datav1alpha1.CacheRuntime) (err
 		return
 	}
 
-	// update only for master-worker architecture and has mount ufs command
-	if runtimeClass.Topology == nil || runtimeClass.Topology.Master == nil || runtime.Spec.Master.Disabled ||
-		runtimeClass.Topology.Master.ExecutionEntries == nil ||
-		runtimeClass.Topology.Master.ExecutionEntries.MountUFS == nil {
+	// update only when architecture supports mount ufs.
+	archApi := resolveArchitectureApi(e.name, e.namespace, runtime, runtimeClass)
+	if !archApi.IsMountUFSSupported() {
 		return
 	}
 
@@ -108,8 +112,8 @@ func (e *CacheEngine) UpdateOnUFSChange(runtime *datav1alpha1.CacheRuntime) (err
 		return
 	}
 
-	shouldUpdate := e.shouldUpdateUFS(dataset, runtimeClass, runtime)
-	// 1. check if need to update ufs
+	// update when dataset mount paths change or master pod restart after the latest mount time
+	shouldUpdate := e.shouldUpdateUFS(dataset, archApi, runtime)
 	if !shouldUpdate {
 		return
 	}
@@ -122,23 +126,9 @@ func (e *CacheEngine) UpdateOnUFSChange(runtime *datav1alpha1.CacheRuntime) (err
 	}
 
 	// 3. use the same mount script to add or remove mount points
-	stdout, err := e.PrepareUFS(runtimeClass)
+	mountOutput, err := e.PrepareUFS(archApi)
 	if err != nil {
-		e.Log.Error(err, "Failed to add or remove mount points")
-		e.Recorder.Eventf(runtime, corev1.EventTypeWarning, common.RuntimeMountUfsFailed, "Failed to execute mount ufs command")
-		return
-	}
-
-	// 4. parse mount output, and sync dataset mounts
-	stdout = strings.TrimSpace(stdout)
-	if stdout == "" {
-		return errors.New("mount ufs command produced empty output")
-	}
-
-	mountOutput := &datav1alpha1.CacheRuntimeMountUfsOutput{}
-	err = json.Unmarshal([]byte(stdout), mountOutput)
-	if err != nil {
-		return errors.Wrapf(err, "failed to parse mount ufs output as CacheRuntimeMountUfsOutput, output: %q", stdout)
+		return errors.Wrapf(err, "failed to execute mount ufs command")
 	}
 
 	// 5. sync dataset mounts, to prevent the runtime config not updated in pods in time.
@@ -193,8 +183,8 @@ func (e *CacheEngine) syncDatasetMounts(dataset *datav1alpha1.Dataset, mountOutp
 	return nil
 }
 
-func (e *CacheEngine) checkIfRemountRequired(runtimeClass *datav1alpha1.CacheRuntimeClass, runtime *datav1alpha1.CacheRuntime) bool {
-	masterPodName, masterContainerName, err := e.getMasterPodInfo(runtimeClass)
+func (e *CacheEngine) checkIfRemountRequired(archApi ArchitectureApi, runtime *datav1alpha1.CacheRuntime) bool {
+	masterPodName, masterContainerName, err := archApi.GetExecutionPodInfo()
 	if err != nil {
 		e.Log.Error(err, "get runtime pod container name failed", "method", "checkIfRemountRequired", "runtimeClass name", e.name)
 		return false
@@ -210,7 +200,7 @@ func (e *CacheEngine) checkIfRemountRequired(runtimeClass *datav1alpha1.CacheRun
 		return false
 	}
 
-	// Check pod phase to ensure it's actually running
+	// Check pod phase to ensure it is actually running
 	if masterPod.Status.Phase != corev1.PodRunning {
 		e.Log.Info("Master pod is not in Running phase, skip remount check",
 			"pod", masterPodName, "phase", masterPod.Status.Phase)
