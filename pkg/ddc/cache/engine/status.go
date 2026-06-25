@@ -149,7 +149,7 @@ func (e *CacheEngine) CheckAndUpdateRuntimeStatus(value *common.CacheRuntimeStat
 			runtimeToUpdate.Status.SetupDuration = utils.CalculateDuration(runtimeToUpdate.CreationTimestamp.Time, time.Now())
 		}
 
-		// TODO(cache runtime): set the CacheRuntime Status left fields:  Selector
+		runtimeToUpdate.Status.Selector = e.getWorkerSelectors()
 		runtimeToUpdate.Status.ValueFile = common.GetCacheRuntimeConfigConfigMapName(e.name)
 
 		if !reflect.DeepEqual(runtime.Status, runtimeToUpdate.Status) {

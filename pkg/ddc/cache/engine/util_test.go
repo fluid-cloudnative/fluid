@@ -19,6 +19,8 @@ package engine
 import (
 	"strings"
 
+	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"k8s.io/apimachinery/pkg/util/validation"
@@ -191,6 +193,44 @@ var _ = Describe("getSecretVolumeName Tests", Label("pkg.ddc.cache.engine.util_t
 				Expect(len(result1)).To(Equal(validation.DNS1035LabelMaxLength))
 				Expect(len(result2)).To(Equal(validation.DNS1035LabelMaxLength))
 			})
+		})
+	})
+})
+
+var _ = Describe("getWorkerSelectors Tests", Label("pkg.ddc.cache.engine.util_test.go"), func() {
+	Describe("getWorkerSelectors", func() {
+		var engine *CacheEngine
+
+		BeforeEach(func() {
+			engine = &CacheEngine{
+				name:      "test-runtime",
+				namespace: "default",
+				Log:       fake.NullLogger(),
+			}
+		})
+
+		It("returns a non-empty selector string", func() {
+			selector := engine.getWorkerSelectors()
+			Expect(selector).NotTo(BeEmpty())
+		})
+
+		It("selector contains the runtime name label", func() {
+			selector := engine.getWorkerSelectors()
+			Expect(selector).To(ContainSubstring(common.LabelCacheRuntimeName))
+			Expect(selector).To(ContainSubstring("test-runtime"))
+		})
+
+		It("selector contains the worker component name label", func() {
+			workerName := common.GetCacheComponentName("test-runtime", common.ComponentTypeWorker)
+			selector := engine.getWorkerSelectors()
+			Expect(selector).To(ContainSubstring(common.LabelCacheRuntimeComponentName))
+			Expect(selector).To(ContainSubstring(workerName))
+		})
+
+		It("returns different selectors for different runtime names", func() {
+			engine1 := &CacheEngine{name: "runtime-a", namespace: "default", Log: fake.NullLogger()}
+			engine2 := &CacheEngine{name: "runtime-b", namespace: "default", Log: fake.NullLogger()}
+			Expect(engine1.getWorkerSelectors()).NotTo(Equal(engine2.getWorkerSelectors()))
 		})
 	})
 })
