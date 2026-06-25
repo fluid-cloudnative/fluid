@@ -8,6 +8,7 @@ controller_deployment="alluxioruntime-controller"
 controller_namespace="fluid-system"
 read_before_job_name="read-before-scaledown"
 read_after_job_name="read-after-scaledown"
+bucket_create_job_name="scaledown-minio-bucket-create"
 
 function syslog() {
     echo ">>> $1"
@@ -21,7 +22,10 @@ function panic() {
 
 # GracefulWorkerScaleDown is Alpha and disabled by default; the controller
 # binary has no Helm value wired up for it yet, so enable it directly on the
-# running deployment for this scenario.
+# running deployment for this scenario. Nothing else patches a --feature-gates
+# arg onto this deployment today, so the substring check below is safe; if
+# that ever changes, switch to matching the exact GracefulWorkerScaleDown=true
+# token so this doesn't end up appending a second --feature-gates arg.
 function enable_graceful_scale_down() {
     if kubectl get deployment "$controller_deployment" -n "$controller_namespace" \
         -ojsonpath='{.spec.template.spec.containers[0].args}' | grep -q "feature-gates=GracefulWorkerScaleDown=true"; then
@@ -30,12 +34,19 @@ function enable_graceful_scale_down() {
     fi
 
     kubectl patch deployment "$controller_deployment" -n "$controller_namespace" --type=json \
-        -p '[{"op":"add","path":"/spec/template/spec/containers/0/args/-","value":"--feature-gates=GracefulWorkerScaleDown=true"}]'
+        -p '[{"op":"add","path":"/spec/template/spec/containers/0/args/-","value":"--feature-gates=GracefulWorkerScaleDown=true"}]' \
+        || panic "failed to patch $controller_deployment to enable GracefulWorkerScaleDown"
 
     kubectl rollout status deployment/"$controller_deployment" -n "$controller_namespace" --timeout=120s \
         || panic "alluxioruntime-controller did not roll out after enabling the feature gate"
 
     syslog "Enabled GracefulWorkerScaleDown feature gate on $controller_deployment"
+}
+
+function setup_minio() {
+    kubectl create -f test/gha-e2e/alluxio-scaledown/minio.yaml
+    kubectl create -f test/gha-e2e/alluxio-scaledown/minio_create_bucket.yaml
+    wait_job_completed "$bucket_create_job_name"
 }
 
 function create_dataset() {
@@ -80,6 +91,7 @@ function wait_worker_replicas() {
     local deadline=900
     local spec_replicas=""
     local status_replicas=""
+    local decommission_condition=""
     local counter=0
     while true; do
         spec_replicas=$(kubectl get statefulset "$worker_sts_name" -ojsonpath='{@.spec.replicas}' 2>/dev/null)
@@ -90,7 +102,9 @@ function wait_worker_replicas() {
         fi
 
         if [[ $((counter % 6)) -eq 0 ]]; then
-            syslog "waiting for $worker_sts_name to reach $expected replicas (already $((counter * 5))s, spec=$spec_replicas status=$status_replicas)"
+            decommission_condition=$(kubectl get alluxioruntime "$dataset_name" \
+                -ojsonpath='{.status.conditions[?(@.type=="WorkerDecommissioning")]}' 2>/dev/null)
+            syslog "waiting for $worker_sts_name to reach $expected replicas (already $((counter * 5))s, spec=$spec_replicas status=$status_replicas, decommissionCondition=$decommission_condition)"
         fi
 
         counter=$((counter + 1))
@@ -103,7 +117,8 @@ function wait_worker_replicas() {
 }
 
 function scale_down() {
-    kubectl patch alluxioruntime "$dataset_name" --type=merge -p '{"spec":{"replicas":1}}'
+    kubectl patch alluxioruntime "$dataset_name" --type=merge -p '{"spec":{"replicas":1}}' \
+        || panic "failed to patch alluxioruntime $dataset_name to replicas=1"
     syslog "Requested scale-down of $dataset_name to 1 replica"
 }
 
@@ -152,12 +167,22 @@ function dump_env_and_clean_up() {
     kubectl delete --ignore-not-found -f test/gha-e2e/alluxio-scaledown/read_after_job.yaml
     kubectl delete --ignore-not-found -f test/gha-e2e/alluxio-scaledown/read_before_job.yaml
     kubectl delete --ignore-not-found -f test/gha-e2e/alluxio-scaledown/dataset.yaml
+    kubectl delete --ignore-not-found -f test/gha-e2e/alluxio-scaledown/minio_create_bucket.yaml
+    kubectl delete --ignore-not-found -f test/gha-e2e/alluxio-scaledown/minio.yaml
 }
 
+# Note: the GHA Kind cluster is single-node, so both worker pods land on the
+# same node and report the same HostIP. drainScalingDownWorkers in
+# pkg/ddc/alluxio/replicas.go dedupes decommission addresses by HostIP:port,
+# so this test cannot prove a *specific* worker was targeted by address - only
+# that the decommission flow runs, the StatefulSet converges, and data isn't
+# lost. Per-address targeting on distinct hosts is covered by the gomonkey
+# unit tests in pkg/ddc/alluxio/replicas_drain_test.go instead.
 function main() {
     syslog "[TESTCASE $testname STARTS AT $(date)]"
     trap dump_env_and_clean_up EXIT
     enable_graceful_scale_down
+    setup_minio
     create_dataset
     wait_dataset_bound
     wait_worker_replicas 2
