@@ -27,6 +27,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/compatibility"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/helm"
 	batchv1 "k8s.io/api/batch/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -423,5 +424,143 @@ func TestCronGetOperationStatusNotScheduledYet(t *testing.T) {
 	}
 	if opStatus == nil {
 		t.Error("expected non-nil opStatus")
+	}
+}
+
+func TestOnceGetOperationStatusJobNotFound(t *testing.T) {
+	testScheme := runtime.NewScheme()
+	_ = v1alpha1.AddToScheme(testScheme)
+	_ = batchv1.AddToScheme(testScheme)
+
+	// Patch helm.DeleteReleaseIfExists to avoid shelling out to ddc-helm binary
+	helmPatch := gomonkey.ApplyFunc(helm.DeleteReleaseIfExists, func(name, namespace string) error {
+		return nil
+	})
+	defer helmPatch.Reset()
+
+	mockDataProcess := v1alpha1.DataProcess{
+		ObjectMeta: v1.ObjectMeta{
+			Name:      "test",
+			Namespace: "default",
+		},
+		Spec: v1alpha1.DataProcessSpec{
+			Policy: v1alpha1.Once,
+		},
+		Status: v1alpha1.OperationStatus{
+			Phase: common.PhasePending,
+		},
+	}
+
+	// No job in fake client - simulates NotFound
+	client := fake.NewFakeClientWithScheme(testScheme, &mockDataProcess)
+	handler := &OnceStatusHandler{Client: client, dataProcess: &mockDataProcess}
+	ctx := cruntime.ReconcileRequestContext{
+		NamespacedName: types.NamespacedName{Namespace: "default", Name: ""},
+		Log:            fake.NullLogger(),
+	}
+
+	// When job is not found, helm release is deleted and we get early return with unchanged status
+	opStatus, err := handler.GetOperationStatus(ctx, &mockDataProcess.Status)
+	if err != nil {
+		t.Errorf("unexpected error on NotFound path: %v", err)
+	}
+	if opStatus == nil {
+		t.Error("expected non-nil opStatus")
+	}
+	if opStatus.Phase != common.PhasePending {
+		t.Errorf("expected phase %s, got %s", common.PhasePending, opStatus.Phase)
+	}
+}
+
+func TestOnEventGetOperationStatusJobNotFound(t *testing.T) {
+	testScheme := runtime.NewScheme()
+	_ = v1alpha1.AddToScheme(testScheme)
+	_ = batchv1.AddToScheme(testScheme)
+
+	// Patch helm.DeleteReleaseIfExists to avoid shelling out to ddc-helm binary
+	helmPatch := gomonkey.ApplyFunc(helm.DeleteReleaseIfExists, func(name, namespace string) error {
+		return nil
+	})
+	defer helmPatch.Reset()
+
+	mockDataProcess := v1alpha1.DataProcess{
+		ObjectMeta: v1.ObjectMeta{
+			Name:      "test",
+			Namespace: "default",
+		},
+		Spec: v1alpha1.DataProcessSpec{
+			Policy: v1alpha1.OnEvent,
+		},
+		Status: v1alpha1.OperationStatus{
+			Phase: common.PhasePending,
+		},
+	}
+
+	// No job in fake client - simulates NotFound
+	client := fake.NewFakeClientWithScheme(testScheme, &mockDataProcess)
+	handler := &OnEventStatusHandler{Client: client, dataProcess: &mockDataProcess}
+	ctx := cruntime.ReconcileRequestContext{
+		NamespacedName: types.NamespacedName{Namespace: "default", Name: ""},
+		Log:            fake.NullLogger(),
+	}
+
+	// When job is not found, helm release is deleted and we get early return with unchanged status
+	opStatus, err := handler.GetOperationStatus(ctx, &mockDataProcess.Status)
+	if err != nil {
+		t.Errorf("unexpected error on NotFound path: %v", err)
+	}
+	if opStatus == nil {
+		t.Error("expected non-nil opStatus")
+	}
+	if opStatus.Phase != common.PhasePending {
+		t.Errorf("expected phase %s, got %s", common.PhasePending, opStatus.Phase)
+	}
+}
+
+func TestCronGetOperationStatusCronJobNotFound(t *testing.T) {
+	testScheme := runtime.NewScheme()
+	_ = v1alpha1.AddToScheme(testScheme)
+	_ = batchv1.AddToScheme(testScheme)
+
+	patch := gomonkey.ApplyFunc(compatibility.IsBatchV1CronJobSupported, func() bool {
+		return true
+	})
+	defer patch.Reset()
+
+	// Patch helm.DeleteReleaseIfExists to avoid shelling out to ddc-helm binary
+	helmPatch := gomonkey.ApplyFunc(helm.DeleteReleaseIfExists, func(name, namespace string) error {
+		return nil
+	})
+	defer helmPatch.Reset()
+
+	mockDataProcess := v1alpha1.DataProcess{
+		ObjectMeta: v1.ObjectMeta{
+			Name:      "test",
+			Namespace: "default",
+		},
+		Spec: v1alpha1.DataProcessSpec{
+			Policy:   v1alpha1.Cron,
+			Schedule: "* * * * *",
+		},
+		Status: v1alpha1.OperationStatus{
+			Phase: common.PhasePending,
+		},
+	}
+
+	// No CronJob in fake client - simulates NotFound
+	client := fake.NewFakeClientWithScheme(testScheme, &mockDataProcess)
+	handler := &CronStatusHandler{Client: client, dataProcess: &mockDataProcess}
+	ctx := cruntime.ReconcileRequestContext{Log: fake.NullLogger()}
+
+	// When CronJob is not found, helm release is deleted and we get early return with unchanged status
+	opStatus, err := handler.GetOperationStatus(ctx, &mockDataProcess.Status)
+	if err != nil {
+		t.Errorf("unexpected error on NotFound path: %v", err)
+	}
+	if opStatus == nil {
+		t.Error("expected non-nil opStatus")
+	}
+	if opStatus.Phase != common.PhasePending {
+		t.Errorf("expected phase %s, got %s", common.PhasePending, opStatus.Phase)
 	}
 }
