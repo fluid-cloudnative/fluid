@@ -299,6 +299,48 @@ function wait_dataload_completed() {
     done
     syslog "Found succeeded dataload_name $dataload_name"
 }
+function scale_worker_and_verify() {
+    local target_replicas=$1
+    local worker_component_name="${dataset_name}-worker"
+    local deadline=180
+    local counter=0
+
+    syslog "Scaling worker to $target_replicas replicas"
+    kubectl patch cacheruntime $dataset_name --type merge -p "{\"spec\":{\"worker\":{\"replicas\":$target_replicas}}}"
+
+    while true; do
+        local ready_replicas=""
+        local desired_replicas=""
+        ready_replicas=$(kubectl get cacheruntime $dataset_name -ojsonpath='{@.status.worker.readyReplicas}' 2>/dev/null)
+        desired_replicas=$(kubectl get cacheruntime $dataset_name -ojsonpath='{@.status.worker.desiredReplicas}' 2>/dev/null)
+
+        if [[ "$ready_replicas" == "$target_replicas" ]] && [[ "$desired_replicas" == "$target_replicas" ]]; then
+            break
+        fi
+
+        counter=$((counter + 1))
+        if [[ $((counter * 5)) -ge $deadline ]]; then
+            panic "timeout ${deadline}s waiting for worker scale to $target_replicas (ready: ${ready_replicas:-<empty>}, desired: ${desired_replicas:-<empty>})"
+        fi
+        sleep 5
+    done
+
+    # verify AdvancedStatefulSet replicas match
+    local asts_replicas=""
+    asts_replicas=$(kubectl get advancedstatefulset "$worker_component_name" -ojsonpath='{@.spec.replicas}' 2>/dev/null)
+    if [[ "$asts_replicas" != "$target_replicas" ]]; then
+        panic "AdvancedStatefulSet replicas mismatch: expected $target_replicas, got $asts_replicas"
+    fi
+
+    local asts_ready=""
+    asts_ready=$(kubectl get advancedstatefulset "$worker_component_name" -ojsonpath='{@.status.readyReplicas}' 2>/dev/null)
+    if [[ "$asts_ready" != "$target_replicas" ]]; then
+        panic "AdvancedStatefulSet readyReplicas mismatch: expected $target_replicas, got $asts_ready"
+    fi
+
+    syslog "Worker scaled to $target_replicas replicas successfully (asts replicas=$asts_replicas, ready=$asts_ready)"
+}
+
 function delete_dataset_and_runtime() {
     kubectl delete --ignore-not-found -f test/gha-e2e/curvine/dataload.yaml
     kubectl delete --ignore-not-found -f test/gha-e2e/curvine/ref-dataset.yaml
@@ -360,6 +402,10 @@ function main() {
     wait_job_completed $read_job_name
     create_job test/gha-e2e/curvine/read_ref_job.yaml $read_ref_job_name
     wait_job_completed $read_ref_job_name
+
+    # verify scale-up and scale-down (exercises patch on advancedstatefulsets and delete on pods)
+    scale_worker_and_verify 2
+    scale_worker_and_verify 1
 
     # verify deletion and cleanup
     delete_dataset_and_runtime
