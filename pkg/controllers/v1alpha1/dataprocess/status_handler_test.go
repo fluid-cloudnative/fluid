@@ -432,8 +432,12 @@ func TestOnceGetOperationStatusJobNotFound(t *testing.T) {
 	_ = v1alpha1.AddToScheme(testScheme)
 	_ = batchv1.AddToScheme(testScheme)
 
-	// Patch helm.DeleteReleaseIfExists to avoid shelling out to ddc-helm binary
+	var helmCalled bool
+	var helmCalledName, helmCalledNamespace string
 	helmPatch := gomonkey.ApplyFunc(helm.DeleteReleaseIfExists, func(name, namespace string) error {
+		helmCalled = true
+		helmCalledName = name
+		helmCalledNamespace = namespace
 		return nil
 	})
 	defer helmPatch.Reset()
@@ -451,7 +455,6 @@ func TestOnceGetOperationStatusJobNotFound(t *testing.T) {
 		},
 	}
 
-	// No job in fake client - simulates NotFound
 	client := fake.NewFakeClientWithScheme(testScheme, &mockDataProcess)
 	handler := &OnceStatusHandler{Client: client, dataProcess: &mockDataProcess}
 	ctx := cruntime.ReconcileRequestContext{
@@ -459,16 +462,22 @@ func TestOnceGetOperationStatusJobNotFound(t *testing.T) {
 		Log:            fake.NullLogger(),
 	}
 
-	// When job is not found, helm release is deleted and we get early return with unchanged status
 	opStatus, err := handler.GetOperationStatus(ctx, &mockDataProcess.Status)
 	if err != nil {
-		t.Errorf("unexpected error on NotFound path: %v", err)
+		t.Fatalf("unexpected error on NotFound path: %v", err)
 	}
 	if opStatus == nil {
-		t.Error("expected non-nil opStatus")
+		t.Fatal("expected non-nil opStatus")
 	}
 	if opStatus.Phase != common.PhasePending {
 		t.Errorf("expected phase %s, got %s", common.PhasePending, opStatus.Phase)
+	}
+	if !helmCalled {
+		t.Error("expected helm.DeleteReleaseIfExists to be called")
+	}
+	expectedReleaseName := utils.GetDataProcessReleaseName(mockDataProcess.GetName())
+	if helmCalledName != expectedReleaseName || helmCalledNamespace != "default" {
+		t.Errorf("expected helm.DeleteReleaseIfExists(%s, %s), got (%s, %s)", expectedReleaseName, "default", helmCalledName, helmCalledNamespace)
 	}
 }
 
@@ -477,8 +486,12 @@ func TestOnEventGetOperationStatusJobNotFound(t *testing.T) {
 	_ = v1alpha1.AddToScheme(testScheme)
 	_ = batchv1.AddToScheme(testScheme)
 
-	// Patch helm.DeleteReleaseIfExists to avoid shelling out to ddc-helm binary
+	var helmCalled bool
+	var helmCalledName, helmCalledNamespace string
 	helmPatch := gomonkey.ApplyFunc(helm.DeleteReleaseIfExists, func(name, namespace string) error {
+		helmCalled = true
+		helmCalledName = name
+		helmCalledNamespace = namespace
 		return nil
 	})
 	defer helmPatch.Reset()
@@ -496,7 +509,6 @@ func TestOnEventGetOperationStatusJobNotFound(t *testing.T) {
 		},
 	}
 
-	// No job in fake client - simulates NotFound
 	client := fake.NewFakeClientWithScheme(testScheme, &mockDataProcess)
 	handler := &OnEventStatusHandler{Client: client, dataProcess: &mockDataProcess}
 	ctx := cruntime.ReconcileRequestContext{
@@ -504,16 +516,22 @@ func TestOnEventGetOperationStatusJobNotFound(t *testing.T) {
 		Log:            fake.NullLogger(),
 	}
 
-	// When job is not found, helm release is deleted and we get early return with unchanged status
 	opStatus, err := handler.GetOperationStatus(ctx, &mockDataProcess.Status)
 	if err != nil {
-		t.Errorf("unexpected error on NotFound path: %v", err)
+		t.Fatalf("unexpected error on NotFound path: %v", err)
 	}
 	if opStatus == nil {
-		t.Error("expected non-nil opStatus")
+		t.Fatal("expected non-nil opStatus")
 	}
 	if opStatus.Phase != common.PhasePending {
 		t.Errorf("expected phase %s, got %s", common.PhasePending, opStatus.Phase)
+	}
+	if !helmCalled {
+		t.Error("expected helm.DeleteReleaseIfExists to be called")
+	}
+	expectedReleaseName := utils.GetDataProcessReleaseName(mockDataProcess.GetName())
+	if helmCalledName != expectedReleaseName || helmCalledNamespace != "default" {
+		t.Errorf("expected helm.DeleteReleaseIfExists(%s, %s), got (%s, %s)", expectedReleaseName, "default", helmCalledName, helmCalledNamespace)
 	}
 }
 
@@ -527,8 +545,12 @@ func TestCronGetOperationStatusCronJobNotFound(t *testing.T) {
 	})
 	defer patch.Reset()
 
-	// Patch helm.DeleteReleaseIfExists to avoid shelling out to ddc-helm binary
+	var helmCalled bool
+	var helmCalledName, helmCalledNamespace string
 	helmPatch := gomonkey.ApplyFunc(helm.DeleteReleaseIfExists, func(name, namespace string) error {
+		helmCalled = true
+		helmCalledName = name
+		helmCalledNamespace = namespace
 		return nil
 	})
 	defer helmPatch.Reset()
@@ -547,20 +569,28 @@ func TestCronGetOperationStatusCronJobNotFound(t *testing.T) {
 		},
 	}
 
-	// No CronJob in fake client - simulates NotFound
 	client := fake.NewFakeClientWithScheme(testScheme, &mockDataProcess)
 	handler := &CronStatusHandler{Client: client, dataProcess: &mockDataProcess}
-	ctx := cruntime.ReconcileRequestContext{Log: fake.NullLogger()}
+	ctx := cruntime.ReconcileRequestContext{
+		NamespacedName: types.NamespacedName{Namespace: "default", Name: ""},
+		Log:            fake.NullLogger(),
+	}
 
-	// When CronJob is not found, helm release is deleted and we get early return with unchanged status
 	opStatus, err := handler.GetOperationStatus(ctx, &mockDataProcess.Status)
 	if err != nil {
-		t.Errorf("unexpected error on NotFound path: %v", err)
+		t.Fatalf("unexpected error on NotFound path: %v", err)
 	}
 	if opStatus == nil {
-		t.Error("expected non-nil opStatus")
+		t.Fatal("expected non-nil opStatus")
 	}
 	if opStatus.Phase != common.PhasePending {
 		t.Errorf("expected phase %s, got %s", common.PhasePending, opStatus.Phase)
+	}
+	if !helmCalled {
+		t.Error("expected helm.DeleteReleaseIfExists to be called")
+	}
+	expectedReleaseName := utils.GetDataProcessReleaseName(mockDataProcess.GetName())
+	if helmCalledName != expectedReleaseName || helmCalledNamespace != "default" {
+		t.Errorf("expected helm.DeleteReleaseIfExists(%s, %s), got (%s, %s)", expectedReleaseName, "default", helmCalledName, helmCalledNamespace)
 	}
 }
