@@ -404,8 +404,15 @@ function main() {
     wait_job_completed $read_ref_job_name
 
     # verify scale-up and scale-down (exercises patch on advancedstatefulsets and delete on pods)
-    scale_worker_and_verify 2
-    scale_worker_and_verify 1
+    # skip on single-node clusters where anti-affinity prevents scheduling the second pod
+    local node_count=""
+    node_count=$(kubectl get nodes --no-headers 2>/dev/null | wc -l | tr -d ' ')
+    if [[ "$node_count" -ge 2 ]]; then
+        scale_worker_and_verify 2
+        scale_worker_and_verify 1
+    else
+        syslog "Skipping scale test: single-node cluster ($node_count node)"
+    fi
 
     # verify deletion and cleanup
     delete_dataset_and_runtime
