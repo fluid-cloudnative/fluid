@@ -299,6 +299,49 @@ function wait_dataload_completed() {
     done
     syslog "Found succeeded dataload_name $dataload_name"
 }
+function delete_dataset_and_runtime() {
+    kubectl delete --ignore-not-found -f test/gha-e2e/curvine/dataload.yaml
+    kubectl delete --ignore-not-found -f test/gha-e2e/curvine/ref-dataset.yaml
+    kubectl delete -f test/gha-e2e/curvine/dataset.yaml
+    kubectl delete -f test/gha-e2e/curvine/cacheruntime.yaml
+}
+
+function wait_runtime_deleted() {
+    local deadline=120
+    local counter=0
+    while true; do
+        local remaining=""
+        remaining=$(kubectl get advancedstatefulset,daemonset,svc -l fluid.io/managed-by=fluid -n default -oname 2>/dev/null)
+        if [[ -z "$remaining" ]]; then
+            break
+        fi
+        counter=$((counter + 1))
+        if [[ $((counter * 5)) -ge $deadline ]]; then
+            syslog "remaining resources after deletion: $remaining"
+            panic "timeout ${deadline}s waiting for runtime resources to be garbage collected"
+        fi
+        sleep 5
+    done
+    syslog "All runtime resources (AdvancedStatefulSet, DaemonSet, Service) garbage collected"
+
+    # verify node labels are cleaned up
+    local cache_labels=""
+    cache_labels=$(kubectl get nodes -ojsonpath='{range .items[*]}{.metadata.labels}' 2>/dev/null | grep -o "fluid.io/s-default-${dataset_name}[^ ]*" || true)
+    if [[ -n "$cache_labels" ]]; then
+        panic "node labels not cleaned up: $cache_labels"
+    fi
+    syslog "Node labels cleaned up successfully"
+
+    # verify PV/PVC are cleaned up
+    if kubectl get pvc $dataset_name -n default >/dev/null 2>&1; then
+        panic "PVC $dataset_name still exists after deletion"
+    fi
+    if kubectl get pv default-$dataset_name >/dev/null 2>&1; then
+        panic "PV default-$dataset_name still exists after deletion"
+    fi
+    syslog "PV/PVC cleaned up successfully"
+}
+
 function main() {
     syslog "[TESTCASE $testname STARTS AT $(date)]"
     trap dump_env_and_clean_up EXIT
@@ -317,6 +360,10 @@ function main() {
     wait_job_completed $read_job_name
     create_job test/gha-e2e/curvine/read_ref_job.yaml $read_ref_job_name
     wait_job_completed $read_ref_job_name
+
+    # verify deletion and cleanup
+    delete_dataset_and_runtime
+    wait_runtime_deleted
 
     syslog "[TESTCASE $testname SUCCEEDED AT $(date)]"
 }
