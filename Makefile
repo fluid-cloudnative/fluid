@@ -47,6 +47,7 @@ WEBHOOK_IMG ?= ${IMG_REPO}/fluid-webhook
 CRD_UPGRADER_IMG ?= ${IMG_REPO}/fluid-crd-upgrader
 PREFETCHER_IMAGE ?= ${IMG_REPO}/fluid-file-prefetcher
 OSS_EMULATOR_IMG ?= ${IMG_REPO}/oss-emulator
+OSS_EMULATOR_VERSION ?= e2e
 
 # Dockerfile paths
 DATASET_DOCKERFILE ?= docker/Dockerfile.dataset
@@ -316,7 +317,7 @@ docker-build-prefetcher:
 
 .PHONY: docker-build-oss-emulator
 docker-build-oss-emulator:
-	docker build ${DOCKER_NO_CACHE_OPTION} test/gha-e2e/jindo/oss-emulator -f ${OSS_EMULATOR_DOCKERFILE} -t ${OSS_EMULATOR_IMG}:${GIT_VERSION}
+	docker build ${DOCKER_NO_CACHE_OPTION} test/gha-e2e/jindo/oss-emulator -f ${OSS_EMULATOR_DOCKERFILE} -t ${OSS_EMULATOR_IMG}:${OSS_EMULATOR_VERSION}
 
 # Push the docker image
 .PHONY: docker-push-dataset-controller
@@ -377,7 +378,7 @@ docker-push-prefetcher: docker-build-prefetcher
 
 .PHONY: docker-push-oss-emulator
 docker-push-oss-emulator: docker-build-oss-emulator
-	docker push ${OSS_EMULATOR_IMG}:${GIT_VERSION}
+	docker push ${OSS_EMULATOR_IMG}:${OSS_EMULATOR_VERSION}
 
 # Buildx and push the docker image
 .PHONY: docker-buildx-push-dataset-controller
@@ -439,7 +440,7 @@ docker-buildx-push-crd-prefetcher:
 
 .PHONY: docker-buildx-push-oss-emulator
 docker-buildx-push-oss-emulator:
-	docker buildx build --push --platform ${DOCKER_PLATFORM} ${DOCKER_NO_CACHE_OPTION} test/gha-e2e/jindo/oss-emulator -f ${OSS_EMULATOR_DOCKERFILE} -t ${OSS_EMULATOR_IMG}:${GIT_VERSION}
+	docker buildx build --push --platform ${DOCKER_PLATFORM} ${DOCKER_NO_CACHE_OPTION} test/gha-e2e/jindo/oss-emulator -f ${OSS_EMULATOR_DOCKERFILE} -t ${OSS_EMULATOR_IMG}:${OSS_EMULATOR_VERSION}
 
 .PHONY: docker-build-all
 docker-build-all: pre-setup download-helm ${DOCKER_BUILD}
