@@ -32,6 +32,8 @@ rules:
       - list
       - watch
       - create
+      - update
+      - patch
       - delete
   - apiGroups:
       - ""
@@ -51,6 +53,18 @@ rules:
       - get
       - list
       - watch
+      - create
+      - update
+      - patch
+      - delete
+  - apiGroups:
+      - ""
+    resources:
+      - pods/status
+    verbs:
+      - get
+      - update
+      - patch
   - apiGroups:
       - ""
     resources:
@@ -71,8 +85,13 @@ rules:
     resources:
       - events
     verbs:
+      - get
+      - list
+      - watch
       - create
+      - update
       - patch
+      - delete
   - apiGroups:
       - ""
     resources:
@@ -108,12 +127,27 @@ rules:
   - apiGroups:
       - apps
     resources:
-      - daemonsets
+      - controllerrevisions
     verbs:
       - get
       - list
       - watch
       - create
+      - update
+      - patch
+      - delete
+  - apiGroups:
+      - apps
+    resources:
+      - daemonsets
+      - daemonsets/status
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - patch
   - apiGroups:
       - workload.fluid.io
     resources:
@@ -125,6 +159,20 @@ rules:
       - create
       - update
       - patch
+  - apiGroups:
+      - workload.fluid.io
+    resources:
+      - advancedstatefulsets/status
+    verbs:
+      - get
+      - update
+      - patch
+  - apiGroups:
+      - workload.fluid.io
+    resources:
+      - advancedstatefulsets/finalizers
+    verbs:
+      - update
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
