@@ -523,12 +523,12 @@ function run_scenario() {
 
 function dump_env_and_clean_up() {
     local exit_code=$?
-    for dataset_name in $s3_dataset_name $multi_oss_dataset_name; do
-        if kubectl get dataset $dataset_name >/dev/null 2>&1; then
-            bash tools/diagnose-fluid-jindo.sh collect --name $dataset_name --namespace default --collect-path ./e2e-tmp/testcase-$dataset_name.tgz
-        fi
-    done
     if [[ $exit_code -ne 0 ]]; then
+        for dataset_name in $s3_dataset_name $multi_oss_dataset_name; do
+            if kubectl get dataset $dataset_name >/dev/null 2>&1; then
+                bash tools/diagnose-fluid-jindo.sh collect --name $dataset_name --namespace default --collect-path ./e2e-tmp/testcase-$dataset_name.tgz
+            fi
+        done
         syslog "=== Diagnostic logs for failed test ==="
         syslog "--- jindoruntime-controller logs (last 100 lines) ---"
         kubectl logs -n fluid-system -l control-plane=jindoruntime-controller -c manager --tail=100 2>&1 || true

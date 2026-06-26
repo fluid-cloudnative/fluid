@@ -89,8 +89,8 @@ function wait_job_completed() {
 
 function dump_env_and_clean_up() {
     local exit_code=$?
-    bash tools/diagnose-fluid-juicefs.sh collect --name $dataset_name --namespace default --collect-path ./e2e-tmp/testcase-juicefs.tgz
     if [[ $exit_code -ne 0 ]]; then
+        bash tools/diagnose-fluid-juicefs.sh collect --name $dataset_name --namespace default --collect-path ./e2e-tmp/testcase-juicefs.tgz
         syslog "=== Diagnostic logs for failed test ==="
         syslog "--- juicefsruntime-controller logs (last 100 lines) ---"
         kubectl logs -n fluid-system -l control-plane=juicefsruntime-controller -c manager --tail=100 2>&1 || true

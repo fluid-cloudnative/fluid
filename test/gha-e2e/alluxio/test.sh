@@ -79,8 +79,8 @@ function wait_job_completed() {
 
 function dump_env_and_clean_up() {
     local exit_code=$?
-    bash tools/diagnose-fluid-alluxio.sh collect --name $dataset_name --namespace default --collect-path ./e2e-tmp/testcase-alluxio.tgz
     if [[ $exit_code -ne 0 ]]; then
+        bash tools/diagnose-fluid-alluxio.sh collect --name $dataset_name --namespace default --collect-path ./e2e-tmp/testcase-alluxio.tgz
         syslog "=== Diagnostic logs for failed test ==="
         syslog "--- alluxioruntime-controller logs (last 100 lines) ---"
         kubectl logs -n fluid-system -l control-plane=alluxioruntime-controller -c manager --tail=100 2>&1 || true

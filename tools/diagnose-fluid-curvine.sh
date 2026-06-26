@@ -30,9 +30,9 @@ run() {
 
 pod_status() {
   local namespace=${1:-"default"}
-  run kubectl get pods -owide -n ${namespace} &>"$diagnose_dir/pods-${namespace}.log"
-  run kubectl get pods -oyaml -n ${namespace} &>>"$diagnose_dir/pods-${namespace}.log"
-  run kubectl describe pods -n ${namespace} &>>"$diagnose_dir/pods-${namespace}.log"
+  run kubectl get pods -owide -n ${namespace} >"$diagnose_dir/pods-${namespace}.log" 2>&1
+  run kubectl get pods -oyaml -n ${namespace} >>"$diagnose_dir/pods-${namespace}.log" 2>&1
+  run kubectl describe pods -n ${namespace} >>"$diagnose_dir/pods-${namespace}.log" 2>&1
 }
 
 fluid_pod_logs() {
@@ -64,16 +64,16 @@ core_component() {
   mkdir -p "$diagnose_dir/pods-${namespace}"
   pods=$(kubectl get po -n ${namespace} "${constrains}" | awk '{print $1}' | grep -v NAME)
   for po in ${pods}; do
-    kubectl logs "${po}" -c "$container" -n ${namespace} &>"$diagnose_dir/pods-${namespace}/${po}-${container}.log" 2>&1
+    kubectl logs "${po}" -c "$container" -n ${namespace} >"$diagnose_dir/pods-${namespace}/${po}-${container}.log" 2>&1
   done
 }
 
 kubectl_resource() {
   # runtime, dataset, pv and pvc should have the same name
-  kubectl describe dataset --namespace ${runtime_namespace} ${runtime_name} &>"${diagnose_dir}/dataset-${runtime_name}.yaml" 2>&1
-  kubectl describe cacheruntime --namespace ${runtime_namespace} ${name} &>"${diagnose_dir}/cacheruntime-${runtime_name}.yaml" 2>&1
-  kubectl describe pv ${runtime_namespace}-${runtime_name} &>"${diagnose_dir}/pv-${runtime_name}.yaml" 2>&1
-  kubectl describe pvc ${runtime_name} --namespace ${runtime_namespace} &>"${diagnose_dir}/pvc-${runtime_name}.yaml" 2>&1
+  kubectl describe dataset --namespace ${runtime_namespace} ${runtime_name} >"${diagnose_dir}/dataset-${runtime_name}.yaml" 2>&1
+  kubectl describe cacheruntime --namespace ${runtime_namespace} ${name} >"${diagnose_dir}/cacheruntime-${runtime_name}.yaml" 2>&1
+  kubectl describe pv ${runtime_namespace}-${runtime_name} >"${diagnose_dir}/pv-${runtime_name}.yaml" 2>&1
+  kubectl describe pvc ${runtime_name} --namespace ${runtime_namespace} >"${diagnose_dir}/pvc-${runtime_name}.yaml" 2>&1
 }
 
 archive() {
