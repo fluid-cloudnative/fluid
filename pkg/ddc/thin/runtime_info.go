@@ -22,17 +22,20 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils/testutil"
 )
 
+// CheckRuntimeReady checks if the ThinRuntime is ready to serve data operations.
+// Unlike Alluxio/Jindo which probe a master pod, ThinRuntime has no master component,
+// so readiness is determined by worker availability. Fuse components are intentionally
+// excluded because fluid treats fuse as always-ready by design (see pkg/ctrl/fuse.go).
 func (t *ThinEngine) CheckRuntimeReady() (ready bool) {
 	workerReady, err := t.CheckWorkersReady()
-	if err != nil || !workerReady {
+	if err != nil {
+		t.Log.Error(err, "failed to check worker readiness")
 		return false
 	}
-
-	fuseReady, err := t.checkFuseHealthy()
-	if err != nil || !fuseReady {
+	if !workerReady {
+		t.Log.Info("runtime not ready", "reason", "workers not ready")
 		return false
 	}
-
 	return true
 }
 
