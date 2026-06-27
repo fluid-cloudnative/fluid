@@ -29,17 +29,17 @@ run() {
 }
 
 helm_get() {
-  run helm get all -n ${runtime_namespace} "${1}" &>"$diagnose_dir/helm-${1}.yaml"
+  run helm get all -n ${runtime_namespace} "${1}" >"$diagnose_dir/helm-${1}.yaml"
 }
 
 helm_get_runtime() {
-  run env HELM_DRIVER=configmap helm get all -n ${runtime_namespace} "${1}" &>"$diagnose_dir/helm-${1}.yaml"
+  run env HELM_DRIVER=configmap helm get all -n ${runtime_namespace} "${1}" >"$diagnose_dir/helm-${1}.yaml"
 }
 
 pod_status() {
   local namespace=${1:-"default"}
-  run kubectl get po -owide -n ${namespace} &>"$diagnose_dir/pods-${namespace}.log"
-  run kubectl get po -oyaml -n ${namespace} &>>"$diagnose_dir/pods-${namespace}.log"
+  run kubectl get po -owide -n ${namespace} >"$diagnose_dir/pods-${namespace}.log"
+  run kubectl get po -oyaml -n ${namespace} >>"$diagnose_dir/pods-${namespace}.log"
 }
 
 fluid_pod_logs() {
@@ -70,16 +70,16 @@ core_component() {
   mkdir -p "$diagnose_dir/pods-${namespace}"
   pods=$(kubectl get po -n ${namespace} "${constrains}" | awk '{print $1}' | grep -v NAME)
   for po in ${pods}; do
-      kubectl logs "${po}" -c "$container" -n ${namespace} &>"$diagnose_dir/pods-${namespace}/${po}-${container}.log" 2>&1
+      kubectl logs "${po}" -c "$container" -n ${namespace} >"$diagnose_dir/pods-${namespace}/${po}-${container}.log" 2>&1
   done
 }
 
 kubectl_resource() {
   # runtime, dataset, pv and pvc should have the same name
-  kubectl describe dataset --namespace ${runtime_namespace} ${runtime_name} &>"${diagnose_dir}/dataset-${runtime_name}.yaml" 2>&1
-  kubectl describe jindoruntime --namespace ${runtime_namespace} ${name} &>"${diagnose_dir}/jindoruntime-${runtime_name}.yaml" 2>&1
-  kubectl describe pv ${runtime_namespace}-${runtime_name} &>"${diagnose_dir}/pv-${runtime_name}.yaml" 2>&1
-  kubectl describe pvc ${runtime_name} --namespace ${runtime_namespace} &>"${diagnose_dir}/pvc-${runtime_name}.yaml" 2>&1
+  kubectl describe dataset --namespace ${runtime_namespace} ${runtime_name} >"${diagnose_dir}/dataset-${runtime_name}.yaml" 2>&1
+  kubectl describe jindoruntime --namespace ${runtime_namespace} ${name} >"${diagnose_dir}/jindoruntime-${runtime_name}.yaml" 2>&1
+  kubectl describe pv ${runtime_namespace}-${runtime_name} >"${diagnose_dir}/pv-${runtime_name}.yaml" 2>&1
+  kubectl describe pvc ${runtime_name} --namespace ${runtime_namespace} >"${diagnose_dir}/pvc-${runtime_name}.yaml" 2>&1
 }
 
 archive() {

@@ -22,7 +22,6 @@ rules:
       - watch
       - create
       - update
-      - patch
       - delete
   - apiGroups:
       - ""
@@ -54,7 +53,18 @@ rules:
       - get
       - list
       - watch
+      - create
       - update
+      - patch
+      - delete
+  - apiGroups:
+      - ""
+    resources:
+      - pods/status
+    verbs:
+      - get
+      - update
+      - patch
   - apiGroups:
       - ""
     resources:
@@ -75,115 +85,45 @@ rules:
     resources:
       - events
     verbs:
+      - get
+      - list
+      - watch
       - create
+      - update
       - patch
+      - delete
   - apiGroups:
       - ""
     resources:
       - services
     verbs:
-      - create
-      - patch
-      - delete
+      - get
       - list
       - watch
-      - get
+      - create
+      - delete
   - apiGroups:
       - data.fluid.io
     resources:
       - cacheruntimes
-      - cacheruntimeclasses
-      - datasets
       - cacheruntimes/status
+      - cacheruntimes/finalizers
+      - datasets
       - datasets/status
     verbs:
       - get
       - list
       - watch
-      - create
       - update
       - patch
-      - delete
   - apiGroups:
-      - ""
+      - data.fluid.io
     resources:
-      - serviceaccounts
-    verbs:
-      - create
-      - list
-      - get
-      - delete
-  - apiGroups:
-      - rbac.authorization.k8s.io
-    resources:
-      - clusterroles
-      - clusterrolebindings
-    verbs:
-      - create
-      - list
-      - get
-      - delete
-  - apiGroups:
-      - apps
-    resources:
-      - daemonsets
-      - statefulsets
-      - daemonsets/status
-      - statefulsets/status
+      - cacheruntimeclasses
     verbs:
       - get
       - list
       - watch
-      - create
-      - update
-      - patch
-      - delete
-  # advance stateful set resources begin
-  - apiGroups:
-      - ""
-    resources:
-      - pods
-    verbs:
-      - get
-      - list
-      - watch
-      - create
-      - update
-      - patch
-      - delete
-  - apiGroups:
-      - ""
-    resources:
-      - pods/status
-    verbs:
-      - get
-      - update
-      - patch
-  - apiGroups:
-      - ""
-    resources:
-      - events
-    verbs:
-      - get
-      - list
-      - watch
-      - create
-      - update
-      - patch
-      - delete
-  - apiGroups:
-      - ""
-    resources:
-      - persistentvolumeclaims
-    verbs:
-      - get
-      - list
-      - watch
-      - create
-      - update
-      - patch
-      - delete
-  # Apps resources
   - apiGroups:
       - apps
     resources:
@@ -196,7 +136,18 @@ rules:
       - update
       - patch
       - delete
-  # Custom resources
+  - apiGroups:
+      - apps
+    resources:
+      - daemonsets
+      - daemonsets/status
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - patch
   - apiGroups:
       - workload.fluid.io
     resources:
@@ -208,7 +159,6 @@ rules:
       - create
       - update
       - patch
-      - delete
   - apiGroups:
       - workload.fluid.io
     resources:
@@ -223,7 +173,6 @@ rules:
       - advancedstatefulsets/finalizers
     verbs:
       - update
-  # advance stateful set resources end
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
