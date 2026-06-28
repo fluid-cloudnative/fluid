@@ -19,8 +19,8 @@ package common
 import (
 	"strconv"
 
-	utilfeature "github.com/fluid-cloudnative/fluid/pkg/utils/feature"
 	"github.com/fluid-cloudnative/fluid/pkg/common/features"
+	utilfeature "github.com/fluid-cloudnative/fluid/pkg/utils/feature"
 )
 
 // HostPIDEnabled check if HostPID is true for runtime fuse pod.
