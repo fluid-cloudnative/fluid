@@ -131,6 +131,10 @@ runtime:
     portRange: 20000-26000
     portAllocatePolicy: random
     enabled: false
+    # featureGates is a comma-separated list of feature gates for alluxioruntime controller.
+    # RuntimeFuseHostPID: Controls whether the runtime.fluid.io/fuse.hostpid annotation can enable hostPID in FUSE DaemonSets.
+    #   Defaults to false for security. Set to true only if you trust all users with AlluxioRuntime CR update permissions.
+    featureGates: "RuntimeFuseHostPID=false"
     init:
       imagePrefix: *defaultImagePrefix
       imageName: init-users
@@ -171,6 +175,10 @@ runtime:
     enabled: false
     engine: jindocache
     queryUfsTotal: true
+    # featureGates is a comma-separated list of feature gates for jindoruntime controller.
+    # RuntimeFuseHostPID: Controls whether the runtime.fluid.io/fuse.hostpid annotation can enable hostPID in FUSE DaemonSets.
+    #   Defaults to false for security. Set to true only if you trust all users with JindoRuntime/JindoFSxRuntime/JindoCacheRuntime CR update permissions.
+    featureGates: "RuntimeFuseHostPID=false"
     smartdata:
       imagePrefix: registry.cn-shanghai.aliyuncs.com/jindofs
       imageName: smartdata
@@ -208,6 +216,10 @@ runtime:
     kubeClientBurst: 30
     workQueueQPS: 10
     workQueueBurst: 100
+    # featureGates is a comma-separated list of feature gates for juicefsruntime controller.
+    # RuntimeFuseHostPID: Controls whether the runtime.fluid.io/fuse.hostpid annotation can enable hostPID in FUSE DaemonSets.
+    #   Defaults to false for security. Set to true only if you trust all users with JuiceFSRuntime CR update permissions.
+    featureGates: "RuntimeFuseHostPID=false"
     controller:
       imagePrefix: *defaultImagePrefix
       imageName: juicefsruntime-controller
@@ -239,6 +251,10 @@ runtime:
     kubeClientBurst: 30
     workQueueQPS: 10
     workQueueBurst: 100
+    # featureGates is a comma-separated list of feature gates for thinruntime controller.
+    # RuntimeFuseHostPID: Controls whether the runtime.fluid.io/fuse.hostpid annotation can enable hostPID in FUSE DaemonSets.
+    #   Defaults to false for security. Set to true only if you trust all users with ThinRuntime CR update permissions.
+    featureGates: "RuntimeFuseHostPID=false"
     controller:
       imagePrefix: *defaultImagePrefix
       imageName: thinruntime-controller
@@ -304,6 +320,10 @@ runtime:
     workQueueQPS: 10
     workQueueBurst: 100
     enabled: false
+    # featureGates is a comma-separated list of feature gates for vineyardruntime controller.
+    # RuntimeFuseHostPID: Controls whether the runtime.fluid.io/fuse.hostpid annotation can enable hostPID in FUSE DaemonSets.
+    #   Defaults to false for security. Set to true only if you trust all users with VineyardRuntime CR update permissions.
+    featureGates: "RuntimeFuseHostPID=false"
     controller:
       imagePrefix: *defaultImagePrefix
       imageName: vineyardruntime-controller

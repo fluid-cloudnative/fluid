@@ -51,6 +51,7 @@ spec:
           - --enable-leader-election
           - --leader-election-namespace={{ include "fluid.namespace" . }}
           - --port-allocate-policy={{ .Values.runtime.jindo.portAllocatePolicy }}
+          - --feature-gates={{ .Values.runtime.jindo.featureGates }}
         env:
         {{- if .Values.workdir }}
         - name: FLUID_WORKDIR

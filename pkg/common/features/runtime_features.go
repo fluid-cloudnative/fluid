@@ -1,5 +1,5 @@
 /*
-Copyright 2024 The Fluid Authors.
+Copyright 2025 The Fluid Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,31 +14,22 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package common
+package features
 
 import (
-	"strconv"
-
 	utilfeature "github.com/fluid-cloudnative/fluid/pkg/utils/feature"
-	"github.com/fluid-cloudnative/fluid/pkg/common/features"
+	"k8s.io/apimachinery/pkg/util/runtime"
+	"k8s.io/component-base/featuregate"
 )
 
-// HostPIDEnabled check if HostPID is true for runtime fuse pod.
-func HostPIDEnabled(annotations map[string]string) bool {
-	if !utilfeature.DefaultFeatureGate.Enabled(features.RuntimeFuseHostPID) {
-		return false
-	}
-	if annotations == nil {
-		return false
-	}
-	value, exist := annotations[RuntimeFuseHostPIDKey]
-	if !exist {
-		return false
-	}
-	enabled, err := strconv.ParseBool(value)
-	// If parse failed, return false
-	if err != nil {
-		return false
-	}
-	return enabled
+const (
+	RuntimeFuseHostPID featuregate.Feature = "RuntimeFuseHostPID"
+)
+
+var defaultFeatureGates = map[featuregate.Feature]featuregate.FeatureSpec{
+	RuntimeFuseHostPID: {Default: false, PreRelease: featuregate.Alpha},
+}
+
+func init() {
+	runtime.Must(utilfeature.DefaultMutableFeatureGate.Add(defaultFeatureGates))
 }
