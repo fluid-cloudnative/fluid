@@ -49,7 +49,9 @@ spec:
           - --workqueue-qps={{ .Values.runtime.juicefs.workQueueQPS }}
           - --workqueue-burst={{ .Values.runtime.juicefs.workQueueBurst }}
           - --leader-election-namespace={{ include "fluid.namespace" . }}
+          {{- if .Values.runtime.juicefs.featureGates }}
           - --feature-gates={{ .Values.runtime.juicefs.featureGates }}
+          {{- end }}
         command: ["juicefsruntime-controller", "start"]
         env:
           {{- if .Values.image.imagePullSecrets }}

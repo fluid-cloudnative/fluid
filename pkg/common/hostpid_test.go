@@ -19,17 +19,33 @@ package common
 import (
 	. "github.com/onsi/ginkgo/v2"
 	"github.com/onsi/gomega"
+	"k8s.io/component-base/featuregate"
 
 	"github.com/fluid-cloudnative/fluid/pkg/common/features"
 	utilfeature "github.com/fluid-cloudnative/fluid/pkg/utils/feature"
 )
 
+func setFeatureGate(feature featuregate.Feature, enabled bool) {
+	original := utilfeature.DefaultFeatureGate.Enabled(feature)
+	err := utilfeature.DefaultMutableFeatureGate.Set(string(feature) + "=" + boolToString(enabled))
+	gomega.Expect(err).NotTo(gomega.HaveOccurred())
+	DeferCleanup(func() {
+		err := utilfeature.DefaultMutableFeatureGate.Set(string(feature) + "=" + boolToString(original))
+		gomega.Expect(err).NotTo(gomega.HaveOccurred())
+	})
+}
+
+func boolToString(b bool) string {
+	if b {
+		return "true"
+	}
+	return "false"
+}
+
 var _ = Describe("HostPIDEnabled", func() {
 	Context("when RuntimeFuseHostPID feature gate is disabled (default)", func() {
 		BeforeEach(func() {
-			// Ensure feature gate is disabled (default state)
-			err := utilfeature.DefaultMutableFeatureGate.Set(string(features.RuntimeFuseHostPID) + "=false")
-			gomega.Expect(err).NotTo(gomega.HaveOccurred())
+			setFeatureGate(features.RuntimeFuseHostPID, false)
 		})
 
 		It("should return false even when annotation is set to true", func() {
@@ -64,15 +80,7 @@ var _ = Describe("HostPIDEnabled", func() {
 
 	Context("when RuntimeFuseHostPID feature gate is enabled", func() {
 		BeforeEach(func() {
-			// Enable feature gate for this test context
-			err := utilfeature.DefaultMutableFeatureGate.Set(string(features.RuntimeFuseHostPID) + "=true")
-			gomega.Expect(err).NotTo(gomega.HaveOccurred())
-		})
-
-		AfterEach(func() {
-			// Reset to disabled after each test
-			err := utilfeature.DefaultMutableFeatureGate.Set(string(features.RuntimeFuseHostPID) + "=false")
-			gomega.Expect(err).NotTo(gomega.HaveOccurred())
+			setFeatureGate(features.RuntimeFuseHostPID, true)
 		})
 
 		It("should return true when annotation is set to true", func() {
@@ -114,16 +122,8 @@ var _ = Describe("HostPIDEnabled", func() {
 
 	Context("feature gate default state verification", func() {
 		It("should have RuntimeFuseHostPID disabled by default", func() {
-			// This test verifies the security default: feature gate is off by default
-			// Reset to ensure we're testing the actual default state
-			err := utilfeature.DefaultMutableFeatureGate.Set(string(features.RuntimeFuseHostPID) + "=false")
-			gomega.Expect(err).NotTo(gomega.HaveOccurred())
-
-			// Even with valid annotation, HostPID should be disabled
-			annotations := map[string]string{
-				RuntimeFuseHostPIDKey: "true",
-			}
-			gomega.Expect(HostPIDEnabled(annotations)).To(gomega.BeFalse(), "Security default: HostPID must be disabled by default")
+			gomega.Expect(utilfeature.DefaultFeatureGate.Enabled(features.RuntimeFuseHostPID)).To(gomega.BeFalse(),
+				"Security default: RuntimeFuseHostPID must be disabled by default")
 		})
 	})
 })

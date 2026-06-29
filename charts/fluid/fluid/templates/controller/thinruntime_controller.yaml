@@ -49,7 +49,9 @@ spec:
           - --workqueue-qps={{ .Values.runtime.thin.workQueueQPS }}
           - --workqueue-burst={{ .Values.runtime.thin.workQueueBurst }}
           - --leader-election-namespace={{ include "fluid.namespace" . }}
+          {{- if .Values.runtime.thin.featureGates }}
           - --feature-gates={{ .Values.runtime.thin.featureGates }}
+          {{- end }}
         command: ["thinruntime-controller", "start"]
         env:
           {{- if .Values.runtime.mountRoot }}
