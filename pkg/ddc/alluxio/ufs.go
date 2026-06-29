@@ -163,6 +163,10 @@ func (e *AlluxioEngine) UpdateOnUFSChange(ufsToUpdate *utils.UFSToUpdate) (updat
 	return
 }
 
+// checkIfRemountRequired checks whether a remount operation is needed for the given UFS.
+// It compares the runtime's MountTime with the Alluxio master container's start time.
+// If the master container started after the last mount, it means the mount data was lost
+// due to container restart, so it finds unmounted UFS paths and schedules a remount.
 func (e *AlluxioEngine) checkIfRemountRequired(ufsToUpdate *utils.UFSToUpdate) {
 	runtime, err := e.getRuntime()
 	if err != nil {
