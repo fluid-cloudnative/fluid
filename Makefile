@@ -70,6 +70,7 @@ OSS_EMULATOR_DOCKERFILE ?= test/gha-e2e/jindo/oss-emulator/Dockerfile
 CSI_BINARY ?= bin/fluid-csi
 DATASET_BINARY ?= bin/dataset-controller
 APPLICATION_BINARY ?= bin/fluidapp-controller
+WORKLOAD_BINARY ?= bin/workload-controller
 ALLUXIORUNTIME_BINARY ?= bin/alluxioruntime-controller
 JINDORUNTIME_BINARY ?= bin/jindoruntime-controller
 JUICEFSRUNTIME_BINARY ?= bin/juicefsruntime-controller
@@ -257,6 +258,15 @@ webhook-build:
 .PHONY: application-controller-build
 application-controller-build:
 	CGO_ENABLED=${CGO_ENABLED} GOOS=${GOOS} GOARCH=${ARCH} GO111MODULE=${GO_MODULE}  go build ${GC_FLAGS} -a -o ${APPLICATION_BINARY} -ldflags '${LDFLAGS}' cmd/fluidapp/main.go
+
+.PHONY: workload-controller-build
+workload-controller-build:
+	CGO_ENABLED=${CGO_ENABLED} GOOS=${GOOS} GOARCH=${ARCH} GO111MODULE=${GO_MODULE} go build ${GC_FLAGS} -a -o ${WORKLOAD_BINARY} -ldflags '${LDFLAGS}' cmd/workload/main.go
+
+# Run workload-controller locally (requires KUBECONFIG and CRD installed)
+.PHONY: run-workload
+run-workload: manifests
+	go run cmd/workload/main.go start
 
 # Build the docker image
 .PHONY: docker-build-dataset-controller
