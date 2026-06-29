@@ -401,6 +401,17 @@ func mockExecCommandInContainerForTotalStorageBytes() (stdout string, stderr str
 	return r, "", nil
 }
 
+// mockExecCommandInContainerForTotalFileNums mocks command execution output for total file count.
+// This helper returns a fixed stdout payload that mimics Alluxio Master metrics output
+// used by TotalFileNums() unit tests.
+//
+// Parameters:
+//   - none
+//
+// Returns:
+//   - stdout (string): Mocked metrics line containing Master.FilesCompleted counter value.
+//   - stderr (string): Empty string because this mock simulates successful execution.
+//   - err (error): Always nil for the success-path test scenario.
 func mockExecCommandInContainerForTotalFileNums() (stdout string, stderr string, err error) {
 	r := `Master.FilesCompleted  (Type: COUNTER, Value: 1,331,167)`
 	return r, "", nil
