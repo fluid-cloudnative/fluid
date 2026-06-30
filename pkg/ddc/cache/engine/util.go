@@ -23,7 +23,7 @@ import (
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/util/validation"
 )
 
@@ -137,19 +137,8 @@ func getTieredStoreMountPath(levelIndex int, pathIndex int, mediumType string) s
 // JuiceFS, Vineyard, EFC).
 func (e *CacheEngine) getWorkerSelectors() string {
 	workerName := common.GetCacheComponentName(e.name, common.ComponentTypeWorker)
-	labels := map[string]string{
+	return labels.SelectorFromSet(labels.Set{
 		common.LabelCacheRuntimeName:          e.name,
 		common.LabelCacheRuntimeComponentName: workerName,
-	}
-	labelSelector := &metav1.LabelSelector{
-		MatchLabels: labels,
-	}
-	selectorValue := ""
-	selector, err := metav1.LabelSelectorAsSelector(labelSelector)
-	if err != nil {
-		e.Log.Error(err, "Failed to parse the labelSelector of the runtime", "labels", labels)
-	} else {
-		selectorValue = selector.String()
-	}
-	return selectorValue
+	}).String()
 }

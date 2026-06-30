@@ -232,5 +232,15 @@ var _ = Describe("getWorkerSelectors Tests", Label("pkg.ddc.cache.engine.util_te
 			engine2 := &CacheEngine{name: "runtime-b", namespace: "default", Log: fake.NullLogger()}
 			Expect(engine1.getWorkerSelectors()).NotTo(Equal(engine2.getWorkerSelectors()))
 		})
+
+		It("returns the exact expected selector string", func() {
+			// Pin the selector string so any future change to label keys, ordering,
+			// or escaping is caught immediately.
+			engine := &CacheEngine{name: "test-runtime", namespace: "default", Log: fake.NullLogger()}
+			workerName := common.GetCacheComponentName("test-runtime", common.ComponentTypeWorker)
+			expected := common.LabelCacheRuntimeComponentName + "=" + workerName +
+				"," + common.LabelCacheRuntimeName + "=test-runtime"
+			Expect(engine.getWorkerSelectors()).To(Equal(expected))
+		})
 	})
 })
