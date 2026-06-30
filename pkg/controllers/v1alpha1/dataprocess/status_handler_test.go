@@ -27,6 +27,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/compatibility"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/helm"
 	batchv1 "k8s.io/api/batch/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -423,5 +424,173 @@ func TestCronGetOperationStatusNotScheduledYet(t *testing.T) {
 	}
 	if opStatus == nil {
 		t.Error("expected non-nil opStatus")
+	}
+}
+
+func TestOnceGetOperationStatusJobNotFound(t *testing.T) {
+	testScheme := runtime.NewScheme()
+	_ = v1alpha1.AddToScheme(testScheme)
+	_ = batchv1.AddToScheme(testScheme)
+
+	var helmCalled bool
+	var helmCalledName, helmCalledNamespace string
+	helmPatch := gomonkey.ApplyFunc(helm.DeleteReleaseIfExists, func(name, namespace string) error {
+		helmCalled = true
+		helmCalledName = name
+		helmCalledNamespace = namespace
+		return nil
+	})
+	defer helmPatch.Reset()
+
+	mockDataProcess := v1alpha1.DataProcess{
+		ObjectMeta: v1.ObjectMeta{
+			Name:      "test",
+			Namespace: "default",
+		},
+		Spec: v1alpha1.DataProcessSpec{
+			Policy: v1alpha1.Once,
+		},
+		Status: v1alpha1.OperationStatus{
+			Phase: common.PhasePending,
+		},
+	}
+
+	client := fake.NewFakeClientWithScheme(testScheme, &mockDataProcess)
+	handler := &OnceStatusHandler{Client: client, dataProcess: &mockDataProcess}
+	ctx := cruntime.ReconcileRequestContext{
+		NamespacedName: types.NamespacedName{Namespace: "default", Name: ""},
+		Log:            fake.NullLogger(),
+	}
+
+	opStatus, err := handler.GetOperationStatus(ctx, &mockDataProcess.Status)
+	if err != nil {
+		t.Fatalf("unexpected error on NotFound path: %v", err)
+	}
+	if opStatus == nil {
+		t.Fatal("expected non-nil opStatus")
+	}
+	if opStatus.Phase != common.PhasePending {
+		t.Errorf("expected phase %s, got %s", common.PhasePending, opStatus.Phase)
+	}
+	if !helmCalled {
+		t.Error("expected helm.DeleteReleaseIfExists to be called")
+	}
+	expectedReleaseName := utils.GetDataProcessReleaseName(mockDataProcess.GetName())
+	if helmCalledName != expectedReleaseName || helmCalledNamespace != "default" {
+		t.Errorf("expected helm.DeleteReleaseIfExists(%s, %s), got (%s, %s)", expectedReleaseName, "default", helmCalledName, helmCalledNamespace)
+	}
+}
+
+func TestOnEventGetOperationStatusJobNotFound(t *testing.T) {
+	testScheme := runtime.NewScheme()
+	_ = v1alpha1.AddToScheme(testScheme)
+	_ = batchv1.AddToScheme(testScheme)
+
+	var helmCalled bool
+	var helmCalledName, helmCalledNamespace string
+	helmPatch := gomonkey.ApplyFunc(helm.DeleteReleaseIfExists, func(name, namespace string) error {
+		helmCalled = true
+		helmCalledName = name
+		helmCalledNamespace = namespace
+		return nil
+	})
+	defer helmPatch.Reset()
+
+	mockDataProcess := v1alpha1.DataProcess{
+		ObjectMeta: v1.ObjectMeta{
+			Name:      "test",
+			Namespace: "default",
+		},
+		Spec: v1alpha1.DataProcessSpec{
+			Policy: v1alpha1.OnEvent,
+		},
+		Status: v1alpha1.OperationStatus{
+			Phase: common.PhasePending,
+		},
+	}
+
+	client := fake.NewFakeClientWithScheme(testScheme, &mockDataProcess)
+	handler := &OnEventStatusHandler{Client: client, dataProcess: &mockDataProcess}
+	ctx := cruntime.ReconcileRequestContext{
+		NamespacedName: types.NamespacedName{Namespace: "default", Name: ""},
+		Log:            fake.NullLogger(),
+	}
+
+	opStatus, err := handler.GetOperationStatus(ctx, &mockDataProcess.Status)
+	if err != nil {
+		t.Fatalf("unexpected error on NotFound path: %v", err)
+	}
+	if opStatus == nil {
+		t.Fatal("expected non-nil opStatus")
+	}
+	if opStatus.Phase != common.PhasePending {
+		t.Errorf("expected phase %s, got %s", common.PhasePending, opStatus.Phase)
+	}
+	if !helmCalled {
+		t.Error("expected helm.DeleteReleaseIfExists to be called")
+	}
+	expectedReleaseName := utils.GetDataProcessReleaseName(mockDataProcess.GetName())
+	if helmCalledName != expectedReleaseName || helmCalledNamespace != "default" {
+		t.Errorf("expected helm.DeleteReleaseIfExists(%s, %s), got (%s, %s)", expectedReleaseName, "default", helmCalledName, helmCalledNamespace)
+	}
+}
+
+func TestCronGetOperationStatusCronJobNotFound(t *testing.T) {
+	testScheme := runtime.NewScheme()
+	_ = v1alpha1.AddToScheme(testScheme)
+	_ = batchv1.AddToScheme(testScheme)
+
+	patch := gomonkey.ApplyFunc(compatibility.IsBatchV1CronJobSupported, func() bool {
+		return true
+	})
+	defer patch.Reset()
+
+	var helmCalled bool
+	var helmCalledName, helmCalledNamespace string
+	helmPatch := gomonkey.ApplyFunc(helm.DeleteReleaseIfExists, func(name, namespace string) error {
+		helmCalled = true
+		helmCalledName = name
+		helmCalledNamespace = namespace
+		return nil
+	})
+	defer helmPatch.Reset()
+
+	mockDataProcess := v1alpha1.DataProcess{
+		ObjectMeta: v1.ObjectMeta{
+			Name:      "test",
+			Namespace: "default",
+		},
+		Spec: v1alpha1.DataProcessSpec{
+			Policy:   v1alpha1.Cron,
+			Schedule: "* * * * *",
+		},
+		Status: v1alpha1.OperationStatus{
+			Phase: common.PhasePending,
+		},
+	}
+
+	client := fake.NewFakeClientWithScheme(testScheme, &mockDataProcess)
+	handler := &CronStatusHandler{Client: client, dataProcess: &mockDataProcess}
+	ctx := cruntime.ReconcileRequestContext{
+		NamespacedName: types.NamespacedName{Namespace: "default", Name: ""},
+		Log:            fake.NullLogger(),
+	}
+
+	opStatus, err := handler.GetOperationStatus(ctx, &mockDataProcess.Status)
+	if err != nil {
+		t.Fatalf("unexpected error on NotFound path: %v", err)
+	}
+	if opStatus == nil {
+		t.Fatal("expected non-nil opStatus")
+	}
+	if opStatus.Phase != common.PhasePending {
+		t.Errorf("expected phase %s, got %s", common.PhasePending, opStatus.Phase)
+	}
+	if !helmCalled {
+		t.Error("expected helm.DeleteReleaseIfExists to be called")
+	}
+	expectedReleaseName := utils.GetDataProcessReleaseName(mockDataProcess.GetName())
+	if helmCalledName != expectedReleaseName || helmCalledNamespace != "default" {
+		t.Errorf("expected helm.DeleteReleaseIfExists(%s, %s), got (%s, %s)", expectedReleaseName, "default", helmCalledName, helmCalledNamespace)
 	}
 }
