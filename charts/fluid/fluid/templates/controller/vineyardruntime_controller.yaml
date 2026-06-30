@@ -50,6 +50,9 @@ spec:
           - --kube-api-burst={{ .Values.runtime.vineyard.kubeClientBurst }}
           - --workqueue-qps={{ .Values.runtime.vineyard.workQueueQPS }}
           - --workqueue-burst={{ .Values.runtime.vineyard.workQueueBurst }}
+          {{- if .Values.runtime.vineyard.featureGates }}
+          - --feature-gates={{ .Values.runtime.vineyard.featureGates }}
+          {{- end }}
         env:
         {{- if .Values.workdir }}
         - name: FLUID_WORKDIR

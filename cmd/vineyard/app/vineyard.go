@@ -17,8 +17,6 @@ import (
 	"os"
 	"time"
 
-	"github.com/fluid-cloudnative/fluid/pkg/controllers"
-	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/spf13/cobra"
 	zapOpt "go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -32,10 +30,14 @@ import (
 
 	"github.com/fluid-cloudnative/fluid"
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	_ "github.com/fluid-cloudnative/fluid/pkg/common/features"
+	"github.com/fluid-cloudnative/fluid/pkg/controllers"
 	vineyardctl "github.com/fluid-cloudnative/fluid/pkg/controllers/v1alpha1/vineyard"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base/portallocator"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/vineyard"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	utilfeature "github.com/fluid-cloudnative/fluid/pkg/utils/feature"
 )
 
 var (
@@ -93,6 +95,7 @@ func init() {
 	startCmd.Flags().IntVar(&maxConcurrentReconciles, "runtime-workers", 3, "Set max concurrent workers for vineyard controller")
 	startCmd.Flags().IntVar(&controllerWorkqueueQPS, "workqueue-qps", 10, "qps limit value for controller's workqueue")
 	startCmd.Flags().IntVar(&controllerWorkqueueBurst, "workqueue-burst", 100, "burst limit value for controller's workqueue")
+	utilfeature.DefaultMutableFeatureGate.AddFlag(startCmd.Flags())
 }
 
 func handle() {
