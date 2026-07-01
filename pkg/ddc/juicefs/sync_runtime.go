@@ -311,7 +311,15 @@ func (j *JuiceFSEngine) syncFuseSpec(ctx cruntime.ReconcileRequestContext, runti
 		return false, err
 	}
 
-	// 2. check if fuse daemonset needs to update
+	// 2. Keep PV's mount_pod_node_selector_key in sync with the current fuse label key.
+	// These can diverge when ownerDatasetUID changes (e.g. Dataset deleted and recreated), causing
+	// mount failures because the CSI node plugin reads the stale key from the PV (issue #6089).
+	// This runs unconditionally so a stale PV is corrected even when no other fuse spec changed.
+	if err := j.syncPVFuseLabelKey(); err != nil {
+		return false, err
+	}
+
+	// 3. check if fuse daemonset needs to update
 	var fuseChanged, fuseGenerationNeedIncrease bool
 	fusesToUpdate := fuses.DeepCopy()
 	fuseChanged, fuseGenerationNeedIncrease = j.checkAndSetFuseChanges(oldValue, latestValue, runtime, fusesToUpdate)
@@ -341,6 +349,45 @@ func (j *JuiceFSEngine) syncFuseSpec(ctx cruntime.ReconcileRequestContext, runti
 	}
 
 	return fuseChanged, nil
+}
+
+// syncPVFuseLabelKey ensures the PV's mount_pod_node_selector_key CSI attribute matches the fuse
+// daemonset's current nodeSelector key. A mismatch causes mount failures (issue #6089).
+func (j *JuiceFSEngine) syncPVFuseLabelKey() error {
+	expectedLabelKey := j.runtimeInfo.GetFuseLabelName()
+
+	pvName := j.runtimeInfo.GetPersistentVolumeName()
+	pv, err := kubeclient.GetPersistentVolume(j.Client, pvName)
+	if err != nil {
+		if utils.IgnoreNotFound(err) == nil {
+			return nil
+		}
+		return err
+	}
+
+	if pv.Spec.CSI == nil {
+		return nil
+	}
+
+	currentLabelKey := pv.Spec.CSI.VolumeAttributes[common.VolumeAttrMountPodNodeSelectorKey]
+	if currentLabelKey == expectedLabelKey {
+		return nil
+	}
+
+	j.Log.Info("syncPVFuseLabelKey: PV mount_pod_node_selector_key is stale, updating",
+		"pv", pvName, "old", currentLabelKey, "new", expectedLabelKey)
+
+	pvToUpdate := pv.DeepCopy()
+	if pvToUpdate.Spec.CSI.VolumeAttributes == nil {
+		pvToUpdate.Spec.CSI.VolumeAttributes = make(map[string]string)
+	}
+	pvToUpdate.Spec.CSI.VolumeAttributes[common.VolumeAttrMountPodNodeSelectorKey] = expectedLabelKey
+	if err := j.Client.Update(context.TODO(), pvToUpdate); err != nil {
+		j.Log.Error(err, "syncPVFuseLabelKey: failed to update PV", "pv", pvName)
+		return err
+	}
+
+	return nil
 }
 
 // TODO: move the default configurations defined in helm fuse template to the logic of transformFuse,
