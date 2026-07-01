@@ -29,14 +29,9 @@ import (
 func (t *ThinEngine) CheckRuntimeReady() (ready bool) {
 	workerReady, err := t.CheckWorkersReady()
 	if err != nil {
-		t.Log.Error(err, "failed to check worker readiness")
 		return false
 	}
-	if !workerReady {
-		t.Log.Info("runtime not ready", "reason", "workers not ready")
-		return false
-	}
-	return true
+	return workerReady
 }
 
 // getRuntimeInfo gets runtime info
