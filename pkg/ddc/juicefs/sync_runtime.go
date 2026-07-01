@@ -345,16 +345,8 @@ func (j *JuiceFSEngine) syncFuseSpec(ctx cruntime.ReconcileRequestContext, runti
 
 // TODO: move the default configurations defined in helm fuse template to the logic of transformFuse,
 // ensuring that checkAndSetFuseChanges don't need to care about the configuration in actual daemonset
+// NOTE: fuse daemonset's nodeSelector should not be changed after creation because it may affect CSI Plugin's behavior to mount fuse filesystem correctly
 func (j *JuiceFSEngine) checkAndSetFuseChanges(oldValue, latestValue *JuiceFS, runtime *datav1alpha1.JuiceFSRuntime, fusesToUpdate *appsv1.DaemonSet) (fuseChanged bool, fuseGenerationNeedUpdate bool) {
-	// nodeSelector
-	if nodeSelectorChanged, newSelector := j.isNodeSelectorChanged(oldValue.Fuse.NodeSelector, latestValue.Fuse.NodeSelector); nodeSelectorChanged {
-		j.Log.Info("syncFuseSpec: node selector changed", "old", oldValue.Fuse.NodeSelector, "new", newSelector)
-		fusesToUpdate.Spec.Template.Spec.NodeSelector =
-			utils.UnionMapsWithOverride(utils.GetMapsDifference(fusesToUpdate.Spec.Template.Spec.NodeSelector, oldValue.Fuse.NodeSelector), newSelector)
-		oldValue.Fuse.NodeSelector = latestValue.Fuse.NodeSelector
-		fuseChanged = true
-	}
-
 	// volumes
 	if volumeChanged, newVolumes := j.isVolumesChanged(oldValue.Fuse.Volumes, latestValue.Fuse.Volumes); volumeChanged {
 		j.Log.Info("syncFuseSpec: volume changed", "old", oldValue.Fuse.Volumes, "new", newVolumes)
