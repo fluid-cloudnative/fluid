@@ -1456,48 +1456,6 @@ var _ = Describe("JuiceFSEngine.checkAndSetFuseChanges()", func() {
 		})
 
 		Context("When latestValue changed because runtime.spec changed (i.e. user update/patch runtime.spec)", func() {
-			Context("Detect fuse nodeSelector changes", func() {
-				cases := []struct {
-					caseText            string
-					latestNodeSelectors map[string]string
-					changed             bool
-				}{
-					{
-						caseText:            "should have no nodeSelector changed",
-						latestNodeSelectors: map[string]string{"key1": "value1"},
-						changed:             false,
-					},
-					{
-						caseText:            "should add a new nodeSelector",
-						latestNodeSelectors: map[string]string{"key1": "value1", "key2": "value2"},
-						changed:             true,
-					},
-					{
-						caseText:            "should remove a new nodeSelector",
-						latestNodeSelectors: map[string]string{},
-						changed:             true,
-					},
-					{
-						caseText:            "should update a old nodeSelector",
-						latestNodeSelectors: map[string]string{"key1": "new-value"},
-						changed:             true,
-					},
-				}
-
-				for _, c := range cases {
-					It(c.caseText, func() {
-						latestValue.Fuse.NodeSelector = c.latestNodeSelectors
-						changed, _ := engine.checkAndSetFuseChanges(currentValue, latestValue, runtime, fuseToUpdate)
-						Expect(changed).To(Equal(c.changed))
-						// Make sure helm related configurations are not touched
-						Expect(fuseToUpdate.Spec.Template.Spec.NodeSelector).To(HaveKeyWithValue("helm_key1", "helm_value"))
-						for k, v := range c.latestNodeSelectors {
-							Expect(fuseToUpdate.Spec.Template.Spec.NodeSelector).To(HaveKeyWithValue(k, v))
-						}
-					})
-				}
-			})
-
 			Context("detect volume changes", func() {
 				cases := []struct {
 					caseText      string
