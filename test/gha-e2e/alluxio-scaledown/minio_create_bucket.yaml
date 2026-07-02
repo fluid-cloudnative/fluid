@@ -1,0 +1,26 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: scaledown-minio-bucket-create
+spec:
+  template:
+    spec:
+      containers:
+      - name: mc
+        image: minio/mc
+        imagePullPolicy: IfNotPresent
+        resources:
+          limits:
+            memory: "512Mi"
+        command:
+          - /bin/sh
+          - -c
+          - "mc alias set myminio http://scaledown-minio:9000 $MINIO_ROOT_USER $MINIO_ROOT_PASSWORD && mc mb myminio/scaledown && printf '%s' 'fluid-alluxio-scaledown-e2e-fixture' | mc pipe myminio/scaledown/fixture.txt"
+        env:
+        - name: MINIO_ROOT_USER
+          value: "minioadmin"
+        - name: MINIO_ROOT_PASSWORD
+          value: "minioadmin"
+      automountServiceAccountToken: false
+      restartPolicy: OnFailure
+  backoffLimit: 4
