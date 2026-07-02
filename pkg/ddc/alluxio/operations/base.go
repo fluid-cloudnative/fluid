@@ -270,6 +270,14 @@ func (a AlluxioFileUtils) Mount(alluxioPath string,
 	return
 }
 
+// UnMount unmounts an Alluxio path from the Alluxio filesystem.
+// It executes the `alluxio fs unmount` command in the Alluxio pod container.
+//
+// Parameters:
+//   - alluxioPath: the Alluxio path to unmount.
+//
+// Returns:
+//   - err: non-nil if the unmount command fails or if executing the command returns an error.
 func (a AlluxioFileUtils) UnMount(alluxioPath string) (err error) {
 	var (
 		command = []string{"alluxio", "fs", "unmount"}
