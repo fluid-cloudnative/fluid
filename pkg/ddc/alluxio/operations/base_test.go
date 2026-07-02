@@ -617,7 +617,9 @@ func TestAlluxioFileUtils_GetFileCount(t *testing.T) {
 		t.Errorf("check failure, want 6367897, got %d", fileCount)
 	}
 }
-
+// TestAlluxioFIleUtils_ReportMetrics tests the ReportMetrics method of AlluxioFileUtils.
+// This test verifies both the error handling when the underlying command execution fails
+// and the successful path when the command returns valid cluster metrics information.
 func TestAlluxioFIleUtils_ReportMetrics(t *testing.T) {
 	ExecCommon := func(a AlluxioFileUtils, command []string, verbose bool) (stdout string, stderr string, err error) {
 		return "report [category] [category args]\nReport Alluxio running cluster information.\n", "", nil
