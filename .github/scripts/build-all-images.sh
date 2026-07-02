@@ -31,6 +31,8 @@ build_images() {
     for img in "${images[@]}"; do
         echo "Loading image ${img} to kind cluster..."
         kind load docker-image "${img}" --name "${KIND_CLUSTER}"
+        echo "Removing local image ${img} to free disk space..."
+        docker rmi "${img}" || echo "Warning: Failed to remove image ${img}, continuing..."
     done
 }
 
