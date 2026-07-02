@@ -52,62 +52,9 @@ type OnEventStatusHandler struct {
 }
 
 func (r *OnceStatusHandler) GetOperationStatus(ctx cruntime.ReconcileRequestContext, opStatus *datav1alpha1.OperationStatus) (result *datav1alpha1.OperationStatus, err error) {
-	result = opStatus.DeepCopy()
-	// 2. Check running status of the DataLoad job
 	releaseName := utils.GetDataLoadReleaseName(r.dataLoad.GetName())
 	jobName := utils.GetDataLoadJobName(releaseName)
-
-	ctx.Log.V(1).Info("DataLoad chart already existed, check its running status")
-	job, err := kubeclient.GetJob(r.Client, jobName, ctx.Namespace)
-	if err != nil {
-		// helm release found but job missing, delete the helm release and requeue
-		if utils.IgnoreNotFound(err) == nil {
-			ctx.Log.Info("Related Job missing, will delete helm chart and retry", "namespace", ctx.Namespace, "jobName", jobName)
-			if err = helm.DeleteReleaseIfExists(releaseName, ctx.Namespace); err != nil {
-				ctx.Log.Error(err, "can't delete dataload release", "namespace", ctx.Namespace, "releaseName", releaseName)
-				return
-			}
-		}
-		// other error
-		ctx.Log.Error(err, "can't get dataload job", "namespace", ctx.Namespace, "jobName", jobName)
-		return
-	}
-
-	finishedJobCondition := kubeclient.GetFinishedJobCondition(job)
-	if finishedJobCondition == nil {
-		ctx.Log.V(1).Info("DataLoad job still running", "namespace", ctx.Namespace, "jobName", jobName)
-		return
-	}
-	isJobSucceed := finishedJobCondition.Type == batchv1.JobComplete
-
-	// set the node labels in status when job succeed
-	if result.NodeAffinity == nil && isJobSucceed {
-		// generate the node labels
-		result.NodeAffinity, err = dataflow.GenerateNodeAffinity(job)
-		if err != nil {
-			return nil, errors.Wrap(err, "error to generate the node labels")
-		}
-	}
-
-	// job either failed or complete, update DataLoad's phase status
-	result.Conditions = []datav1alpha1.Condition{
-		{
-			Type:               common.ConditionType(finishedJobCondition.Type),
-			Status:             finishedJobCondition.Status,
-			Reason:             finishedJobCondition.Reason,
-			Message:            finishedJobCondition.Message,
-			LastProbeTime:      finishedJobCondition.LastProbeTime,
-			LastTransitionTime: finishedJobCondition.LastTransitionTime,
-		},
-	}
-	if isJobSucceed {
-		result.Phase = common.PhaseComplete
-	} else {
-		result.Phase = common.PhaseFailed
-	}
-	result.Duration = utils.CalculateDuration(job.CreationTimestamp.Time, finishedJobCondition.LastTransitionTime.Time)
-
-	return
+	return getJobOperationStatus(ctx, r.Client, releaseName, jobName, ctx.Namespace, true, opStatus)
 }
 func (c *CronStatusHandler) GetOperationStatus(ctx cruntime.ReconcileRequestContext, opStatus *datav1alpha1.OperationStatus) (result *datav1alpha1.OperationStatus, err error) {
 	result = opStatus.DeepCopy()
@@ -188,33 +135,41 @@ func (c *CronStatusHandler) GetOperationStatus(ctx cruntime.ReconcileRequestCont
 }
 
 func (o *OnEventStatusHandler) GetOperationStatus(ctx cruntime.ReconcileRequestContext, opStatus *datav1alpha1.OperationStatus) (result *datav1alpha1.OperationStatus, err error) {
-	result = opStatus.DeepCopy()
 	releaseName := utils.GetDataLoadReleaseName(o.dataLoad.GetName())
 	jobName := utils.GetDataLoadJobName(releaseName)
+	return getJobOperationStatus(ctx, o.Client, releaseName, jobName, ctx.Namespace, true, opStatus)
+}
+
+// getJobOperationStatus is a shared helper for OnceStatusHandler and OnEventStatusHandler.
+// It looks up the triggered job, checks its finished condition, and returns the updated
+// OperationStatus with the correct phase, conditions and duration. If generateNodeAffinity
+// is true and the job succeeded, it also populates NodeAffinity from the job's node labels.
+func getJobOperationStatus(ctx cruntime.ReconcileRequestContext, c client.Client, releaseName, jobName, namespace string, generateNodeAffinity bool, opStatus *datav1alpha1.OperationStatus) (result *datav1alpha1.OperationStatus, err error) {
+	result = opStatus.DeepCopy()
 
 	ctx.Log.V(1).Info("DataLoad chart already existed, check its running status")
-	job, err := kubeclient.GetJob(o.Client, jobName, ctx.Namespace)
+	job, err := kubeclient.GetJob(c, jobName, namespace)
 	if err != nil {
 		if utils.IgnoreNotFound(err) == nil {
-			ctx.Log.Info("Related Job missing, will delete helm chart and retry", "namespace", ctx.Namespace, "jobName", jobName)
-			if err = helm.DeleteReleaseIfExists(releaseName, ctx.Namespace); err != nil {
-				ctx.Log.Error(err, "can't delete dataload release", "namespace", ctx.Namespace, "releaseName", releaseName)
+			ctx.Log.Info("Related Job missing, will delete helm chart and retry", "namespace", namespace, "jobName", jobName)
+			if err = helm.DeleteReleaseIfExists(releaseName, namespace); err != nil {
+				ctx.Log.Error(err, "can't delete dataload release", "namespace", namespace, "releaseName", releaseName)
 				return
 			}
 			return
 		}
-		ctx.Log.Error(err, "can't get dataload job", "namespace", ctx.Namespace, "jobName", jobName)
+		ctx.Log.Error(err, "can't get dataload job", "namespace", namespace, "jobName", jobName)
 		return
 	}
 
 	finishedJobCondition := kubeclient.GetFinishedJobCondition(job)
 	if finishedJobCondition == nil {
-		ctx.Log.V(1).Info("DataLoad job still running", "namespace", ctx.Namespace, "jobName", jobName)
+		ctx.Log.V(1).Info("DataLoad job still running", "namespace", namespace, "jobName", jobName)
 		return
 	}
 	isJobSucceed := finishedJobCondition.Type == batchv1.JobComplete
 
-	if result.NodeAffinity == nil && isJobSucceed {
+	if generateNodeAffinity && result.NodeAffinity == nil && isJobSucceed {
 		result.NodeAffinity, err = dataflow.GenerateNodeAffinity(job)
 		if err != nil {
 			return nil, errors.Wrap(err, "error to generate the node labels")
