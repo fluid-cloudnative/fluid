@@ -134,8 +134,9 @@ runtime:
     # featureGates is a comma-separated list of feature gates for alluxioruntime controller.
     # RuntimeFuseHostPID: Controls whether the runtime.fluid.io/fuse.hostpid annotation can enable hostPID in FUSE DaemonSets.
     #   Alpha; may change or be removed in future releases.
-    #   Defaults to false for security. Set to true only if you trust all users with AlluxioRuntime CR update permissions.
-    featureGates: "RuntimeFuseHostPID=false"
+    #   Disabled by default for security; the default is compiled into the controller binary and
+    #   applies when featureGates is unset, so there is no need to set RuntimeFuseHostPID=false here.
+    #   Enable only if you trust all users with AlluxioRuntime CR update permissions.
     init:
       imagePrefix: *defaultImagePrefix
       imageName: init-users
@@ -179,8 +180,9 @@ runtime:
     # featureGates is a comma-separated list of feature gates for jindoruntime controller.
     # RuntimeFuseHostPID: Controls whether the runtime.fluid.io/fuse.hostpid annotation can enable hostPID in FUSE DaemonSets.
     #   Alpha; may change or be removed in future releases.
-    #   Defaults to false for security. Set to true only if you trust all users with JindoRuntime/JindoFSxRuntime/JindoCacheRuntime CR update permissions.
-    featureGates: "RuntimeFuseHostPID=false"
+    #   Disabled by default for security; the default is compiled into the controller binary and
+    #   applies when featureGates is unset, so there is no need to set RuntimeFuseHostPID=false here.
+    #   Enable only if you trust all users with JindoRuntime/JindoFSxRuntime/JindoCacheRuntime CR update permissions.
     smartdata:
       imagePrefix: registry.cn-shanghai.aliyuncs.com/jindofs
       imageName: smartdata
@@ -221,8 +223,9 @@ runtime:
     # featureGates is a comma-separated list of feature gates for juicefsruntime controller.
     # RuntimeFuseHostPID: Controls whether the runtime.fluid.io/fuse.hostpid annotation can enable hostPID in FUSE DaemonSets.
     #   Alpha; may change or be removed in future releases.
-    #   Defaults to false for security. Set to true only if you trust all users with JuiceFSRuntime CR update permissions.
-    featureGates: "RuntimeFuseHostPID=false"
+    #   Disabled by default for security; the default is compiled into the controller binary and
+    #   applies when featureGates is unset, so there is no need to set RuntimeFuseHostPID=false here.
+    #   Enable only if you trust all users with JuiceFSRuntime CR update permissions.
     controller:
       imagePrefix: *defaultImagePrefix
       imageName: juicefsruntime-controller
@@ -257,8 +260,9 @@ runtime:
     # featureGates is a comma-separated list of feature gates for thinruntime controller.
     # RuntimeFuseHostPID: Controls whether the runtime.fluid.io/fuse.hostpid annotation can enable hostPID in FUSE DaemonSets.
     #   Alpha; may change or be removed in future releases.
-    #   Defaults to false for security. Set to true only if you trust all users with ThinRuntime CR update permissions.
-    featureGates: "RuntimeFuseHostPID=false"
+    #   Disabled by default for security; the default is compiled into the controller binary and
+    #   applies when featureGates is unset, so there is no need to set RuntimeFuseHostPID=false here.
+    #   Enable only if you trust all users with ThinRuntime CR update permissions.
     controller:
       imagePrefix: *defaultImagePrefix
       imageName: thinruntime-controller
@@ -327,8 +331,9 @@ runtime:
     # featureGates is a comma-separated list of feature gates for vineyardruntime controller.
     # RuntimeFuseHostPID: Controls whether the runtime.fluid.io/fuse.hostpid annotation can enable hostPID in FUSE DaemonSets.
     #   Alpha; may change or be removed in future releases.
-    #   Defaults to false for security. Set to true only if you trust all users with VineyardRuntime CR update permissions.
-    featureGates: "RuntimeFuseHostPID=false"
+    #   Disabled by default for security; the default is compiled into the controller binary and
+    #   applies when featureGates is unset, so there is no need to set RuntimeFuseHostPID=false here.
+    #   Enable only if you trust all users with VineyardRuntime CR update permissions.
     controller:
       imagePrefix: *defaultImagePrefix
       imageName: vineyardruntime-controller
