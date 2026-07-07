@@ -2,7 +2,7 @@
 
 ## 前提说明
 
-本文档是 [CacheRuntime 对接社区文档](../dev/generic_cache_runtime_integration.md) 的扩展，**假设您已经完成了基础的 CacheRuntime 集成**（包括定义 topology、配置组件等）。
+本文档是 [CacheRuntime 对接社区文档](../../dev/generic_cache_runtime_integration.md) 的扩展，**假设您已经完成了基础的 CacheRuntime 集成**（包括定义 topology、配置组件等）。
 
 本文档仅说明如何在已有的 `CacheRuntimeClass` 基础上**新增数据操作支持**，核心改动只有一个字段：`dataOperationSpecs`。
 
@@ -16,7 +16,7 @@ Fluid 的 CacheRuntime 提供了一种通用的缓存运行时抽象，允许用
 
 ## 前提条件
 
-在运行该示例之前，请参考[安装文档](../userguide/install.md)完成 Fluid 安装，并检查 Fluid 各组件正常运行：
+在运行该示例之前，请参考[安装文档](../../userguide/install.md)完成 Fluid 安装，并检查 Fluid 各组件正常运行：
 
 ```shell
 $ kubectl get pod -n fluid-system

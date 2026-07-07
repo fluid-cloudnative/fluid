@@ -47,6 +47,7 @@ runtime_pod_logs() {
   core_component "${runtime_namespace}" "master" "cacheruntime.fluid.io/component-name=${runtime_name}-master"
   core_component "${runtime_namespace}" "worker" "cacheruntime.fluid.io/component-name=${runtime_name}-worker"
   core_component "${runtime_namespace}" "client" "cacheruntime.fluid.io/component-name=${runtime_name}-client"
+  core_component "${runtime_namespace}" "dataloader" "role=dataload-pod"
 }
 
 core_component() {

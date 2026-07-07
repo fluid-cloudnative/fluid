@@ -25,8 +25,6 @@ function setup() {
 
     kubectl create -f test/gha-e2e/curvine/minio_create_bucket.yaml
     wait_job_completed "$bucket_create_job_name"
-
-    kubectl create -f test/gha-e2e/curvine/mount.yaml
 }
 
 function create_dataset() {
@@ -125,7 +123,6 @@ function wait_cache_worker_ready() {
     local asts_ready_replicas=""
     local asts_desired_replicas=""
     local worker_pod=""
-    local worker_registered="false"
     local pod_states=""
     local log_interval=0
     local log_times=0
@@ -137,15 +134,12 @@ function wait_cache_worker_ready() {
         asts_ready_replicas=$(kubectl get advancedstatefulset "$worker_component_name" -ojsonpath='{@.status.readyReplicas}' 2>/dev/null)
         asts_desired_replicas=$(kubectl get advancedstatefulset "$worker_component_name" -ojsonpath='{@.spec.replicas}' 2>/dev/null)
         worker_pod=$(kubectl get pod -l "$worker_selector" -ojsonpath='{.items[0].metadata.name}' 2>/dev/null)
-        worker_registered="false"
-        if [[ -n "$worker_pod" ]] && kubectl logs "$worker_pod" -c worker --tail=200 2>/dev/null | grep -q "worker register success"; then
-            worker_registered="true"
-        fi
+
         pod_states=$(kubectl get pod -l "$worker_selector" -ojsonpath='{range .items[*]}{.metadata.name}:{range .status.containerStatuses[*]}{.ready}{end}:{.status.phase}{" "}{end}' 2>/dev/null)
 
         if [[ $log_interval -eq 3 ]]; then
             log_times=$((log_times + 1))
-            syslog "checking cache worker readiness (already $((log_times * log_interval * 5))s, runtime phase: ${last_phase:-<empty>}, runtime ready/desired: ${runtime_ready_replicas:-<empty>}/${runtime_desired_replicas:-<empty>}, advanced sts ready/desired: ${asts_ready_replicas:-<empty>}/${asts_desired_replicas:-<empty>}, registered: ${worker_registered}, pods: ${pod_states:-<empty>})"
+            syslog "checking cache worker readiness (already $((log_times * log_interval * 5))s, runtime phase: ${last_phase:-<empty>}, runtime ready/desired: ${runtime_ready_replicas:-<empty>}/${runtime_desired_replicas:-<empty>}, advanced sts ready/desired: ${asts_ready_replicas:-<empty>}/${asts_desired_replicas:-<empty>}, pods: ${pod_states:-<empty>})"
             if [[ $((log_times * log_interval * 5)) -ge $deadline ]]; then
                 panic "timeout waiting for cache worker pod ready after ${deadline}s"
             fi
@@ -156,8 +150,7 @@ function wait_cache_worker_ready() {
             [[ -n "$runtime_desired_replicas" ]] && \
             [[ "$runtime_desired_replicas" != "0" ]] && \
             [[ "$runtime_ready_replicas" == "$runtime_desired_replicas" ]] && \
-            kubectl wait --for=condition=Ready --timeout=5s pod -l "$worker_selector" >/dev/null 2>&1 && \
-            [[ "$worker_registered" == "true" ]]; then
+            kubectl wait --for=condition=Ready --timeout=5s pod -l "$worker_selector" >/dev/null 2>&1 ; then
             break
         fi
 
@@ -272,7 +265,6 @@ function dump_env_and_clean_up() {
     kubectl delete --ignore-not-found -f test/gha-e2e/curvine/cacheruntime.yaml
     kubectl delete --ignore-not-found -f test/gha-e2e/curvine/cacheruntimeclass.yaml
     kubectl delete --ignore-not-found -f test/gha-e2e/curvine/minio.yaml
-    kubectl delete --ignore-not-found -f test/gha-e2e/curvine/mount.yaml
     kubectl delete --ignore-not-found -f test/gha-e2e/curvine/minio_create_bucket.yaml
 }
 

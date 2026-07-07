@@ -21,7 +21,8 @@
     - [Share data across namespace (Sidecar mode)](samples/dataset_across_namespace_with_sidecar.md)
   + Operation
     - [Data Preloading](samples/data_warmup.md)
-    - [CacheRuntime Data Operations](samples/cacheruntime_data_operations.md)
+    - [CacheRuntime Data Operations](samples/cacheruntime/cacheruntime_data_operations.md)
+    - [Use Curvine as CacheRuntime for Data Caching](samples/cacheruntime/curvine_cache_runtime.md)
     - [Cache Runtime Manually Scaling](samples/dataset_scaling.md)
     - [Automatic Cleanup Data Operation](samples/automatic_clean_up_data_operation.md)
   + Security
@@ -53,6 +54,7 @@
 + Operation Guide
   - [Runtime monitoring](operation/monitoring.md)
   - [Cache Runtime Auto Scaling](operation/dataset_auto_scaling.md)
+  - [CacheRuntime Spec Field Update Capabilities](samples/cacheruntime/cacheruntime_spec_update.md)
 + Troubleshooting
   - [Collecting logs](userguide/troubleshooting.md)
 + Developer Guide

@@ -87,6 +87,10 @@ type DataLoadInfo struct {
 
 	// Args DataLoad job container, for cache engine.
 	Args []string `json:"args,omitempty"`
+
+	VolumeMounts []corev1.VolumeMount `json:"volumeMounts,omitempty"`
+
+	Volumes []corev1.Volume `json:"volumes,omitempty"`
 }
 
 type Env struct {

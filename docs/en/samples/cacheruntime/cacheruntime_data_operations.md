@@ -2,7 +2,7 @@
 
 ## Prerequisites
 
-This document is an extension of the [CacheRuntime Integration Guide](../dev/generic_cache_runtime_integration.md) and **assumes you have already completed the basic CacheRuntime integration** (including defining topology, configuring components, etc.).
+This document is an extension of the [CacheRuntime Integration Guide](../../dev/generic_cache_runtime_integration.md) and **assumes you have already completed the basic CacheRuntime integration** (including defining topology, configuring components, etc.).
 
 This document only explains how to **add data operation support** to an existing `CacheRuntimeClass`. The core change involves just one field: `dataOperationSpecs`.
 
@@ -16,7 +16,7 @@ This document demonstrates how to configure and use the DataLoad feature for Cac
 
 ## Environment Verification
 
-Before running this example, please refer to the [Installation Guide](../userguide/install.md) to complete the Fluid installation and verify that all Fluid components are running properly:
+Before running this example, please refer to the [Installation Guide](../../userguide/install.md) to complete the Fluid installation and verify that all Fluid components are running properly:
 
 ```shell
 $ kubectl get pod -n fluid-system

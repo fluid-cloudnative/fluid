@@ -26,7 +26,8 @@
     - [跨namespace共享数据(sidecar模式)](samples/dataset_across_namespace_with_sidecar.md)
   + 操作
     - [数据预加载](samples/data_warmup.md)
-    - [CacheRuntime 数据操作](samples/cacheruntime_data_operations.md)
+    - [CacheRuntime 数据操作](samples/cacheruntime/cacheruntime_data_operations.md)
+    - [使用 Curvine 作为 CacheRuntime 进行数据缓存](samples/cacheruntime/curvine_cache_runtime.md)
     - [Cache Runtime手动扩缩容](samples/dataset_scaling.md)
     - [数据操作自动清理](samples/automatic_clean_up_data_operation.md)
   + 安全
@@ -69,7 +70,7 @@
   - [Dashboard 可视化管理](dashboard/overview.md)
 + 运维指南
   - [运行时监控](operation/monitoring.md)
-  - [CacheRuntime Spec 字段更新能力说明](cacheruntime/cacheruntime_spec_update.md)
+  - [CacheRuntime Spec 字段更新能力说明](samples/cacheruntime/cacheruntime_spec_update.md)
   - [JVM性能分析](dev/profiling.md)
   - [自动弹性伸缩](operation/dataset_auto_scaling.md)
   - [定时弹性伸缩](operation/dataset_cron_scaling.md)

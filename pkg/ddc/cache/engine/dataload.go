@@ -171,6 +171,29 @@ func (e *CacheEngine) genDataLoadValue(ctx cruntime.ReconcileRequestContext, tar
 		// FLUID_DATALOAD_DATA_PATH and FLUID_DATALOAD_PATH_REPLICAS is generated and set in the helm job yaml.
 	}
 
+	volumeName := e.getRuntimeConfigVolumeName()
+
+	dataloadInfo.Volumes = []corev1.Volume{
+		{
+			Name: volumeName,
+			VolumeSource: corev1.VolumeSource{
+				ConfigMap: &corev1.ConfigMapVolumeSource{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: common.GetCacheRuntimeConfigConfigMapName(e.name),
+					},
+				},
+			},
+		},
+	}
+
+	dataloadInfo.VolumeMounts = []corev1.VolumeMount{
+		{
+			Name:      volumeName,
+			MountPath: e.getRuntimeConfigDir(),
+			ReadOnly:  true,
+		},
+	}
+
 	dataLoadValue := &cdataload.DataLoadValue{
 		Name:           dataload.Name,
 		OwnerDatasetId: utils.GetDatasetId(targetDataset.Namespace, targetDataset.Name, string(targetDataset.UID)),

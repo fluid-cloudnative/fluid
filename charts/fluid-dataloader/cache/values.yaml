@@ -120,3 +120,7 @@ dataloader:
   #   - name: EXAMPLE_ENV
   #     value: "example-value"
   envs: []
+
+  volumes: []
+
+  volumeMounts: []

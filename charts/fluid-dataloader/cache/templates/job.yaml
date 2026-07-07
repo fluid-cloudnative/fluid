@@ -103,4 +103,12 @@ spec:
             - name: {{ .name }}
               value: {{ .value | quote }}
             {{- end }}
+          {{- if .Values.dataloader.volumeMounts }}
+          volumeMounts:
+ {{ toYaml .Values.dataloader.volumeMounts | indent 12 }}
+          {{- end }}
+      {{- if .Values.dataloader.volumes }}
+      volumes:
+{{ toYaml .Values.dataloader.volumes | indent 8 }}
+      {{- end }}
 {{- end }}
