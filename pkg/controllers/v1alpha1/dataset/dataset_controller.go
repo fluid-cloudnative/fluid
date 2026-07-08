@@ -17,6 +17,7 @@ package dataset
 import (
 	"context"
 	"errors"
+	"fmt"
 	"reflect"
 	"strings"
 	"time"
@@ -137,24 +138,21 @@ func (r *DatasetReconciler) reconcileDataset(ctx reconcileRequestContext, needRe
 		return r.reconcileDatasetDeletion(ctx)
 	}
 
-	// 2.Add finalizer
+	// 2. Add finalizer
 	if !utils.ContainsString(ctx.Dataset.ObjectMeta.GetFinalizers(), finalizer) {
 		return r.addFinalizerAndRequeue(ctx)
 	}
 
-	// 3. Create Runtime if it's reference dataset
-	checkReferenceDataset, err := base.CheckReferenceDataset(&ctx.Dataset)
-	if err != nil {
-		ctx.Log.Error(err, "Failed to validate dataset", "ctx", ctx)
-		r.Recorder.Eventf(&ctx.Dataset, v1.EventTypeWarning, common.ErrorCreateDataset, "Failed to validate dataset because err: %v", err)
-		return utils.RequeueIfError(err)
+	// 2.5 Validate multiple mounts with root path.
+	// This check must come after deletion handling (step 1) so that a Dataset
+	// edited into an invalid state can still be deleted and have its finalizer removed.
+	if stop, res, err := r.validateMultiMountRoot(ctx); stop {
+		return res, err
 	}
-	if checkReferenceDataset {
-		err := utils.CreateRuntimeForReferenceDatasetIfNotExist(r.Client, &ctx.Dataset)
-		if err != nil {
-			ctx.Log.Error(err, "Failed to create thinRuntime", "ctx", ctx)
-			return utils.RequeueIfError(err)
-		}
+
+	// 3. Create Runtime if it's reference dataset
+	if stop, res, err := r.createRuntimeForReferenceDataset(ctx); stop {
+		return res, err
 	}
 
 	// 4. Update the phase to NotBoundDatasetPhase
@@ -260,6 +258,101 @@ func (r *DatasetReconciler) addFinalizerAndRequeue(ctx reconcileRequestContext) 
 	}
 
 	return utils.RequeueImmediatelyUnlessGenerationChanged(prevGeneration, ctx.Dataset.ObjectMeta.GetGeneration())
+}
+
+// createRuntimeForReferenceDataset creates a runtime for reference dataset if it doesn't exist.
+// It returns true (with a result and error) if the controller should stop reconciling early.
+func (r *DatasetReconciler) createRuntimeForReferenceDataset(ctx reconcileRequestContext) (bool, ctrl.Result, error) {
+	checkReferenceDataset, err := base.CheckReferenceDataset(&ctx.Dataset)
+	if err != nil {
+		ctx.Log.Error(err, "Failed to validate dataset", "ctx", ctx)
+		r.Recorder.Eventf(&ctx.Dataset, v1.EventTypeWarning, common.ErrorCreateDataset, "Failed to validate dataset because err: %v", err)
+		res, retErr := utils.RequeueIfError(err)
+		return true, res, retErr
+	}
+	if checkReferenceDataset {
+		err := utils.CreateRuntimeForReferenceDatasetIfNotExist(r.Client, &ctx.Dataset)
+		if err != nil {
+			ctx.Log.Error(err, "Failed to create thinRuntime", "ctx", ctx)
+			res, retErr := utils.RequeueIfError(err)
+			return true, res, retErr
+		}
+	}
+	return false, ctrl.Result{}, nil
+}
+
+// validateMultiMountRoot validates that root-path mounting is not used when multiple mounts are defined.
+// It returns true (with a result and error) if the controller should stop reconciling early.
+func (r *DatasetReconciler) validateMultiMountRoot(ctx reconcileRequestContext) (bool, ctrl.Result, error) {
+	if hasInvalidMultiMountRoot(ctx.Dataset.Spec.Mounts) {
+		validationErr := errors.New("root-path mounting is only supported for single-mount Datasets")
+		ctx.Log.Error(validationErr, "Failed to validate dataset", "DatasetValidationError", ctx)
+		r.Recorder.Eventf(&ctx.Dataset, v1.EventTypeWarning, common.ErrorProcessDatasetReason, "Failed to validate dataset because err: %v", validationErr)
+
+		if ctx.Dataset.Status.Phase == datav1alpha1.FailedDatasetPhase {
+			res, _ := utils.NoRequeue()
+			return true, res, nil
+		}
+
+		dataset := ctx.Dataset.DeepCopy()
+		dataset.Status.Phase = datav1alpha1.FailedDatasetPhase
+		cond := utils.NewDatasetCondition(
+			datav1alpha1.DatasetReady,
+			"InvalidDatasetSpec",
+			validationErr.Error(),
+			v1.ConditionFalse,
+		)
+		dataset.Status.Conditions = utils.UpdateDatasetCondition(dataset.Status.Conditions, cond)
+		if updateErr := r.Status().Update(ctx, dataset); updateErr != nil {
+			ctx.Log.Error(updateErr, "Failed to update the dataset phase to Failed", "StatusUpdateError", ctx)
+			res, err := utils.RequeueIfError(updateErr)
+			return true, res, err
+		}
+		res, _ := utils.NoRequeue()
+		return true, res, nil
+	}
+
+	return r.recoverFromInvalidDatasetSpec(ctx)
+}
+
+func hasInvalidMultiMountRoot(mounts []datav1alpha1.Mount) bool {
+	if len(mounts) <= 1 {
+		return false
+	}
+	for _, mount := range mounts {
+		effectivePath := mount.Path
+		if effectivePath == "" {
+			effectivePath = fmt.Sprintf(common.UFSMountPathFormat, strings.TrimLeft(mount.Name, "/"))
+		}
+		if effectivePath == common.RootDirPath {
+			return true
+		}
+	}
+	return false
+}
+
+func (r *DatasetReconciler) recoverFromInvalidDatasetSpec(ctx reconcileRequestContext) (bool, ctrl.Result, error) {
+	idx, cond := utils.GetDatasetCondition(ctx.Dataset.Status.Conditions, datav1alpha1.DatasetReady)
+	if idx != -1 && cond != nil && cond.Reason == "InvalidDatasetSpec" {
+		dataset := ctx.Dataset.DeepCopy()
+		dataset.Status.Phase = datav1alpha1.NotBoundDatasetPhase
+		// Remove the InvalidDatasetSpec condition
+		var newConditions []datav1alpha1.DatasetCondition
+		for _, c := range dataset.Status.Conditions {
+			if c.Type == datav1alpha1.DatasetReady && c.Reason == "InvalidDatasetSpec" {
+				continue
+			}
+			newConditions = append(newConditions, c)
+		}
+		dataset.Status.Conditions = newConditions
+		if updateErr := r.Status().Update(ctx, dataset); updateErr != nil {
+			ctx.Log.Error(updateErr, "Failed to reset dataset phase from Failed", "StatusUpdateError", ctx)
+			res, err := utils.RequeueIfError(updateErr)
+			return true, res, err
+		}
+		return true, ctrl.Result{Requeue: true}, nil
+	}
+	return false, ctrl.Result{}, nil
 }
 
 func (r *DatasetReconciler) SetupWithManager(mgr ctrl.Manager, options controller.Options) error {

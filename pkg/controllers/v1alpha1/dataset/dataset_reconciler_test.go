@@ -25,6 +25,7 @@ import (
 	. "github.com/onsi/gomega"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -276,6 +277,133 @@ var _ = Describe("DatasetReconciler (fake client)", func() {
 			result, err := r.reconcileDataset(ctx, false)
 			Expect(err).To(HaveOccurred())
 			Expect(result).To(Equal(ctrl.Result{}))
+		})
+
+		It("sets FailedDatasetPhase and stops requeue when dataset has multiple mounts and one has root path", func() {
+			ds := datav1alpha1.Dataset{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:       "multi-root",
+					Namespace:  "default",
+					Finalizers: []string{finalizer},
+				},
+				Spec: datav1alpha1.DatasetSpec{
+					Mounts: []datav1alpha1.Mount{
+						{Name: "m1", MountPoint: "local:///path1", Path: "/"},
+						{Name: "m2", MountPoint: "local:///path2", Path: "/path2"},
+					},
+				},
+				Status: datav1alpha1.DatasetStatus{Phase: datav1alpha1.NotBoundDatasetPhase},
+			}
+			r := newTestReconciler(&ds)
+			ctx := makeReconcileCtx(r, ds)
+
+			result, err := r.reconcileDataset(ctx, false)
+			// NoRequeue: no error, empty result
+			Expect(err).NotTo(HaveOccurred())
+			Expect(result).To(Equal(ctrl.Result{}))
+
+			// Verify status phase is set to FailedDatasetPhase
+			stored := &datav1alpha1.Dataset{}
+			Expect(r.Get(ctx, types.NamespacedName{Namespace: "default", Name: "multi-root"}, stored)).To(Succeed())
+			Expect(stored.Status.Phase).To(Equal(datav1alpha1.FailedDatasetPhase))
+		})
+
+		It("catches implicit root path when mount.Path and mount.Name are both empty", func() {
+			ds := datav1alpha1.Dataset{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:       "implicit-root",
+					Namespace:  "default",
+					Finalizers: []string{finalizer},
+				},
+				Spec: datav1alpha1.DatasetSpec{
+					Mounts: []datav1alpha1.Mount{
+						{MountPoint: "local:///path1"},
+						{Name: "m2", MountPoint: "local:///path2", Path: "/path2"},
+					},
+				},
+				Status: datav1alpha1.DatasetStatus{Phase: datav1alpha1.NotBoundDatasetPhase},
+			}
+			r := newTestReconciler(&ds)
+			ctx := makeReconcileCtx(r, ds)
+
+			result, err := r.reconcileDataset(ctx, false)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(result).To(Equal(ctrl.Result{}))
+
+			stored := &datav1alpha1.Dataset{}
+			Expect(r.Get(ctx, types.NamespacedName{Namespace: "default", Name: "implicit-root"}, stored)).To(Succeed())
+			Expect(stored.Status.Phase).To(Equal(datav1alpha1.FailedDatasetPhase))
+		})
+
+		It("allows deletion of a dataset that was edited into an invalid multi-mount config", func() {
+			now := metav1.Now()
+			ds := datav1alpha1.Dataset{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:              "del-invalid",
+					Namespace:         "default",
+					Finalizers:        []string{finalizer},
+					DeletionTimestamp: &now,
+				},
+				Spec: datav1alpha1.DatasetSpec{
+					Mounts: []datav1alpha1.Mount{
+						{Name: "m1", MountPoint: "local:///path1", Path: "/"},
+						{Name: "m2", MountPoint: "local:///path2", Path: "/path2"},
+					},
+				},
+			}
+			r := newTestReconciler(&ds)
+			ctx := makeReconcileCtx(r, ds)
+
+			result, err := r.reconcileDataset(ctx, false)
+			// Should proceed to deletion, not block on validation
+			Expect(err).NotTo(HaveOccurred())
+			Expect(result).To(Equal(ctrl.Result{}))
+
+			// Assert the finalizer is removed, demonstrating that the Terminating-stuck regression is fixed.
+			// Once the finalizer is removed on an object with a deletion timestamp, the API server (or mock client) deletes it.
+			stored := &datav1alpha1.Dataset{}
+			getErr := r.Get(ctx, types.NamespacedName{Namespace: "default", Name: "del-invalid"}, stored)
+			Expect(apierrors.IsNotFound(getErr)).To(BeTrue())
+		})
+
+		It("recovers from FailedDatasetPhase when the invalid multi-mount config is fixed", func() {
+			ds := datav1alpha1.Dataset{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:       "recover-invalid",
+					Namespace:  "default",
+					Finalizers: []string{finalizer},
+				},
+				Spec: datav1alpha1.DatasetSpec{
+					Mounts: []datav1alpha1.Mount{
+						{Name: "m1", MountPoint: "local:///path1", Path: "/"},
+						{Name: "m2", MountPoint: "local:///path2", Path: "/path2"},
+					},
+				},
+				Status: datav1alpha1.DatasetStatus{
+					Phase: datav1alpha1.FailedDatasetPhase,
+					Conditions: []datav1alpha1.DatasetCondition{
+						{
+							Type:   datav1alpha1.DatasetReady,
+							Status: corev1.ConditionFalse,
+							Reason: "InvalidDatasetSpec",
+						},
+					},
+				},
+			}
+			r := newTestReconciler(&ds)
+			// Now update the spec to be valid
+			ds.Spec.Mounts[0].Path = "/path1"
+			ctx := makeReconcileCtx(r, ds)
+
+			result, err := r.reconcileDataset(ctx, false)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(result).To(Equal(ctrl.Result{Requeue: true}))
+
+			stored := &datav1alpha1.Dataset{}
+			Expect(r.Get(ctx, types.NamespacedName{Namespace: "default", Name: "recover-invalid"}, stored)).To(Succeed())
+			Expect(stored.Status.Phase).To(Equal(datav1alpha1.NotBoundDatasetPhase))
+			idx, _ := utils.GetDatasetCondition(stored.Status.Conditions, datav1alpha1.DatasetReady)
+			Expect(idx).To(Equal(-1))
 		})
 	})
 
