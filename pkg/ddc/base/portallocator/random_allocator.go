@@ -34,6 +34,8 @@ type RandomAllocator struct {
 	log  logr.Logger
 }
 
+// needResetReservedPorts reports whether reserved ports should be restored into the allocator
+// during initialization. RandomAllocator does not track port usage, so no restoration is needed.
 func (r *RandomAllocator) needResetReservedPorts() bool {
 	return false
 }
