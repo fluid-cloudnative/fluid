@@ -25,13 +25,24 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/cache/component"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/dataset/lifecycle"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/util/retry"
 )
 
 func (e *CacheEngine) Sync(ctx cruntime.ReconcileRequestContext) (err error) {
+	// permitSyncEngineStatus avoids frequent rpcs with engines with rate limited retries
+	permitSyncEngineStatus := e.permitSync()
+	if permitSyncEngineStatus {
+		defer e.setTimeOfLastSync()
+	}
+
+	defer utils.TimeTrack(time.Now(), "CacheEngine.Sync", "ctx", ctx)
+
 	runtime, err := e.getRuntime()
 	if err != nil {
 		return err
@@ -68,14 +79,19 @@ func (e *CacheEngine) Sync(ctx cruntime.ReconcileRequestContext) (err error) {
 	}
 
 	// sync runtime status
-	_, err = e.CheckAndUpdateRuntimeStatus(statusValue)
+	runtimeReady, err := e.CheckAndUpdateRuntimeStatus(statusValue)
 	if err != nil {
 		return err
 	}
 
-	// handle runtime spec change
-
-	// sync metadata
+	// sync dataset cache states
+	if runtimeReady && permitSyncEngineStatus {
+		e.Log.Info("sync dataset cache states")
+		err = e.syncDataSetCacheStates(ctx, runtime, runtimeClass)
+		if err != nil {
+			return err
+		}
+	}
 
 	// add dataset related labels for worker nodes
 	info, err := e.getRuntimeInfo()
@@ -134,6 +150,22 @@ func getSyncRetryDuration() (d *time.Duration, err error) {
 			return d, err
 		}
 		d = &duration
+	}
+	return
+}
+
+// setTimeOfLastSync updates the synchronization timestamp for the TemplateEngine.
+// This function sets the internal timeOfLastSync field to the current time and
+// logs the updated time value for tracking purposes.
+func (e *CacheEngine) setTimeOfLastSync() {
+	e.timeOfLastSync = time.Now()
+	e.Log.V(1).Info("Set timeOfLastSync", "timeOfLastSync", e.timeOfLastSync)
+}
+func (e *CacheEngine) permitSync() (permit bool) {
+	if time.Since(e.timeOfLastSync) < e.syncRetryDuration {
+		permit = false
+	} else {
+		permit = true
 	}
 	return
 }
@@ -200,4 +232,40 @@ func (e *CacheEngine) syncRuntimeSpec(ctx cruntime.ReconcileRequestContext, runt
 	// Client component will be recreated when spec changes
 
 	return nil
+}
+
+func (e *CacheEngine) syncDataSetCacheStates(ctx cruntime.ReconcileRequestContext, runtime *datav1alpha1.CacheRuntime, runtimeClass *datav1alpha1.CacheRuntimeClass) (err error) {
+	err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+		dataset, err := utils.GetDataset(e.Client, e.name, e.namespace)
+		if err != nil {
+			return err
+		}
+		datasetToUpdate := dataset.DeepCopy()
+
+		cacheStates, err := e.GetCacheStates(runtime, runtimeClass)
+		if err == nil {
+			datasetToUpdate.Status.CacheStates = cacheStates
+			datasetToUpdate.Status.FileNum = cacheStates[common.FileNums]
+			datasetToUpdate.Status.UfsTotal = cacheStates[common.UfsTotal]
+		} else {
+			e.Log.Error(err, "Failed to get cache states, keeping previous cache states in dataset status")
+		}
+
+		if !reflect.DeepEqual(dataset.Status, datasetToUpdate.Status) {
+			e.Log.Info("the dataset status", "status", datasetToUpdate.Status)
+			err = e.Client.Status().Update(ctx.Context, datasetToUpdate)
+			if err != nil {
+				return err
+			}
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		return utils.LoggingErrorExceptConflict(e.Log, err, "Failed to Update dataset",
+			types.NamespacedName{Namespace: e.namespace, Name: e.name})
+	}
+
+	return
 }

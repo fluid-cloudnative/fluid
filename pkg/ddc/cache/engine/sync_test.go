@@ -21,6 +21,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/agiledragon/gomonkey/v2"
+	"github.com/go-logr/logr"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
@@ -33,6 +35,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
+	cclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
@@ -43,6 +46,7 @@ var _ = Describe("CacheEngine Sync Tests", Label("pkg.ddc.cache.engine.sync_test
 		runtimeClass *datav1alpha1.CacheRuntimeClass
 		dataset      *datav1alpha1.Dataset
 		ctx          cruntime.ReconcileRequestContext
+		fakeClient   cclient.Client
 	)
 
 	BeforeEach(func() {
@@ -90,6 +94,12 @@ var _ = Describe("CacheEngine Sync Tests", Label("pkg.ddc.cache.engine.sync_test
 					Template: corev1.PodTemplateSpec{
 						Spec: corev1.PodSpec{
 							Containers: []corev1.Container{{Name: "master", Image: "test-master:latest"}},
+						},
+					},
+					ExecutionEntries: &datav1alpha1.ExecutionEntries{
+						ReportSummary: &datav1alpha1.ExecutionCommonEntry{
+							Command:        []string{"summary"},
+							TimeoutSeconds: 10,
 						},
 					},
 				},
@@ -173,10 +183,10 @@ var _ = Describe("CacheEngine Sync Tests", Label("pkg.ddc.cache.engine.sync_test
 			},
 		}
 
-		fakeClient := fake.NewClientBuilder().
+		fakeClient = fake.NewClientBuilder().
 			WithScheme(scheme).
 			WithObjects(dataset, runtimeObj, runtimeClass, masterSts, workerSts, clientDs).
-			WithStatusSubresource(runtimeObj).
+			WithStatusSubresource(dataset, runtimeObj).
 			Build()
 
 		engine = &CacheEngine{
@@ -187,6 +197,7 @@ var _ = Describe("CacheEngine Sync Tests", Label("pkg.ddc.cache.engine.sync_test
 		}
 
 		ctx = cruntime.ReconcileRequestContext{
+			Client:         fakeClient,
 			Context:        context.Background(),
 			Log:            ctrl.Log.WithName("test"),
 			RuntimeType:    "cache",
@@ -207,8 +218,7 @@ var _ = Describe("CacheEngine Sync Tests", Label("pkg.ddc.cache.engine.sync_test
 				scheme := runtime.NewScheme()
 				_ = datav1alpha1.AddToScheme(scheme)
 				_ = appsv1.AddToScheme(scheme)
-				fakeClient := fake.NewClientBuilder().WithScheme(scheme).Build()
-				engine.Client = fakeClient
+				engine.Client = fake.NewClientBuilder().WithScheme(scheme).Build()
 			})
 
 			It("should return error", func() {
@@ -223,11 +233,10 @@ var _ = Describe("CacheEngine Sync Tests", Label("pkg.ddc.cache.engine.sync_test
 				scheme := runtime.NewScheme()
 				_ = datav1alpha1.AddToScheme(scheme)
 				_ = appsv1.AddToScheme(scheme)
-				fakeClient := fake.NewClientBuilder().
+				engine.Client = fake.NewClientBuilder().
 					WithScheme(scheme).
 					WithObjects(runtimeObj).
 					Build()
-				engine.Client = fakeClient
 			})
 
 			It("should return error", func() {
@@ -281,12 +290,11 @@ var _ = Describe("CacheEngine Sync Tests", Label("pkg.ddc.cache.engine.sync_test
 					ObjectMeta: metav1.ObjectMeta{Name: "test-runtime-client", Namespace: "default"},
 					Status:     appsv1.DaemonSetStatus{NumberReady: 0, DesiredNumberScheduled: 0},
 				}
-				fakeClient := fake.NewClientBuilder().
+				engine.Client = fake.NewClientBuilder().
 					WithScheme(scheme).
 					WithObjects(dataset, runtimeObj, runtimeClass, configMap, masterSts, workerSts, clientDs).
 					WithStatusSubresource(runtimeObj).
 					Build()
-				engine.Client = fakeClient
 			})
 
 			It("should update configmap", func() {
@@ -318,6 +326,233 @@ var _ = Describe("CacheEngine Sync Tests", Label("pkg.ddc.cache.engine.sync_test
 				Expect(err).NotTo(HaveOccurred())
 				Expect(cm.Data).NotTo(BeNil())
 				Expect(cm.OwnerReferences).NotTo(BeEmpty())
+			})
+		})
+
+		Context("when runtime is ready and sync is permitted", func() {
+			It("should attempt to sync dataset cache states", func() {
+				err := engine.Sync(ctx)
+				Expect(err).NotTo(HaveOccurred())
+			})
+		})
+
+		Context("when runtime is ready with ReportSummary configured", func() {
+			var patches *gomonkey.Patches
+
+			AfterEach(func() {
+				if patches != nil {
+					patches.Reset()
+				}
+			})
+
+			It("should get cache states successfully with mocked Execute", func() {
+
+				mockExecutions := &MockExecutions{
+					MockExecute: func(command []string, timeout time.Duration) (stdout string, err error) {
+						return `{"cached":"1073741824","cachedPercentage":"50","cacheCapacity":"2147483648","cacheHitRatio":"90","fileNums":"100","ufsTotal":"2147483648"}`, nil
+					},
+				}
+
+				patches = gomonkey.ApplyFunc(NewCacheFileUtil, func(podName, containerName, namespace string, log logr.Logger) CacheFileUtil {
+					return mockExecutions
+				})
+
+				err := engine.Sync(ctx)
+				Expect(err).NotTo(HaveOccurred())
+
+				updateDataset := datav1alpha1.Dataset{}
+				err = engine.Client.Get(context.Background(), types.NamespacedName{
+					Name:      "test-runtime",
+					Namespace: "default",
+				}, &updateDataset)
+				Expect(err).NotTo(HaveOccurred())
+
+				cacheStates := updateDataset.Status.CacheStates
+				Expect(cacheStates).NotTo(BeNil())
+				Expect(cacheStates["cached"]).To(Equal("1073741824"))
+				Expect(cacheStates["cachedPercentage"]).To(Equal("50"))
+				Expect(cacheStates["cacheCapacity"]).To(Equal("2147483648"))
+				Expect(cacheStates["cacheHitRatio"]).To(Equal("90"))
+				Expect(cacheStates["fileNums"]).To(Equal("100"))
+				Expect(cacheStates["ufsTotal"]).To(Equal("2147483648"))
+			})
+		})
+
+		Context("when runtime is not ready (master not ready)", func() {
+			BeforeEach(func() {
+				masterReplicas := int32(1)
+				masterSts := &workloadv1alpha1.AdvancedStatefulSet{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "test-runtime-master",
+						Namespace: "default",
+					},
+					Spec: workloadv1alpha1.AdvancedStatefulSetSpec{
+						Replicas: &masterReplicas,
+						Template: corev1.PodTemplateSpec{
+							Spec: corev1.PodSpec{
+								Containers: []corev1.Container{{Name: "master", Image: "test-master:latest"}},
+							},
+						},
+					},
+					Status: workloadv1alpha1.AdvancedStatefulSetStatus{
+						ReadyReplicas:     0,
+						CurrentReplicas:   1,
+						AvailableReplicas: 0,
+					},
+				}
+
+				workerReplicas := int32(2)
+				workerSts := &workloadv1alpha1.AdvancedStatefulSet{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "test-runtime-worker",
+						Namespace: "default",
+					},
+					Spec: workloadv1alpha1.AdvancedStatefulSetSpec{
+						Replicas: &workerReplicas,
+						Template: corev1.PodTemplateSpec{
+							Spec: corev1.PodSpec{
+								Containers: []corev1.Container{{Name: "worker", Image: "test-worker:latest"}},
+							},
+						},
+					},
+					Status: workloadv1alpha1.AdvancedStatefulSetStatus{
+						ReadyReplicas:     2,
+						CurrentReplicas:   2,
+						AvailableReplicas: 2,
+					},
+				}
+
+				clientDs := &appsv1.DaemonSet{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "test-runtime-client",
+						Namespace: "default",
+					},
+					Spec: appsv1.DaemonSetSpec{
+						Template: corev1.PodTemplateSpec{
+							Spec: corev1.PodSpec{
+								Containers: []corev1.Container{{Name: "client", Image: "test-client:latest"}},
+							},
+						},
+					},
+					Status: appsv1.DaemonSetStatus{
+						NumberReady:            0,
+						DesiredNumberScheduled: 0,
+					},
+				}
+
+				engine = &CacheEngine{
+					name:      "test-runtime",
+					namespace: "default",
+					Client: fake.NewClientBuilder().
+						WithScheme(CacheEngineTestScheme).
+						WithObjects(dataset, runtimeObj, runtimeClass, masterSts, workerSts, clientDs).
+						WithStatusSubresource(runtimeObj).
+						Build(),
+					Log: ctrl.Log.WithName("test"),
+				}
+			})
+
+			It("should not sync dataset cache states when master is not ready", func() {
+				err := engine.Sync(ctx)
+				Expect(err).NotTo(HaveOccurred())
+
+				updatedDataset := &datav1alpha1.Dataset{}
+				err = engine.Client.Get(context.Background(), types.NamespacedName{
+					Name:      "test-runtime",
+					Namespace: "default",
+				}, updatedDataset)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(updatedDataset.Status.CacheStates).To(BeNil(), "expected CacheStates to remain nil when runtime is not ready")
+			})
+		})
+
+		Context("when runtime is not ready (worker not ready)", func() {
+			BeforeEach(func() {
+				masterReplicas := int32(1)
+				masterSts := &workloadv1alpha1.AdvancedStatefulSet{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "test-runtime-master",
+						Namespace: "default",
+					},
+					Spec: workloadv1alpha1.AdvancedStatefulSetSpec{
+						Replicas: &masterReplicas,
+						Template: corev1.PodTemplateSpec{
+							Spec: corev1.PodSpec{
+								Containers: []corev1.Container{{Name: "master", Image: "test-master:latest"}},
+							},
+						},
+					},
+					Status: workloadv1alpha1.AdvancedStatefulSetStatus{
+						ReadyReplicas:     1,
+						CurrentReplicas:   1,
+						AvailableReplicas: 1,
+					},
+				}
+
+				workerReplicas := int32(2)
+				workerSts := &workloadv1alpha1.AdvancedStatefulSet{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "test-runtime-worker",
+						Namespace: "default",
+					},
+					Spec: workloadv1alpha1.AdvancedStatefulSetSpec{
+						Replicas: &workerReplicas,
+						Template: corev1.PodTemplateSpec{
+							Spec: corev1.PodSpec{
+								Containers: []corev1.Container{{Name: "worker", Image: "test-worker:latest"}},
+							},
+						},
+					},
+					Status: workloadv1alpha1.AdvancedStatefulSetStatus{
+						ReadyReplicas:     0,
+						CurrentReplicas:   2,
+						AvailableReplicas: 0,
+					},
+				}
+
+				clientDs := &appsv1.DaemonSet{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "test-runtime-client",
+						Namespace: "default",
+					},
+					Spec: appsv1.DaemonSetSpec{
+						Template: corev1.PodTemplateSpec{
+							Spec: corev1.PodSpec{
+								Containers: []corev1.Container{{Name: "client", Image: "test-client:latest"}},
+							},
+						},
+					},
+					Status: appsv1.DaemonSetStatus{
+						NumberReady:            0,
+						DesiredNumberScheduled: 0,
+					},
+				}
+
+				fakeClient := fake.NewClientBuilder().
+					WithScheme(CacheEngineTestScheme).
+					WithObjects(dataset, runtimeObj, runtimeClass, masterSts, workerSts, clientDs).
+					WithStatusSubresource(runtimeObj).
+					Build()
+
+				engine = &CacheEngine{
+					name:      "test-runtime",
+					namespace: "default",
+					Client:    fakeClient,
+					Log:       ctrl.Log.WithName("test"),
+				}
+			})
+
+			It("should not sync dataset cache states when worker is not ready", func() {
+				err := engine.Sync(ctx)
+				Expect(err).NotTo(HaveOccurred())
+
+				updatedDataset := &datav1alpha1.Dataset{}
+				err = engine.Client.Get(context.Background(), types.NamespacedName{
+					Name:      "test-runtime",
+					Namespace: "default",
+				}, updatedDataset)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(updatedDataset.Status.CacheStates).To(BeNil(), "expected CacheStates to remain nil when runtime is not ready")
 			})
 		})
 	})
@@ -531,12 +766,11 @@ var _ = Describe("CacheEngine Sync Tests", Label("pkg.ddc.cache.engine.sync_test
 					ObjectMeta: metav1.ObjectMeta{Name: "test-runtime-client", Namespace: "default"},
 					Status:     appsv1.DaemonSetStatus{NumberReady: 0, DesiredNumberScheduled: 0},
 				}
-				fakeClient := fake.NewClientBuilder().
+				engine.Client = fake.NewClientBuilder().
 					WithScheme(scheme).
 					WithObjects(dataset, minimalRuntime, runtimeClass, masterSts, workerSts, clientDs).
 					WithStatusSubresource(minimalRuntime).
 					Build()
-				engine.Client = fakeClient
 
 				err := engine.syncRuntimeValueConfigMap(ctx, minimalRuntime)
 				Expect(err).NotTo(HaveOccurred())

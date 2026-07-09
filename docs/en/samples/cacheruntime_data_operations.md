@@ -94,5 +94,7 @@ During data operation execution, Fluid automatically injects the following envir
 | `FLUID_DATALOAD_METADATA` | Whether to load metadata                        | `"true"` or `"false"` |
 | `FLUID_DATALOAD_DATA_PATH` | Data paths to be loaded (multiple paths separated by colons)           | `/spark/spark-3.0.1:/spark/spark-2.4.7` |
 | `FLUID_DATALOAD_PATH_REPLICAS` | Number of replicas for each path (separated by colons, corresponding one-to-one with DATA_PATH) | `1:2` |
+| `FLUID_RUNTIME_CONFIG_PATH` |  Runtime configuration path provided by fluid            |
+
 
 The underlying caching system writes data preloading scripts based on the above environment variables and packages them into the image. When users define DataLoad operations, they can specify the script through the `command` and `args` fields.

@@ -94,5 +94,7 @@ dataOperationSpecs:
 | `FLUID_DATALOAD_METADATA` | 是否加载元数据                        | `"true"` 或 `"false"` |
 | `FLUID_DATALOAD_DATA_PATH` | 需要加载的数据路径（多个路径用冒号分隔）           | `/spark/spark-3.0.1:/spark/spark-2.4.7` |
 | `FLUID_DATALOAD_PATH_REPLICAS` | 每个路径的副本数（用冒号分隔，与 DATA_PATH 一一对应） | `1:2` |
+| `FLUID_RUNTIME_CONFIG_PATH` | 由fluid提供的runtime配置路径             |
+
 
 底层的缓存系统根据上面的环境变量，编写数据预热的脚本并打包到镜像中，用户在定义 DataLoad 操作时，即可通过`command` 和 `args` 字段指定脚本。

@@ -83,7 +83,7 @@ The component in Topology mainly contains the following content:
 | Service | Currently only supports Headless      |                                                                                                                                                                                                                         |
 | Dependencies | ExtraResources     | Whether this component needs to mount additional ConfigMaps (the dependent ConfigMap information is defined in the ExtraResources field of CacheRuntimeClass).                                                                                                                                     |
 | ExecutionEntries| MountUFS           | For Master-Worker architecture, when Master is Ready, the underlying file system mount operation needs to be executed. The MountUFS script must output JSON in `CacheRuntimeMountUfsOutput` struct format, containing the list of mounted UFS paths. See Step 2.7 for details.                                                                                                                                      |
-| ExecutionEntries| ReportSummary      | How the cache system defines operations to obtain cache information metrics [Not supported in current version].                                                                                                                                                                                            |
+| ExecutionEntries| ReportSummary      | Defines operations for the cache system to obtain cache information metrics, the command must output JSON in `CacheRuntimeReportSummary` struct format.                                                                                                                                                   |
 
 ### Step 2.1 Prepare K8s-adapted Native Images and Define Component workloadType and PodTemplate
 
@@ -383,3 +383,38 @@ type CacheRuntimeMountUfsOutput struct {
 1. **Must output to standard output (stdout)**: Fluid reads JSON data from the script's standard output
 2. **Error messages to standard error (stderr)**: Use `>&2` to output error messages to stderr to avoid polluting stdout
 3. **JSON format must strictly comply with requirements**: Otherwise, Fluid cannot parse it, leading to mount failure
+
+
+### Step 2.8 ReportSummary Script Output Format Requirements
+
+The ReportSummary script is used to obtain runtime metrics of the cache system. It executes commands within the component's Pod, and the results are updated to the DataSet's Status field.
+**The ReportSummary script must output JSON in `CacheRuntimeReportSummary` struct format**, so that Fluid can correctly parse cache system metrics.
+
+#### Output Format Specification
+
+The standard output of the ReportSummary script must be in the following JSON format:
+
+```json
+{
+  "cached": "0.00B",
+  "cachedPercentage": "0",
+  "cacheCapacity": "4.00GiB",
+  "cacheHitRatio": 1000,
+  "fileNums": "400",
+  "ufsTotal": "100GB"
+}
+```
+
+Where:
+- cached: cached capacity, representing the total capacity of the cache system (in bytes)
+- cachedPercentage: percentage of cached data relative to cache capacity, 0-100
+- cacheCapacity: total cache data capacity (in bytes)
+- cacheHitRatio: cache hit ratio, 0-100
+- fileNums: number of files in the Dataset
+- ufsTotal: total size of the Dataset (in bytes)
+
+#### Important Notes
+
+1. **Must output to standard output (stdout)**: Fluid reads JSON data from the script's standard output
+2. **Error messages to standard error (stderr)**: Use `>&2` to output error messages to stderr to avoid polluting stdout
+3. **JSON format must strictly comply with requirements**: Otherwise, Fluid cannot parse it

@@ -82,8 +82,8 @@ Topology中comopent主要包含以下内容
 | Template | PodTemplateSpec 原生字段   |                                                                                                                                                                                                                          |
 | Service | 目前仅支持Headless      |                                                                                                                                                                                                                          |
 | Dependencies | ExtraResources     | 该组件是否需要挂载额外的 ConfigMap （其依赖的ConfigMap 信息定义于 CacheRuntimeClass 的 ExtraResources 字段）。                                                                                                                                      |
-| ExecutionEntries| MountUFS           | 对于Master-Worker架构，当Master Ready时，需要执行底层文件系统的挂载操作。MountUFS 脚本必须输出符合 `CacheRuntimeMountUfsOutput` 结构体格式的 JSON，包含已挂载的 UFS 路径列表。详见步骤 2.7。                                                                                                                                      |
-| ExecutionEntries| ReportSummary      | 缓存系统定义如何获取缓存信息指标的操作 【当前版本暂未支持】。                                                                                                                                                                                          |
+| ExecutionEntries| MountUFS           | 对于Master-Worker架构，当Master Ready时，需要执行底层文件系统的挂载操作。MountUFS 脚本必须输出符合 `CacheRuntimeMountUfsOutput` 结构体格式的 JSON，包含已挂载的 UFS 路径列表。详见步骤 2.7。                                                                                    |
+| ExecutionEntries| ReportSummary      | 缓存系统定义如何获取缓存信息指标的操作，命令必须输出符合 `CacheRuntimeReportSummary` 结构体格式的 JSON。                                                                                                                                                   |
 
 ### 步骤2.1 准备K8s适配的原生镜像及明确组件workloadType和PodTemplate
 
@@ -382,3 +382,38 @@ type CacheRuntimeMountUfsOutput struct {
 1. **必须输出到标准输出（stdout）**：Fluid 会从脚本的标准输出读取 JSON 数据
 2. **错误信息输出到标准错误（stderr）**：使用 `>&2` 将错误信息输出到 stderr，避免污染 stdout
 3. **JSON 格式必须严格符合要求**：否则 Fluid 无法解析，会导致挂载失败
+
+
+### 步骤2.8 ReportSummary 脚本输出格式要求
+
+ReportSummary 脚本用于获取缓存系统的运行状态指标，它会在所在组件的 Pod 中执行相应命令，结果更新到 DataSet 的 Status 字段中。
+**ReportSummary 脚本必须输出符合 `CacheRuntimeReportSummary` 结构体格式的 JSON**，以便 Fluid 能够正确解析缓存系统的指标信息。
+
+#### 输出格式规范
+
+ReportSummary 脚本的标准输出必须是以下 JSON 格式：
+
+```json
+{
+  "cached": "0.00B",
+  "cachedPercentage": "0",
+  "cacheCapacity": "4.00GiB",
+  "cacheHitRatio": 1000,
+  "fileNums": "400",
+  "ufsTotal": "100GB"
+}
+```
+
+其中：
+- cached：已缓存容量，表示缓存系统的总容量（字节数)
+- cachedPercentage：已缓存数据占缓存容量的百分数，0-100
+- cacheCapacity：缓存数据总容量（字节数)
+- cacheHitRatio：表示缓存命中率，0-100
+- fileNums：Dataset 中的文件数量
+- ufsTotal：Dataset 的总大小（字节数)
+
+#### 注意事项
+
+1. **必须输出到标准输出（stdout）**：Fluid 会从脚本的标准输出读取 JSON 数据
+2. **错误信息输出到标准错误（stderr）**：使用 >&2 将错误信息输出到 stderr，避免污染 stdout
+3. **JSON 格式必须严格符合要求**：否则 Fluid 无法解析
