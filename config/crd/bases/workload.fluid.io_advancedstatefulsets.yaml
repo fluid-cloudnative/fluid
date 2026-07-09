@@ -1,0 +1,339 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.19.0
+  name: advancedstatefulsets.workload.fluid.io
+spec:
+  group: workload.fluid.io
+  names:
+    categories:
+    - fluid
+    kind: AdvancedStatefulSet
+    listKind: AdvancedStatefulSetList
+    plural: advancedstatefulsets
+    shortNames:
+    - asts
+    singular: advancedstatefulset
+  scope: Namespaced
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .spec.replicas
+      name: DESIRED
+      type: integer
+    - jsonPath: .status.replicas
+      name: CURRENT
+      type: integer
+    - jsonPath: .status.updatedReplicas
+      name: UPDATED
+      type: integer
+    - jsonPath: .status.readyReplicas
+      name: READY
+      type: integer
+    - jsonPath: .metadata.creationTimestamp
+      name: AGE
+      type: date
+    - jsonPath: .spec.template.spec.containers[*].name
+      name: CONTAINERS
+      priority: 1
+      type: string
+    - jsonPath: .spec.template.spec.containers[*].image
+      name: IMAGES
+      priority: 1
+      type: string
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        properties:
+          apiVersion:
+            type: string
+          kind:
+            type: string
+          metadata:
+            type: object
+          spec:
+            properties:
+              lifecycle:
+                properties:
+                  inPlaceUpdate:
+                    properties:
+                      finalizersHandler:
+                        items:
+                          type: string
+                        type: array
+                      labelsHandler:
+                        additionalProperties:
+                          type: string
+                        type: object
+                      markPodNotReady:
+                        type: boolean
+                    type: object
+                  preDelete:
+                    properties:
+                      finalizersHandler:
+                        items:
+                          type: string
+                        type: array
+                      labelsHandler:
+                        additionalProperties:
+                          type: string
+                        type: object
+                      markPodNotReady:
+                        type: boolean
+                    type: object
+                  preNormal:
+                    properties:
+                      finalizersHandler:
+                        items:
+                          type: string
+                        type: array
+                      labelsHandler:
+                        additionalProperties:
+                          type: string
+                        type: object
+                      markPodNotReady:
+                        type: boolean
+                    type: object
+                type: object
+              ordinals:
+                properties:
+                  start:
+                    format: int32
+                    type: integer
+                type: object
+              persistentVolumeClaimRetentionPolicy:
+                properties:
+                  whenDeleted:
+                    type: string
+                  whenScaled:
+                    type: string
+                type: object
+              podManagementPolicy:
+                type: string
+              replicas:
+                format: int32
+                type: integer
+              reserveOrdinals:
+                items:
+                  anyOf:
+                  - type: integer
+                  - type: string
+                  x-kubernetes-int-or-string: true
+                type: array
+              revisionHistoryLimit:
+                format: int32
+                type: integer
+              scaleStrategy:
+                properties:
+                  maxUnavailable:
+                    anyOf:
+                    - type: integer
+                    - type: string
+                    x-kubernetes-int-or-string: true
+                type: object
+              selector:
+                properties:
+                  matchExpressions:
+                    items:
+                      properties:
+                        key:
+                          type: string
+                        operator:
+                          type: string
+                        values:
+                          items:
+                            type: string
+                          type: array
+                      required:
+                      - key
+                      - operator
+                      type: object
+                    type: array
+                  matchLabels:
+                    additionalProperties:
+                      type: string
+                    type: object
+                type: object
+                x-kubernetes-map-type: atomic
+              serviceName:
+                type: string
+              template:
+                x-kubernetes-preserve-unknown-fields: true
+              updateStrategy:
+                properties:
+                  rollingUpdate:
+                    properties:
+                      inPlaceUpdateStrategy:
+                        properties:
+                          gracePeriodSeconds:
+                            format: int32
+                            type: integer
+                        type: object
+                      maxUnavailable:
+                        anyOf:
+                        - type: integer
+                        - type: string
+                        x-kubernetes-int-or-string: true
+                      minReadySeconds:
+                        format: int32
+                        type: integer
+                      partition:
+                        format: int32
+                        type: integer
+                      paused:
+                        type: boolean
+                      podUpdatePolicy:
+                        type: string
+                      unorderedUpdate:
+                        properties:
+                          priorityStrategy:
+                            properties:
+                              orderPriority:
+                                items:
+                                  properties:
+                                    orderedKey:
+                                      type: string
+                                  required:
+                                  - orderedKey
+                                  type: object
+                                type: array
+                              weightPriority:
+                                items:
+                                  properties:
+                                    matchSelector:
+                                      properties:
+                                        matchExpressions:
+                                          items:
+                                            properties:
+                                              key:
+                                                type: string
+                                              operator:
+                                                type: string
+                                              values:
+                                                items:
+                                                  type: string
+                                                type: array
+                                            required:
+                                            - key
+                                            - operator
+                                            type: object
+                                          type: array
+                                        matchLabels:
+                                          additionalProperties:
+                                            type: string
+                                          type: object
+                                      type: object
+                                      x-kubernetes-map-type: atomic
+                                    weight:
+                                      format: int32
+                                      type: integer
+                                  required:
+                                  - matchSelector
+                                  - weight
+                                  type: object
+                                type: array
+                            type: object
+                        type: object
+                    type: object
+                  type:
+                    type: string
+                type: object
+              volumeClaimTemplates:
+                x-kubernetes-preserve-unknown-fields: true
+              volumeClaimUpdateStrategy:
+                properties:
+                  type:
+                    type: string
+                type: object
+            required:
+            - selector
+            - template
+            type: object
+          status:
+            properties:
+              availableReplicas:
+                format: int32
+                type: integer
+              collisionCount:
+                format: int32
+                type: integer
+              conditions:
+                items:
+                  properties:
+                    lastTransitionTime:
+                      format: date-time
+                      type: string
+                    message:
+                      type: string
+                    reason:
+                      type: string
+                    status:
+                      type: string
+                    type:
+                      type: string
+                  required:
+                  - status
+                  - type
+                  type: object
+                type: array
+              currentReplicas:
+                format: int32
+                type: integer
+              currentRevision:
+                type: string
+              labelSelector:
+                type: string
+              observedGeneration:
+                format: int64
+                type: integer
+              readyReplicas:
+                format: int32
+                type: integer
+              replicas:
+                format: int32
+                type: integer
+              updateRevision:
+                type: string
+              updatedAvailableReplicas:
+                format: int32
+                type: integer
+              updatedReadyReplicas:
+                format: int32
+                type: integer
+              updatedReplicas:
+                format: int32
+                type: integer
+              volumeClaims:
+                items:
+                  properties:
+                    compatibleReadyReplicas:
+                      format: int32
+                      type: integer
+                    compatibleReplicas:
+                      format: int32
+                      type: integer
+                    volumeClaimName:
+                      type: string
+                  required:
+                  - compatibleReadyReplicas
+                  - compatibleReplicas
+                  - volumeClaimName
+                  type: object
+                type: array
+            required:
+            - availableReplicas
+            - currentReplicas
+            - readyReplicas
+            - replicas
+            - updatedReplicas
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      scale:
+        labelSelectorPath: .status.labelSelector
+        specReplicasPath: .spec.replicas
+        statusReplicasPath: .status.replicas
+      status: {}
