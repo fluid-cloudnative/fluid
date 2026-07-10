@@ -43,6 +43,11 @@ func (e *CacheEngine) BindToDataset(runtime *datav1alpha1.CacheRuntime, runtimeC
 }
 
 func (e *CacheEngine) UpdateDatasetStatus(phase datav1alpha1.DatasetPhase, runtime *datav1alpha1.CacheRuntime, runtimeClass *datav1alpha1.CacheRuntimeClass) (err error) {
+	cacheStates, err := e.GetCacheStates(runtime, runtimeClass)
+	if err != nil {
+		e.Log.Error(err, "Failed to get cache states, keeping previous cache states in dataset status")
+	}
+
 	err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
 		dataset, err := utils.GetDataset(e.Client, e.name, e.namespace)
 		if err != nil {
@@ -84,13 +89,10 @@ func (e *CacheEngine) UpdateDatasetStatus(phase datav1alpha1.DatasetPhase, runti
 		datasetToUpdate.Status.Conditions = utils.UpdateDatasetCondition(datasetToUpdate.Status.Conditions,
 			cond)
 
-		cacheStates, err := e.GetCacheStates(runtime, runtimeClass)
-		if err == nil {
+		if cacheStates != nil {
 			datasetToUpdate.Status.CacheStates = cacheStates
 			datasetToUpdate.Status.FileNum = cacheStates[common.FileNum]
 			datasetToUpdate.Status.UfsTotal = cacheStates[common.UfsTotal]
-		} else {
-			e.Log.Error(err, "Failed to get cache states, keeping previous cache states in dataset status")
 		}
 
 		if !reflect.DeepEqual(dataset.Status, datasetToUpdate.Status) {

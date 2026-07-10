@@ -87,7 +87,7 @@ func (e *CacheEngine) Sync(ctx cruntime.ReconcileRequestContext) (err error) {
 	// sync dataset cache states
 	if runtimeReady && permitSyncEngineStatus {
 		e.Log.Info("sync dataset cache states")
-		err = e.syncDataSetCacheStates(ctx, runtime, runtimeClass)
+		err = e.syncDatasetCacheStates(ctx, runtime, runtimeClass)
 		if err != nil {
 			return err
 		}
@@ -234,7 +234,14 @@ func (e *CacheEngine) syncRuntimeSpec(ctx cruntime.ReconcileRequestContext, runt
 	return nil
 }
 
-func (e *CacheEngine) syncDataSetCacheStates(ctx cruntime.ReconcileRequestContext, runtime *datav1alpha1.CacheRuntime, runtimeClass *datav1alpha1.CacheRuntimeClass) (err error) {
+func (e *CacheEngine) syncDatasetCacheStates(ctx cruntime.ReconcileRequestContext, runtime *datav1alpha1.CacheRuntime, runtimeClass *datav1alpha1.CacheRuntimeClass) (err error) {
+	cacheStates, err := e.GetCacheStates(runtime, runtimeClass)
+	if err != nil {
+		e.Log.Error(err, "Failed to get cache states, keeping previous cache states in dataset status")
+		// not blocking the sync flow when failed to get cache states
+		return nil
+	}
+
 	err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
 		dataset, err := utils.GetDataset(e.Client, e.name, e.namespace)
 		if err != nil {
@@ -242,14 +249,9 @@ func (e *CacheEngine) syncDataSetCacheStates(ctx cruntime.ReconcileRequestContex
 		}
 		datasetToUpdate := dataset.DeepCopy()
 
-		cacheStates, err := e.GetCacheStates(runtime, runtimeClass)
-		if err == nil {
-			datasetToUpdate.Status.CacheStates = cacheStates
-			datasetToUpdate.Status.FileNum = cacheStates[common.FileNum]
-			datasetToUpdate.Status.UfsTotal = cacheStates[common.UfsTotal]
-		} else {
-			e.Log.Error(err, "Failed to get cache states, keeping previous cache states in dataset status")
-		}
+		datasetToUpdate.Status.CacheStates = cacheStates
+		datasetToUpdate.Status.FileNum = cacheStates[common.FileNum]
+		datasetToUpdate.Status.UfsTotal = cacheStates[common.UfsTotal]
 
 		if !reflect.DeepEqual(dataset.Status, datasetToUpdate.Status) {
 			e.Log.Info("the dataset status", "status", datasetToUpdate.Status)

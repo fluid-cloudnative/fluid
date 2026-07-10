@@ -406,7 +406,7 @@ The standard output of the ReportSummary script must be in the following JSON fo
 ```
 
 Where:
-- cached: cached capacity, representing the total capacity of the cache system (in bytes)
+- cached: the amount of data cached, in bytes
 - cachedPercentage: percentage of cached data relative to cache capacity, 0-100
 - cacheCapacity: total cache data capacity (in bytes)
 - cacheHitRatio: cache hit ratio, 0-100

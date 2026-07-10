@@ -405,7 +405,7 @@ ReportSummary 脚本的标准输出必须是以下 JSON 格式：
 ```
 
 其中：
-- cached：已缓存容量，表示缓存系统的总容量（字节数)
+- cached：已缓存的数据量（字节数)
 - cachedPercentage：已缓存数据占缓存容量的百分数，0-100
 - cacheCapacity：缓存数据总容量（字节数)
 - cacheHitRatio：表示缓存命中率，0-100
