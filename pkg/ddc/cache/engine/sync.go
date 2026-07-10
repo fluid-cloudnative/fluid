@@ -84,8 +84,14 @@ func (e *CacheEngine) Sync(ctx cruntime.ReconcileRequestContext) (err error) {
 		return err
 	}
 
-	// sync dataset cache states
-	if runtimeReady && permitSyncEngineStatus {
+	if !runtimeReady {
+		// update dataset status when runtime not ready
+		err = e.UpdateDatasetStatus(datav1alpha1.FailedDatasetPhase, runtime, runtimeClass)
+		if err != nil {
+			return err
+		}
+	} else if permitSyncEngineStatus {
+		// sync dataset cache states when runtime is ready and sync permitted
 		e.Log.Info("sync dataset cache states")
 		err = e.syncDatasetCacheStates(ctx, runtime, runtimeClass)
 		if err != nil {

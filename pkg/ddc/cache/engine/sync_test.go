@@ -18,9 +18,10 @@ package engine
 
 import (
 	"context"
-	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"os"
 	"time"
+
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 
 	"github.com/agiledragon/gomonkey/v2"
 	"github.com/go-logr/logr"
@@ -370,6 +371,7 @@ var _ = Describe("CacheEngine Sync Tests", Label("pkg.ddc.cache.engine.sync_test
 
 				cacheStates := updateDataset.Status.CacheStates
 				Expect(cacheStates).NotTo(BeNil())
+				Expect(updateDataset.Status.Phase, datav1alpha1.BoundDatasetPhase)
 				Expect(cacheStates[common.Cached]).To(Equal("1073741824"))
 				Expect(cacheStates[common.CachedPercentage]).To(Equal("50"))
 				Expect(cacheStates[common.CacheCapacity]).To(Equal("2147483648"))
@@ -447,7 +449,7 @@ var _ = Describe("CacheEngine Sync Tests", Label("pkg.ddc.cache.engine.sync_test
 					Client: fake.NewClientBuilder().
 						WithScheme(CacheEngineTestScheme).
 						WithObjects(dataset, runtimeObj, runtimeClass, masterSts, workerSts, clientDs).
-						WithStatusSubresource(runtimeObj).
+						WithStatusSubresource(dataset, runtimeObj).
 						Build(),
 					Log: ctrl.Log.WithName("test"),
 				}
@@ -463,6 +465,7 @@ var _ = Describe("CacheEngine Sync Tests", Label("pkg.ddc.cache.engine.sync_test
 					Namespace: "default",
 				}, updatedDataset)
 				Expect(err).NotTo(HaveOccurred())
+				Expect(updatedDataset.Status.Phase, datav1alpha1.FailedDatasetPhase)
 				Expect(updatedDataset.Status.CacheStates).To(BeNil(), "expected CacheStates to remain nil when runtime is not ready")
 			})
 		})
@@ -532,7 +535,7 @@ var _ = Describe("CacheEngine Sync Tests", Label("pkg.ddc.cache.engine.sync_test
 				fakeClient := fake.NewClientBuilder().
 					WithScheme(CacheEngineTestScheme).
 					WithObjects(dataset, runtimeObj, runtimeClass, masterSts, workerSts, clientDs).
-					WithStatusSubresource(runtimeObj).
+					WithStatusSubresource(dataset, runtimeObj).
 					Build()
 
 				engine = &CacheEngine{
@@ -553,6 +556,7 @@ var _ = Describe("CacheEngine Sync Tests", Label("pkg.ddc.cache.engine.sync_test
 					Namespace: "default",
 				}, updatedDataset)
 				Expect(err).NotTo(HaveOccurred())
+				Expect(updatedDataset.Status.Phase, datav1alpha1.FailedDatasetPhase)
 				Expect(updatedDataset.Status.CacheStates).To(BeNil(), "expected CacheStates to remain nil when runtime is not ready")
 			})
 		})
