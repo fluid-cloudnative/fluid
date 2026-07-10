@@ -400,7 +400,7 @@ The standard output of the ReportSummary script must be in the following JSON fo
   "cachedPercentage": "0",
   "cacheCapacity": "4.00GiB",
   "cacheHitRatio": "0",
-  "fileNums": "400",
+  "fileNum": "400",
   "ufsTotal": "100GB"
 }
 ```
@@ -410,7 +410,7 @@ Where:
 - cachedPercentage: percentage of cached data relative to cache capacity, 0-100
 - cacheCapacity: total cache data capacity (in bytes)
 - cacheHitRatio: cache hit ratio, 0-100
-- fileNums: number of files in the Dataset
+- fileNum: number of files in the Dataset
 - ufsTotal: total size of the Dataset (in GB)
 
 #### Important Notes

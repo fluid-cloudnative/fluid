@@ -399,7 +399,7 @@ ReportSummary 脚本的标准输出必须是以下 JSON 格式：
   "cachedPercentage": "0",
   "cacheCapacity": "4.00GiB",
   "cacheHitRatio": "0",
-  "fileNums": "400",
+  "fileNum": "400",
   "ufsTotal": "100GB"
 }
 ```
@@ -409,7 +409,7 @@ ReportSummary 脚本的标准输出必须是以下 JSON 格式：
 - cachedPercentage：已缓存数据占缓存容量的百分数，0-100
 - cacheCapacity：缓存数据总容量（字节数)
 - cacheHitRatio：表示缓存命中率，0-100
-- fileNums：Dataset 中的文件数量
+- fileNum：Dataset 中的文件数量
 - ufsTotal：Dataset 的总大小（GB单位)
 
 #### 注意事项

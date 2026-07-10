@@ -55,7 +55,7 @@ const (
 	CacheCapacity CacheStateName = "cacheCapacity"
 
 	// FileNum represents the file numbers of the dataset
-	FileNum CacheStateName = "fileNums"
+	FileNum CacheStateName = "fileNum"
 
 	// UfsTotal is the total size of the dataset in the cluster, in GB.
 	UfsTotal CacheStateName = "ufsTotal"
