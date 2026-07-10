@@ -18,6 +18,7 @@ package engine
 
 import (
 	"context"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"os"
 	"time"
 
@@ -349,7 +350,7 @@ var _ = Describe("CacheEngine Sync Tests", Label("pkg.ddc.cache.engine.sync_test
 
 				mockExecutions := &MockExecutions{
 					MockExecute: func(command []string, timeout time.Duration) (stdout string, err error) {
-						return `{"cached":"1073741824","cachedPercentage":"50","cacheCapacity":"2147483648","cacheHitRatio":"90","fileNums":"100","ufsTotal":"2147483648"}`, nil
+						return `{"cached":"1073741824","cachedPercentage":"50","cacheCapacity":"2147483648","cacheHitRatio":"90","fileNum":"100","ufsTotal":"2147483648"}`, nil
 					},
 				}
 
@@ -369,12 +370,12 @@ var _ = Describe("CacheEngine Sync Tests", Label("pkg.ddc.cache.engine.sync_test
 
 				cacheStates := updateDataset.Status.CacheStates
 				Expect(cacheStates).NotTo(BeNil())
-				Expect(cacheStates["cached"]).To(Equal("1073741824"))
-				Expect(cacheStates["cachedPercentage"]).To(Equal("50"))
-				Expect(cacheStates["cacheCapacity"]).To(Equal("2147483648"))
-				Expect(cacheStates["cacheHitRatio"]).To(Equal("90"))
-				Expect(cacheStates["fileNums"]).To(Equal("100"))
-				Expect(cacheStates["ufsTotal"]).To(Equal("2147483648"))
+				Expect(cacheStates[common.Cached]).To(Equal("1073741824"))
+				Expect(cacheStates[common.CachedPercentage]).To(Equal("50"))
+				Expect(cacheStates[common.CacheCapacity]).To(Equal("2147483648"))
+				Expect(cacheStates[common.CacheHitRatio]).To(Equal("90"))
+				Expect(cacheStates[common.FileNum]).To(Equal("100"))
+				Expect(cacheStates[common.UfsTotal]).To(Equal("2147483648"))
 			})
 		})
 
