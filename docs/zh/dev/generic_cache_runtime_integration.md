@@ -398,7 +398,7 @@ ReportSummary 脚本的标准输出必须是以下 JSON 格式：
   "cached": "0.00B",
   "cachedPercentage": "0",
   "cacheCapacity": "4.00GiB",
-  "cacheHitRatio": 1000,
+  "cacheHitRatio": "0",
   "fileNums": "400",
   "ufsTotal": "100GB"
 }
@@ -410,10 +410,11 @@ ReportSummary 脚本的标准输出必须是以下 JSON 格式：
 - cacheCapacity：缓存数据总容量（字节数)
 - cacheHitRatio：表示缓存命中率，0-100
 - fileNums：Dataset 中的文件数量
-- ufsTotal：Dataset 的总大小（字节数)
+- ufsTotal：Dataset 的总大小（GB单位)
 
 #### 注意事项
 
 1. **必须输出到标准输出（stdout）**：Fluid 会从脚本的标准输出读取 JSON 数据
 2. **错误信息输出到标准错误（stderr）**：使用 >&2 将错误信息输出到 stderr，避免污染 stdout
 3. **JSON 格式必须严格符合要求**：否则 Fluid 无法解析
+4. 如果`command`执行时间很长，例如对于`fileNum`和`ufsTotal`的统计，缓存端的脚本不要实时获取这些信息

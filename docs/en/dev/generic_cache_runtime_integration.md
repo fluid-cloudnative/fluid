@@ -399,7 +399,7 @@ The standard output of the ReportSummary script must be in the following JSON fo
   "cached": "0.00B",
   "cachedPercentage": "0",
   "cacheCapacity": "4.00GiB",
-  "cacheHitRatio": 1000,
+  "cacheHitRatio": "0",
   "fileNums": "400",
   "ufsTotal": "100GB"
 }
@@ -411,10 +411,11 @@ Where:
 - cacheCapacity: total cache data capacity (in bytes)
 - cacheHitRatio: cache hit ratio, 0-100
 - fileNums: number of files in the Dataset
-- ufsTotal: total size of the Dataset (in bytes)
+- ufsTotal: total size of the Dataset (in GB)
 
 #### Important Notes
 
 1. **Must output to standard output (stdout)**: Fluid reads JSON data from the script's standard output
 2. **Error messages to standard error (stderr)**: Use `>&2` to output error messages to stderr to avoid polluting stdout
 3. **JSON format must strictly comply with requirements**: Otherwise, Fluid cannot parse it
+4. If the execution time of `command` is long, such as for the statistics of `fileNum` and `ufsTotal`, the script on the caching side **should not obtain this information in real time**

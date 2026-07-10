@@ -1422,7 +1422,7 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_CacheRuntimeReportSummary(ref c
 				Properties: map[string]spec.Schema{
 					"cached": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Cached is the amount of data cached, in bytes. (500Gi = 500GiB = 500 * 1024 * 1024 * 1024)",
+							Description: "Cached is the amount of data cached, in bytes.",
 							Type:        []string{"string"},
 							Format:      "",
 						},
@@ -1444,6 +1444,20 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_CacheRuntimeReportSummary(ref c
 					"cacheHitRatio": {
 						SchemaProps: spec.SchemaProps{
 							Description: "CacheHitRatio defines the total cache hit ratio (both local hit and remote hit).",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"fileNum": {
+						SchemaProps: spec.SchemaProps{
+							Description: "FileNum represents the file numbers of the dataset",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"ufsTotal": {
+						SchemaProps: spec.SchemaProps{
+							Description: "UfsTotal is the total size of the dataset in the cluster, in GB.",
 							Type:        []string{"string"},
 							Format:      "",
 						},

@@ -154,7 +154,7 @@ func getSyncRetryDuration() (d *time.Duration, err error) {
 	return
 }
 
-// setTimeOfLastSync updates the synchronization timestamp for the TemplateEngine.
+// setTimeOfLastSync updates the synchronization timestamp for the CacheEngine.
 // This function sets the internal timeOfLastSync field to the current time and
 // logs the updated time value for tracking purposes.
 func (e *CacheEngine) setTimeOfLastSync() {
@@ -245,7 +245,7 @@ func (e *CacheEngine) syncDataSetCacheStates(ctx cruntime.ReconcileRequestContex
 		cacheStates, err := e.GetCacheStates(runtime, runtimeClass)
 		if err == nil {
 			datasetToUpdate.Status.CacheStates = cacheStates
-			datasetToUpdate.Status.FileNum = cacheStates[common.FileNums]
+			datasetToUpdate.Status.FileNum = cacheStates[common.FileNum]
 			datasetToUpdate.Status.UfsTotal = cacheStates[common.UfsTotal]
 		} else {
 			e.Log.Error(err, "Failed to get cache states, keeping previous cache states in dataset status")
