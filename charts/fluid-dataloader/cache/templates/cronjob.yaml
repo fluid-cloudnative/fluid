@@ -98,5 +98,4 @@ spec:
           volumes:
 {{ toYaml .Values.dataloader.volumes | indent 12 }}
           {{- end }}
-
 {{- end }}
