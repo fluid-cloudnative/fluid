@@ -105,7 +105,7 @@ spec:
             {{- end }}
           {{- if .Values.dataloader.volumeMounts }}
           volumeMounts:
- {{ toYaml .Values.dataloader.volumeMounts | indent 12 }}
+{{ toYaml .Values.dataloader.volumeMounts | indent 12 }}
           {{- end }}
       {{- if .Values.dataloader.volumes }}
       volumes:
