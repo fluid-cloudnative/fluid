@@ -24,6 +24,8 @@
 8. 通过缓存层读取数据（获得更快的访问速度）
 9. （可选）使用引用 Dataset 实现跨命名空间数据共享
 
+有关 Curvine 如何使用 Fluid 的详细说明（包括 Curvine 参数的解析和使用），请参考 [Curvine Fluid 集成文档](https://curvineio.github.io/zh-cn/docs/Architecture/fluid-integration/)。
+
 ## 步骤 1：部署 MinIO
 
 创建一个 MinIO Deployment 作为 S3 兼容后端：

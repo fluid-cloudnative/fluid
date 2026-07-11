@@ -24,6 +24,8 @@ The complete workflow consists of these steps:
 8. Read data through the cached layer (faster access)
 9. (Optional) Use a reference Dataset for cross-namespace data sharing
 
+For detailed documentation on how Curvine integrates with Fluid, including how Curvine parameters are parsed and used, refer to the [Curvine Fluid Integration Guide](https://curvineio.github.io/zh-cn/docs/Architecture/fluid-integration/).
+
 ## Step 1: Deploy MinIO
 
 Create a MinIO deployment to serve as the S3-compatible backend:
