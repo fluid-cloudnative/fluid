@@ -27,9 +27,9 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/client-go/tools/record"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -42,7 +42,7 @@ var _ = Describe("DataLoad genDataLoadValue Tests", Label("pkg.ddc.cache.engine.
 		runtimeObj   *datav1alpha1.CacheRuntime
 		runtimeClass *datav1alpha1.CacheRuntimeClass
 		dataload     *datav1alpha1.DataLoad
-		baseClient client.Client
+		baseClient   client.Client
 	)
 
 	BeforeEach(func() {
@@ -107,11 +107,11 @@ var _ = Describe("DataLoad genDataLoadValue Tests", Label("pkg.ddc.cache.engine.
 		dataload = &datav1alpha1.DataLoad{
 			ObjectMeta: metav1.ObjectMeta{Name: "test-load", Namespace: "default"},
 			Spec: datav1alpha1.DataLoadSpec{
-				Dataset:        datav1alpha1.TargetDataset{Name: "demo", Namespace: "default"},
-				LoadMetadata:   true,
-				Policy:         datav1alpha1.Once,
-				Target:         []datav1alpha1.TargetPath{{Path: "/data"}},
-				Resources:      corev1.ResourceRequirements{},
+				Dataset:      datav1alpha1.TargetDataset{Name: "demo", Namespace: "default"},
+				LoadMetadata: true,
+				Policy:       datav1alpha1.Once,
+				Target:       []datav1alpha1.TargetPath{{Path: "/data"}},
+				Resources:    corev1.ResourceRequirements{},
 			},
 		}
 
