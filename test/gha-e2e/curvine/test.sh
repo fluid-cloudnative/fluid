@@ -122,7 +122,6 @@ function wait_cache_worker_ready() {
     local runtime_desired_replicas=""
     local asts_ready_replicas=""
     local asts_desired_replicas=""
-    local worker_pod=""
     local pod_states=""
     local log_interval=0
     local log_times=0
@@ -133,7 +132,6 @@ function wait_cache_worker_ready() {
         runtime_desired_replicas=$(kubectl get cacheruntime "$dataset_name" -ojsonpath='{@.status.worker.desiredReplicas}')
         asts_ready_replicas=$(kubectl get advancedstatefulset "$worker_component_name" -ojsonpath='{@.status.readyReplicas}' 2>/dev/null)
         asts_desired_replicas=$(kubectl get advancedstatefulset "$worker_component_name" -ojsonpath='{@.spec.replicas}' 2>/dev/null)
-        worker_pod=$(kubectl get pod -l "$worker_selector" -ojsonpath='{.items[0].metadata.name}' 2>/dev/null)
 
         pod_states=$(kubectl get pod -l "$worker_selector" -ojsonpath='{range .items[*]}{.metadata.name}:{range .status.containerStatuses[*]}{.ready}{end}:{.status.phase}{" "}{end}' 2>/dev/null)
 
