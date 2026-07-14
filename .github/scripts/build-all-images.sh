@@ -28,6 +28,12 @@ build_images() {
     make docker-build-all
     docker build -t "${oss_emulator_img}" test/gha-e2e/jindo/oss-emulator
 
+    echo ">>> Cleaning docker build caches before loading images to free disk space..."
+    docker builder prune -a -f
+    docker buildx prune -a -f
+    echo ">>> System disk usage after cleaning docker build caches"
+    df -h
+
     for img in "${images[@]}"; do
         echo "Loading image ${img} to kind cluster..."
         kind load docker-image "${img}" --name "${KIND_CLUSTER}"
