@@ -49,7 +49,7 @@ topology:
         restartPolicy: Always
         containers:
           - name: master
-            image: curvine/curvine-fluid:latest-amd64
+            image: curvine/curvine:v0.3.5-alpha
             command:
               - /entrypoint.sh
             args:
@@ -75,7 +75,7 @@ topology:
         restartPolicy: Always
         containers:
           - name: worker
-            image: curvine/curvine-fluid:latest-amd64
+            image: curvine/curvine:v0.3.5-alpha
             command:
               - /entrypoint.sh
             args:
@@ -99,7 +99,7 @@ topology:
         restartPolicy: Always
         containers:
           - name: client
-            image: curvine/curvine-fluid:latest-amd64
+            image: curvine/curvine:v0.3.5-alpha
             command:
               - /entrypoint.sh
             args:
