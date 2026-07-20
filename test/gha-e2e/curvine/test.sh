@@ -374,6 +374,14 @@ function wait_runtime_deleted() {
     syslog "PV/PVC cleaned up successfully"
 }
 
+function check_dataset_cache_state() {
+    local cache_capacity
+    cache_capacity=$(kubectl get dataset ${dataset_name} -o jsonpath='{.status.cacheStates.cacheCapacity}' 2>/dev/null)
+    if [[ -z "$cache_capacity" ]]; then
+        panic "cache_capacity is empty"
+    fi
+}
+
 function main() {
     syslog "[TESTCASE $testname STARTS AT $(date)]"
     trap dump_env_and_clean_up EXIT
@@ -383,6 +391,9 @@ function main() {
     create_reference_dataset
     wait_reference_dataset_bound
     wait_cache_worker_ready
+
+    check_dataset_cache_state
+
     create_job test/gha-e2e/curvine/write_job.yaml $write_job_name
     wait_job_completed $write_job_name
     create_dataload
@@ -412,3 +423,5 @@ function main() {
 }
 
 main
+
+}

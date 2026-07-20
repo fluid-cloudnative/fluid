@@ -217,6 +217,12 @@ topology:
           - -c
           - /app/curvine/mountUfs.sh
         timeout: 120
+      reportSummary:
+        command:
+          - bash
+          - -c
+          - /app/curvine/reportSummary.sh
+        timeout: 30
     template:
       spec:
         restartPolicy: Always
@@ -304,7 +310,7 @@ $ kubectl create -f cacheruntimeclass.yaml
 关键部分说明：
 - **`fileSystemType`**: 标识此为 Curvine 文件系统（`curvinefs`）
 - **`dataOperationSpecs`**: 定义 DataLoad 操作的执行方式——生成配置文件，然后使用 `cv` CLI 从 UFS 预热数据到 Curvine
-- **`topology.master`**: Curvine master 节点，包含 Headless Service、8995 端口的就绪探针和 MountUFS 脚本
+- **`topology.master`**: Curvine master 节点，包含 Headless Service、8995 端口的就绪探针、MountUFS 脚本和 reportSummary 脚本（用于生成缓存摘要报告）
 - **`topology.worker`**: Curvine worker 节点，包含 8997 端口的就绪探针
 - **`topology.client`**: FUSE 客户端 DaemonSet，以特权模式运行，包含优雅的 pre-stop 卸载清理逻辑
 

@@ -44,12 +44,18 @@ topology:
           - -c
           - /app/curvine/mountUfs.sh
         timeout: 120
+      reportSummary:
+        command:
+          - bash
+          - -c
+          - /app/curvine/reportSummary.sh
+        timeout: 30
     template:
       spec:
         restartPolicy: Always
         containers:
           - name: master
-            image: curvine/curvine:v0.3.5-alpha
+            image: curvine/curvine:v0.3.6-alpha
             command:
               - /entrypoint.sh
             args:
@@ -75,7 +81,7 @@ topology:
         restartPolicy: Always
         containers:
           - name: worker
-            image: curvine/curvine:v0.3.5-alpha
+            image: curvine/curvine:v0.3.6-alpha
             command:
               - /entrypoint.sh
             args:
@@ -99,7 +105,7 @@ topology:
         restartPolicy: Always
         containers:
           - name: client
-            image: curvine/curvine:v0.3.5-alpha
+            image: curvine/curvine:v0.3.6-alpha
             command:
               - /entrypoint.sh
             args:
