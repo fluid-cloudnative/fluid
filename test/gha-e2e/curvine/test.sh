@@ -378,7 +378,7 @@ function check_dataset_cache_state() {
     local cache_capacity
     cache_capacity=$(kubectl get dataset ${dataset_name} -o jsonpath='{.status.cacheStates.cacheCapacity}' 2>/dev/null)
     if [[ -z "$cache_capacity" ]]; then
-        panic "cache_capacity is empty"
+        panic "cache_capacity is empty, report summary failed."
     fi
 }
 
@@ -424,4 +424,4 @@ function main() {
 
 main
 
-}
+
