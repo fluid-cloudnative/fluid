@@ -19,11 +19,13 @@ package component
 import (
 	"context"
 	"fmt"
+	"reflect"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
+	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -143,7 +145,89 @@ func (s *DaemonSetManager) ConstructComponentStatus(ctx context.Context, identit
 	}, nil
 }
 
-// SyncComponentSpec is not supported for DaemonSet, Client Component does not support to be modified after created.
-func (s *DaemonSetManager) SyncComponentSpec(ctx context.Context, identity *common.ComponentIdentity, spec ComponentSpec) error {
-	return fmt.Errorf("SyncComponentSpec is not supported for DaemonSet component %s/%s, client component does not support to be modified after created", identity.Namespace, identity.Name)
+// SyncComponentSpec synchronizes component specification changes to the DaemonSet.
+// This supports in-place update for compatible fields (image, resources) without deleting the DaemonSet;
+// Kubernetes\' DaemonSet controller handles rolling out the updated pod template to each node\'s pod automatically.
+// Note: Replicas is not applicable to DaemonSet (replica count is determined by node count) and is ignored if set.
+func (s *DaemonSetManager) SyncComponentSpec(ctx context.Context, identity *common.ComponentIdentity, newSpec ComponentSpec) error {
+	logger := log.FromContext(ctx)
+	logger.Info("start syncing component spec", "component", identity.Name)
+
+	ds := &appsv1.DaemonSet{}
+	err := s.client.Get(ctx, types.NamespacedName{Name: identity.Name, Namespace: identity.Namespace}, ds)
+	if err != nil {
+		logger.Error(err, "failed to get daemonset")
+		return err
+	}
+
+	if len(ds.Spec.Template.Spec.Containers) == 0 {
+		return fmt.Errorf("no containers found in daemonset %s/%s", identity.Namespace, identity.Name)
+	}
+
+	dsToUpdate := ds.DeepCopy()
+	needsUpdate := false
+
+	if s.updateImage(dsToUpdate, newSpec.Version, logger) {
+		needsUpdate = true
+	}
+
+	if s.updateResources(dsToUpdate, newSpec.Resources, logger) {
+		needsUpdate = true
+	}
+
+	if !needsUpdate {
+		logger.Info("no spec changes detected, skip update")
+		return nil
+	}
+
+	patch := client.MergeFrom(ds)
+	err = s.client.Patch(ctx, dsToUpdate, patch)
+	if err != nil {
+		logger.Error(err, "failed to patch daemonset")
+		return err
+	}
+
+	logger.Info("successfully patched daemonset with new spec")
+	return nil
+}
+
+// updateImage updates container image if changed. Returns true if update is needed.
+func (s *DaemonSetManager) updateImage(ds *appsv1.DaemonSet, version datav1alpha1.VersionSpec, logger logr.Logger) bool {
+	if len(ds.Spec.Template.Spec.Containers) == 0 {
+		return false
+	}
+
+	container := &ds.Spec.Template.Spec.Containers[0]
+	currentImage := container.Image
+
+	if version.Image == "" || version.ImageTag == "" {
+		return false
+	}
+
+	newImage := version.Image + ":" + version.ImageTag
+
+	if currentImage != newImage {
+		logger.Info("image changed, will update", "old", currentImage, "new", newImage)
+		container.Image = newImage
+		return true
+	}
+
+	return false
+}
+
+// updateResources updates container resources if changed. Returns true if update is needed.
+func (s *DaemonSetManager) updateResources(ds *appsv1.DaemonSet, resources corev1.ResourceRequirements, logger logr.Logger) bool {
+	if len(ds.Spec.Template.Spec.Containers) == 0 {
+		return false
+	}
+
+	container := &ds.Spec.Template.Spec.Containers[0]
+
+	if !reflect.DeepEqual(container.Resources, resources) {
+		logger.Info("resources changed, will update")
+		container.Resources = *resources.DeepCopy()
+		return true
+	}
+
+	return false
 }
