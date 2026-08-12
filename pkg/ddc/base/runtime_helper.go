@@ -107,7 +107,7 @@ func (info *RuntimeInfo) getMountInfo() (path, mountType, subpath string, err er
 	if pv.Spec.CSI != nil && len(pv.Spec.CSI.VolumeAttributes) > 0 {
 		path = pv.Spec.CSI.VolumeAttributes[common.VolumeAttrFluidPath]
 		mountType = pv.Spec.CSI.VolumeAttributes[common.VolumeAttrMountType]
-		subpath = pv.Spec.CSI.VolumeAttributes[common.VolumeAttrFluidSubPath]
+		subpath = utils.CleanSubPath(pv.Spec.CSI.VolumeAttributes[common.VolumeAttrFluidSubPath])
 	} else {
 		err = fmt.Errorf("the pv %s is not created by fluid", pv.Name)
 	}

@@ -22,6 +22,7 @@ import (
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	transformerutils "github.com/fluid-cloudnative/fluid/pkg/utils/transformer"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -57,7 +58,7 @@ func GetPhysicalDatasetSubPath(virtualDataset *datav1alpha1.Dataset) []string {
 			datasetPath := strings.TrimPrefix(mount.MountPoint, string(common.RefSchema))
 			splitsStrings := strings.SplitAfterN(datasetPath, "/", 3)
 			if len(splitsStrings) == 3 {
-				paths = append(paths, splitsStrings[2])
+				paths = append(paths, utils.CleanSubPath(splitsStrings[2]))
 			}
 		}
 	}

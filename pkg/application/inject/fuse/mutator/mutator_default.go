@@ -159,7 +159,7 @@ func defaultMutateDatasetVolumes(helper *helperData) (err error) {
 	}
 
 	if helper.template.FuseMountInfo.SubPath != "" {
-		mountPath = mountPath + "/" + helper.template.FuseMountInfo.SubPath
+		mountPath = filepath.Join(mountPath, utils.CleanSubPath(helper.template.FuseMountInfo.SubPath))
 	}
 
 	mutatedDatasetVolume := corev1.Volume{

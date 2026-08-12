@@ -134,9 +134,14 @@ func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 		mountType = common.AlluxioMountType
 	}
 
-	mountPath := fluidPath
+	mountPath := filepath.Clean(fluidPath)
 	if subPath != "" {
-		mountPath = fluidPath + "/" + subPath
+		if filepath.IsAbs(subPath) {
+			return nil, status.Errorf(codes.InvalidArgument, "%s must be a relative path, but got \"%s\"", common.VolumeAttrFluidSubPath, subPath)
+		}
+		// Clamp subPath so that it cannot escape the FUSE mount point
+		subPath = utils.CleanSubPath(subPath)
+		mountPath = filepath.Join(mountPath, subPath)
 	}
 
 	// 1. Wait the runtime fuse ready and check the sub path existence
