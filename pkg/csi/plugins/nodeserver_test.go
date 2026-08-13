@@ -35,6 +35,8 @@ import (
 	csicommon "github.com/kubernetes-csi/drivers/pkg/csi-common"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -294,6 +296,102 @@ var _ = Describe("NodeServer", func() {
 			})
 		})
 
+		Context("when validating fluid_path against traversal", func() {
+			It("should reject a relative fluid_path", func() {
+				req := &csi.NodePublishVolumeRequest{
+					VolumeId:   testVolumeID,
+					TargetPath: testTargetPath,
+					VolumeContext: map[string]string{
+						common.VolumeAttrFluidPath: "runtime/test-dataset",
+					},
+				}
+
+				isMountedPatch := gomonkey.ApplyFunc(utils.IsMounted, func(absPath string) (bool, error) {
+					return false, os.ErrNotExist
+				})
+				defer isMountedPatch.Reset()
+
+				_, err := ns.NodePublishVolume(context.Background(), req)
+				Expect(err).To(HaveOccurred())
+				Expect(status.Code(err)).To(Equal(codes.InvalidArgument))
+			})
+
+			It("should reject an absolute fluid_path outside the mount root", func() {
+				tempDir, err := os.MkdirTemp("", "node-publish-escape-*")
+				Expect(err).NotTo(HaveOccurred())
+				DeferCleanup(func() {
+					Expect(os.RemoveAll(tempDir)).To(Succeed())
+				})
+
+				Expect(os.Setenv(utils.MountRoot, filepath.Join(tempDir, "runtime-mnt"))).To(Succeed())
+				DeferCleanup(func() {
+					Expect(os.Unsetenv(utils.MountRoot)).To(Succeed())
+				})
+
+				isMountedPatch := gomonkey.ApplyFunc(utils.IsMounted, func(absPath string) (bool, error) {
+					return false, os.ErrNotExist
+				})
+				defer isMountedPatch.Reset()
+
+				req := &csi.NodePublishVolumeRequest{
+					VolumeId:   testVolumeID,
+					TargetPath: testTargetPath,
+					VolumeContext: map[string]string{
+						common.VolumeAttrFluidPath: "/etc",
+					},
+				}
+
+				_, err = ns.NodePublishVolume(context.Background(), req)
+				Expect(err).To(HaveOccurred())
+				Expect(status.Code(err)).To(Equal(codes.InvalidArgument))
+			})
+
+			It("should reject a mount path that is a symlink", func() {
+				tempDir, err := os.MkdirTemp("", "node-publish-symlink-*")
+				Expect(err).NotTo(HaveOccurred())
+				DeferCleanup(func() {
+					Expect(os.RemoveAll(tempDir)).To(Succeed())
+				})
+
+				mountRoot := filepath.Join(tempDir, "runtime-mnt")
+				fluidPath := filepath.Join(mountRoot, testName, "fuse")
+				Expect(os.MkdirAll(fluidPath, 0750)).To(Succeed())
+
+				// Plant a symlink under the FUSE mount point.
+				target := filepath.Join(tempDir, "target-dir")
+				Expect(os.MkdirAll(target, 0750)).To(Succeed())
+				Expect(os.Symlink(target, filepath.Join(fluidPath, "evil"))).To(Succeed())
+
+				Expect(os.Setenv(utils.MountRoot, mountRoot)).To(Succeed())
+				DeferCleanup(func() {
+					Expect(os.Unsetenv(utils.MountRoot)).To(Succeed())
+				})
+
+				isMountedPatch := gomonkey.ApplyFunc(utils.IsMounted, func(absPath string) (bool, error) {
+					return false, os.ErrNotExist
+				})
+				defer isMountedPatch.Reset()
+
+				mountReadyPatch := gomonkey.ApplyFunc(utils.CheckMountReadyAndSubPathExist, func(fluidPath string, mountType string, subPath string) error {
+					return nil
+				})
+				defer mountReadyPatch.Reset()
+
+				req := &csi.NodePublishVolumeRequest{
+					VolumeId:   testVolumeID,
+					TargetPath: filepath.Join(tempDir, "target"),
+					VolumeContext: map[string]string{
+						common.VolumeAttrFluidPath:    fluidPath,
+						common.VolumeAttrFluidSubPath: "evil",
+					},
+				}
+
+				_, err = ns.NodePublishVolume(context.Background(), req)
+				Expect(err).To(HaveOccurred())
+				Expect(status.Code(err)).To(Equal(codes.InvalidArgument))
+			})
+		})
+
 		Context("when bind mounting succeeds", func() {
 			It("should return success after creating the target path", func() {
 				tempDir, err := os.MkdirTemp("", "node-publish-success-*")
@@ -306,6 +404,12 @@ var _ = Describe("NodeServer", func() {
 				targetPath := filepath.Join(tempDir, "target")
 				fakeMountPath := filepath.Join(tempDir, "mount")
 				originalPath := os.Getenv("PATH")
+
+				Expect(os.MkdirAll(fluidPath, 0750)).To(Succeed())
+				Expect(os.Setenv(utils.MountRoot, tempDir)).To(Succeed())
+				DeferCleanup(func() {
+					Expect(os.Unsetenv(utils.MountRoot)).To(Succeed())
+				})
 
 				isMountedPatch := gomonkey.ApplyFunc(utils.IsMounted, func(absPath string) (bool, error) {
 					return false, os.ErrNotExist

@@ -134,13 +134,21 @@ func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 		mountType = common.AlluxioMountType
 	}
 
-	mountPath := filepath.Clean(fluidPath)
+	if !filepath.IsAbs(fluidPath) {
+		return nil, status.Errorf(codes.InvalidArgument, "%s must be an absolute path, but got \"%s\"", common.VolumeAttrFluidPath, fluidPath)
+	}
+	fluidPath = filepath.Clean(fluidPath)
+	if err := checkPathUnderMountRoot(common.VolumeAttrFluidPath, fluidPath); err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+
+	mountPath := fluidPath
 	if subPath != "" {
-		if filepath.IsAbs(subPath) {
-			return nil, status.Errorf(codes.InvalidArgument, "%s must be a relative path, but got \"%s\"", common.VolumeAttrFluidSubPath, subPath)
+		// filepath.IsLocal rejects an absolute subPath or one that escapes the FUSE mount point
+		// (e.g. contains "../"), so it cannot be used to break out of fluidPath.
+		if !filepath.IsLocal(subPath) {
+			return nil, status.Errorf(codes.InvalidArgument, "%s must be a relative path that does not escape the mount point, but got \"%s\"", common.VolumeAttrFluidSubPath, subPath)
 		}
-		// Clamp subPath so that it cannot escape the FUSE mount point
-		subPath = utils.CleanSubPath(subPath)
 		mountPath = filepath.Join(mountPath, subPath)
 	}
 
@@ -162,6 +170,14 @@ func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 		if err != nil {
 			return nil, status.Error(codes.Internal, err.Error())
 		}
+	}
+
+	// 2. Reject mountPath if it is a symlink. A symlink planted under the FUSE mount point could
+	// otherwise redirect the bind mount or the symlink to an arbitrary path on the host.
+	if isSymlinkFile, err := checkSymlinkFile(mountPath); err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	} else if isSymlinkFile {
+		return nil, status.Errorf(codes.InvalidArgument, "reject mounting path %s because it is a symlink", mountPath)
 	}
 
 	// use symlink
@@ -395,6 +411,38 @@ func (ns *nodeServer) NodeGetCapabilities(ctx context.Context, req *csi.NodeGetC
 			},
 		},
 	}, nil
+}
+
+// checkPathUnderMountRoot rejects a path that does not live under the mount root configured via
+// the MOUNT_ROOT env. The path comes from PV volume attributes, which are not under CSI's control,
+// so an arbitrary host path such as "/etc" must not be accepted for mounting.
+func checkPathUnderMountRoot(attrName, path string) error {
+	mountRoot, err := utils.GetMountRoot()
+	if err != nil {
+		return errors.Wrapf(err, "failed to get mount root for validating %s \"%s\"", attrName, path)
+	}
+
+	if !utils.IsSubPath(mountRoot, path) {
+		return fmt.Errorf("%s \"%s\" must be under the mount root \"%s\"", attrName, path, mountRoot)
+	}
+
+	return nil
+}
+
+// checkSymlinkFile reports whether path is a symlink. A non-existent path or a corrupted mount point
+// is treated as not a symlink. Contents under the FUSE mount point are controlled by the dataset, so
+// a symlink there must not be used as the bind mount source or the target symlink, otherwise it could
+// redirect to an arbitrary path on the host.
+func checkSymlinkFile(path string) (bool, error) {
+	fi, err := os.Lstat(path)
+	if err != nil {
+		if os.IsNotExist(err) || mount.IsCorruptedMnt(err) {
+			return false, nil
+		}
+		return false, errors.Wrapf(err, "failed to lstat path %s", path)
+	}
+
+	return fi.Mode()&os.ModeSymlink != 0, nil
 }
 
 // getRuntimeNamespacedName first checks volume context for runtime's namespace and name as a fast path.
