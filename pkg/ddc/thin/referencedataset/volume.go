@@ -18,7 +18,6 @@ package referencedataset
 
 import (
 	"context"
-	"fmt"
 	"reflect"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
@@ -87,12 +86,12 @@ func createFusePersistentVolume(ctx context.Context, client client.Client, virtu
 			return accessModes, err
 		}
 		// set the sub path attribute
-		subPaths := base.GetPhysicalDatasetSubPath(virtualDataset)
-		if len(subPaths) > 1 {
-			return accessModes, fmt.Errorf("the dataset is not validated, only support dataset mounts which expects 1")
+		subPath, err := base.GetPhysicalDatasetSubPath(virtualDataset)
+		if err != nil {
+			return accessModes, err
 		}
-		if len(subPaths) == 1 && subPaths[0] != "" {
-			copiedPvSpec.CSI.VolumeAttributes[common.VolumeAttrFluidSubPath] = subPaths[0]
+		if subPath != "" {
+			copiedPvSpec.CSI.VolumeAttributes[common.VolumeAttrFluidSubPath] = subPath
 		}
 
 		// set the accessModes

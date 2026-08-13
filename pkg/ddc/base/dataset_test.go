@@ -95,40 +95,60 @@ var _ = Describe("Dataset", func() {
 	})
 
 	Describe("GetPhysicalDatasetSubPath", func() {
-		DescribeTable("extracts dataset subpaths",
-			func(dataset *datav1alpha1.Dataset, expected []string) {
-				Expect(GetPhysicalDatasetSubPath(dataset)).To(Equal(expected))
+		DescribeTable("extracts and validates the dataset subpath",
+			func(dataset *datav1alpha1.Dataset, expected string, expectErr bool) {
+				got, err := GetPhysicalDatasetSubPath(dataset)
+				if expectErr {
+					Expect(err).To(HaveOccurred())
+					return
+				}
+				Expect(err).NotTo(HaveOccurred())
+				Expect(got).To(Equal(expected))
 			},
-			Entry("returns nested subpaths",
+			Entry("returns a nested subpath",
 				&datav1alpha1.Dataset{Spec: datav1alpha1.DatasetSpec{Mounts: []datav1alpha1.Mount{{MountPoint: "dataset://ns-a/ds-b/sub-c/sub-d"}}}},
-				[]string{"sub-c/sub-d"},
+				"sub-c/sub-d",
+				false,
 			),
-			Entry("trims the trailing slash of a subpath",
+			Entry("keeps the trailing slash of a subpath",
 				&datav1alpha1.Dataset{Spec: datav1alpha1.DatasetSpec{Mounts: []datav1alpha1.Mount{{MountPoint: "dataset://ns-a/ds-b/sub-c/"}}}},
-				[]string{"sub-c"},
+				"sub-c/",
+				false,
 			),
 			Entry("returns an empty subpath when path ends with slash",
 				&datav1alpha1.Dataset{Spec: datav1alpha1.DatasetSpec{Mounts: []datav1alpha1.Mount{{MountPoint: "dataset://ns-a/ds-b/"}}}},
-				[]string{""},
+				"",
+				false,
 			),
-			Entry("returns nil when no subpath exists",
+			Entry("returns an empty subpath when no subpath exists",
 				&datav1alpha1.Dataset{Spec: datav1alpha1.DatasetSpec{Mounts: []datav1alpha1.Mount{{MountPoint: "dataset://ns-a/ds-b"}}}},
-				nil,
+				"",
+				false,
 			),
-			Entry("returns cleaned subpath", &datav1alpha1.Dataset{Spec: datav1alpha1.DatasetSpec{Mounts: []datav1alpha1.Mount{{MountPoint: "dataset://ns-a/ds-b/../sub-c/./inner/../sub-d"}}}},
-				[]string{"sub-c/sub-d"},
-			),
-			Entry("clamps a subpath escaping the dataset root",
+			Entry("rejects a subpath escaping the dataset root",
 				&datav1alpha1.Dataset{Spec: datav1alpha1.DatasetSpec{Mounts: []datav1alpha1.Mount{{MountPoint: "dataset://ns-a/ds-b/../../../etc"}}}},
-				[]string{"etc"},
+				"",
+				true,
 			),
-			Entry("clamps a subpath escaping the dataset root from a nested segment",
+			Entry("rejects a subpath escaping the dataset root from a nested segment",
 				&datav1alpha1.Dataset{Spec: datav1alpha1.DatasetSpec{Mounts: []datav1alpha1.Mount{{MountPoint: "dataset://ns-a/ds-b/sub-c/../../../sub-d"}}}},
-				[]string{"sub-d"},
+				"",
+				true,
 			),
-			Entry("returns an empty subpath when the subpath resolves to the dataset root",
+			Entry("rejects a subpath that resolves to the dataset root",
 				&datav1alpha1.Dataset{Spec: datav1alpha1.DatasetSpec{Mounts: []datav1alpha1.Mount{{MountPoint: "dataset://ns-a/ds-b/.."}}}},
-				[]string{""},
+				"",
+				true,
+			),
+			Entry("rejects a dataset with more than one mount",
+				&datav1alpha1.Dataset{Spec: datav1alpha1.DatasetSpec{Mounts: []datav1alpha1.Mount{{MountPoint: "dataset://ns-a/ds-b/sub-c"}, {MountPoint: "dataset://ns-a/ds-c"}}}},
+				"",
+				true,
+			),
+			Entry("rejects a dataset whose only mount is not a fluid ref",
+				&datav1alpha1.Dataset{Spec: datav1alpha1.DatasetSpec{Mounts: []datav1alpha1.Mount{{MountPoint: "http://ns-a/ds-b"}}}},
+				"",
+				true,
 			),
 		)
 	})

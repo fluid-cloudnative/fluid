@@ -21,7 +21,6 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"strings"
 
 	"github.com/fluid-cloudnative/fluid/pkg/utils/cmdguard"
@@ -40,15 +39,6 @@ func GetMountRoot() (string, error) {
 		return mountRoot, err
 	}
 	return mountRoot, nil
-}
-
-// CleanSubPath clamps an untrusted sub path into a cleaned relative path. Anchoring the path at
-// the root before cleaning makes any leading ".." elements collapse, so the result can never
-// escape the directory it is later joined to. An empty string is returned for a sub path that
-// resolves to the root itself.
-func CleanSubPath(subPath string) string {
-	cleaned := filepath.Join(string(filepath.Separator), subPath)
-	return strings.TrimPrefix(cleaned, string(filepath.Separator))
 }
 
 func CheckMountReadyAndSubPathExist(fluidPath string, mountType string, subPath string) (err error) {

@@ -73,32 +73,6 @@ func TestMountRootWithoutEnvSet(t *testing.T) {
 	}
 }
 
-func TestCleanSubPath(t *testing.T) {
-	var testCases = []struct {
-		name     string
-		input    string
-		expected string
-	}{
-		{"empty subPath", "", ""},
-		{"plain subPath", "sub", "sub"},
-		{"nested subPath", "sub/path", "sub/path"},
-		{"redundant separators", "sub//path/", "sub/path"},
-		{"dot elements", "./sub/./path", "sub/path"},
-		{"inner parent element", "sub/inner/../path", "sub/path"},
-		{"leading parent elements", "../../etc", "etc"},
-		{"escaping from a nested segment", "sub/../../../path", "path"},
-		{"resolves to the parent itself", "..", ""},
-		{"absolute subPath", "/sub/path", "sub/path"},
-	}
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			if got := CleanSubPath(tc.input); got != tc.expected {
-				t.Errorf("CleanSubPath(%q) = %q, expected %q", tc.input, got, tc.expected)
-			}
-		})
-	}
-}
-
 func TestCheckMountReady(t *testing.T) {
 	Convey("TestCheckMountReady", t, func() {
 		Convey("CheckMountReady success", func() {

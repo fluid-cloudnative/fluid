@@ -18,11 +18,11 @@ package base
 
 import (
 	"fmt"
+	"path/filepath"
 	"strings"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
-	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	transformerutils "github.com/fluid-cloudnative/fluid/pkg/utils/transformer"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -51,18 +51,34 @@ func GetPhysicalDatasetFromMounts(mounts []datav1alpha1.Mount) []types.Namespace
 	return physicalNamespacedName
 }
 
-func GetPhysicalDatasetSubPath(virtualDataset *datav1alpha1.Dataset) []string {
-	var paths []string
-	for _, mount := range virtualDataset.Spec.Mounts {
-		if common.IsFluidRefSchema(mount.MountPoint) {
-			datasetPath := strings.TrimPrefix(mount.MountPoint, string(common.RefSchema))
-			splitsStrings := strings.SplitAfterN(datasetPath, "/", 3)
-			if len(splitsStrings) == 3 {
-				paths = append(paths, utils.CleanSubPath(splitsStrings[2]))
-			}
-		}
+func GetPhysicalDatasetSubPath(virtualDataset *datav1alpha1.Dataset) (string, error) {
+	if len(virtualDataset.Spec.Mounts) != 1 {
+		return "", fmt.Errorf("the dataset \"%s/%s\" should only have one mount", virtualDataset.Namespace, virtualDataset.Name)
 	}
-	return paths
+
+	mount := virtualDataset.Spec.Mounts[0]
+	if !common.IsFluidRefSchema(mount.MountPoint) {
+		return "", fmt.Errorf("the dataset \"%s/%s\" should only have one mount", virtualDataset.Namespace, virtualDataset.Name)
+	}
+
+	datasetPath := strings.TrimPrefix(mount.MountPoint, string(common.RefSchema))
+	splitsStrings := strings.SplitAfterN(datasetPath, "/", 3)
+	if len(splitsStrings) != 3 {
+		return "", nil
+	}
+
+	subPath := splitsStrings[2]
+	if subPath == "" {
+		return "", nil
+	}
+
+	// The raw subPath must not escape the physical dataset's mount root. filepath.IsLocal rejects
+	// an absolute path or one that contains a "../" escape, so it cannot be used to break out.
+	if !filepath.IsLocal(subPath) {
+		return "", fmt.Errorf("the dataset \"%s/%s\" has an invalid subPath %q: must be a relative path that does not escape the mount point", virtualDataset.Namespace, virtualDataset.Name, subPath)
+	}
+
+	return subPath, nil
 }
 
 func CheckReferenceDataset(dataset *datav1alpha1.Dataset) (check bool, err error) {

@@ -255,5 +255,10 @@ func (e *ReferenceDatasetEngine) checkDatasetMountSupport(dataset *v1alpha1.Data
 		return fmt.Errorf("ThinRuntime with no profile name can only handle dataset only mounting one dataset")
 	}
 
+	// the subPath in the reference mount point must not escape the physical dataset's mount root
+	if _, err := base.GetPhysicalDatasetSubPath(dataset); err != nil {
+		return err
+	}
+
 	return nil
 }
