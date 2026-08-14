@@ -172,13 +172,16 @@ func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 		}
 	}
 
-	// 2. Reject mountPath if it is a symlink. A symlink planted under the FUSE mount point could
-	// otherwise redirect the bind mount or the symlink to an arbitrary path on the host.
-	if isSymlinkFile, err := checkSymlinkFile(mountPath); err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
-	} else if isSymlinkFile {
-		return nil, status.Errorf(codes.InvalidArgument, "reject mounting path %s because it is a symlink", mountPath)
+	// 2. Resolve the bind mount source below the FUSE mount point. Every component of subPath is
+	// opened without following symlinks, so a symlink planted anywhere under the mount point cannot
+	// redirect the mount to an arbitrary path on the host.
+	mountSource, closeMountSource, err := resolveMountSource(fluidPath, subPath)
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
+	// The source pins the resolved inode only while the descriptor is open, so it must outlive the
+	// mount call below.
+	defer closeMountSource()
 
 	// use symlink
 	if useSymlink(req) {
@@ -195,9 +198,9 @@ func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 	// }
 
 	if readOnly {
-		args = append(args, "-o", "ro", mountPath, targetPath)
+		args = append(args, "-o", "ro", mountSource, targetPath)
 	} else {
-		args = append(args, mountPath, targetPath)
+		args = append(args, mountSource, targetPath)
 	}
 	command, err := cmdguard.Command("mount", args...)
 	if err != nil {
@@ -427,22 +430,6 @@ func checkPathUnderMountRoot(attrName, path string) error {
 	}
 
 	return nil
-}
-
-// checkSymlinkFile reports whether path is a symlink. A non-existent path or a corrupted mount point
-// is treated as not a symlink. Contents under the FUSE mount point are controlled by the dataset, so
-// a symlink there must not be used as the bind mount source or the target symlink, otherwise it could
-// redirect to an arbitrary path on the host.
-func checkSymlinkFile(path string) (bool, error) {
-	fi, err := os.Lstat(path)
-	if err != nil {
-		if os.IsNotExist(err) || mount.IsCorruptedMnt(err) {
-			return false, nil
-		}
-		return false, errors.Wrapf(err, "failed to lstat path %s", path)
-	}
-
-	return fi.Mode()&os.ModeSymlink != 0, nil
 }
 
 // getRuntimeNamespacedName first checks volume context for runtime's namespace and name as a fast path.
