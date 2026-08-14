@@ -58,7 +58,7 @@ func GetPhysicalDatasetSubPath(virtualDataset *datav1alpha1.Dataset) (string, er
 
 	mount := virtualDataset.Spec.Mounts[0]
 	if !common.IsFluidRefSchema(mount.MountPoint) {
-		return "", fmt.Errorf("the dataset \"%s/%s\" should only have one mount", virtualDataset.Namespace, virtualDataset.Name)
+		return "", fmt.Errorf("the dataset \"%s/%s\" mountpoint should follow the schema \"%s\"", virtualDataset.Namespace, virtualDataset.Name, common.RefSchema)
 	}
 
 	datasetPath := strings.TrimPrefix(mount.MountPoint, string(common.RefSchema))
