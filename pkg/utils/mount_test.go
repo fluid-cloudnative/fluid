@@ -73,6 +73,44 @@ func TestMountRootWithoutEnvSet(t *testing.T) {
 	}
 }
 
+func TestNormalizeSubPath(t *testing.T) {
+	testCases := []struct {
+		subPath   string
+		expected  string
+		expectErr bool
+	}{
+		{subPath: "sub-c", expected: "sub-c"},
+		{subPath: "sub-c/sub-d", expected: "sub-c/sub-d"},
+		// A mount point written as "dataset://ns/ds//sub-c" yields a leading separator
+		{subPath: "/sub-c", expected: "sub-c"},
+		{subPath: "//sub-c", expected: "sub-c"},
+		{subPath: "/sub-c/sub-d", expected: "sub-c/sub-d"},
+		{subPath: "sub-c/", expected: "sub-c"},
+		{subPath: "./sub-c", expected: "sub-c"},
+		{subPath: "", expected: ""},
+		{subPath: "/", expected: ""},
+		{subPath: "../etc", expectErr: true},
+		{subPath: "sub-c/../../etc", expectErr: true},
+	}
+
+	for _, tc := range testCases {
+		got, err := NormalizeSubPath(tc.subPath)
+		if tc.expectErr {
+			if err == nil {
+				t.Errorf("NormalizeSubPath(%q) expected an error, but got none", tc.subPath)
+			}
+			continue
+		}
+		if err != nil {
+			t.Errorf("NormalizeSubPath(%q) got unexpected error %v", tc.subPath, err)
+			continue
+		}
+		if got != tc.expected {
+			t.Errorf("NormalizeSubPath(%q) = %q, expected %q", tc.subPath, got, tc.expected)
+		}
+	}
+}
+
 func TestCheckMountReady(t *testing.T) {
 	Convey("TestCheckMountReady", t, func() {
 		Convey("CheckMountReady success", func() {

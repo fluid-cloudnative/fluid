@@ -441,6 +441,54 @@ var _ = Describe("NodeServer", func() {
 				Expect(resp).NotTo(BeNil())
 				Expect(targetPath).To(BeADirectory())
 			})
+			It("should publish a subPath with a redundant leading separator", func() {
+				tempDir, err := os.MkdirTemp("", "node-publish-legacy-subpath-*")
+				Expect(err).NotTo(HaveOccurred())
+				DeferCleanup(func() {
+					Expect(os.RemoveAll(tempDir)).To(Succeed())
+				})
+
+				fluidPath := filepath.Join(tempDir, "runtime", testName)
+				targetPath := filepath.Join(tempDir, "target")
+				fakeMountPath := filepath.Join(tempDir, "mount")
+				originalPath := os.Getenv("PATH")
+
+				Expect(os.MkdirAll(filepath.Join(fluidPath, "sub-c"), 0750)).To(Succeed())
+				Expect(os.Setenv(utils.MountRoot, tempDir)).To(Succeed())
+				DeferCleanup(func() {
+					Expect(os.Unsetenv(utils.MountRoot)).To(Succeed())
+				})
+
+				isMountedPatch := gomonkey.ApplyFunc(utils.IsMounted, func(absPath string) (bool, error) {
+					return false, os.ErrNotExist
+				})
+				defer isMountedPatch.Reset()
+
+				mountReadyPatch := gomonkey.ApplyFunc(utils.CheckMountReadyAndSubPathExist, func(fluidPath string, mountType string, subPath string) error {
+					return nil
+				})
+				defer mountReadyPatch.Reset()
+
+				Expect(os.WriteFile(fakeMountPath, []byte("#!/bin/sh\nexit 0\n"), 0755)).To(Succeed())
+				Expect(os.Setenv("PATH", tempDir+string(os.PathListSeparator)+originalPath)).To(Succeed())
+				DeferCleanup(func() {
+					Expect(os.Setenv("PATH", originalPath)).To(Succeed())
+				})
+
+				req := &csi.NodePublishVolumeRequest{
+					VolumeId:   testVolumeID,
+					TargetPath: targetPath,
+					VolumeContext: map[string]string{
+						common.VolumeAttrFluidPath:    fluidPath,
+						common.VolumeAttrFluidSubPath: "/sub-c",
+					},
+				}
+
+				resp, err := ns.NodePublishVolume(context.Background(), req)
+
+				Expect(err).NotTo(HaveOccurred())
+				Expect(resp).NotTo(BeNil())
+			})
 		})
 
 		Context("when skip check mount ready is set", func() {

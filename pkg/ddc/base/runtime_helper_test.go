@@ -165,6 +165,31 @@ var _ = Describe("RuntimeHelper", func() {
 						VolumeName: "default-fluid-dataset-subpath",
 					},
 				},
+				&corev1.PersistentVolumeClaim{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:        "fluid-dataset-legacy-subpath",
+						Namespace:   testNamespace,
+						Annotations: common.GetExpectedFluidAnnotations(),
+					},
+					Spec: corev1.PersistentVolumeClaimSpec{
+						VolumeName: "default-fluid-dataset-legacy-subpath",
+					},
+				},
+				&corev1.PersistentVolume{
+					ObjectMeta: metav1.ObjectMeta{Name: "default-fluid-dataset-legacy-subpath"},
+					Spec: corev1.PersistentVolumeSpec{
+						PersistentVolumeSource: corev1.PersistentVolumeSource{
+							CSI: &corev1.CSIPersistentVolumeSource{
+								Driver: "fuse.csi.fluid.io",
+								VolumeAttributes: map[string]string{
+									common.VolumeAttrFluidPath:    "/runtime-mnt/jindo/big-data/nofounddataset/jindofs-fuse",
+									common.VolumeAttrMountType:    common.JindoRuntime,
+									common.VolumeAttrFluidSubPath: "/subtest",
+								},
+							},
+						},
+					},
+				},
 				&corev1.PersistentVolume{
 					ObjectMeta: metav1.ObjectMeta{Name: "default-fluid-dataset"},
 					Spec: corev1.PersistentVolumeSpec{
@@ -293,6 +318,26 @@ var _ = Describe("RuntimeHelper", func() {
 			})
 
 			It("should return the correct mount info with subpath", func() {
+				path, mountType, subpath, err := runtimeInfo.getMountInfo()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(path).To(Equal("/runtime-mnt/jindo/big-data/nofounddataset/jindofs-fuse"))
+				Expect(mountType).To(Equal(common.JindoRuntime))
+				Expect(subpath).To(Equal("subtest"))
+			})
+		})
+
+		Context("when the PV has a subpath with a redundant leading separator", func() {
+			BeforeEach(func() {
+				fakeClient := fake.NewFakeClientWithScheme(scheme, objs...)
+				runtimeInfo = RuntimeInfo{
+					name:        "fluid-dataset-legacy-subpath",
+					namespace:   testNamespace,
+					runtimeType: common.JindoRuntime,
+					apiReader:   fakeClient,
+				}
+			})
+
+			It("should normalize the subpath instead of failing", func() {
 				path, mountType, subpath, err := runtimeInfo.getMountInfo()
 				Expect(err).NotTo(HaveOccurred())
 				Expect(path).To(Equal("/runtime-mnt/jindo/big-data/nofounddataset/jindofs-fuse"))

@@ -72,7 +72,7 @@ fi
 
 count=1
 limit=30
-while ! cat /proc/self/mountinfo | grep $ConditionPathIsMountPoint | grep $MountType
+while ! cat /proc/self/mountinfo | grep -F "$ConditionPathIsMountPoint" | grep -F "$MountType"
 do
     sleep 1
     count=¬expr $count + 1¬
@@ -86,7 +86,7 @@ done
 # different with csi, as here the mount point is the parent dir of the fuse mount point, 
 subpath_check_count=1
 subpath_check_limit=30
-while [ ! -e  $ConditionPathIsMountPoint/*/$SubPath ]
+while ! ls -d "$ConditionPathIsMountPoint"/*/"$SubPath" >/dev/null 2>&1
 do
     sleep 1
     subpath_check_count=¬expr $subpath_check_count + 1¬

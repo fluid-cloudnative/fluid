@@ -144,10 +144,9 @@ func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 
 	mountPath := fluidPath
 	if subPath != "" {
-		// filepath.IsLocal rejects an absolute subPath or one that escapes the FUSE mount point
-		// (e.g. contains "../"), so it cannot be used to break out of fluidPath.
-		if !filepath.IsLocal(subPath) {
-			return nil, status.Errorf(codes.InvalidArgument, "%s must be a relative path that does not escape the mount point, but got \"%s\"", common.VolumeAttrFluidSubPath, subPath)
+		subPath, err = utils.NormalizeSubPath(subPath)
+		if err != nil {
+			return nil, status.Errorf(codes.InvalidArgument, "invalid %s: %v", common.VolumeAttrFluidSubPath, err)
 		}
 		mountPath = filepath.Join(mountPath, subPath)
 	}

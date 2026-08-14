@@ -18,11 +18,11 @@ package base
 
 import (
 	"fmt"
-	"path/filepath"
 	"strings"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	transformerutils "github.com/fluid-cloudnative/fluid/pkg/utils/transformer"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -72,13 +72,12 @@ func GetPhysicalDatasetSubPath(virtualDataset *datav1alpha1.Dataset) (string, er
 		return "", nil
 	}
 
-	// The raw subPath must not escape the physical dataset's mount root. filepath.IsLocal rejects
-	// an absolute path or one that contains a "../" escape, so it cannot be used to break out.
-	if !filepath.IsLocal(subPath) {
-		return "", fmt.Errorf("the dataset \"%s/%s\" has an invalid subPath %q: must be a relative path that does not escape the mount point", virtualDataset.Namespace, virtualDataset.Name, subPath)
+	normalized, err := utils.NormalizeSubPath(subPath)
+	if err != nil {
+		return "", fmt.Errorf("the dataset \"%s/%s\" has an invalid subPath: %w", virtualDataset.Namespace, virtualDataset.Name, err)
 	}
 
-	return subPath, nil
+	return normalized, nil
 }
 
 func CheckReferenceDataset(dataset *datav1alpha1.Dataset) (check bool, err error) {

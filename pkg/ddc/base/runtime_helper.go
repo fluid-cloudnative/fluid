@@ -18,7 +18,6 @@ package base
 
 import (
 	"fmt"
-	"path/filepath"
 	"time"
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
@@ -109,9 +108,12 @@ func (info *RuntimeInfo) getMountInfo() (path, mountType, subpath string, err er
 		path = pv.Spec.CSI.VolumeAttributes[common.VolumeAttrFluidPath]
 		mountType = pv.Spec.CSI.VolumeAttributes[common.VolumeAttrMountType]
 		subpath = pv.Spec.CSI.VolumeAttributes[common.VolumeAttrFluidSubPath]
-		if len(subpath) != 0 && !filepath.IsLocal(subpath) {
-			err = fmt.Errorf("the pv %s has an invalid subPath %q: must be a relative path that does not escape the mount point", pv.Name, subpath)
-			return
+		if len(subpath) != 0 {
+			subpath, err = utils.NormalizeSubPath(subpath)
+			if err != nil {
+				err = errors.Wrapf(err, "the pv %s has an invalid subPath", pv.Name)
+				return
+			}
 		}
 	} else {
 		err = fmt.Errorf("the pv %s is not created by fluid", pv.Name)

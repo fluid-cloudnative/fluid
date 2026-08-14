@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 
 	"github.com/fluid-cloudnative/fluid/pkg/utils/cmdguard"
@@ -39,6 +40,26 @@ func GetMountRoot() (string, error) {
 		return mountRoot, err
 	}
 	return mountRoot, nil
+}
+
+// NormalizeSubPath cleans a Fluid subPath and rejects one that escapes its mount root.
+//
+// Leading separators are stripped before validation: GetPhysicalDatasetSubPath derives the subPath
+// with strings.SplitAfterN, so a mount point written as "dataset://ns/ds//sub" yields "/sub". Such a
+// value used to mount fine because the extra separator collapsed on concatenation, meaning PVs
+// carrying it already exist and must keep working. Traversal that still escapes after cleaning is
+// returned as an error instead of being clamped, so the caller can surface it.
+func NormalizeSubPath(subPath string) (string, error) {
+	cleaned := filepath.Clean(strings.TrimLeft(subPath, "/"))
+	if cleaned == "." {
+		return "", nil
+	}
+
+	if !filepath.IsLocal(cleaned) {
+		return "", fmt.Errorf("subPath %q must be a relative path that does not escape the mount point", subPath)
+	}
+
+	return cleaned, nil
 }
 
 func CheckMountReadyAndSubPathExist(fluidPath string, mountType string, subPath string) (err error) {
