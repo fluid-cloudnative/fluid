@@ -264,7 +264,7 @@ var _ = Describe("Application Injector Related Tests", Label("pkg.application.in
 		// Verify post start hook
 		Expect(out.Spec.Containers[containerIdx].Lifecycle.PostStart).To(Equal(&corev1.LifecycleHandler{
 			Exec: &corev1.ExecAction{
-				Command: []string{"bash", "-c", fmt.Sprintf("time /check-mount.sh /runtime-mnt/thin/%s/%s/ thin ", dataset.Namespace, dataset.Name)},
+				Command: []string{"bash", "-c", `time "$0" "$@"`, "/check-mount.sh", fmt.Sprintf("/runtime-mnt/thin/%s/%s/", dataset.Namespace, dataset.Name), "thin", ""},
 			},
 		}))
 

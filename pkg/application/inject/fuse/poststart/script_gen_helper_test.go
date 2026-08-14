@@ -17,8 +17,6 @@ limitations under the License.
 package poststart
 
 import (
-	"fmt"
-
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -339,15 +337,18 @@ var _ = Describe("ScriptGeneratorForApp", func() {
 
 			Expect(handler).NotTo(BeNil())
 			Expect(handler.Exec).NotTo(BeNil())
-			expectedCmd := fmt.Sprintf("time %s %s %s", appScriptPath, "/data1:/data2", "alluxio:jindo")
-			Expect(handler.Exec.Command).To(Equal([]string{"bash", "-c", expectedCmd}))
+			Expect(handler.Exec.Command).To(Equal([]string{
+				"bash", "-c", `time "$0" "$@"`, appScriptPath, "/data1:/data2", "alluxio:jindo",
+			}))
 		})
 
-		It("should include the script path in the command", func() {
+		It("should pass arguments as argv instead of interpolating them into the shell string", func() {
 			g := NewScriptGeneratorForApp("default")
-			handler := g.GetPostStartCommand("/mnt/data", "juicefs")
+			handler := g.GetPostStartCommand("/mnt/data; touch /tmp/injected", "juicefs")
 
-			Expect(handler.Exec.Command[2]).To(ContainSubstring(appScriptPath))
+			Expect(handler.Exec.Command[2]).NotTo(ContainSubstring("touch"))
+			Expect(handler.Exec.Command[3]).To(Equal(appScriptPath))
+			Expect(handler.Exec.Command[4]).To(Equal("/mnt/data; touch /tmp/injected"))
 		})
 	})
 
