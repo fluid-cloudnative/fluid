@@ -338,6 +338,71 @@ var _ = Describe("CacheEngine Sync Tests", Label("pkg.ddc.cache.engine.sync_test
 			})
 		})
 
+		Context("when runtime is ready but dataset was left Failed by a previous outage", func() {
+			BeforeEach(func() {
+				dataset.Status.Phase = datav1alpha1.FailedDatasetPhase
+
+				masterReplicas := int32(1)
+				masterSts := &workloadv1alpha1.AdvancedStatefulSet{
+					ObjectMeta: metav1.ObjectMeta{Name: "test-runtime-master", Namespace: "default"},
+					Spec: workloadv1alpha1.AdvancedStatefulSetSpec{
+						Replicas: &masterReplicas,
+						Template: corev1.PodTemplateSpec{
+							Spec: corev1.PodSpec{
+								Containers: []corev1.Container{{Name: "master", Image: "test-master:latest"}},
+							},
+						},
+					},
+					Status: workloadv1alpha1.AdvancedStatefulSetStatus{ReadyReplicas: 1, CurrentReplicas: 1, AvailableReplicas: 1},
+				}
+
+				workerReplicas := int32(2)
+				workerSts := &workloadv1alpha1.AdvancedStatefulSet{
+					ObjectMeta: metav1.ObjectMeta{Name: "test-runtime-worker", Namespace: "default"},
+					Spec: workloadv1alpha1.AdvancedStatefulSetSpec{
+						Replicas: &workerReplicas,
+						Template: corev1.PodTemplateSpec{
+							Spec: corev1.PodSpec{
+								Containers: []corev1.Container{{Name: "worker", Image: "test-worker:latest"}},
+							},
+						},
+					},
+					Status: workloadv1alpha1.AdvancedStatefulSetStatus{ReadyReplicas: 2, CurrentReplicas: 2, AvailableReplicas: 2},
+				}
+
+				clientDs := &appsv1.DaemonSet{
+					ObjectMeta: metav1.ObjectMeta{Name: "test-runtime-client", Namespace: "default"},
+					Spec: appsv1.DaemonSetSpec{
+						Template: corev1.PodTemplateSpec{
+							Spec: corev1.PodSpec{
+								Containers: []corev1.Container{{Name: "client", Image: "test-client:latest"}},
+							},
+						},
+					},
+					Status: appsv1.DaemonSetStatus{NumberReady: 0, DesiredNumberScheduled: 0},
+				}
+
+				engine.Client = fake.NewClientBuilder().
+					WithScheme(CacheEngineTestScheme).
+					WithObjects(dataset, runtimeObj, runtimeClass, masterSts, workerSts, clientDs).
+					WithStatusSubresource(dataset, runtimeObj).
+					Build()
+			})
+
+			It("should restore the dataset phase to Bound", func() {
+				err := engine.Sync(ctx)
+				Expect(err).NotTo(HaveOccurred())
+
+				updatedDataset := &datav1alpha1.Dataset{}
+				err = engine.Client.Get(context.Background(), types.NamespacedName{
+					Name:      "test-runtime",
+					Namespace: "default",
+				}, updatedDataset)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(updatedDataset.Status.Phase).To(Equal(datav1alpha1.BoundDatasetPhase))
+			})
+		})
+
 		Context("when runtime is ready with ReportSummary configured", func() {
 			var patches *gomonkey.Patches
 
