@@ -1,0 +1,29 @@
+# Negative case: without a client component there is no FUSE mount point, so an
+# application pod that mounts this Dataset's PVC is bound to fail. Fluid still
+# creates the PVC/PV and reports them as Bound, which easily gives the
+# impression that they can be mounted, so the docs call this out in their FAQ
+# and this test pins the behaviour down.
+#
+# This pod is expected never to start; it is deleted as soon as the check is done.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: mooncake-bad-mount
+  namespace: default
+spec:
+  # The mount keeps being retried anyway, no need to have kubelet restart the
+  # container over and over
+  restartPolicy: Never
+  automountServiceAccountToken: false
+  containers:
+    - name: app
+      image: busybox:1.36
+      imagePullPolicy: IfNotPresent
+      command: ["sleep", "infinity"]
+      volumeMounts:
+        - name: mc-vol
+          mountPath: /data
+  volumes:
+    - name: mc-vol
+      persistentVolumeClaim:
+        claimName: mooncake-demo
