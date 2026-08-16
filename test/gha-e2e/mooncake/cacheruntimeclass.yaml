@@ -1,0 +1,92 @@
+# Mooncake is a cache system without POSIX mount semantics: applications talk to
+# the cache service directly through its own client, so this topology declares
+# only master and worker and omits the client component that would do the
+# mounting. That is exactly the scenario this case guards: the controller must
+# not panic when the client component is omitted.
+#
+# Note: do not declare resources on the containers here. When the
+# CacheRuntimeClass template sets resources but the CacheRuntime does not,
+# syncRuntimeSpec passes the zero value to updateResources, which overwrites the
+# template's resources with an empty value. That has two consequences:
+#   1. the resources declared in the template are silently dropped and the pod
+#      ends up with {};
+#   2. the patch triggers one ASTS rollout, during which the runtime is briefly
+#      not-ready, and once the Dataset flips to Failed it does not recover on its
+#      own (even after the component phase returns to Ready).
+apiVersion: data.fluid.io/v1alpha1
+kind: CacheRuntimeClass
+metadata:
+  name: mooncake-demo
+fileSystemType: mooncakefs
+topology:
+  master:
+    service:
+      headless: {}
+    executionEntries:
+      reportSummary:
+        command:
+          - bash
+          - -c
+          - /reportSummary.sh
+        timeout: 30
+    template:
+      spec:
+        restartPolicy: Always
+        containers:
+          - name: master
+            image: fluidcloudnative/mooncake:e2e
+            command:
+              - /custom-entrypoint.sh
+            args:
+              - master
+              - start
+            imagePullPolicy: IfNotPresent
+            readinessProbe:
+              tcpSocket:
+                port: 50051
+              initialDelaySeconds: 10
+              periodSeconds: 5
+              failureThreshold: 12
+            env:
+              - name: POD_NAME
+                valueFrom:
+                  fieldRef:
+                    fieldPath: metadata.name
+            ports:
+              - containerPort: 50051
+                name: rpc
+              - containerPort: 8080
+                name: metadata
+              - containerPort: 9003
+                name: metrics
+  worker:
+    service:
+      headless: {}
+    template:
+      spec:
+        restartPolicy: Always
+        containers:
+          - name: worker
+            image: fluidcloudnative/mooncake:e2e
+            command:
+              - /custom-entrypoint.sh
+            args:
+              - worker
+              - start
+            imagePullPolicy: IfNotPresent
+            readinessProbe:
+              tcpSocket:
+                port: 50052
+              initialDelaySeconds: 5
+              periodSeconds: 5
+              failureThreshold: 12
+            env:
+              - name: POD_NAME
+                valueFrom:
+                  fieldRef:
+                    fieldPath: metadata.name
+            ports:
+              - containerPort: 50052
+                name: data
+              - containerPort: 9300
+                name: http

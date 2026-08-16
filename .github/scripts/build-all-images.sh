@@ -11,6 +11,7 @@ get_image_tag() {
 
 build_images() {
     oss_emulator_img="${IMG_REPO}/oss-emulator:e2e"
+    mooncake_img="${IMG_REPO}/mooncake:e2e"
     images=(
         "${IMG_REPO}/dataset-controller:${IMAGE_TAG}"
         "${IMG_REPO}/application-controller:${IMAGE_TAG}"
@@ -23,10 +24,12 @@ build_images() {
         "${IMG_REPO}/fluid-webhook:${IMAGE_TAG}"
         "${IMG_REPO}/fluid-crd-upgrader:${IMAGE_TAG}"
         "${oss_emulator_img}"
+        "${mooncake_img}"
     )
 
     make docker-build-all
     docker build -t "${oss_emulator_img}" test/gha-e2e/jindo/oss-emulator
+    docker build -t "${mooncake_img}" test/gha-e2e/mooncake/image
 
     echo ">>> Cleaning docker build caches before loading images to free disk space..."
     docker builder prune -a -f
