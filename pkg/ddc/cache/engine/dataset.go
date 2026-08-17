@@ -45,8 +45,19 @@ func (e *CacheEngine) BindToDataset(runtime *datav1alpha1.CacheRuntime, runtimeC
 func (e *CacheEngine) UpdateDatasetStatus(phase datav1alpha1.DatasetPhase, runtime *datav1alpha1.CacheRuntime, runtimeClass *datav1alpha1.CacheRuntimeClass) (err error) {
 	var cacheStates common.CacheStateList
 
-	// only update cache states for BoundDatasetPhase
-	if phase == datav1alpha1.BoundDatasetPhase {
+	current, err := utils.GetDataset(e.Client, e.name, e.namespace)
+	if err != nil {
+		return err
+	}
+	if current.Status.Phase == phase {
+		// already in the desired phase, nothing to do
+		return nil
+	}
+
+	// GetCacheStates execs into the master pod with a floor of MinExecutionTimeoutSeconds,
+	// so keep it behind the same rate limiter that bounds other engine RPCs, and only
+	// attempt it for BoundDatasetPhase.
+	if phase == datav1alpha1.BoundDatasetPhase && e.permitSync() {
 		e.Log.V(1).Info("Start to update cache states")
 		cacheStates, err = e.GetCacheStates(runtime, runtimeClass)
 		if err != nil {

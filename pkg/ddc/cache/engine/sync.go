@@ -99,7 +99,9 @@ func (e *CacheEngine) Sync(ctx cruntime.ReconcileRequestContext) (err error) {
 		if dataset.Status.Phase == datav1alpha1.FailedDatasetPhase {
 			// the runtime recovered from a previous outage but the dataset was left in Failed
 			// phase because the phase is otherwise only restored to Bound by the mount flow,
-			// which does not run on a normal reconcile. Restore it here.
+			// which does not run on a normal reconcile. Restore it here. UpdateDatasetStatus
+			// keeps this cheap: it only execs into the master pod for cache states when the
+			// sync limiter permits it.
 			e.Log.Info("runtime is ready again, restoring dataset phase from Failed to Bound")
 			err = e.UpdateDatasetStatus(datav1alpha1.BoundDatasetPhase, runtime, runtimeClass)
 			if err != nil {

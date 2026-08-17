@@ -22,6 +22,7 @@ import (
 	"time"
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
 
 	"github.com/agiledragon/gomonkey/v2"
 	"github.com/go-logr/logr"
@@ -295,7 +296,7 @@ var _ = Describe("CacheEngine Sync Tests", Label("pkg.ddc.cache.engine.sync_test
 				engine.Client = fake.NewClientBuilder().
 					WithScheme(scheme).
 					WithObjects(dataset, runtimeObj, runtimeClass, configMap, masterSts, workerSts, clientDs).
-					WithStatusSubresource(runtimeObj).
+					WithStatusSubresource(dataset, runtimeObj).
 					Build()
 			})
 
@@ -341,6 +342,12 @@ var _ = Describe("CacheEngine Sync Tests", Label("pkg.ddc.cache.engine.sync_test
 		Context("when runtime is ready but dataset was left Failed by a previous outage", func() {
 			BeforeEach(func() {
 				dataset.Status.Phase = datav1alpha1.FailedDatasetPhase
+				dataset.Status.Conditions = []datav1alpha1.DatasetCondition{
+					{
+						Type:   datav1alpha1.DatasetReady,
+						Status: corev1.ConditionFalse,
+					},
+				}
 
 				masterReplicas := int32(1)
 				masterSts := &workloadv1alpha1.AdvancedStatefulSet{
@@ -400,6 +407,30 @@ var _ = Describe("CacheEngine Sync Tests", Label("pkg.ddc.cache.engine.sync_test
 				}, updatedDataset)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(updatedDataset.Status.Phase).To(Equal(datav1alpha1.BoundDatasetPhase))
+
+				idx, cond := utils.GetDatasetCondition(updatedDataset.Status.Conditions, datav1alpha1.DatasetReady)
+				Expect(idx).NotTo(Equal(-1))
+				Expect(cond.Status).To(Equal(corev1.ConditionTrue))
+			})
+
+			Context("and the sync limiter is closed", func() {
+				BeforeEach(func() {
+					engine.syncRetryDuration = defaultSyncRetryDuration
+					engine.timeOfLastSync = time.Now()
+				})
+
+				It("should still restore the dataset phase to Bound without fetching cache states", func() {
+					err := engine.Sync(ctx)
+					Expect(err).NotTo(HaveOccurred())
+
+					updatedDataset := &datav1alpha1.Dataset{}
+					err = engine.Client.Get(context.Background(), types.NamespacedName{
+						Name:      "test-runtime",
+						Namespace: "default",
+					}, updatedDataset)
+					Expect(err).NotTo(HaveOccurred())
+					Expect(updatedDataset.Status.Phase).To(Equal(datav1alpha1.BoundDatasetPhase))
+				})
 			})
 		})
 
