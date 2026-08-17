@@ -39,10 +39,13 @@ func (e *CacheEngine) BindToDataset(runtime *datav1alpha1.CacheRuntime, runtimeC
 		return
 	}
 
-	return e.UpdateDatasetStatus(datav1alpha1.BoundDatasetPhase, runtime, runtimeClass)
+	return e.UpdateDatasetStatus(datav1alpha1.BoundDatasetPhase, runtime, runtimeClass, true)
 }
 
-func (e *CacheEngine) UpdateDatasetStatus(phase datav1alpha1.DatasetPhase, runtime *datav1alpha1.CacheRuntime, runtimeClass *datav1alpha1.CacheRuntimeClass) (err error) {
+// UpdateDatasetStatus transitions the Dataset to phase. fetchCacheStates controls whether it
+// execs into the master pod for fresh cache states (only relevant for BoundDatasetPhase); the
+// caller decides this so that rate-limiting via permitSync stays a concern of Sync alone.
+func (e *CacheEngine) UpdateDatasetStatus(phase datav1alpha1.DatasetPhase, runtime *datav1alpha1.CacheRuntime, runtimeClass *datav1alpha1.CacheRuntimeClass, fetchCacheStates bool) (err error) {
 	var cacheStates common.CacheStateList
 
 	current, err := utils.GetDataset(e.Client, e.name, e.namespace)
@@ -55,9 +58,9 @@ func (e *CacheEngine) UpdateDatasetStatus(phase datav1alpha1.DatasetPhase, runti
 	}
 
 	// GetCacheStates execs into the master pod with a floor of MinExecutionTimeoutSeconds,
-	// so keep it behind the same rate limiter that bounds other engine RPCs, and only
-	// attempt it for BoundDatasetPhase.
-	if phase == datav1alpha1.BoundDatasetPhase && e.permitSync() {
+	// so callers keep it behind the same rate limiter that bounds other engine RPCs, and it's
+	// only attempted for BoundDatasetPhase.
+	if phase == datav1alpha1.BoundDatasetPhase && fetchCacheStates {
 		e.Log.V(1).Info("Start to update cache states")
 		cacheStates, err = e.GetCacheStates(runtime, runtimeClass)
 		if err != nil {
