@@ -19,6 +19,7 @@ package engine
 import (
 	"context"
 	"os"
+	"reflect"
 	"time"
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
@@ -414,9 +415,28 @@ var _ = Describe("CacheEngine Sync Tests", Label("pkg.ddc.cache.engine.sync_test
 			})
 
 			Context("and the sync limiter is closed", func() {
+				var patches *gomonkey.Patches
+				var getCacheStatesCalled bool
+
 				BeforeEach(func() {
 					engine.syncRetryDuration = defaultSyncRetryDuration
 					engine.timeOfLastSync = time.Now()
+
+					getCacheStatesCalled = false
+					// Patched at the GetCacheStates level, not NewCacheFileUtil: this Context has no
+					// ReportSummary execution entries configured, so a real call would fail before ever
+					// reaching the exec layer. The point here is only whether GetCacheStates is invoked at all.
+					patches = gomonkey.ApplyMethod(reflect.TypeOf(engine), "GetCacheStates",
+						func(_ *CacheEngine, _ *datav1alpha1.CacheRuntime, _ *datav1alpha1.CacheRuntimeClass) (common.CacheStateList, error) {
+							getCacheStatesCalled = true
+							return common.CacheStateList{}, nil
+						})
+				})
+
+				AfterEach(func() {
+					if patches != nil {
+						patches.Reset()
+					}
 				})
 
 				It("should still restore the dataset phase to Bound without fetching cache states", func() {
@@ -430,6 +450,7 @@ var _ = Describe("CacheEngine Sync Tests", Label("pkg.ddc.cache.engine.sync_test
 					}, updatedDataset)
 					Expect(err).NotTo(HaveOccurred())
 					Expect(updatedDataset.Status.Phase).To(Equal(datav1alpha1.BoundDatasetPhase))
+					Expect(getCacheStatesCalled).To(BeFalse(), "GetCacheStates should be skipped while the sync limiter is closed")
 				})
 			})
 		})
