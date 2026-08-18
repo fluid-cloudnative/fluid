@@ -43,6 +43,7 @@
 + 进阶使用
   - [使用内存加速和SSD加速配置](samples/accelerate_data_by_mem_or_ssd.md)
   - [AlluxioRuntime分层存储配置](samples/tieredstore_config.md)
+  - [CacheRuntime分层存储配置](userguide/cache_runtime_tieredstore.md)
   - [Alluxio S3 高并发读调优](samples/alluxio_s3_high_concurrency.md)
   - [通过Webhook机制优化Pod调度](operation/pod_schedule_optimization.md)
   - [基于Runtime分层位置信息的应用Pod调度](operation/tiered_locality_schedule.md)
