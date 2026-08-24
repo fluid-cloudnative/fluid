@@ -18,9 +18,15 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils/testutil"
 )
 
+// CheckRuntimeReady checks if the VineyardRuntime is ready to serve data operations.
+// Readiness is determined by worker availability. Fuse components are intentionally
+// excluded because fluid treats fuse as always-ready by design (see pkg/ctrl/fuse.go).
 func (e *VineyardEngine) CheckRuntimeReady() (ready bool) {
-	//TODO implement me
-	return true
+	workerReady, err := e.CheckWorkersReady()
+	if err != nil {
+		return false
+	}
+	return workerReady
 }
 
 // getRuntimeInfo gets runtime info
