@@ -1,0 +1,66 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: scaledown-minio-secret
+stringData:
+  aws.accessKeyId: minioadmin
+  aws.secretKey: minioadmin
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: scaledown-minio
+spec:
+  type: ClusterIP
+  ports:
+    - port: 9000
+      targetPort: 9000
+      protocol: TCP
+  selector:
+    app: scaledown-minio
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: scaledown-minio
+spec:
+  selector:
+    matchLabels:
+      app: scaledown-minio
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: scaledown-minio
+    spec:
+      containers:
+      - name: minio
+        # MinIO stopped publishing to Docker Hub and archived minio/minio in
+        # early 2026; :latest is frozen at its final push rather than a
+        # moving target, but pin explicitly anyway so this test doesn't
+        # depend on however Docker Hub ends up serving :latest for an
+        # archived repo.
+        image: minio/minio:RELEASE.2025-09-07T16-13-09Z
+        imagePullPolicy: IfNotPresent
+        resources:
+          limits:
+            memory: "512Mi"
+        args:
+        - server
+        - /data
+        env:
+        - name: MINIO_ROOT_USER
+          value: "minioadmin"
+        - name: MINIO_ROOT_PASSWORD
+          value: "minioadmin"
+        ports:
+        - containerPort: 9000
+        readinessProbe:
+          httpGet:
+            path: /minio/health/ready
+            port: 9000
+          initialDelaySeconds: 1
+          periodSeconds: 2
+          failureThreshold: 30
+      automountServiceAccountToken: false
