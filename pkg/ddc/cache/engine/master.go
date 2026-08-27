@@ -84,8 +84,7 @@ func (e *CacheEngine) setupMasterInternal(masterValue *common.CacheRuntimeCompon
 		runtimeToUpdate := runtime.DeepCopy()
 		runtimeToUpdate.Status.Master = masterStatus
 
-		// TODO(cache runtime): figure out how to use this selector
-		// runtimeToUpdate.Status.Selector = e.getWorkerSelectors()
+		runtimeToUpdate.Status.Selector = e.getWorkerSelectors()
 
 		if len(runtimeToUpdate.Status.Conditions) == 0 {
 			runtimeToUpdate.Status.Conditions = []datav1alpha1.RuntimeCondition{}

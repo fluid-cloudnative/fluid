@@ -104,9 +104,14 @@ function curvine_e2e() {
     set -e
     bash test/gha-e2e/curvine/test.sh
 }
+function cache_selector_e2e() {
+    set -e
+    bash test/gha-e2e/cacheruntime-selector/test.sh
+}
 
 check_control_plane_status
 alluxio_e2e
 jindo_e2e
 juicefs_e2e
 curvine_e2e
+cache_selector_e2e
