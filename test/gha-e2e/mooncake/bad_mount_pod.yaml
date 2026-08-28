@@ -20,6 +20,16 @@ spec:
       image: busybox:1.36
       imagePullPolicy: IfNotPresent
       command: ["sleep", "infinity"]
+      # This pod never starts, so the limits are only here to satisfy the
+      # cluster policies a reviewer's environment may enforce; the values are
+      # nominal.
+      resources:
+        limits:
+          memory: 64Mi
+          ephemeral-storage: 64Mi
+        requests:
+          memory: 32Mi
+          ephemeral-storage: 32Mi
       volumeMounts:
         - name: mc-vol
           mountPath: /data

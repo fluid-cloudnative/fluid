@@ -41,4 +41,11 @@ COPY custom-entrypoint.sh /custom-entrypoint.sh
 COPY reportSummary.sh /reportSummary.sh
 RUN chmod +x /custom-entrypoint.sh /reportSummary.sh
 
+# Run the components as an unprivileged user. Every listening port is above
+# 1024, the components write nothing to the container filesystem, and the tiered
+# store quota is handed to Mooncake as a process memory segment rather than a
+# directory, so no root capability is required at runtime.
+RUN useradd --create-home --uid 10001 --user-group mooncake
+USER 10001
+
 CMD ["python3"]
