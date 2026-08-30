@@ -23,7 +23,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	"k8s.io/client-go/kubernetes"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 
@@ -41,7 +40,7 @@ const (
 type driver struct {
 	client               client.Client
 	apiReader            client.Reader
-	nodeAuthorizedClient *kubernetes.Clientset
+	nodeAuthorizedClient NodeAuthorizedClient
 	csiDriver            *csicommon.CSIDriver
 	nodeId, endpoint     string
 
@@ -50,7 +49,7 @@ type driver struct {
 
 var _ manager.Runnable = &driver{}
 
-func NewDriver(nodeID, endpoint string, client client.Client, apiReader client.Reader, nodeAuthorizedClient *kubernetes.Clientset, locks *utils.VolumeLocks) *driver {
+func NewDriver(nodeID, endpoint string, client client.Client, apiReader client.Reader, nodeAuthorizedClient NodeAuthorizedClient, locks *utils.VolumeLocks) *driver {
 	glog.Infof("Driver: %v version: %v", driverName, version)
 
 	proto, addr := utils.SplitSchemaAddr(endpoint)
