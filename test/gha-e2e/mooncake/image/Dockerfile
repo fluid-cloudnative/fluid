@@ -23,11 +23,17 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # Install from wheels only (--only-binary) so no package build or setup script
-# runs at install time, and pin every resolved version explicitly so the image
-# e2e builds stays the same from run to run.
-RUN pip install --no-cache-dir --only-binary=:all: \
-        mooncake-transfer-engine-non-cuda==0.3.12.post1 \
-        nvidia-cuda-runtime-cu12==12.8.90
+# runs at install time, and from a hash-locked requirements file so the image
+# e2e builds stays the same from run to run. Pinning only the two top-level
+# packages would not be enough: Mooncake declares aiohttp, msgpack and requests
+# without an upper bound, so pip would keep resolving those (and their own
+# transitive dependencies) afresh on every build. --require-hashes makes pip
+# fail loudly on anything the lock file does not cover; see requirements.txt
+# for how to regenerate it.
+COPY requirements.txt /tmp/requirements.txt
+RUN pip install --no-cache-dir --only-binary=:all: --require-hashes \
+        -r /tmp/requirements.txt \
+    && rm /tmp/requirements.txt
 
 ENV LD_LIBRARY_PATH=/usr/local/lib/python3.12/site-packages/nvidia/cuda_runtime/lib:$LD_LIBRARY_PATH
 

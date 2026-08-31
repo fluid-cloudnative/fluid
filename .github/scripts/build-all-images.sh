@@ -10,8 +10,6 @@ get_image_tag() {
 }
 
 build_images() {
-    oss_emulator_img="${IMG_REPO}/oss-emulator:e2e"
-    mooncake_img="${IMG_REPO}/mooncake:e2e"
     images=(
         "${IMG_REPO}/dataset-controller:${IMAGE_TAG}"
         "${IMG_REPO}/application-controller:${IMAGE_TAG}"
@@ -23,13 +21,24 @@ build_images() {
         "${IMG_REPO}/fluid-csi:${IMAGE_TAG}"
         "${IMG_REPO}/fluid-webhook:${IMAGE_TAG}"
         "${IMG_REPO}/fluid-crd-upgrader:${IMAGE_TAG}"
-        "${oss_emulator_img}"
-        "${mooncake_img}"
     )
 
     make docker-build-all
-    docker build -t "${oss_emulator_img}" test/gha-e2e/jindo/oss-emulator
-    docker build -t "${mooncake_img}" test/gha-e2e/mooncake/image
+
+    # The two images below back the functionality e2e suites in test/gha-e2e and
+    # nothing else. Each costs a build plus a kind load onto the node, and the
+    # mooncake one is ~470MB, so they are opt-in: the backward-compatibility
+    # workflow shares this script but exercises Alluxio only, and would
+    # otherwise pay for both on every job of its five-version matrix.
+    if [[ "${WITH_E2E_TEST_IMAGES:-false}" == "true" ]]; then
+        oss_emulator_img="${IMG_REPO}/oss-emulator:e2e"
+        mooncake_img="${IMG_REPO}/mooncake:e2e"
+        docker build -t "${oss_emulator_img}" test/gha-e2e/jindo/oss-emulator
+        docker build -t "${mooncake_img}" test/gha-e2e/mooncake/image
+        images+=("${oss_emulator_img}" "${mooncake_img}")
+    else
+        echo ">>> Skipping e2e-only test images (set WITH_E2E_TEST_IMAGES=true to build them)"
+    fi
 
     echo ">>> Cleaning docker build caches before loading images to free disk space..."
     docker builder prune -a -f

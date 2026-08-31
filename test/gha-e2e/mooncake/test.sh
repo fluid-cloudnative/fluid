@@ -225,7 +225,8 @@ function check_cached_after_write() {
     while true; do
         cached=$(kubectl get dataset ${dataset_name} -ojsonpath='{.status.cacheStates.cached}' 2>/dev/null)
         file_num=$(kubectl get dataset ${dataset_name} -ojsonpath='{.status.cacheStates.fileNum}' 2>/dev/null)
-        if [[ -n "$cached" ]] && [[ "$cached" != "0B" ]] && [[ "$file_num" != "0" ]]; then
+        if [[ -n "$cached" ]] && [[ "$cached" != "0B" ]] && \
+            [[ -n "$file_num" ]] && [[ "$file_num" != "0" ]]; then
             break
         fi
         counter=$((counter + 1))
@@ -285,10 +286,17 @@ function check_pvc_not_mountable() {
 
     syslog "Found expected FailedMount event: $failed_mount"
 
-    # The failure reason should point at the missing FUSE mount point, not some
-    # other mount problem
-    if ! echo "$failed_mount" | grep -qi "fuse mount point"; then
-        syslog "WARNING: FailedMount message does not mention the FUSE mount point; the docs' FAQ wording may need updating"
+    # A FailedMount event on its own proves little: kubelet reports every mount
+    # problem under that one reason, so a transient CSI or node error would
+    # satisfy the loop above without exercising the documented behaviour. The
+    # message has to name the mount point too; csi-plugin phrases it as "timeout
+    # waiting for FUSE mount point to be ready" (pkg/utils/mount.go). Only the
+    # whitespace is relaxed, deliberately: $failed_mount concatenates every
+    # matching event, and the driver is called fuse.csi.fluid.io, so a pattern
+    # allowing anything between the two terms would happily bridge "fuse" in one
+    # unrelated message and "mount point" in another.
+    if ! echo "$failed_mount" | grep -qiE "fuse[[:space:]]+mount[[:space:]]*point"; then
+        panic "expected FailedMount to name the missing FUSE mount point (the docs' FAQ wording may need updating), got: $failed_mount"
     fi
 
     kubectl delete --ignore-not-found -f $testdir/bad_mount_pod.yaml --force --grace-period=0 >/dev/null 2>&1
