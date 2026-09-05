@@ -495,6 +495,21 @@ func TestThinEngine_updateFuseConfigOnChange(t *testing.T) {
 			},
 		},
 	}
+	// the referenced PersistentVolumeClaim does not exist, so transformFuseConfig fails
+	pvcDataset := datav1alpha1.Dataset{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test",
+			Namespace: "default",
+		},
+		Spec: datav1alpha1.DatasetSpec{
+			Mounts: []datav1alpha1.Mount{
+				{
+					MountPoint: "pvc://missing-pvc",
+					Name:       "missing-pvc",
+				},
+			},
+		},
+	}
 	thinruntime := datav1alpha1.ThinRuntime{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "test",
@@ -528,6 +543,13 @@ func TestThinEngine_updateFuseConfigOnChange(t *testing.T) {
 			cm:         &corev1.ConfigMap{},
 			wantUpdate: false,
 			wantErr:    false,
+		},
+		{
+			name:       "transform fuse config failed",
+			dataset:    &pvcDataset,
+			cm:         &cm,
+			wantUpdate: false,
+			wantErr:    true,
 		},
 	}
 
