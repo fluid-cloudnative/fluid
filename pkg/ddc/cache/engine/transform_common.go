@@ -18,6 +18,7 @@ package engine
 
 import (
 	"fmt"
+	"strings"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
@@ -119,9 +120,11 @@ func (e *CacheEngine) transformComponentPodTemplate(runtimeCompSpec datav1alpha1
 
 	// transform container related config, currently only modify the first container
 	if len(podTemplate.Spec.Containers) > 0 {
-		// transform Container Image name etc.
-		if len(runtimeCompSpec.RuntimeVersion.Image) > 0 && len(runtimeCompSpec.RuntimeVersion.ImageTag) > 0 {
-			podTemplate.Spec.Containers[0].Image = runtimeCompSpec.RuntimeVersion.Image + ":" + runtimeCompSpec.RuntimeVersion.ImageTag
+		// transform Container Image name etc. A version naming only one of image and imageTag
+		// takes the other half from the template rather than being dropped.
+		version := desiredComponentVersion(runtimeCompSpec.RuntimeVersion, podTemplate.Spec.Containers[0].Image)
+		if len(version.Image) > 0 && len(version.ImageTag) > 0 {
+			podTemplate.Spec.Containers[0].Image = version.Image + ":" + version.ImageTag
 		}
 		if len(runtimeCompSpec.RuntimeVersion.ImagePullPolicy) > 0 {
 			podTemplate.Spec.Containers[0].ImagePullPolicy = (corev1.PullPolicy)(runtimeCompSpec.RuntimeVersion.ImagePullPolicy)
@@ -147,4 +150,63 @@ func (e *CacheEngine) transformComponentPodTemplate(runtimeCompSpec datav1alpha1
 	if len(componentValue.PodTemplateSpec.Spec.InitContainers) > 0 {
 		componentValue.PodTemplateSpec.Spec.InitContainers[0].Env = append(addEnvs, componentValue.PodTemplateSpec.Spec.InitContainers[0].Env...)
 	}
+}
+
+// desiredComponentVersion completes a partially specified runtime version against the image
+// carried by the CacheRuntimeClass template.
+//
+// VersionSpec declares image and imageTag as independent optional strings, so naming only one
+// of them is a legal way to say "the same image on a newer tag". Both the creation path and
+// updateImage used to require both halves and otherwise leave the template image alone, which
+// silently discards that edit. Completing the missing half here gives both paths the same
+// desired image, so a component created with a partial version and one updated to it end up
+// identical instead of rolling on the next reconcile.
+//
+// A version naming neither half is returned untouched, leaving the template image in place. So
+// is one whose missing half cannot be recovered - a template with no image, or an image pinned
+// by digest - because guessing there would move the workload onto something nobody asked for.
+func desiredComponentVersion(runtimeVersion datav1alpha1.VersionSpec, templateImage string) datav1alpha1.VersionSpec {
+	if runtimeVersion.Image == "" && runtimeVersion.ImageTag == "" {
+		return runtimeVersion
+	}
+	if runtimeVersion.Image != "" && runtimeVersion.ImageTag != "" {
+		return runtimeVersion
+	}
+
+	templateRepository, templateTag := splitImageReference(templateImage)
+	if runtimeVersion.Image == "" {
+		runtimeVersion.Image = templateRepository
+	}
+	if runtimeVersion.ImageTag == "" {
+		runtimeVersion.ImageTag = templateTag
+	}
+
+	return runtimeVersion
+}
+
+// splitImageReference splits a container image reference into its repository and tag. The tag
+// is empty when the reference carries none, and both are empty for a reference pinned by
+// digest, where there is no tag to complete and appending one would not be valid.
+func splitImageReference(image string) (repository string, tag string) {
+	if image == "" || strings.Contains(image, "@") {
+		return "", ""
+	}
+
+	lastColon := strings.LastIndex(image, ":")
+	// A colon before the last slash belongs to a registry port, not to a tag.
+	if lastColon == -1 || lastColon < strings.LastIndex(image, "/") {
+		return image, ""
+	}
+
+	return image[:lastColon], image[lastColon+1:]
+}
+
+// componentTemplateImage returns the image the CacheRuntimeClass declares for a component,
+// which is the baseline a partially specified runtime version is completed against.
+func componentTemplateImage(componentDefinition *datav1alpha1.RuntimeComponentDefinition) string {
+	if componentDefinition == nil || len(componentDefinition.Template.Spec.Containers) == 0 {
+		return ""
+	}
+
+	return componentDefinition.Template.Spec.Containers[0].Image
 }
