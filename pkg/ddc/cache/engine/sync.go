@@ -86,16 +86,33 @@ func (e *CacheEngine) Sync(ctx cruntime.ReconcileRequestContext) (err error) {
 
 	if !runtimeReady {
 		// update dataset status when runtime not ready
-		err = e.UpdateDatasetStatus(datav1alpha1.FailedDatasetPhase, runtime, runtimeClass)
+		err = e.UpdateDatasetStatus(datav1alpha1.FailedDatasetPhase, runtime, runtimeClass, permitSyncEngineStatus)
 		if err != nil {
 			return err
 		}
-	} else if permitSyncEngineStatus {
-		// sync dataset cache states when runtime is ready and sync permitted
-		e.Log.Info("sync dataset cache states")
-		err = e.syncDatasetCacheStates(ctx, runtime, runtimeClass)
-		if err != nil {
-			return err
+	} else {
+		dataset, getErr := utils.GetDataset(e.Client, e.name, e.namespace)
+		if getErr != nil {
+			return getErr
+		}
+
+		if dataset.Status.Phase == datav1alpha1.FailedDatasetPhase {
+			// the runtime recovered from a previous outage but the dataset was left in Failed
+			// phase because the phase is otherwise only restored to Bound by the mount flow,
+			// which does not run on a normal reconcile. Restore it here, keeping the cache-states
+			// exec behind the same sync limiter as syncDatasetCacheStates below.
+			e.Log.Info("runtime is ready again, restoring dataset phase from Failed to Bound")
+			err = e.UpdateDatasetStatus(datav1alpha1.BoundDatasetPhase, runtime, runtimeClass, permitSyncEngineStatus)
+			if err != nil {
+				return err
+			}
+		} else if permitSyncEngineStatus {
+			// sync dataset cache states when runtime is ready and sync permitted
+			e.Log.Info("sync dataset cache states")
+			err = e.syncDatasetCacheStates(ctx, runtime, runtimeClass)
+			if err != nil {
+				return err
+			}
 		}
 	}
 
