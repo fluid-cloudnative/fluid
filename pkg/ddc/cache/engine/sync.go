@@ -248,28 +248,26 @@ func (e *CacheEngine) syncRuntimeSpec(ctx cruntime.ReconcileRequestContext, runt
 }
 
 // desiredComponentResources resolves the resources that should be synced to a
-// component's workload. A value set on the CacheRuntime wins; when the CacheRuntime
-// sets none, the CacheRuntimeClass template value is used, which is what the creation
-// path rendered into the workload. A nil return means neither declares resources, and
-// the workload's current resources are left untouched.
+// component's workload. It mirrors the creation path: the values set on the CacheRuntime
+// are overlaid key by key on the CacheRuntimeClass template baseline, so a key the
+// CacheRuntime does not name keeps the template value the creation path rendered into the
+// workload instead of being dropped from it. A nil return means neither declares
+// resources, and the workload's current resources are left untouched.
 //
 // Only the first container is considered, matching the creation path, which also only
 // fills in resources for Containers[0].
 func desiredComponentResources(runtimeResources corev1.ResourceRequirements, componentDefinition *datav1alpha1.RuntimeComponentDefinition) *corev1.ResourceRequirements {
-	if runtimeResources.Requests != nil || runtimeResources.Limits != nil {
-		return runtimeResources.DeepCopy()
+	var templateResources corev1.ResourceRequirements
+	if componentDefinition != nil && len(componentDefinition.Template.Spec.Containers) > 0 {
+		templateResources = componentDefinition.Template.Spec.Containers[0].Resources
 	}
 
-	if componentDefinition == nil || len(componentDefinition.Template.Spec.Containers) == 0 {
+	desired := mergeResourceRequirements(templateResources, runtimeResources)
+	if desired.Requests == nil && desired.Limits == nil && desired.Claims == nil {
 		return nil
 	}
 
-	templateResources := componentDefinition.Template.Spec.Containers[0].Resources
-	if templateResources.Requests == nil && templateResources.Limits == nil {
-		return nil
-	}
-
-	return templateResources.DeepCopy()
+	return &desired
 }
 
 func (e *CacheEngine) syncDatasetCacheStates(ctx cruntime.ReconcileRequestContext, runtime *datav1alpha1.CacheRuntime, runtimeClass *datav1alpha1.CacheRuntimeClass) (err error) {

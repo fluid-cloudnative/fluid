@@ -947,6 +947,76 @@ var _ = Describe("CacheEngine Sync Tests", Label("pkg.ddc.cache.engine.sync_test
 			})
 		})
 
+		// Issue #6173: a CacheRuntime that names one key used to replace the container's
+		// whole ResourceRequirements, so raising the memory limit alone left the container
+		// with no CPU request and no CPU limit at all.
+		Context("when the CacheRuntime only names part of the template's resources", func() {
+			fullTemplateResources := corev1.ResourceRequirements{
+				Requests: corev1.ResourceList{
+					corev1.ResourceCPU:    resource.MustParse("1"),
+					corev1.ResourceMemory: resource.MustParse("2Gi"),
+				},
+				Limits: corev1.ResourceList{
+					corev1.ResourceCPU:    resource.MustParse("2"),
+					corev1.ResourceMemory: resource.MustParse("4Gi"),
+				},
+			}
+
+			workerWorkload := func() *workloadv1alpha1.AdvancedStatefulSet {
+				sts := &workloadv1alpha1.AdvancedStatefulSet{}
+				key := types.NamespacedName{Name: workerSts, Namespace: "default"}
+				Expect(fakeClient.Get(ctx.Context, key, sts)).To(Succeed())
+				return sts
+			}
+
+			// The CacheRuntime raises the memory limit and names nothing else.
+			BeforeEach(func() {
+				runtimeObj.Spec.Worker.Resources = corev1.ResourceRequirements{
+					Limits: corev1.ResourceList{corev1.ResourceMemory: resource.MustParse("8Gi")},
+				}
+			})
+
+			Context("and the template declares a full set of requirements", func() {
+				// Re-seed over the limits-only template the outer BeforeEach installs, so
+				// the spec has requirements left to lose.
+				BeforeEach(func() {
+					runtimeClass.Topology.Worker.Template.Spec.Containers[0].Resources = *fullTemplateResources.DeepCopy()
+
+					sts := workerWorkload()
+					sts.Spec.Template.Spec.Containers[0].Resources = *fullTemplateResources.DeepCopy()
+					Expect(fakeClient.Update(ctx.Context, sts)).To(Succeed())
+				})
+
+				It("should move the key it names and keep the template's other requirements", func() {
+					Expect(engine.syncRuntimeSpec(ctx, runtimeObj, runtimeClass)).To(Succeed())
+
+					synced := workerWorkload().Spec.Template.Spec.Containers[0].Resources
+					Expect(synced.Limits.Memory().String()).To(Equal("8Gi"))
+					Expect(synced.Limits.Cpu().String()).To(Equal("2"))
+					Expect(synced.Requests.Cpu().String()).To(Equal("1"))
+					Expect(synced.Requests.Memory().String()).To(Equal("2Gi"))
+				})
+			})
+
+			Context("and neither side declares requests", func() {
+				// The template the outer BeforeEach installs is limits-only. A merge that
+				// turned the absent requests into an empty map instead of leaving them nil
+				// would never compare equal to the workload, and the sync would patch on
+				// every reconcile.
+				It("should leave requests unset and stop patching once converged", func() {
+					Expect(engine.syncRuntimeSpec(ctx, runtimeObj, runtimeClass)).To(Succeed())
+
+					synced := workerWorkload().Spec.Template.Spec.Containers[0].Resources
+					Expect(synced.Limits.Memory().String()).To(Equal("8Gi"))
+					Expect(synced.Requests).To(BeNil())
+
+					converged := workerWorkload().ResourceVersion
+					Expect(engine.syncRuntimeSpec(ctx, runtimeObj, runtimeClass)).To(Succeed())
+					Expect(workerWorkload().ResourceVersion).To(Equal(converged))
+				})
+			})
+		})
+
 		Context("when the workload no longer matches the template", func() {
 			// setWorkloadMemLimit edits the workload behind the runtime's back, standing in
 			// for a workload that drifted from the template for any reason.

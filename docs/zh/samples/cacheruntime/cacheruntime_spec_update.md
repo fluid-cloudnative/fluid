@@ -73,18 +73,23 @@ spec:
         memory: 16Gi
 ```
 
-**取值优先级**：
+**取值方式**：
 
-每次 reconcile 时，`resources` 按以下顺序取值：
+每次 reconcile 时，`resources` 按以下方式取值：
 
-1. CacheRuntime 上设置的值（只要声明了 `requests` 或 `limits`）；
-2. 否则取 CacheRuntimeClass 模板中声明的值；
+1. 以 CacheRuntimeClass 模板中声明的 `resources` 为基线；
+2. 将 CacheRuntime 上设置的 `resources` 按 key 叠加到该基线上——`requests` 与 `limits` 按资源名
+   合并，`claims` 按 claim 名合并；
 3. 两者都未声明时不做同步，工作负载保持当前的资源配置。
+
+也就是说，CacheRuntime 只需要表达相对模板的差异。只设置 `limits.memory` 时，仅该值被修改，模板中的
+`requests.cpu`、`requests.memory` 和 `limits.cpu` 保持不变。
 
 **限制**：
 - ⚠️ 不能超过节点可用资源
-- ⚠️ 当 CacheRuntimeClass 模板声明了 `resources` 时，从 CacheRuntime 中删除 `resources` **不会**
-  让组件变为不受限，而是回退到模板中的值。如需放宽限制，请显式设置目标值，而不是删除该字段。
+- ⚠️ CacheRuntimeClass 模板中声明的 key **可以覆盖，但不能删除**：从 CacheRuntime 中省略某个 key 不会
+  让组件变为不受限，而是保留模板中的值。如需放宽限制，请显式设置目标值；如需彻底去掉某项资源要求，
+  请修改 CacheRuntimeClass 模板——运行时自身的资源要求本就描述在那里。
 - ⚠️ **Kubernetes 版本要求**：需要 K8s >= 1.27 且启用 `InPlacePodVerticalScaling` Feature Gate
   ```bash
   # 检查 Feature Gate 是否启用

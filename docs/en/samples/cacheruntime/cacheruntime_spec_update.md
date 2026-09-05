@@ -77,15 +77,22 @@ spec:
 
 `resources` is resolved as follows on every reconcile:
 
-1. the value set on the CacheRuntime, if it declares any `requests` or `limits`;
-2. otherwise the value declared by the CacheRuntimeClass template;
-3. otherwise nothing is synced and the workload keeps its current resources.
+1. the `resources` declared by the CacheRuntimeClass template form the baseline;
+2. the `resources` set on the CacheRuntime are overlaid on that baseline key by key —
+   `requests` and `limits` merge by resource name, `claims` by claim name;
+3. when neither declares anything, nothing is synced and the workload keeps its current resources.
+
+The CacheRuntime therefore expresses only the differences it wants from the template. Naming
+`limits.memory` alone moves that one value and leaves the template's `requests.cpu`,
+`requests.memory` and `limits.cpu` in place.
 
 **Limitations**:
 - ⚠️ Cannot exceed the node's available resources.
-- ⚠️ When the CacheRuntimeClass template declares `resources`, removing `resources` from the
-  CacheRuntime does **not** leave the component unconstrained — it falls back to the template value.
-  To relax a limit, set the value you want explicitly instead of removing the field.
+- ⚠️ A key the CacheRuntimeClass template declares can be **overridden but not removed**: omitting it
+  from the CacheRuntime leaves the template's value in place rather than leaving the component
+  unconstrained. To relax a limit, set the value you want explicitly; to drop a requirement
+  altogether, change the CacheRuntimeClass template, which is where the runtime's own requirements
+  are described.
 - ⚠️ **Kubernetes version requirement**: K8s >= 1.27 with the `InPlacePodVerticalScaling` Feature Gate enabled.
   ```bash
   # Check if the Feature Gate is enabled
