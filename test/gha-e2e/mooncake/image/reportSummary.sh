@@ -6,7 +6,7 @@ set -euo pipefail
 
 RAW=$(curl -s http://localhost:9003/metrics/summary)
 
-if [ -z "$RAW" ]; then
+if [[ -z "$RAW" ]]; then
   echo "Error: empty response from metrics endpoint" >&2
   exit 1
 fi

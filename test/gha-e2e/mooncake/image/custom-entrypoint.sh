@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # Component entrypoint invoked by Fluid's CacheRuntime.
 # Usage: /custom-entrypoint.sh <master|worker|client> start
 
@@ -7,7 +7,7 @@ set -e
 ROLE="$1"
 ACTION="$2"
 
-if [ "$ACTION" != "start" ]; then
+if [[ "$ACTION" != "start" ]]; then
   echo "Error: unsupported action '$ACTION'"
   exit 1
 fi
@@ -27,7 +27,7 @@ case "$ROLE" in
 
   worker)
     # Read the runtime config JSON that Fluid mounts into the component pod.
-    if [ -z "$FLUID_RUNTIME_CONFIG_PATH" ] || [ ! -f "$FLUID_RUNTIME_CONFIG_PATH" ]; then
+    if [[ -z "$FLUID_RUNTIME_CONFIG_PATH" ]] || [[ ! -f "$FLUID_RUNTIME_CONFIG_PATH" ]]; then
       echo "Error: FLUID_RUNTIME_CONFIG_PATH not set or file not found"
       exit 1
     fi
