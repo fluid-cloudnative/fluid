@@ -60,18 +60,29 @@ func (e *CacheEngine) initComponentValue(
 }
 
 // transformComponentPodTemplate transforms common pod template configurations for master/worker/client components
-// This includes image, resources, args, env, nodeSelector, tolerations and pod metadata
-func (e *CacheEngine) transformComponentPodTemplate(runtimeCompSpec datav1alpha1.RuntimeComponentCommonSpec,
+// This includes image, resources, args, env, nodeSelector, tolerations, image pull secrets and pod metadata.
+//
+// Fields carried by both runtimeSpec and runtimeCompSpec are layered the way spec.options already is:
+// the CacheRuntimeClass template first, then the runtime-level spec, then the component-level spec.
+func (e *CacheEngine) transformComponentPodTemplate(runtimeSpec datav1alpha1.CacheRuntimeSpec,
+	runtimeCompSpec datav1alpha1.RuntimeComponentCommonSpec,
 	dataset *datav1alpha1.Dataset, componentValue *common.CacheRuntimeComponentValue) {
 	podTemplate := &componentValue.PodTemplateSpec
 
-	// Pod Meta - Labels and Annotations
-	if runtimeCompSpec.PodMetadata.Labels != nil {
-		podTemplate.Labels = utils.UnionMapsWithOverride(podTemplate.Labels, runtimeCompSpec.PodMetadata.Labels)
-	}
-	if runtimeCompSpec.PodMetadata.Annotations != nil {
-		podTemplate.Annotations = utils.UnionMapsWithOverride(podTemplate.Annotations, runtimeCompSpec.PodMetadata.Annotations)
-	}
+	// Pod Meta - Labels and Annotations, template < runtime level < component level.
+	// UnionMapsWithOverride copies both operands, so a nil map at any layer is a no-op.
+	podTemplate.Labels = utils.UnionMapsWithOverride(
+		utils.UnionMapsWithOverride(podTemplate.Labels, runtimeSpec.PodMetadata.Labels),
+		runtimeCompSpec.PodMetadata.Labels)
+	podTemplate.Annotations = utils.UnionMapsWithOverride(
+		utils.UnionMapsWithOverride(podTemplate.Annotations, runtimeSpec.PodMetadata.Annotations),
+		runtimeCompSpec.PodMetadata.Annotations)
+
+	// ImagePullSecrets has no component-level counterpart, so the runtime-level list is merged
+	// onto whatever the template already declares. The CRD marks the field with a merge patch
+	// strategy keyed on name, so a secret named at both layers must not appear twice.
+	podTemplate.Spec.ImagePullSecrets = appendMissingImagePullSecrets(
+		podTemplate.Spec.ImagePullSecrets, runtimeSpec.ImagePullSecrets)
 
 	// transform NodeSelector, runtime component takes higher priority
 	podTemplate.Spec.NodeSelector = utils.UnionMapsWithOverride(podTemplate.Spec.NodeSelector, runtimeCompSpec.NodeSelector)
@@ -147,4 +158,29 @@ func (e *CacheEngine) transformComponentPodTemplate(runtimeCompSpec datav1alpha1
 	if len(componentValue.PodTemplateSpec.Spec.InitContainers) > 0 {
 		componentValue.PodTemplateSpec.Spec.InitContainers[0].Env = append(addEnvs, componentValue.PodTemplateSpec.Spec.InitContainers[0].Env...)
 	}
+}
+
+// appendMissingImagePullSecrets appends the secrets that are not already referenced, comparing
+// by name so that a secret declared both on the CacheRuntimeClass template and on the
+// CacheRuntime is carried once.
+func appendMissingImagePullSecrets(existing []corev1.LocalObjectReference,
+	toAdd []corev1.LocalObjectReference) []corev1.LocalObjectReference {
+	if len(toAdd) == 0 {
+		return existing
+	}
+
+	present := make(map[string]bool, len(existing))
+	for _, secret := range existing {
+		present[secret.Name] = true
+	}
+
+	for _, secret := range toAdd {
+		if present[secret.Name] {
+			continue
+		}
+		present[secret.Name] = true
+		existing = append(existing, secret)
+	}
+
+	return existing
 }
