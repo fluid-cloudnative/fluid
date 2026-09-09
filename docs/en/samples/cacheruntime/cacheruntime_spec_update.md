@@ -4,9 +4,10 @@
 
 This document describes which `spec` fields of the CacheRuntime's Master and Worker components (backed by **AdvancedStatefulSet**) can be updated in-place.
 
-The current version supports in-place updates for only the following two fields:
+The current version supports in-place updates for the following three fields:
 - **Container image** (`runtimeVersion`)
 - **Resource limits** (`resources`)
+- **Replica count** (`replicas`)
 
 Modifications to other fields **will not be propagated to the AdvancedStatefulSet** and require redeployment to take effect.
 
@@ -16,12 +17,12 @@ Modifications to other fields **will not be propagated to the AdvancedStatefulSe
 
 | Component | Workload Type | Field Update Support |
 |-----------|---------------|---------------------|
-| **Master** | AdvancedStatefulSet | ✅ Supports `runtimeVersion` and `resources` |
-| **Worker** | AdvancedStatefulSet | ✅ Supports `runtimeVersion` and `resources` |
+| **Master** | AdvancedStatefulSet | ✅ Supports `runtimeVersion`, `resources` and `replicas` |
+| **Worker** | AdvancedStatefulSet | ✅ Supports `runtimeVersion`, `resources` and `replicas` |
 | **Client** | DaemonSet | ❌ Not supported (any changes require redeployment) |
 
 **Notes**:
-- Modifying `runtimeVersion` and `resources` on Master and Worker components automatically propagates to the underlying AdvancedStatefulSet.
+- Modifying `runtimeVersion`, `resources` and `replicas` on Master and Worker components automatically propagates to the underlying AdvancedStatefulSet.
 - The Client component uses a DaemonSet and does not support dynamic updates.
 
 ---
@@ -104,23 +105,44 @@ spec:
   ```
   See [Kubernetes Issue #127356](https://github.com/kubernetes/kubernetes/issues/127356).
 
+---
+
+### 3.3 Replica Count (`replicas`)
+
+**Field path**: `spec.{master,worker}.replicas`
+
+**Example**:
+```yaml
+spec:
+  worker:
+    replicas: 3
+```
+
+```bash
+kubectl patch cacheruntime my-cache --type='merge' -p '{"spec":{"worker":{"replicas":3}}}'
+```
+
+The new value is synced to the AdvancedStatefulSet's `spec.replicas`, which then performs the scaling.
+
+**Limitations**:
+- ⚠️ **Scaling in discards cached data**: the Worker Pods removed are deleted outright, and the data they had cached is not migrated to the remaining Workers — it has to be loaded from the underlying storage again. Scaling out leaves the existing cache untouched.
+- ⚠️ Scaling writes no RuntimeCondition and emits no Kubernetes Event. Progress can be observed through `status.{master,worker}.{readyReplicas,desiredReplicas}` or the controller logs:
+  ```bash
+  # Current replica status
+  kubectl get cacheruntime my-cache -o jsonpath='{.status.worker.readyReplicas}/{.status.worker.desiredReplicas}'
+
+  # Or from the controller logs
+  kubectl -n fluid-system logs deploy/cacheruntime-controller | grep "replicas changed"
+  ```
+- ⚠️ If the replica count exceeds the number of schedulable nodes, the surplus Worker Pods stay `Pending`.
+
 ## 4. Unsupported Update Fields
 
-Aside from `runtimeVersion` and `resources`, **modifying any other fields in the CacheRuntime spec will not propagate to the AdvancedStatefulSet**, including but not limited to:
-
-- `env`: Environment variables
-- `podMetadata`: Pod metadata (labels/annotations)
-- `args`/`command`: Container startup arguments
-- `ports`: Container ports
-- `volumeMounts`/`volumes`: Storage configuration
-- `nodeSelector`/`tolerations`/`affinity`: Scheduling configuration
-- `securityContext`: Security context
-- `replicas`: Replica count
-- `disabled`: Component enabled/disabled status
+**Any field not listed in section 3 cannot be updated in place**; changes to it are not propagated to the AdvancedStatefulSet.
 
 **Notes**:
-- After modifying these fields, you must redeploy the CacheRuntime for changes to take effect.
-- The system does not automatically detect or propagate changes to these fields.
+- Such a field takes effect only after the CacheRuntime is redeployed.
+- The system does not automatically detect or propagate these changes.
 
 ---
 
@@ -130,9 +152,10 @@ Aside from `runtimeVersion` and `resources`, **modifying any other fields in the
 |-------|-----------|---------------|
 | `runtimeVersion` | ✅ Yes | Automatically synced to AdvancedStatefulSet |
 | `resources` | ✅ Yes | Automatically synced to AdvancedStatefulSet (requires K8s >= 1.27) |
+| `replicas` | ✅ Yes | Automatically synced to AdvancedStatefulSet (scaling in discards that Worker's cache) |
 | All other fields | ❌ No | Not synced; redeployment required |
 
 **Key Takeaways**:
-1. The current version supports dynamic updates for only `runtimeVersion` and `resources`.
-2. In cgroupv1 environments, these two fields must be updated separately (step-by-step).
+1. The current version supports dynamic updates for `runtimeVersion`, `resources` and `replicas`.
+2. In cgroupv1 environments, `runtimeVersion` and `resources` must be updated separately (step-by-step); `replicas` is not subject to this limitation.
 3. Modifications to other fields will not take effect and require redeployment.
