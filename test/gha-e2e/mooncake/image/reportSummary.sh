@@ -15,8 +15,8 @@ fi
 MEM_LINE=$(echo "$RAW" | grep -oE 'Mem Storage: [^|]+' || true)
 
 CACHED_RAW=$(echo "$MEM_LINE" | sed -E 's/Mem Storage: ([^/]+) \/.*/\1/' | xargs)
-CAPACITY_RAW=$(echo "$MEM_LINE" | sed -E 's/.*\/ ([^(]+) \(.*/\1/' | xargs)
-PERCENT_RAW=$(echo "$MEM_LINE" | grep -oE '\([0-9.]+%\)' | tr -d '()%')
+CAPACITY_RAW=$(echo "$MEM_LINE" | sed -E 's/.*\/ ([^(]*).*/\1/' | xargs)
+PERCENT_RAW=$(echo "$MEM_LINE" | grep -oE '\([0-9.]+%\)' | tr -d '()%' || echo "0.0")
 
 # Normalize units ("2.00 GB" -> "2.00GiB").
 normalize_unit() {

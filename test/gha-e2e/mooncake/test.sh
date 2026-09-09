@@ -47,8 +47,15 @@ function create_dataset() {
 # for Bound and report the root cause directly on failure.
 function check_controller_not_panicked() {
     local logs=""
+    local prev_logs=""
     logs=$(kubectl logs -n fluid-system -l control-plane=cacheruntime-controller \
         -c manager --tail=200 2>/dev/null || true)
+    # A nil-pointer panic restarts the manager container, so the trace lands in
+    # the previous container's log while the current one comes back clean.
+    # No previous container is the normal case, so tolerate the failure.
+    prev_logs=$(kubectl logs -n fluid-system -l control-plane=cacheruntime-controller \
+        -c manager --previous --tail=200 2>/dev/null || true)
+    logs="${prev_logs}"$'\n'"${logs}"
     if echo "$logs" | grep -qE "panic:|invalid memory address or nil pointer dereference"; then
         syslog "--- cacheruntime-controller panic detected ---"
         echo "$logs" | grep -A 20 -E "panic:|nil pointer dereference" || true
@@ -313,7 +320,7 @@ function wait_runtime_deleted() {
     local counter=0
     while true; do
         local remaining=""
-        remaining=$(kubectl get advancedstatefulset,daemonset,svc -l fluid.io/managed-by=fluid -n default -oname 2>/dev/null)
+        remaining=$(kubectl get advancedstatefulset,daemonset,svc -l "cacheruntime.fluid.io/name=${dataset_name}" -n default -oname 2>/dev/null)
         if [[ -z "$remaining" ]]; then
             break
         fi
