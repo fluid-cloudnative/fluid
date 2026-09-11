@@ -80,11 +80,6 @@ func (e *CacheEngine) getRuntimeShFileName() string {
 	return "runtime.sh"
 }
 
-// getRuntimeShPath defines the mount path of the shell-format runtime config in the pod.
-func (e *CacheEngine) getRuntimeShPath() string {
-	return fmt.Sprintf("%s/%s", e.getRuntimeConfigDir(), e.getRuntimeShFileName())
-}
-
 func (e *CacheEngine) getRuntimeClassExtraConfigMapVolumeName(name string) string {
 	return fmt.Sprintf("fluid-extra-%s-%s", e.name, name)
 }

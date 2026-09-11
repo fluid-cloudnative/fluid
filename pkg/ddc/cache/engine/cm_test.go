@@ -745,7 +745,7 @@ func fullyPopulatedRuntimeConfig() *common.CacheRuntimeConfig {
 func configFieldPaths(t *testing.T, typ reflect.Type, seen map[reflect.Type]bool, paths map[string]bool) {
 	t.Helper()
 
-	for typ.Kind() == reflect.Ptr || typ.Kind() == reflect.Slice || typ.Kind() == reflect.Map {
+	for typ.Kind() == reflect.Pointer || typ.Kind() == reflect.Slice || typ.Kind() == reflect.Map {
 		typ = typ.Elem()
 	}
 	if typ.Kind() != reflect.Struct || seen[typ] {
