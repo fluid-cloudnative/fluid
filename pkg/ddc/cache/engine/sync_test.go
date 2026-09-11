@@ -909,6 +909,84 @@ var _ = Describe("CacheEngine Sync Tests", Label("pkg.ddc.cache.engine.sync_test
 			seedTemplateResources(workerSts, &runtimeClass.Topology.Worker.Template)
 		})
 
+		// The client component runs on a DaemonSet. Neither reconcile path carries a
+		// client spec edit to that workload: syncRuntimeSpec skips the client outright,
+		// and reconcileDaemonSet returns early once the DaemonSet exists. The edit is
+		// dropped with no error, no event and no condition.
+		Context("when the CacheRuntime edits the client component", func() {
+			const clientDs = "test-runtime-client"
+
+			imageOfSts := func(stsName string) string {
+				sts := &workloadv1alpha1.AdvancedStatefulSet{}
+				key := types.NamespacedName{Name: stsName, Namespace: "default"}
+				Expect(fakeClient.Get(ctx.Context, key, sts)).To(Succeed())
+				return sts.Spec.Template.Spec.Containers[0].Image
+			}
+
+			clientContainer := func() corev1.Container {
+				ds := &appsv1.DaemonSet{}
+				key := types.NamespacedName{Name: clientDs, Namespace: "default"}
+				Expect(fakeClient.Get(ctx.Context, key, ds)).To(Succeed())
+				return ds.Spec.Template.Spec.Containers[0]
+			}
+
+			BeforeEach(func() {
+				edited, err := engine.getRuntime()
+				Expect(err).NotTo(HaveOccurred())
+				// The same edit on the master and on the client. The master is the
+				// control: its outcome proves the edit and the harness are well formed.
+				edited.Spec.Master.RuntimeVersion = datav1alpha1.VersionSpec{Image: "test-master", ImageTag: "v2"}
+				edited.Spec.Client.RuntimeVersion = datav1alpha1.VersionSpec{Image: "test-client", ImageTag: "v2"}
+				edited.Spec.Client.Resources = corev1.ResourceRequirements{
+					Limits: corev1.ResourceList{corev1.ResourceMemory: resource.MustParse("4Gi")},
+				}
+				Expect(fakeClient.Update(ctx.Context, edited)).To(Succeed())
+			})
+
+			It("should apply the edit to the master and silently drop it for the client", func() {
+				Expect(imageOfSts(masterSts)).To(Equal("test-master:latest"))
+				Expect(clientContainer().Image).To(Equal("test-client:latest"))
+
+				syncRuntime, err := engine.getRuntime()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(engine.syncRuntimeSpec(ctx, syncRuntime, runtimeClass)).To(Succeed())
+
+				// Control: the master's workload picks the new image up.
+				Expect(imageOfSts(masterSts)).To(Equal("test-master:v2"))
+
+				// The client's DaemonSet keeps the image and the resources it was created
+				// with, and syncRuntimeSpec reported success all the same.
+				Expect(clientContainer().Image).To(Equal("test-client:latest"))
+				Expect(clientContainer().Resources.Limits).To(BeEmpty())
+			})
+
+			It("should leave the DaemonSet untouched even on the creation path", func() {
+				// The transform derives the right desired state, so the edit is lost
+				// downstream of it, inside the workload manager.
+				syncRuntime, err := engine.getRuntime()
+				Expect(err).NotTo(HaveOccurred())
+				value, err := engine.transform(dataset, syncRuntime, runtimeClass)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(value.Client.PodTemplateSpec.Spec.Containers[0].Image).To(Equal("test-client:v2"))
+
+				// SetupClientInternal is called directly, bypassing the ShouldSetupClient
+				// gate that skips it once the client has left RuntimePhaseNone, so this
+				// isolates reconcileDaemonSet itself.
+				Expect(engine.SetupClientInternal(value.Client)).To(Succeed())
+				Expect(clientContainer().Image).To(Equal("test-client:latest"))
+			})
+
+			It("should gate the creation path off once the client has been set up", func() {
+				setup, err := engine.getRuntime()
+				Expect(err).NotTo(HaveOccurred())
+				setup.Status.Client.Phase = datav1alpha1.RuntimePhaseReady
+				Expect(fakeClient.Status().Update(ctx.Context, setup)).To(Succeed())
+
+				should, err := engine.ShouldSetupClient()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(should).To(BeFalse())
+			})
+		})
 		Context("when the CacheRuntime does not specify resources", func() {
 			It("should leave the template's resources untouched", func() {
 				Expect(runtimeObj.Spec.Master.Resources.Limits).To(BeNil())
