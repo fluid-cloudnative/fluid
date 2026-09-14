@@ -229,6 +229,86 @@ var _ = Describe("RuntimeReconciler", func() {
 		})
 	})
 
+	Describe("ensureDatasetForRuntime", func() {
+		It("auto-creates the dataset with a controller reference and filtered annotations", func() {
+			runtimeObj := newTestAlluxioRuntime(defaultNamespace, demoRuntimeName)
+			runtimeObj.UID = types.UID(demoRuntimeName + "-uid")
+			runtimeObj.Annotations = map[string]string{
+				common.AnnotationCheckMountScriptSHA256:        "abc123",
+				common.AnnotationDisableRuntimeHelmValueConfig: "true",
+			}
+			r := newTestRuntimeReconciler(runtimeObj)
+			ctx := newTestRequestContext(r.Client, runtimeObj, nil)
+
+			dataset, err := r.ensureDatasetForRuntime(ctx, runtimeObj)
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(dataset.Annotations[common.AnnotationDatasetPolicy]).To(Equal(common.DatasetPolicyAutoCreate))
+			Expect(dataset.Annotations).To(HaveKeyWithValue(common.AnnotationCheckMountScriptSHA256, "abc123"))
+			Expect(dataset.Annotations).NotTo(HaveKey(common.AnnotationDisableRuntimeHelmValueConfig))
+			Expect(dataset.OwnerReferences).To(HaveLen(1))
+			Expect(dataset.OwnerReferences[0].Name).To(Equal(demoRuntimeName))
+			Expect(dataset.OwnerReferences[0].UID).To(Equal(runtimeObj.UID))
+		})
+
+		It("returns the existing dataset when creation races with another writer that already carries the auto-create policy", func() {
+			runtimeObj := newTestAlluxioRuntime(defaultNamespace, demoRuntimeName)
+			existing := newTestDataset(defaultNamespace, demoRuntimeName)
+			existing.Annotations = map[string]string{common.AnnotationDatasetPolicy: common.DatasetPolicyAutoCreate}
+			r := newTestRuntimeReconciler(runtimeObj, existing)
+			ctx := newTestRequestContext(r.Client, runtimeObj, nil)
+
+			dataset, err := r.ensureDatasetForRuntime(ctx, runtimeObj)
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(dataset.UID).To(Equal(existing.UID))
+		})
+
+		It("returns an error when creation races with an unrelated pre-existing dataset", func() {
+			runtimeObj := newTestAlluxioRuntime(defaultNamespace, demoRuntimeName)
+			runtimeObj.UID = types.UID(demoRuntimeName + "-uid")
+			existing := newTestDataset(defaultNamespace, demoRuntimeName)
+			r := newTestRuntimeReconciler(runtimeObj, existing)
+			ctx := newTestRequestContext(r.Client, runtimeObj, nil)
+
+			dataset, err := r.ensureDatasetForRuntime(ctx, runtimeObj)
+
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("already exists and is not owned by this runtime"))
+			Expect(dataset).To(BeNil())
+		})
+
+		It("returns an error when the runtime is nil", func() {
+			r := newTestRuntimeReconciler()
+			runtimeObj := newTestAlluxioRuntime(defaultNamespace, demoRuntimeName)
+
+			dataset, err := r.ensureDatasetForRuntime(cruntime.ReconcileRequestContext{Context: context.Background()}, runtimeObj)
+
+			Expect(err).To(MatchError("runtime is nil"))
+			Expect(dataset).To(BeNil())
+		})
+
+		It("returns an error when the controller reference cannot be set", func() {
+			scheme := runtime.NewScheme()
+			_ = corev1.AddToScheme(scheme)
+			cl := fakeutil.NewFakeClientWithScheme(scheme)
+			r := &RuntimeReconciler{Client: cl, Log: fakeutil.NullLogger(), Recorder: record.NewFakeRecorder(8)}
+			runtimeObj := newTestAlluxioRuntime(defaultNamespace, demoRuntimeName)
+			ctx := cruntime.ReconcileRequestContext{
+				Context:        context.Background(),
+				Client:         cl,
+				Runtime:        runtimeObj,
+				NamespacedName: types.NamespacedName{Namespace: defaultNamespace, Name: demoRuntimeName},
+			}
+
+			dataset, err := r.ensureDatasetForRuntime(ctx, runtimeObj)
+
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("failed to set controller reference"))
+			Expect(dataset).To(BeNil())
+		})
+	})
+
 	Describe("AddOwnerAndRequeue", func() {
 		It("adds the dataset as an owner reference and requeues", func() {
 			dataset := newTestDataset(defaultNamespace, demoDatasetName)
@@ -347,6 +427,32 @@ var _ = Describe("RuntimeReconciler", func() {
 
 			Expect(err).NotTo(HaveOccurred())
 			Expect(result.RequeueAfter).To(Equal(5 * time.Second))
+		})
+
+		It("auto-creates the dataset and requeues to add the owner reference when the policy is auto-create", func() {
+			runtimeObj := newTestAlluxioRuntime(defaultNamespace, demoRuntimeName)
+			runtimeObj.UID = types.UID(demoRuntimeName + "-uid")
+			runtimeObj.Annotations = map[string]string{common.AnnotationDatasetPolicy: common.DatasetPolicyAutoCreate}
+			impl := &testRuntimeReconcilerImplement{
+				getOrCreateEngine: func(cruntime.ReconcileRequestContext) (base.Engine, error) {
+					return &testEngine{}, nil
+				},
+				getRuntimeObjectMeta: func(ctx cruntime.ReconcileRequestContext) (metav1.Object, error) {
+					return runtimeObj, nil
+				},
+			}
+			r := newTestRuntimeReconcilerWithImplement(impl, runtimeObj)
+
+			result, err := r.ReconcileInternal(newTestRequestContext(r.Client, runtimeObj, nil))
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(result.Requeue).To(BeTrue())
+
+			createdDataset := &datav1alpha1.Dataset{}
+			Expect(r.Get(context.Background(), types.NamespacedName{Namespace: defaultNamespace, Name: demoRuntimeName}, createdDataset)).To(Succeed())
+			Expect(createdDataset.Annotations[common.AnnotationDatasetPolicy]).To(Equal(common.DatasetPolicyAutoCreate))
+			Expect(createdDataset.OwnerReferences).To(HaveLen(1))
+			Expect(createdDataset.OwnerReferences[0].Name).To(Equal(demoRuntimeName))
 		})
 
 		It("delegates runtime deletion and removes the engine on error", func() {
