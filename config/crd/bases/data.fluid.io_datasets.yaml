@@ -65,6 +65,9 @@ spec:
                 items:
                   type: string
                 type: array
+              allowEmptyMounts:
+                description: AllowEmptyMounts indicates whether Mounts can be empty
+                type: boolean
               dataRestoreLocation:
                 properties:
                   nodeName:
@@ -115,7 +118,6 @@ spec:
                   required:
                   - mountPoint
                   type: object
-                minItems: 1
                 type: array
               nodeAffinity:
                 properties:
@@ -246,6 +248,11 @@ spec:
                   type: object
                 type: array
             type: object
+            x-kubernetes-validations:
+            - message: Mounts must have at least one item unless AllowEmptyMounts
+                is true
+              rule: self.allowEmptyMounts == true || (has(self.mounts) && size(self.mounts)
+                >= 1)
           status:
             properties:
               cacheStates:
