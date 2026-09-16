@@ -19,9 +19,11 @@ package engine
 import (
 	"context"
 	"os"
+	"reflect"
 	"time"
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
 
 	"github.com/agiledragon/gomonkey/v2"
 	"github.com/go-logr/logr"
@@ -296,7 +298,7 @@ var _ = Describe("CacheEngine Sync Tests", Label("pkg.ddc.cache.engine.sync_test
 				engine.Client = fake.NewClientBuilder().
 					WithScheme(scheme).
 					WithObjects(dataset, runtimeObj, runtimeClass, configMap, masterSts, workerSts, clientDs).
-					WithStatusSubresource(runtimeObj).
+					WithStatusSubresource(dataset, runtimeObj).
 					Build()
 			})
 
@@ -336,6 +338,121 @@ var _ = Describe("CacheEngine Sync Tests", Label("pkg.ddc.cache.engine.sync_test
 			It("should attempt to sync dataset cache states", func() {
 				err := engine.Sync(ctx)
 				Expect(err).NotTo(HaveOccurred())
+			})
+		})
+
+		Context("when runtime is ready but dataset was left Failed by a previous outage", func() {
+			BeforeEach(func() {
+				dataset.Status.Phase = datav1alpha1.FailedDatasetPhase
+				dataset.Status.Conditions = []datav1alpha1.DatasetCondition{
+					{
+						Type:   datav1alpha1.DatasetReady,
+						Status: corev1.ConditionFalse,
+					},
+				}
+
+				masterReplicas := int32(1)
+				masterSts := &workloadv1alpha1.AdvancedStatefulSet{
+					ObjectMeta: metav1.ObjectMeta{Name: "test-runtime-master", Namespace: "default"},
+					Spec: workloadv1alpha1.AdvancedStatefulSetSpec{
+						Replicas: &masterReplicas,
+						Template: corev1.PodTemplateSpec{
+							Spec: corev1.PodSpec{
+								Containers: []corev1.Container{{Name: "master", Image: "test-master:latest"}},
+							},
+						},
+					},
+					Status: workloadv1alpha1.AdvancedStatefulSetStatus{ReadyReplicas: 1, CurrentReplicas: 1, AvailableReplicas: 1},
+				}
+
+				workerReplicas := int32(2)
+				workerSts := &workloadv1alpha1.AdvancedStatefulSet{
+					ObjectMeta: metav1.ObjectMeta{Name: "test-runtime-worker", Namespace: "default"},
+					Spec: workloadv1alpha1.AdvancedStatefulSetSpec{
+						Replicas: &workerReplicas,
+						Template: corev1.PodTemplateSpec{
+							Spec: corev1.PodSpec{
+								Containers: []corev1.Container{{Name: "worker", Image: "test-worker:latest"}},
+							},
+						},
+					},
+					Status: workloadv1alpha1.AdvancedStatefulSetStatus{ReadyReplicas: 2, CurrentReplicas: 2, AvailableReplicas: 2},
+				}
+
+				clientDs := &appsv1.DaemonSet{
+					ObjectMeta: metav1.ObjectMeta{Name: "test-runtime-client", Namespace: "default"},
+					Spec: appsv1.DaemonSetSpec{
+						Template: corev1.PodTemplateSpec{
+							Spec: corev1.PodSpec{
+								Containers: []corev1.Container{{Name: "client", Image: "test-client:latest"}},
+							},
+						},
+					},
+					Status: appsv1.DaemonSetStatus{NumberReady: 0, DesiredNumberScheduled: 0},
+				}
+
+				engine.Client = fake.NewClientBuilder().
+					WithScheme(CacheEngineTestScheme).
+					WithObjects(dataset, runtimeObj, runtimeClass, masterSts, workerSts, clientDs).
+					WithStatusSubresource(dataset, runtimeObj).
+					Build()
+			})
+
+			It("should restore the dataset phase to Bound", func() {
+				err := engine.Sync(ctx)
+				Expect(err).NotTo(HaveOccurred())
+
+				updatedDataset := &datav1alpha1.Dataset{}
+				err = engine.Client.Get(context.Background(), types.NamespacedName{
+					Name:      "test-runtime",
+					Namespace: "default",
+				}, updatedDataset)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(updatedDataset.Status.Phase).To(Equal(datav1alpha1.BoundDatasetPhase))
+
+				idx, cond := utils.GetDatasetCondition(updatedDataset.Status.Conditions, datav1alpha1.DatasetReady)
+				Expect(idx).NotTo(Equal(-1))
+				Expect(cond.Status).To(Equal(corev1.ConditionTrue))
+			})
+
+			Context("and the sync limiter is closed", func() {
+				var patches *gomonkey.Patches
+				var getCacheStatesCalled bool
+
+				BeforeEach(func() {
+					engine.syncRetryDuration = defaultSyncRetryDuration
+					engine.timeOfLastSync = time.Now()
+
+					getCacheStatesCalled = false
+					// Patched at the GetCacheStates level, not NewCacheFileUtil: this Context has no
+					// ReportSummary execution entries configured, so a real call would fail before ever
+					// reaching the exec layer. The point here is only whether GetCacheStates is invoked at all.
+					patches = gomonkey.ApplyMethod(reflect.TypeOf(engine), "GetCacheStates",
+						func(_ *CacheEngine, _ *datav1alpha1.CacheRuntime, _ *datav1alpha1.CacheRuntimeClass) (common.CacheStateList, error) {
+							getCacheStatesCalled = true
+							return common.CacheStateList{}, nil
+						})
+				})
+
+				AfterEach(func() {
+					if patches != nil {
+						patches.Reset()
+					}
+				})
+
+				It("should still restore the dataset phase to Bound without fetching cache states", func() {
+					err := engine.Sync(ctx)
+					Expect(err).NotTo(HaveOccurred())
+
+					updatedDataset := &datav1alpha1.Dataset{}
+					err = engine.Client.Get(context.Background(), types.NamespacedName{
+						Name:      "test-runtime",
+						Namespace: "default",
+					}, updatedDataset)
+					Expect(err).NotTo(HaveOccurred())
+					Expect(updatedDataset.Status.Phase).To(Equal(datav1alpha1.BoundDatasetPhase))
+					Expect(getCacheStatesCalled).To(BeFalse(), "GetCacheStates should be skipped while the sync limiter is closed")
+				})
 			})
 		})
 
