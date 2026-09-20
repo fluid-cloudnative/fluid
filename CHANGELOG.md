@@ -1,5 +1,51 @@
 # Fluid Release Notes
 
+## v1.1.0
+### Highlights
+*   **CacheRuntime – a generic cache engine framework** – Two new CRDs, `CacheRuntime` and `CacheRuntimeClass`, let you onboard a cache system declaratively instead of writing a new Go engine. Describe the cluster topology (`MasterSlave` / `P2P-DHT` / `ClientOnly`), the per-component workload form and the operation commands in a `CacheRuntimeClass`, and the shared controller handles reconciliation, scheduling and lifecycle. See the [CacheRuntime Integration Guide](docs/en/dev/generic_cache_runtime_integration.md).
+*   **Curvine support via CacheRuntime** – Curvine is the first cache system integrated through the new framework, with a native image, cache-state reporting and dataset `files`/`UFSTotal` synchronization.
+*   **CacheRuntime data operations** – DataLoad, DataProcess and manual scaling work against CacheRuntime-backed Datasets, alongside tiered store configuration for worker and client components.
+*   **In-place update for CacheRuntime** – Backed by AdvancedStatefulSet, image-version and other spec changes roll out without recreating Pods. Field-level update semantics are documented in [CacheRuntime Spec Field Update Capabilities](docs/en/samples/cacheruntime/cacheruntime_spec_update.md).
+*   **DataProcess scheduling policies** – `Cron` and `OnEvent` policies allow recurring and event-driven data processing.
+*   **RDMA for JindoCache** – JindoCache engine can now use RDMA for higher cache read throughput.
+*   **ThinRuntime over CacheRuntime** – ThinRuntime can consume a CacheRuntime-backed Dataset, with validation that rejects invalid combinations.
+
+### Enhancements
+*   **Feature gates for FUSE host PID** – Host PID behaviour is now controlled by a feature gate rather than an implicit chart default.
+*   **Global runtime sync switch** – A cluster-level option can skip runtime syncing to reduce control-plane load.
+*   **JuiceFSRuntime worker `volumeClaimTemplates`** – Workers can claim persistent volumes directly.
+*   **Extended resource names on runtime Pods** – More resource names can be requested on master/worker/FUSE Pods.
+*   **JindoCache master self-healing** – The master recovers automatically after an unexpected crash.
+*   **CSI recovery loop** – Improved FUSE mount recovery, plus a fast path for resolving the mount Pod's node-selector label key.
+*   **Security hardening** – Least-privilege ClusterRole for the CacheRuntime controller, least-privilege GitHub Actions permissions across workflows, and enforced CPU/memory/storage limits in e2e manifests.
+*   **Dependency and base-image updates** – Helm 3.19.5 and Alpine 3.23.3.
+*   **Portable container images** – The hardcoded `Asia/Shanghai` timezone was removed from all images.
+*   **Developer experience** – Go modules replace the GOPATH requirement, Helm binaries were removed from the source tree, and a large share of the unit-test suite migrated from testify/gohook to Ginkgo/Gomega and gomonkey. Backward-compatibility e2e tests were added.
+*   **2026 roadmap** – Published in [ROADMAP.md](ROADMAP.md).
+
+### Bug Fixes
+*   Recover the GroupVersionKind of an owner whose TypeMeta is incomplete.
+*   Recreate the ThinRuntime of a reference Dataset stuck in `NotBound`.
+*   Prevent nodeSelector changes on the JuiceFS FUSE DaemonSet.
+*   Support multi-mount OSS secret projections in Jindo.
+*   Merge Dataset annotations across multi-round FUSE injection.
+*   Implement the missing `Validate` logic for `ReferenceDatasetEngine`.
+*   Implement `OnEventStatusHandler.GetOperationStatus` for DataLoad and DataMigrate.
+*   Watch Job resources in the DataLoad and DataMigrate controllers.
+*   Retry on conflict when updating `ufsTotal` status, and retry subpath/mount checks in the webhook.
+*   Preserve required-affinity branch semantics in the webhook.
+*   Fix Pod creation failure when mounting a Dataset with a long name.
+*   Prevent controller panic on a wrapped NotFound error in `OperationReconciler`.
+*   Handle the `updatedb.conf` path being a directory in the CSI plugin.
+*   Fix a data race in `ExecCommandInContainerWithTimeout`.
+*   Remove redundant UFS readiness checks in JindoCache and add an early runtime check.
+*   Correct cache client status reporting and propagate context through volume, ConfigMap, exec and dataflow-affinity paths.
+
+### Deprecations and Removals
+*   **GooseFSRuntime is deprecated** – The engine and its related resources have been removed. Migrate to another runtime before upgrading.
+
+---
+
 ## v1.0.8
 ### Highlights
 *   **Native Sidecar support** – Enable Kubernetes Native Sidecar injection for FUSE deployments to resolve lifecycle management, startup order, and resource isolation issues.  
