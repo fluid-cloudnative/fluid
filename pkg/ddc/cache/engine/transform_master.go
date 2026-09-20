@@ -41,7 +41,7 @@ func (e *CacheEngine) transformMaster(dataset *datav1alpha1.Dataset, runtime *da
 	// TODO: TieredStore handling
 
 	// transform container related config, currently only modify the first container
-	e.transformComponentPodTemplate(runtimeMaster.RuntimeComponentCommonSpec, dataset, value.Master)
+	e.transformComponentPodTemplate(runtime.Spec, runtimeMaster.RuntimeComponentCommonSpec, dataset, value.Master)
 
 	// transform all volume-related configurations
 	err = e.transformVolumes(runtime.Spec.Volumes, runtime.Spec.Master.VolumeMounts, dataset, componentDefinition, commonConfig, true, &value.Master.PodTemplateSpec.Spec)
