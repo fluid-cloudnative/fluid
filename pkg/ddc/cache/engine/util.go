@@ -74,6 +74,12 @@ func (e *CacheEngine) getRuntimeConfigFileName() string {
 	return "runtime.json"
 }
 
+// getRuntimeShFileName defines the file name of the shell-format runtime config, used by
+// FUSE-less clients that source it instead of parsing runtime.json.
+func (e *CacheEngine) getRuntimeShFileName() string {
+	return "runtime.sh"
+}
+
 func (e *CacheEngine) getRuntimeClassExtraConfigMapVolumeName(name string) string {
 	return fmt.Sprintf("fluid-extra-%s-%s", e.name, name)
 }
