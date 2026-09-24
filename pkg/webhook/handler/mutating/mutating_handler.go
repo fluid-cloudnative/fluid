@@ -147,6 +147,23 @@ func (a *FluidMutatingHandler) MutatePod(pod *corev1.Pod, useDirectReader bool) 
 		setupLog.Error(err, "failed to collect runtime infos from PVCs", "pvcNames", pvcNames)
 		return webhookutils.NewNeedRetryWithApiReaderError(errors.Wrapf(err, "failed to collect runtime infos from PVCs %v", pvcNames))
 	}
+	// A pod of a cache runtime without a fuse client mounts no dataset volume at all, so
+	// its datasets come from an annotation instead of from PVCs. Collect them only for
+	// such pods, so that the serverless and serverful paths keep seeing exactly the PVCs
+	// they see today.
+	if utils.InjectEnabled(pod.GetLabels()) {
+		annotationRuntimeInfos, annErr := webhookutils.CollectRuntimeInfosFromAnnotations(handlerClient, pod.Annotations, pod.Namespace, setupLog, utils.SkipPrecheckEnable(pod.Annotations))
+		if annErr != nil {
+			setupLog.Error(annErr, "failed to collect runtime infos from annotation", "annotation", common.LabelAnnotationDatasets)
+			return webhookutils.NewNeedRetryWithApiReaderError(errors.Wrapf(annErr, "failed to collect runtime infos from annotation %s", common.LabelAnnotationDatasets))
+		}
+		for datasetName, runtimeInfo := range annotationRuntimeInfos {
+			// A dataset already resolved from a PVC wins:
+			if _, exists := runtimeInfos[datasetName]; !exists {
+				runtimeInfos[datasetName] = runtimeInfo
+			}
+		}
+	}
 
 	// get plugins registry and get the need plugins list from it
 	pluginsRegistry := plugins.GetRegistryHandler()
@@ -166,8 +183,14 @@ func (a *FluidMutatingHandler) MutatePod(pod *corev1.Pod, useDirectReader bool) 
 		} else {
 			pluginsList = pluginsRegistry.GetPodWithDatasetHandler()
 		}
-	}
+	case utils.InjectEnabled(pod.GetLabels()):
+		if len(runtimeInfos) == 0 {
+			pluginsList = pluginsRegistry.GetClientlessPodWithoutDatasetHandler()
+		} else {
+			pluginsList = pluginsRegistry.GetClientlessPodWithDatasetHandler()
+		}
 
+	}
 	// call every plugin in the plugins list in the defined order
 	// if a plugin return shouldStop, stop to call other plugins
 	for _, plugin := range pluginsList {
