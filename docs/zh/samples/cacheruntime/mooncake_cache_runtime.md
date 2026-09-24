@@ -286,6 +286,83 @@ EOF
 - `POD_IP` 通过 downward API 注入，客户端的 `local_hostname` 必须是 Pod 自身 IP，其他节点才能回连取数。
 - `nodeName` 显式指定节点，是为了让后面的跨节点读取有确定的效果：写入方固定在一个节点，读取方固定在另一个节点。请把 `fluid-mooncake-worker2` 换成你集群中的实际节点名（`kubectl get nodes`），并确保与后面 client-2 使用的节点不同。
 
+#### 可选：让 Fluid 注入运行时配置
+
+上面的例子把 Master 地址直接写在了 Python 代码里。也可以让 Fluid 把运行时配置注入到业务 Pod 里，只要在 Pod 上加一个标签和一个注解：
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: mooncake-client-1
+  namespace: default              # 必须与 Dataset 同 namespace
+  labels:
+    fluid.io/inject: "true"
+  annotations:
+    fluid.io/datasets: "mooncake-demo"
+spec:
+  containers:
+    - name: client
+      image: btxu/mooncake:v3
+      command: ["sleep", "infinity"]
+      env:
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+```
+
+Pod 创建出来后会多出一个只读卷、一个挂载点和一个环境变量：
+
+```shell
+$ kubectl get pod mooncake-client-1 -o jsonpath='{.spec.containers[0].env}' | jq
+[
+  { "name": "POD_IP", "valueFrom": { "fieldRef": { "fieldPath": "status.podIP" } } },
+  {
+    "name": "FLUID_RUNTIME_CONFIG_PATH_MOONCAKE_DEMO",
+    "value": "/etc/fluid/config/mooncake-demo/runtime.sh"
+  }
+]
+```
+
+环境变量名里的数据集名是大写的，`-` 换成了 `_`（`mooncake-demo` 变成 `MOONCAKE_DEMO`），因为 shell 变量名里不能有 `-`。
+
+在容器里 `source` 一下就能拿到配置：
+
+```shell
+$ kubectl exec -it mooncake-client-1 -- sh -c '
+    . "$FLUID_RUNTIME_CONFIG_PATH_MOONCAKE_DEMO"
+    echo "master: ${MASTER_NAME}-0.${MASTER_SERVICE_NAME}"
+  '
+master: mooncake-demo-master-0.svc-mooncake-demo-master
+```
+
+实际用的时候，把拼地址的逻辑放进镜像的 entrypoint，应用只读环境变量：
+
+```sh
+#!/bin/sh
+# 打进镜像的 entrypoint，由接入方维护
+if [ -n "$FLUID_RUNTIME_CONFIG_PATH_MOONCAKE_DEMO" ]; then
+    . "$FLUID_RUNTIME_CONFIG_PATH_MOONCAKE_DEMO"
+    MASTER_HOST="${MASTER_NAME}-0.${MASTER_SERVICE_NAME}"
+    # 端口不在运行时配置中，与 CacheRuntimeClass 中声明的 containerPort 保持一致即可
+    export MOONCAKE_MASTER_ADDR="${MASTER_HOST}:50051"
+    export MOONCAKE_METADATA_SERVER="http://${MASTER_HOST}:8080/metadata"
+fi
+exec "$@"
+```
+
+```python
+store.setup(
+    local_hostname=os.environ["POD_IP"],
+    metadata_server=os.environ["MOONCAKE_METADATA_SERVER"],
+    master_server_addr=os.environ["MOONCAKE_MASTER_ADDR"],
+    ...
+)
+```
+
+这些配置来自 Dataset 和 CacheRuntime，副本数之类改了以后 ConfigMap 会跟着更新，但已经在跑的 Pod 不会重新读，应用只在启动时 `source` 一次。注入是怎么做的、有哪些限制（比如同时用多个数据集），见[通用缓存系统接入指南](../../dev/generic_cache_runtime_integration.md)里的“无 Client 组件的场景”。
+
 **启动应用并写入数据**
 
 ```shell
@@ -461,7 +538,7 @@ Events:
 
 **原因**：本示例的 CacheRuntimeClass 未声明 client 组件，因此不存在 FUSE 挂载点。CSI 插件会一直等待挂载点就绪直到超时，于是报出上面的 `timeout waiting for FUSE mount point to be ready`。虽然 Fluid 仍会创建 PVC/PV 且状态为 Bound，但业务 Pod 无法通过 `volumeMounts` 使用它。
 
-**处理**：从业务 Pod 中移除该 PVC 的挂载，改为按上文方式直连缓存服务，然后删除卡住的 Pod。
+**处理**：从业务 Pod 中移除该 PVC 的挂载，改为按上文方式直连缓存服务（可参考[可选：让 Fluid 注入运行时配置](#可选让-fluid-注入运行时配置)，由 Fluid 把 Master 地址等信息注入业务 Pod），然后删除卡住的 Pod。
 
 ```shell
 $ kubectl delete pod <pod-name>
