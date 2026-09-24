@@ -99,7 +99,7 @@ func (e *CacheEngine) transformComponentPodTemplate(runtimeCompSpec datav1alpha1
 			Value: e.namespace,
 		},
 		{
-			Name:  "FLUID_RUNTIME_CONFIG_PATH",
+			Name:  common.EnvRuntimeConfigPath,
 			Value: e.getRuntimeConfigPath(),
 		},
 		{

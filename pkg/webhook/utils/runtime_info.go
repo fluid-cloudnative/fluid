@@ -2,6 +2,7 @@ package utils
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/fluid-cloudnative/fluid/api/v1alpha1"
@@ -14,6 +15,7 @@ import (
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/validation"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -66,6 +68,80 @@ func CollectRuntimeInfosFromPVCs(client client.Reader, pvcNames []string, namesp
 
 	if len(errPVCs) > 0 {
 		err = fmt.Errorf("failed to get the following PVCs %v", errPVCs)
+		return
+	}
+
+	return
+}
+
+// CollectRuntimeInfosFromAnnotations collects runtime infos for the datasets a pod declares in its
+// fluid.io/datasets annotation. It is the counterpart of CollectRuntimeInfosFromPVCs for pods that
+// mount no dataset volume at all, e.g. app pods of a cache runtime that has no fuse client.
+//
+// The returned map is keyed by dataset name. Datasets are resolved in the pod's own namespace,
+// because a pod can only reference volumes and config maps from there, so the annotation carries
+// bare names rather than namespaced ones.
+func CollectRuntimeInfosFromAnnotations(client client.Reader, annotations map[string]string, namespace string, setupLog logr.Logger, skipPrecheck bool) (runtimeInfos map[string]base.RuntimeInfoInterface, err error) {
+	runtimeInfos = map[string]base.RuntimeInfoInterface{}
+
+	datasetNames := annotations[common.LabelAnnotationDatasets]
+	if len(datasetNames) == 0 {
+		return
+	}
+
+	if utils.IsTimeTrackerDebugEnabled() {
+		defer utils.TimeTrack(time.Now(), "mutating.CollectRuntimeInfosFromAnnotations",
+			"dataset.names", datasetNames, "dataset.namespace", namespace)
+	}
+
+	seen := map[string]struct{}{}
+	errDatasets := []string{}
+	for _, datasetName := range strings.Split(datasetNames, ",") {
+		datasetName = strings.TrimSpace(datasetName)
+		if len(datasetName) == 0 {
+			continue
+		}
+		if _, dup := seen[datasetName]; dup {
+			continue
+		}
+		seen[datasetName] = struct{}{}
+
+		// A dataset name is a k8s object name, so an invalid one can never resolve. Reject it here
+		// with a message naming the annotation, instead of letting it fail later as a not-found.
+		if nameErrs := validation.IsDNS1035Label(datasetName); len(nameErrs) > 0 {
+			setupLog.Error(errors.New(strings.Join(nameErrs, "; ")),
+				"invalid dataset name in annotation, ignore and continue to check next dataset",
+				"annotation", common.LabelAnnotationDatasets,
+				"dataset", datasetName)
+			errDatasets = append(errDatasets, datasetName)
+			continue
+		}
+
+		if !skipPrecheck {
+			if boundErr := checkDatasetBound(client, datasetName, namespace); boundErr != nil {
+				setupLog.Error(boundErr, "unable to check dataset, ignore and continue to check next dataset",
+					"dataset", datasetName,
+					"namespace", namespace)
+				errDatasets = append(errDatasets, datasetName)
+				continue
+			}
+		}
+
+		runtimeInfo, infoErr := base.GetRuntimeInfo(client, datasetName, namespace)
+		if infoErr != nil {
+			setupLog.Error(infoErr, "unable to get runtimeInfo, ignore and continue to check next dataset",
+				"dataset", datasetName,
+				"namespace", namespace)
+			errDatasets = append(errDatasets, datasetName)
+			continue
+		}
+
+		runtimeInfos[datasetName] = runtimeInfo
+	}
+
+	if len(errDatasets) > 0 {
+		err = fmt.Errorf("failed to get the following datasets %v declared in annotation %s",
+			errDatasets, common.LabelAnnotationDatasets)
 		return
 	}
 
