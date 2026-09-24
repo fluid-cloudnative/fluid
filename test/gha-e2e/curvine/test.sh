@@ -343,7 +343,7 @@ function wait_runtime_deleted() {
     local counter=0
     while true; do
         local remaining=""
-        remaining=$(kubectl get advancedstatefulset,daemonset,svc -l fluid.io/managed-by=fluid -n default -oname 2>/dev/null)
+        remaining=$(kubectl get advancedstatefulset,daemonset,svc -l "cacheruntime.fluid.io/name=${dataset_name}" -n default -oname 2>/dev/null)
         if [[ -z "$remaining" ]]; then
             break
         fi

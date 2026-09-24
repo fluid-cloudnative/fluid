@@ -1,0 +1,20 @@
+# One worker replica: the CI kind cluster is single-node, so extra replicas would
+# show no scheduling difference and only make the case slower. Replica scaling is
+# already covered by the curvine case and is not repeated here.
+apiVersion: data.fluid.io/v1alpha1
+kind: CacheRuntime
+metadata:
+  name: mooncake-demo
+  namespace: default
+spec:
+  runtimeClassName: mooncake-demo
+  master:
+    replicas: 1
+  worker:
+    replicas: 1
+    tieredStore:
+      levels:
+        - emptyDir:
+            quota: 1Gi
+          high: "0.8"
+          low: "0.5"

@@ -1,0 +1,16 @@
+# Mooncake mounts no underlying storage (UFS); data is written directly into the
+# cache by the client. The mountPoint here is only a placeholder: the
+# CacheRuntimeClass declares no mountUfs execution entry, so Fluid never performs
+# an actual mount.
+apiVersion: data.fluid.io/v1alpha1
+kind: Dataset
+metadata:
+  name: mooncake-demo
+  namespace: default
+spec:
+  placement: Shared
+  accessModes:
+    - ReadWriteMany
+  mounts:
+    - name: mc
+      mountPoint: "mooncakefs:///"
