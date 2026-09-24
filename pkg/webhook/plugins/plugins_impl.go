@@ -30,6 +30,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/webhook/plugins/nodeaffinitywithcache"
 	"github.com/fluid-cloudnative/fluid/pkg/webhook/plugins/prefernodeswithoutcache"
 	"github.com/fluid-cloudnative/fluid/pkg/webhook/plugins/requirenodewithfuse"
+	"github.com/fluid-cloudnative/fluid/pkg/webhook/plugins/runtimeconfiginjector"
 	"gopkg.in/yaml.v2"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -52,6 +53,7 @@ func RegisterMutatingHandlers(client client.Client) error {
 	_ = registry.Register(fusesidecar.Name, fusesidecar.NewPlugin)
 	_ = registry.Register(datasetusageinjector.Name, datasetusageinjector.NewPlugin)
 	_ = registry.Register(fileprefetcher.Name, fileprefetcher.NewPlugin)
+	_ = registry.Register(runtimeconfiginjector.Name, runtimeconfiginjector.NewPlugin)
 
 	// get the handlers through the config file
 	data, err := os.ReadFile(common.WebhookPluginFilePath)
@@ -78,6 +80,8 @@ type Handlers struct {
 	podWithoutDatasetHandler           []api.MutatingHandler
 	serverlessPodWithDatasetHandler    []api.MutatingHandler
 	serverlessPodWithoutDatasetHandler []api.MutatingHandler
+	clientlessPodWithDatasetHandler    []api.MutatingHandler
+	clientlessPodWithoutDatasetHandler []api.MutatingHandler
 }
 
 func (h *Handlers) GetPodWithoutDatasetHandler() []api.MutatingHandler {
@@ -96,6 +100,14 @@ func (h *Handlers) GetServerlessPodWithoutDatasetHandler() []api.MutatingHandler
 	return h.serverlessPodWithoutDatasetHandler
 }
 
+func (h *Handlers) GetClientlessPodWithDatasetHandler() []api.MutatingHandler {
+	return h.clientlessPodWithDatasetHandler
+}
+
+func (h *Handlers) GetClientlessPodWithoutDatasetHandler() []api.MutatingHandler {
+	return h.clientlessPodWithoutDatasetHandler
+}
+
 func GetRegistryHandler() api.RegistryHandler {
 	return cacheHandlers
 }
@@ -111,7 +123,7 @@ func newHandler(client client.Client, profile *PluginsProfile) (handlers *Handle
 		pluginConfig[name] = profile.PluginConfig[i].Args
 	}
 
-	// new handler for serverful and serverless pod with/without dataset
+	// new handler for serverful, serverless and clientless pod with/without dataset
 	podWithDatasetHandler, err := newHandlerForType(client, profile.Plugins.Serverful.WithDataset, pluginConfig, "podWithDatasetHandler")
 	if err != nil {
 		return nil, err
@@ -135,6 +147,18 @@ func newHandler(client client.Client, profile *PluginsProfile) (handlers *Handle
 		return nil, err
 	}
 	handlers.serverlessPodWithoutDatasetHandler = serverlessPodWithoutDatasetHandler
+
+	clientlessPodWithDatasetHandler, err := newHandlerForType(client, profile.Plugins.Clientless.WithDataset, pluginConfig, "clientlessPodWithDatasetHandler")
+	if err != nil {
+		return nil, err
+	}
+	handlers.clientlessPodWithDatasetHandler = clientlessPodWithDatasetHandler
+
+	clientlessPodWithoutDatasetHandler, err := newHandlerForType(client, profile.Plugins.Clientless.WithoutDataset, pluginConfig, "clientlessPodWithoutDatasetHandler")
+	if err != nil {
+		return nil, err
+	}
+	handlers.clientlessPodWithoutDatasetHandler = clientlessPodWithoutDatasetHandler
 
 	return handlers, nil
 }
