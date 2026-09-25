@@ -23,7 +23,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 )
 
-// IgnoreAlreadyExists ignores already existes error
+// IgnoreAlreadyExists ignores already exists error
 func IgnoreAlreadyExists(err error) error {
 	if apierrs.IsAlreadyExists(err) {
 		return nil
@@ -39,6 +39,9 @@ func IgnoreNotFound(err error) error {
 	return err
 }
 
+// IgnoreNoKindMatchError ignores NoKindMatch errors returned when the API server
+// does not recognize the requested resource kind. This is useful when checking
+// for optional CRD-backed resources that may not be installed in all clusters.
 func IgnoreNoKindMatchError(err error) error {
 	if apimeta.IsNoMatchError(err) {
 		return nil
