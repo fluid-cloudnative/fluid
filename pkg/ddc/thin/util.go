@@ -24,11 +24,15 @@ import (
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	apierrs "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/util/retry"
 	podutil "k8s.io/kubernetes/pkg/api/v1/pod"
 	options "sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/yaml"
 )
 
 // getRuntime gets thin runtime
@@ -132,6 +136,70 @@ func (t *ThinEngine) getDataSetFileNum() (string, error) {
 
 func (t ThinEngine) getFuseConfigMapName() string {
 	return t.name + "-fuse-conf"
+}
+
+// GetValuesConfigMap returns the ConfigMap holding the Helm values that the runtime was last
+// rendered with. It returns a nil ConfigMap without an error when the ConfigMap does not exist,
+// which happens when the user opted out via common.AnnotationDisableRuntimeHelmValueConfig.
+func (t *ThinEngine) GetValuesConfigMap() (cm *corev1.ConfigMap, err error) {
+	cm = &corev1.ConfigMap{}
+	err = t.Client.Get(context.TODO(), types.NamespacedName{
+		Name:      t.getHelmValuesConfigMapName(),
+		Namespace: t.namespace,
+	}, cm)
+	if apierrs.IsNotFound(err) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	return cm, nil
+}
+
+// GetValueFromConfigmap returns the last synced ThinValue. A nil value without an error means the
+// values ConfigMap is not available, so there is no state to sync against.
+func (t *ThinEngine) GetValueFromConfigmap() (*ThinValue, error) {
+	cm, err := t.GetValuesConfigMap()
+	if err != nil || cm == nil {
+		return nil, err
+	}
+
+	data, exist := cm.Data["data"]
+	if !exist {
+		return nil, fmt.Errorf("no data key found in the helm value configmap %s/%s", t.namespace, cm.Name)
+	}
+
+	var value ThinValue
+	if err := yaml.Unmarshal([]byte(data), &value); err != nil {
+		return nil, err
+	}
+
+	return &value, nil
+}
+
+// SaveValueToConfigmap persists the value as the new last synced state.
+func (t *ThinEngine) SaveValueToConfigmap(value *ThinValue) error {
+	data, err := yaml.Marshal(value)
+	if err != nil {
+		return err
+	}
+
+	return retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+		cm, err := t.GetValuesConfigMap()
+		if err != nil {
+			return err
+		}
+		if cm == nil {
+			return fmt.Errorf("helm value configmap %s/%s not found", t.namespace, t.getHelmValuesConfigMapName())
+		}
+
+		if cm.Data == nil {
+			cm.Data = map[string]string{}
+		}
+		cm.Data["data"] = string(data)
+		return kubeclient.UpdateConfigMap(t.Client, cm)
+	})
 }
 
 func (t ThinEngine) isWorkerEnable() bool {

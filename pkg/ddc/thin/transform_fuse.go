@@ -19,6 +19,7 @@ package thin
 import (
 	"fmt"
 	"path/filepath"
+	"sort"
 	"strings"
 
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
@@ -296,6 +297,10 @@ func (t *ThinEngine) parseFuseOptions(runtime *datav1alpha1.ThinRuntime, profile
 			optionList = append(optionList, k)
 		}
 	}
+	// Sort so that the same set of options always renders the same string. Otherwise map iteration
+	// order would make SyncRuntime see a different mount options env variable on every
+	// reconciliation and keep updating the fuse daemonset forever.
+	sort.Strings(optionList)
 	if len(optionList) != 0 {
 		option = strings.Join(optionList, ",")
 	}
