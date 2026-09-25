@@ -127,10 +127,11 @@ func (e *CacheEngine) transformComponentPodTemplate(runtimeCompSpec datav1alpha1
 			podTemplate.Spec.Containers[0].ImagePullPolicy = (corev1.PullPolicy)(runtimeCompSpec.RuntimeVersion.ImagePullPolicy)
 		}
 
-		// use runtime component resources if specified, otherwise use default resources
-		if runtimeCompSpec.Resources.Limits != nil || runtimeCompSpec.Resources.Requests != nil {
-			podTemplate.Spec.Containers[0].Resources = runtimeCompSpec.Resources
-		}
+		// Overlay the runtime component resources on the CacheRuntimeClass template
+		// baseline key by key: a partially specified resources only moves the keys it
+		// names and leaves the rest of the template's requirements in place.
+		podTemplate.Spec.Containers[0].Resources = mergeResourceRequirements(
+			podTemplate.Spec.Containers[0].Resources, runtimeCompSpec.Resources)
 
 		if runtimeCompSpec.Args != nil {
 			podTemplate.Spec.Containers[0].Args = runtimeCompSpec.Args
@@ -147,4 +148,67 @@ func (e *CacheEngine) transformComponentPodTemplate(runtimeCompSpec datav1alpha1
 	if len(componentValue.PodTemplateSpec.Spec.InitContainers) > 0 {
 		componentValue.PodTemplateSpec.Spec.InitContainers[0].Env = append(addEnvs, componentValue.PodTemplateSpec.Spec.InitContainers[0].Env...)
 	}
+}
+
+// mergeResourceRequirements overlays the resources declared on a CacheRuntime component
+// on top of the baseline rendered from the CacheRuntimeClass template, key by key.
+//
+// The two are not alternatives: the template carries the runtime's own requirements and
+// the CacheRuntime only expresses the deltas an owner wants for their instance, so
+// replacing the whole struct would silently drop every requirement the CacheRuntime does
+// not restate. A key the overlay does not name keeps its template value; a key it names
+// wins, including a key the template never declared.
+//
+// The corollary is that a key set by the template cannot be removed by omitting it from
+// the CacheRuntime, only overridden. Removing a requirement is a change to the template,
+// which is where the runtime's requirements are described in the first place.
+//
+// Claims are name-keyed rather than merged by resource name: an overlay claim replaces
+// the template claim with the same name and any other claim is appended, preserving the
+// template's order.
+func mergeResourceRequirements(base, overlay corev1.ResourceRequirements) corev1.ResourceRequirements {
+	merged := *base.DeepCopy()
+	merged.Limits = mergeResourceList(merged.Limits, overlay.Limits)
+	merged.Requests = mergeResourceList(merged.Requests, overlay.Requests)
+	merged.Claims = mergeResourceClaims(merged.Claims, overlay.Claims)
+	return merged
+}
+
+// mergeResourceList applies the overlay entries onto base, modifying it in place, and
+// returns it. Callers own base: mergeResourceRequirements hands over a deep copy. A nil
+// base is kept nil when the overlay declares nothing, so that an untouched component
+// still compares equal to the workload it was rendered into.
+func mergeResourceList(base, overlay corev1.ResourceList) corev1.ResourceList {
+	if len(overlay) == 0 {
+		return base
+	}
+	if base == nil {
+		base = corev1.ResourceList{}
+	}
+	for name, quantity := range overlay {
+		base[name] = quantity.DeepCopy()
+	}
+	return base
+}
+
+// mergeResourceClaims applies the overlay claims onto base by name, modifying it in
+// place, and returns it.
+func mergeResourceClaims(base, overlay []corev1.ResourceClaim) []corev1.ResourceClaim {
+	if len(overlay) == 0 {
+		return base
+	}
+	for _, claim := range overlay {
+		replaced := false
+		for i := range base {
+			if base[i].Name == claim.Name {
+				base[i] = *claim.DeepCopy()
+				replaced = true
+				break
+			}
+		}
+		if !replaced {
+			base = append(base, *claim.DeepCopy())
+		}
+	}
+	return base
 }
