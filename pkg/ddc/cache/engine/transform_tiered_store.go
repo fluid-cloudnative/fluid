@@ -21,6 +21,7 @@ import (
 	"strings"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -255,4 +256,76 @@ func withTieredStoreMemoryQuota(base corev1.ResourceRequirements, quota resource
 		}
 	}
 	return result
+}
+
+// convertToLegacyTieredStore converts a CacheRuntime RuntimeTieredStore into the legacy
+// TieredStore that base.BuildRuntimeInfo consumes. RuntimeInfo holds a single TieredStoreInfo
+// and drives the cache capacity labels put on nodes, so it is fed from the worker tiered store
+// only: labelling is keyed off nodes running worker pods (getDesiredNodesWithScheduleInfo), and
+// a client tier would therefore be counted on nodes where a worker happens to co-reside and
+// silently dropped everywhere else.
+//
+// The two APIs describe the storage medium differently. RuntimeTieredStoreLevel names it
+// structurally through ProcessMemory, EmptyDir and HostPath, while the legacy Level carries an
+// explicit MEM/SSD/HDD enum. Only the memory-versus-disk distinction survives, which is what the
+// consumers need: tieredstore.GetLevelStorageMap buckets SSD and HDD together. Disk-backed levels
+// are reported as HDD to match the medium type already written into the runtime config ConfigMap
+// by extractTieredStoreLevels.
+//
+// The media are examined in the same order as TransformRuntimeTieredStore - memory, host path,
+// empty dir - so that the two functions agree on which one wins should a level ever name more
+// than the single medium the API allows.
+//
+// A level naming no medium is skipped rather than emitted. convertToTieredstoreInfo rejects a
+// Level carrying neither Quota nor QuotaList, and that error propagates through WithTieredStore
+// and BuildRuntimeInfo out of getRuntimeInfo, which would fail the whole reconcile.
+func convertToLegacyTieredStore(tieredStore datav1alpha1.RuntimeTieredStore) datav1alpha1.TieredStore {
+	legacyTieredStore := datav1alpha1.TieredStore{}
+
+	for levelIndex, level := range tieredStore.Levels {
+		legacyLevel := datav1alpha1.Level{
+			High: level.High,
+			Low:  level.Low,
+		}
+
+		switch {
+		case level.ProcessMemory != nil:
+			quota := level.ProcessMemory.Quota.DeepCopy()
+			legacyLevel.MediumType = common.Memory
+			legacyLevel.Path = GetMemoryTieredStoreMountPath(levelIndex)
+			legacyLevel.Quota = &quota
+		case level.HostPath != nil:
+			// Paths and Quotas are parallel lists. The CRD requires both to be non-empty but
+			// cannot express that they must have the same length, so guard here: a mismatch
+			// would otherwise be rejected by convertToTieredstoreInfo.
+			if len(level.HostPath.Paths) == 0 || len(level.HostPath.Paths) != len(level.HostPath.Quotas) {
+				continue
+			}
+			paths := make([]string, 0, len(level.HostPath.Paths))
+			quotas := make([]string, 0, len(level.HostPath.Quotas))
+			for pathIndex := range level.HostPath.Paths {
+				paths = append(paths, GetHostPathTieredStoreMountPath(levelIndex, pathIndex))
+				quotas = append(quotas, level.HostPath.Quotas[pathIndex].String())
+			}
+			legacyLevel.MediumType = common.HDD
+			// Per-path quotas must be kept apart: a single Quota would be divided equally over
+			// the paths by convertToTieredstoreInfo and lose the declared distribution.
+			legacyLevel.Path = strings.Join(paths, ",")
+			legacyLevel.QuotaList = strings.Join(quotas, ",")
+		case level.EmptyDir != nil:
+			quota := level.EmptyDir.Quota.DeepCopy()
+			legacyLevel.MediumType = common.HDD
+			if level.EmptyDir.Medium == corev1.StorageMediumMemory {
+				legacyLevel.MediumType = common.Memory
+			}
+			legacyLevel.Path = GetEmptyDirTieredStoreMountPath(levelIndex)
+			legacyLevel.Quota = &quota
+		default:
+			continue
+		}
+
+		legacyTieredStore.Levels = append(legacyTieredStore.Levels, legacyLevel)
+	}
+
+	return legacyTieredStore
 }
