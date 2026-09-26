@@ -30,8 +30,9 @@ spec:
     spec:
       containers:
       - name: minio
-        # Pulls the default Minio image from Docker Hub
-        image: minio/minio
+        # MinIO no longer publishes images; pull the copy kept in the ACK registry next to the jindo images
+        image: registry-cn-hongkong.ack.aliyuncs.com/acs/minio:RELEASE.2022-10-24T18-35-07Z-update
+        imagePullPolicy: IfNotPresent
         resources:
           limits:
             memory: "512Mi"
