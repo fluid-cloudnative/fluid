@@ -269,11 +269,32 @@ PY
     fi
 }
 
+# dump_minio_state prints why the MinIO pods are not ready: without it a rollout timeout
+# says nothing about whether the image failed to pull, the container crashed, or the
+# pod never got scheduled.
+function dump_minio_state() {
+    local selector="app.kubernetes.io/part-of=jindo-e2e-minio"
+    syslog "MinIO pods:"
+    kubectl get pod -l "$selector" -o wide || true
+    syslog "MinIO pod details:"
+    kubectl describe pod -l "$selector" || true
+    syslog "Recent events:"
+    kubectl get events --sort-by=.lastTimestamp | tail -n 40 || true
+}
+
+function wait_minio_ready() {
+    local deployment=$1
+    if ! kubectl rollout status --timeout=180s "deployment/${deployment}"; then
+        dump_minio_state
+        panic "${deployment} deployment is not ready"
+    fi
+}
+
 function setup_minio() {
     kubectl create -f test/gha-e2e/jindo/minio.yaml
-    kubectl rollout status --timeout=180s deployment/minio || panic "minio deployment is not ready"
-    kubectl rollout status --timeout=180s deployment/minio-a || panic "minio-a deployment is not ready"
-    kubectl rollout status --timeout=180s deployment/minio-b || panic "minio-b deployment is not ready"
+    wait_minio_ready minio
+    wait_minio_ready minio-a
+    wait_minio_ready minio-b
 
     seed_minio_bucket minio minioadmin minioadmin mybucket "$s3_object_key" helloworld 19000
     if should_use_minio_multi_oss; then
