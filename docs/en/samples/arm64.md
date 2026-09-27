@@ -64,6 +64,8 @@ This example is based on JuiceFSRuntime
 
 2. Refer to the [document](juicefs_setup.md) to prepare JuiceFS Community Edition
 
+   Note: the MinIO image used in that document is amd64 only. On ARM64, deploy an S3-compatible object storage service that ships an arm64 image instead.
+
 Before using JuiceFS, you need to provide parameters for metadata services (such as Redis) and object storage services (such as MinIO), and create corresponding secrets:
 
 ```shell

@@ -52,7 +52,7 @@ spec:
       containers:
       - name: minio
         # MinIO no longer publishes images; use the copy kept in the ACK registry
-        image: registry-cn-hangzhou.ack.aliyuncs.com/acs/minio:RELEASE.2022-10-24T18-35-07Z-update
+        image: registry-cn-hongkong.ack.aliyuncs.com/acs/minio:RELEASE.2022-10-24T18-35-07Z-update
         args:
         - server
         - /data
