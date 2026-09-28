@@ -6,8 +6,10 @@ spec:
   template:
     spec:
       containers:
-      - name: mc
-        image: minio/mc
+      # mc is no longer published either, so create the bucket with a signed S3 request.
+      # The curl in the MinIO image predates --aws-sigv4, hence curl's own image.
+      - name: create-bucket
+        image: curlimages/curl:8.22.0
         imagePullPolicy: IfNotPresent
         resources:
           limits:
@@ -15,7 +17,7 @@ spec:
         command:
           - /bin/sh
           - -c
-          - "mc alias set myminio http://minio:9000 $MINIO_ROOT_USER $MINIO_ROOT_PASSWORD && mc mb myminio/test"
+          - "curl -sSf -X PUT --aws-sigv4 aws:amz:us-east-1:s3 --user $MINIO_ROOT_USER:$MINIO_ROOT_PASSWORD http://minio:9000/test"
         env:
         # Minio access key and secret key
         - name: MINIO_ROOT_USER

@@ -70,7 +70,7 @@ spec:
     spec:
       containers:
       - name: minio
-        image: minio/minio
+        image: registry-cn-hongkong.ack.aliyuncs.com/acs/minio:RELEASE.2022-10-24T18-35-07Z-update
         imagePullPolicy: IfNotPresent
         resources:
           limits:
@@ -104,8 +104,8 @@ spec:
   template:
     spec:
       containers:
-      - name: mc
-        image: minio/mc
+      - name: create-bucket
+        image: curlimages/curl:8.22.0
         imagePullPolicy: IfNotPresent
         resources:
           limits:
@@ -113,7 +113,7 @@ spec:
         command:
           - /bin/sh
           - -c
-          - "mc alias set myminio http://minio:9000 $MINIO_ROOT_USER $MINIO_ROOT_PASSWORD && mc mb myminio/test"
+          - "curl -sSf -X PUT --aws-sigv4 aws:amz:us-east-1:s3 --user \$MINIO_ROOT_USER:\$MINIO_ROOT_PASSWORD http://minio:9000/test"
         env:
         - name: MINIO_ROOT_USER
           value: "minioadmin"

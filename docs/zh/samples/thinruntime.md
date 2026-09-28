@@ -49,16 +49,17 @@ spec:
     spec:
       containers:
       - name: minio
-        # Pulls the default Minio image from Docker Hub
-        image: bitnami/minio
+        # MinIO no longer publishes images; use the copy kept in the ACK registry
+        image: registry-cn-hongkong.ack.aliyuncs.com/acs/minio:RELEASE.2022-10-24T18-35-07Z-update
+        args:
+        - server
+        - /data
         env:
         # Minio access key and secret key
         - name: MINIO_ROOT_USER
           value: "minioadmin"
         - name: MINIO_ROOT_PASSWORD
           value: "minioadmin"
-        - name: MINIO_DEFAULT_BUCKETS
-          value: "my-first-bucket:public"
         ports:
         - containerPort: 9000
           hostPort: 9000
@@ -68,15 +69,16 @@ spec:
 ```
 $ kubectl create -f minio.yaml
 ```
-部署成功后，Kubernetes集群内的其他Pod即可通过`http://minio:9000`的Minio API端点访问Minio存储系统中的数据。上述YAML配置中，我们设置Minio的用户名与密码均为`minioadmin`，并在启动Minio存储时默认创建一个名为`my-first-bucket`的存储桶，在接下来的示例中，我们将会访问`my-first-bucket`这个存储桶中的数据。在执行以下步骤前，首先执行以下命令，在`my-first-bucket`中存储示例文件：
+部署成功后，Kubernetes集群内的其他Pod即可通过`http://minio:9000`的Minio API端点访问Minio存储系统中的数据。上述YAML配置中，我们设置Minio的用户名与密码均为`minioadmin`，在接下来的示例中，我们将会访问名为`my-first-bucket`的存储桶中的数据。在执行以下步骤前，首先执行以下命令，创建`my-first-bucket`并在其中存储示例文件。MinIO 官方已不再发布`mc`客户端，因此这里使用 curl 签名 S3 请求：
 
 ```
-$ kubectl exec -it minio-69c555f4cf-np59j -- bash -c "echo fluid-minio-test > testfile"
-
-$ kubectl exec -it minio-69c555f4cf-np59j -- bash -c "mc cp ./testfile local/my-first-bucket/" 
-
-$ kubectl exec -it  minio-69c555f4cf-np59j -- bash -c "mc cat local/my-first-bucket/testfile"
+$ kubectl run minio-init --rm -i --restart=Never --image=curlimages/curl:8.22.0 --command -- sh -c '
+    S3="--aws-sigv4 aws:amz:us-east-1:s3 --user minioadmin:minioadmin"
+    curl -sSf -X PUT $S3 http://minio:9000/my-first-bucket &&
+    echo fluid-minio-test | curl -sSf -X PUT $S3 --data-binary @- http://minio:9000/my-first-bucket/testfile &&
+    curl -sSf $S3 http://minio:9000/my-first-bucket/testfile'
 fluid-minio-test
+pod "minio-init" deleted
 ```
 
 **准备包含Minio Fuse客户端的容器镜像**

@@ -49,16 +49,17 @@ spec:
     spec:
       containers:
       - name: minio
-        # Pulls the default Minio image from Docker Hub
-        image: bitnami/minio
+        # MinIO no longer publishes images; use the copy kept in the ACK registry
+        image: registry-cn-hongkong.ack.aliyuncs.com/acs/minio:RELEASE.2022-10-24T18-35-07Z-update
+        args:
+        - server
+        - /data
         env:
         # Minio access key and secret key
         - name: MINIO_ROOT_USER
           value: "minioadmin"
         - name: MINIO_ROOT_PASSWORD
           value: "minioadmin"
-        - name: MINIO_DEFAULT_BUCKETS
-          value: "my-first-bucket:public"
         ports:
         - containerPort: 9000
           hostPort: 9000
@@ -69,15 +70,16 @@ Deploy the above resources to the Kubernetes cluster:
 $ kubectl create -f minio.yaml
 ```
 
-After successful deployment, other Pods in the Kubernetes cluster can access data in the Minio storage system through the Minio API endpoint `http://minio:9000`. In the above YAML configuration, we set both the Minio username and password to `minioadmin`, and create a bucket named `my-first-bucket` by default when starting Minio storage. In the following examples, we will access data in the `my-first-bucket` bucket. Before executing the following steps, first execute the following commands to store sample files in `my-first-bucket`:
+After successful deployment, other Pods in the Kubernetes cluster can access data in the Minio storage system through the Minio API endpoint `http://minio:9000`. In the above YAML configuration, we set both the Minio username and password to `minioadmin`. In the following examples, we will access data in a bucket named `my-first-bucket`. Before executing the following steps, first execute the following command to create `my-first-bucket` and store a sample file in it. MinIO no longer publishes its `mc` client, so the command signs S3 requests with curl instead:
 
 ```bash
-$ kubectl exec -it minio-69c555f4cf-np59j -- bash -c "echo fluid-minio-test > testfile"
-
-$ kubectl exec -it minio-69c555f4cf-np59j -- bash -c "mc cp ./testfile local/my-first-bucket/" 
-
-$ kubectl exec -it  minio-69c555f4cf-np59j -- bash -c "mc cat local/my-first-bucket/testfile"
+$ kubectl run minio-init --rm -i --restart=Never --image=curlimages/curl:8.22.0 --command -- sh -c '
+    S3="--aws-sigv4 aws:amz:us-east-1:s3 --user minioadmin:minioadmin"
+    curl -sSf -X PUT $S3 http://minio:9000/my-first-bucket &&
+    echo fluid-minio-test | curl -sSf -X PUT $S3 --data-binary @- http://minio:9000/my-first-bucket/testfile &&
+    curl -sSf $S3 http://minio:9000/my-first-bucket/testfile'
 fluid-minio-test
+pod "minio-init" deleted
 ```
 
 **Prepare Container Image with Minio Fuse Client**
