@@ -16,9 +16,19 @@ limitations under the License.
 
 package testutil
 
-import "os"
+import (
+	"os"
+	"strings"
+)
 
 const FluidUnitTestEnv = "FLUID_UNIT_TEST"
+
+func init() {
+	// Automatically detect if running inside a test binary
+	if strings.HasSuffix(os.Args[0], ".test") || strings.HasSuffix(os.Args[0], ".test.exe") {
+		os.Setenv(FluidUnitTestEnv, "true")
+	}
+}
 
 func IsUnitTest() bool {
 	_, exists := os.LookupEnv(FluidUnitTestEnv)
