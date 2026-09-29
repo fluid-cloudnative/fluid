@@ -241,8 +241,28 @@ func (e *CacheEngine) syncRuntimeSpec(ctx cruntime.ReconcileRequestContext, runt
 		}
 	}
 
-	// Note: Client component is NOT synced here because it uses DaemonSet which does not support in-place update
-	// Client component will be recreated when spec changes
+	// Sync Client component if enabled (supports in-place update for image/resources via DaemonSet patch;
+	// Kubernetes rolls the updated pod template out to each node automatically)
+	if runtimeClass.Topology.Client != nil && !runtime.Spec.Client.Disabled {
+		clientIdentity := &common.ComponentIdentity{
+			Name:      common.GetCacheComponentName(e.name, common.ComponentTypeClient),
+			Namespace: e.namespace,
+		}
+		manager := component.NewComponentHelper(common.ComponentTypeClient, e.Client)
+		var clientResources corev1.ResourceRequirements
+		if runtime.Spec.Client.Resources.Requests != nil || runtime.Spec.Client.Resources.Limits != nil {
+			clientResources = runtime.Spec.Client.Resources
+		}
+		clientSpec := component.ComponentSpec{
+			Version:   runtime.Spec.Client.RuntimeVersion,
+			Resources: clientResources,
+			// Replicas intentionally left nil: DaemonSet replica count is determined by node count, not user-specified.
+		}
+		if err := manager.SyncComponentSpec(ctx.Context, clientIdentity, clientSpec); err != nil {
+			e.Log.Error(err, "failed to sync client component spec", "component", clientIdentity.Name)
+			return err
+		}
+	}
 
 	return nil
 }
