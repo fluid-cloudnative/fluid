@@ -25,28 +25,42 @@ import (
 // a -> a
 // a b -> a b
 // $a -> $'$a'
-// $'a' -> $'$\'$a'\'
+// $'a' -> $'$\'a\”
 func EscapeBashStr(s string) string {
-	if !containsOne(s, []rune{'$', '`', '&', ';', '>', '|', '(', ')'}) {
+	// Check if string contains any shell-sensitive characters that require escaping
+	// Added '\', '\'', '\n', '\r', and '\t' to the list as identified by security review
+	if !containsOne(s, []rune{'$', '`', '&', ';', '>', '|', '(', ')', '\'', '\\', '\n', '\r', '\t', ' '}) {
 		return s
 	}
-	s = strings.ReplaceAll(s, `\`, `\\`)
-	s = strings.ReplaceAll(s, `'`, `\'`)
-	if strings.Contains(s, `\\`) {
-		s = strings.ReplaceAll(s, `\\\\`, `\\`)
-		s = strings.ReplaceAll(s, `\\\'`, `\'`)
-		s = strings.ReplaceAll(s, `\\"`, `\"`)
-		s = strings.ReplaceAll(s, `\\a`, `\a`)
-		s = strings.ReplaceAll(s, `\\b`, `\b`)
-		s = strings.ReplaceAll(s, `\\e`, `\e`)
-		s = strings.ReplaceAll(s, `\\E`, `\E`)
-		s = strings.ReplaceAll(s, `\\n`, `\n`)
-		s = strings.ReplaceAll(s, `\\r`, `\r`)
-		s = strings.ReplaceAll(s, `\\t`, `\t`)
-		s = strings.ReplaceAll(s, `\\v`, `\v`)
-		s = strings.ReplaceAll(s, `\\?`, `\?`)
+
+	// Build the escaped string manually to handle all special cases correctly
+	var result strings.Builder
+
+	for _, ch := range s {
+		switch ch {
+		case '\\':
+			// Escape backslashes by doubling them
+			result.WriteString(`\\`)
+		case '\'':
+			// Escape single quotes
+			result.WriteString(`\'`)
+		case '\n':
+			// Preserve newline as literal \n in ANSI-C quoted string
+			result.WriteString(`\n`)
+		case '\r':
+			// Preserve carriage return as literal \r in ANSI-C quoted string
+			result.WriteString(`\r`)
+		case '\t':
+			// Preserve tab as literal \t in ANSI-C quoted string
+			result.WriteString(`\t`)
+		default:
+			// All other characters (including $, `, &, etc.) are safe within $'...'
+			result.WriteRune(ch)
+		}
 	}
-	return fmt.Sprintf(`$'%s'`, s)
+
+	// Wrap in ANSI-C quoting format
+	return fmt.Sprintf(`$'%s'`, result.String())
 }
 
 func containsOne(target string, chars []rune) bool {
