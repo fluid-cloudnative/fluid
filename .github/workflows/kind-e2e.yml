@@ -79,6 +79,9 @@ jobs:
       - name: Build fluid docker images
         env:
           IMG_REPO: fluidcloudnative
+          # The e2e suites in test/gha-e2e need the oss-emulator and mooncake
+          # helper images; the backward-compatibility workflow does not.
+          WITH_E2E_TEST_IMAGES: "true"
         run: |
           echo ">>> System disk usage before build fluid images"
           df -h
