@@ -16,7 +16,10 @@ limitations under the License.
 
 package common
 
-import "regexp"
+import (
+	"regexp"
+	"strings"
+)
 
 const (
 	// LabelAnnotationPrefix is the prefix of every label and annotations added by the controller.
@@ -83,6 +86,10 @@ const (
 	// i.e. fluid.io/check-mount-script-sha256
 	AnnotationCheckMountScriptSHA256 = LabelAnnotationPrefix + "check-mount-script-sha256"
 
+	// AnnotationDatasetPolicy is a runtime annotation that controls how Dataset is handled.
+	// i.e. fluid.io/dataset-policy
+	AnnotationDatasetPolicy = LabelAnnotationPrefix + "dataset-policy"
+
 	// AnnotationDisableRuntimeHelmValueConfig is a runtime label indicates the configmap contains helm value will not be created in setup.
 	AnnotationDisableRuntimeHelmValueConfig = "runtime." + LabelAnnotationPrefix + "disable-helm-value-config"
 
@@ -92,7 +99,18 @@ const (
 
 	// i.e. fuse.runtime.fluid.io/generation
 	LabelRuntimeFuseGeneration = "fuse.runtime." + LabelAnnotationPrefix + "generation"
+
+	// runtimeOnlyAnnotationPrefix matches keys scoped to a Runtime object only, e.g.
+	// "runtime.fluid.io/..." or any "<component>.runtime.fluid.io/..." variant such as
+	// "fuse.runtime.fluid.io/generation" or "controller.runtime.fluid.io/replicas".
+	runtimeOnlyAnnotationPrefix = "runtime." + LabelAnnotationPrefix
 )
+
+// IsRuntimeOnlyAnnotationKey reports whether key is scoped to a Runtime object only and
+// therefore should not be propagated onto another object such as an auto-created Dataset.
+func IsRuntimeOnlyAnnotationKey(key string) bool {
+	return strings.HasPrefix(key, runtimeOnlyAnnotationPrefix) || strings.Contains(key, "."+runtimeOnlyAnnotationPrefix)
+}
 
 const (
 	// i.e. controller.runtime.fluid.io/replicas
