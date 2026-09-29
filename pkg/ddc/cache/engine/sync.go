@@ -64,8 +64,6 @@ func (e *CacheEngine) Sync(ctx cruntime.ReconcileRequestContext) (err error) {
 		return err
 	}
 
-	// TODO: implement other logic like inplace update and replica scaling
-
 	// Use lightweight getRuntimeStatusValue instead of full transform for status update
 	statusValue, err := e.getRuntimeStatusValue(runtime, runtimeClass)
 	if err != nil {
