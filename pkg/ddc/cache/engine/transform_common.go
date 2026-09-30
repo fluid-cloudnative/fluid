@@ -186,65 +186,48 @@ func appendMissingImagePullSecrets(existing []corev1.LocalObjectReference,
 	return existing
 }
 
-// mergeResourceRequirements overlays the resources declared on a CacheRuntime component
-// on top of the baseline rendered from the CacheRuntimeClass template, key by key.
-//
-// The two are not alternatives: the template carries the runtime's own requirements and
-// the CacheRuntime only expresses the deltas an owner wants for their instance, so
-// replacing the whole struct would silently drop every requirement the CacheRuntime does
-// not restate. A key the overlay does not name keeps its template value; a key it names
-// wins, including a key the template never declared.
-//
-// The corollary is that a key set by the template cannot be removed by omitting it from
-// the CacheRuntime, only overridden. Removing a requirement is a change to the template,
-// which is where the runtime's requirements are described in the first place.
-//
-// Claims are name-keyed rather than merged by resource name: an overlay claim replaces
-// the template claim with the same name and any other claim is appended, preserving the
-// template's order.
+// mergeResourceRequirements overlays the CacheRuntime component resources onto the
+// CacheRuntimeClass template baseline key by key: a key the overlay names wins, any other
+// keeps its template value, so a template key can be overridden but not removed. Claims
+// are matched by name, replacing on a match and appending otherwise.
 func mergeResourceRequirements(base, overlay corev1.ResourceRequirements) corev1.ResourceRequirements {
 	merged := *base.DeepCopy()
-	merged.Limits = mergeResourceList(merged.Limits, overlay.Limits)
-	merged.Requests = mergeResourceList(merged.Requests, overlay.Requests)
-	merged.Claims = mergeResourceClaims(merged.Claims, overlay.Claims)
+	mergeResourceList(&merged.Limits, overlay.Limits)
+	mergeResourceList(&merged.Requests, overlay.Requests)
+	mergeResourceClaims(&merged.Claims, overlay.Claims)
 	return merged
 }
 
-// mergeResourceList applies the overlay entries onto base, modifying it in place, and
-// returns it. Callers own base: mergeResourceRequirements hands over a deep copy. A nil
-// base is kept nil when the overlay declares nothing, so that an untouched component
-// still compares equal to the workload it was rendered into.
-func mergeResourceList(base, overlay corev1.ResourceList) corev1.ResourceList {
+// mergeResourceList applies the overlay entries onto *base in place. Callers own *base:
+// mergeResourceRequirements hands over a deep copy. A nil *base is kept nil when the
+// overlay declares nothing, so that an untouched component still compares equal to the
+// workload it was rendered into, and is allocated otherwise.
+func mergeResourceList(base *corev1.ResourceList, overlay corev1.ResourceList) {
 	if len(overlay) == 0 {
-		return base
+		return
 	}
-	if base == nil {
-		base = corev1.ResourceList{}
+	if *base == nil {
+		*base = corev1.ResourceList{}
 	}
 	for name, quantity := range overlay {
-		base[name] = quantity.DeepCopy()
+		(*base)[name] = quantity.DeepCopy()
 	}
-	return base
 }
 
-// mergeResourceClaims applies the overlay claims onto base by name, modifying it in
-// place, and returns it.
-func mergeResourceClaims(base, overlay []corev1.ResourceClaim) []corev1.ResourceClaim {
-	if len(overlay) == 0 {
-		return base
-	}
+// mergeResourceClaims applies the overlay claims onto *base by name in place: a claim
+// with the same name is replaced and any other claim is appended.
+func mergeResourceClaims(base *[]corev1.ResourceClaim, overlay []corev1.ResourceClaim) {
 	for _, claim := range overlay {
 		replaced := false
-		for i := range base {
-			if base[i].Name == claim.Name {
-				base[i] = *claim.DeepCopy()
+		for i := range *base {
+			if (*base)[i].Name == claim.Name {
+				(*base)[i] = *claim.DeepCopy()
 				replaced = true
 				break
 			}
 		}
 		if !replaced {
-			base = append(base, *claim.DeepCopy())
+			*base = append(*base, *claim.DeepCopy())
 		}
 	}
-	return base
 }
