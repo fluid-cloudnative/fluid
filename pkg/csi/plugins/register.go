@@ -20,43 +20,54 @@ import (
 	"os"
 
 	"github.com/fluid-cloudnative/fluid/pkg/csi/config"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/compatibility"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubelet"
 	"github.com/golang/glog"
-	"github.com/pkg/errors"
-	"k8s.io/client-go/kubernetes"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
-// getNodeAuthorizedClientFromKubeletConfig retrieves a node-authorized Kubernetes client from the Kubelet configuration file.
-// This function checks if the specified Kubelet configuration file exists. If the file does not exist, it returns an empty client without an error .
+// isUseKubeletConfig checks if the specified Kubelet configuration file exists. If the file does not exist, it returns an empty client without an error .
 // If the file exists, it attempts to initialize and return a node-authorized Kubernetes client.
-func getNodeAuthorizedClientFromKubeletConfig(kubeletConfigPath string) (*kubernetes.Clientset, error) {
+func isUseKubeletConfig(kubeletConfigPath string) bool {
 	_, err := os.Stat(kubeletConfigPath)
 	if err != nil {
 		if os.IsNotExist(err) {
 			glog.Warningf("kubelet config file %s not exists, continue without node authorization...", kubeletConfigPath)
-			return nil, nil
+			return false
 		}
-		return nil, errors.Wrapf(err, "fail to stat kubelet config file %s", kubeletConfigPath)
+		glog.Warningf("fail to stat kubelet config file %s", kubeletConfigPath)
 	}
 
-	return kubelet.InitNodeAuthorizedClient(kubeletConfigPath)
+	return true
 }
 
 // Register initializes the csi driver and registers it to the controller manager.
 func Register(mgr manager.Manager, ctx config.RunningContext) error {
-	client, err := getNodeAuthorizedClientFromKubeletConfig(ctx.KubeletConfigPath)
+	nodeAuthClient, err := getNodeAuthClient(mgr, ctx)
 	if err != nil {
 		return err
 	}
 
-	csiDriver := NewDriver(ctx.NodeId, ctx.Endpoint, mgr.GetClient(), mgr.GetAPIReader(), client, ctx.VolumeLocks)
+	csiDriver := NewDriver(ctx.NodeId, ctx.Endpoint, mgr.GetClient(), mgr.GetAPIReader(), nodeAuthClient, ctx.VolumeLocks)
 
 	if err := mgr.Add(csiDriver); err != nil {
 		return err
 	}
 
 	return nil
+}
+
+func getNodeAuthClient(mgr manager.Manager, ctx config.RunningContext) (NodeAuthorizedClient, error) {
+	// use and support node binding token
+	if !isUseKubeletConfig(ctx.KubeletConfigPath) && compatibility.IsNodeBindingTokenSupported() {
+		return &restrictedNodeClient{mgr.GetClient()}, nil
+	}
+	// otherwise, use kubelet config
+	nodeAuthClient, err := kubelet.InitNodeAuthorizedClient(ctx.KubeletConfigPath)
+	if err != nil {
+		return nil, err
+	}
+	return &kubeletNodeClient{nodeAuthClient}, nil
 }
 
 // Enabled checks if the csi driver should be enabled.
