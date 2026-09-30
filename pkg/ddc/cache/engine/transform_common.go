@@ -138,10 +138,11 @@ func (e *CacheEngine) transformComponentPodTemplate(runtimeSpec datav1alpha1.Cac
 			podTemplate.Spec.Containers[0].ImagePullPolicy = (corev1.PullPolicy)(runtimeCompSpec.RuntimeVersion.ImagePullPolicy)
 		}
 
-		// use runtime component resources if specified, otherwise use default resources
-		if runtimeCompSpec.Resources.Limits != nil || runtimeCompSpec.Resources.Requests != nil {
-			podTemplate.Spec.Containers[0].Resources = runtimeCompSpec.Resources
-		}
+		// Overlay the runtime component resources on the CacheRuntimeClass template
+		// baseline key by key: a partially specified resources only moves the keys it
+		// names and leaves the rest of the template's requirements in place.
+		podTemplate.Spec.Containers[0].Resources = mergeResourceRequirements(
+			podTemplate.Spec.Containers[0].Resources, runtimeCompSpec.Resources)
 
 		if runtimeCompSpec.Args != nil {
 			podTemplate.Spec.Containers[0].Args = runtimeCompSpec.Args
@@ -183,4 +184,50 @@ func appendMissingImagePullSecrets(existing []corev1.LocalObjectReference,
 	}
 
 	return existing
+}
+
+// mergeResourceRequirements overlays the CacheRuntime component resources onto the
+// CacheRuntimeClass template baseline key by key: a key the overlay names wins, any other
+// keeps its template value, so a template key can be overridden but not removed. Claims
+// are matched by name, replacing on a match and appending otherwise.
+func mergeResourceRequirements(base, overlay corev1.ResourceRequirements) corev1.ResourceRequirements {
+	merged := *base.DeepCopy()
+	mergeResourceList(&merged.Limits, overlay.Limits)
+	mergeResourceList(&merged.Requests, overlay.Requests)
+	mergeResourceClaims(&merged.Claims, overlay.Claims)
+	return merged
+}
+
+// mergeResourceList applies the overlay entries onto *base in place. Callers own *base:
+// mergeResourceRequirements hands over a deep copy. A nil *base is kept nil when the
+// overlay declares nothing, so that an untouched component still compares equal to the
+// workload it was rendered into, and is allocated otherwise.
+func mergeResourceList(base *corev1.ResourceList, overlay corev1.ResourceList) {
+	if len(overlay) == 0 {
+		return
+	}
+	if *base == nil {
+		*base = corev1.ResourceList{}
+	}
+	for name, quantity := range overlay {
+		(*base)[name] = quantity.DeepCopy()
+	}
+}
+
+// mergeResourceClaims applies the overlay claims onto *base by name in place: a claim
+// with the same name is replaced and any other claim is appended.
+func mergeResourceClaims(base *[]corev1.ResourceClaim, overlay []corev1.ResourceClaim) {
+	for _, claim := range overlay {
+		replaced := false
+		for i := range *base {
+			if (*base)[i].Name == claim.Name {
+				(*base)[i] = *claim.DeepCopy()
+				replaced = true
+				break
+			}
+		}
+		if !replaced {
+			*base = append(*base, *claim.DeepCopy())
+		}
+	}
 }
