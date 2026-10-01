@@ -184,5 +184,76 @@ var _ = Describe("OnceHandler", func() {
 			Expect(opStatus.Conditions).To(HaveLen(1))
 			Expect(opStatus.Conditions[0].LastTransitionTime.Time).To(BeTemporally("~", conditionTime.Time, time.Second))
 		})
+
+		It("should inject NodeAffinity when backup pod succeeds with dataflow annotations", func() {
+			pod := &corev1.Pod{
+				ObjectMeta: v1.ObjectMeta{
+					Name:      mockDataBackup.GetName() + "-pod",
+					Namespace: mockDataBackup.GetNamespace(),
+					Annotations: map[string]string{
+						common.AnnotationDataFlowAffinityInject:                          "true",
+						common.AnnotationDataFlowCustomizedAffinityPrefix + "node-label": "node-value",
+					},
+				},
+				Status: corev1.PodStatus{
+					Phase: corev1.PodSucceeded,
+					Conditions: []corev1.PodCondition{
+						{
+							Type:               corev1.PodReady,
+							Status:             corev1.ConditionFalse,
+							LastTransitionTime: v1.Now(),
+						},
+					},
+				},
+			}
+			c := fake.NewFakeClientWithScheme(testScheme, pod, mockDataBackup)
+			handler := &OnceHandler{dataBackup: mockDataBackup}
+			ctx := cruntime.ReconcileRequestContext{
+				NamespacedName: types.NamespacedName{Namespace: "default", Name: "test"},
+				Log:            fake.NullLogger(),
+				Client:         c,
+			}
+			result, err := handler.GetOperationStatus(ctx, &mockDataBackup.Status)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(result.Phase).To(Equal(common.PhaseComplete))
+			Expect(result.NodeAffinity).NotTo(BeNil())
+			Expect(result.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution).NotTo(BeNil())
+			terms := result.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms
+			Expect(terms).To(HaveLen(1))
+			Expect(terms[0].MatchExpressions).To(HaveLen(1))
+			Expect(terms[0].MatchExpressions[0].Key).To(Equal("node-label"))
+			Expect(terms[0].MatchExpressions[0].Values).To(ContainElement("node-value"))
+		})
+
+		It("should not inject NodeAffinity when backup pod succeeds without dataflow annotations", func() {
+			pod := &corev1.Pod{
+				ObjectMeta: v1.ObjectMeta{
+					Name:      mockDataBackup.GetName() + "-pod",
+					Namespace: mockDataBackup.GetNamespace(),
+				},
+				Status: corev1.PodStatus{
+					Phase: corev1.PodSucceeded,
+					Conditions: []corev1.PodCondition{
+						{
+							Type:               corev1.PodReady,
+							Status:             corev1.ConditionFalse,
+							LastTransitionTime: v1.Now(),
+						},
+					},
+				},
+			}
+			c := fake.NewFakeClientWithScheme(testScheme, pod, mockDataBackup)
+			handler := &OnceHandler{dataBackup: mockDataBackup}
+			ctx := cruntime.ReconcileRequestContext{
+				NamespacedName: types.NamespacedName{Namespace: "default", Name: "test"},
+				Log:            fake.NullLogger(),
+				Client:         c,
+			}
+			result, err := handler.GetOperationStatus(ctx, &mockDataBackup.Status)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(result.Phase).To(Equal(common.PhaseComplete))
+			Expect(result.NodeAffinity).To(BeNil())
+		})
+
 	})
 })
