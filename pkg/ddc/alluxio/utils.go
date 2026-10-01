@@ -65,6 +65,8 @@ func (e *AlluxioEngine) getRuntime() (*datav1alpha1.AlluxioRuntime, error) {
 	return &runtime, nil
 }
 
+// getMasterPod retrieves the Alluxio master pod with the specified name and namespace.
+// It returns the pod and any error encountered while querying the Kubernetes API.
 func (e *AlluxioEngine) getMasterPod(name string, namespace string) (pod *v1.Pod, err error) {
 	pod = &v1.Pod{}
 	err = e.Client.Get(context.TODO(), types.NamespacedName{
