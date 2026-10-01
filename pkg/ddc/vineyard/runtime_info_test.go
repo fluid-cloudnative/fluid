@@ -19,12 +19,14 @@ import (
 
 	"github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
+	ctrlhelper "github.com/fluid-cloudnative/fluid/pkg/ctrl"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	v1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/utils/ptr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -179,5 +181,89 @@ func TestGetRuntimeInfo(t *testing.T) {
 		if isErr != testCase.isErr {
 			t.Errorf(" want %t, got %t", testCase.isErr, isErr)
 		}
+	}
+}
+
+func TestVineyardEngineCheckRuntimeReady(t *testing.T) {
+	testcases := []struct {
+		name          string
+		workerSS      *v1.StatefulSet
+		runtime       *v1alpha1.VineyardRuntime
+		expectedReady bool
+	}{
+		{
+			name: "workers ready returns true",
+			workerSS: &v1.StatefulSet{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "hbase-worker",
+					Namespace: "fluid",
+				},
+				Spec: v1.StatefulSetSpec{
+					Replicas: ptr.To[int32](1),
+				},
+				Status: v1.StatefulSetStatus{
+					Replicas:          1,
+					ReadyReplicas:     1,
+					AvailableReplicas: 1,
+				},
+			},
+			runtime: &v1alpha1.VineyardRuntime{
+				ObjectMeta: metav1.ObjectMeta{Name: "hbase", Namespace: "fluid"},
+				Spec: v1alpha1.VineyardRuntimeSpec{
+					Worker: v1alpha1.VineyardCompTemplateSpec{Replicas: 1},
+				},
+			},
+			expectedReady: true,
+		},
+		{
+			name: "workers not ready returns false",
+			workerSS: &v1.StatefulSet{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "hbase-worker",
+					Namespace: "fluid",
+				},
+				Spec: v1.StatefulSetSpec{
+					Replicas: ptr.To[int32](1),
+				},
+				Status: v1.StatefulSetStatus{
+					Replicas:          1,
+					ReadyReplicas:     0,
+					AvailableReplicas: 0,
+				},
+			},
+			runtime: &v1alpha1.VineyardRuntime{
+				ObjectMeta: metav1.ObjectMeta{Name: "hbase", Namespace: "fluid"},
+				Spec: v1alpha1.VineyardRuntimeSpec{
+					Worker: v1alpha1.VineyardCompTemplateSpec{Replicas: 1},
+				},
+			},
+			expectedReady: false,
+		},
+	}
+
+	for _, tc := range testcases {
+		t.Run(tc.name, func(t *testing.T) {
+			dataset := &v1alpha1.Dataset{
+				ObjectMeta: metav1.ObjectMeta{Name: "hbase", Namespace: "fluid"},
+			}
+			objs := []runtime.Object{tc.workerSS, tc.runtime, dataset}
+			fakeClient := fake.NewFakeClientWithScheme(testScheme, objs...)
+			runtimeInfo, err := base.BuildRuntimeInfo("hbase", "fluid", common.VineyardRuntime)
+			if err != nil {
+				t.Fatalf("failed to build runtime info: %v", err)
+			}
+			engine := &VineyardEngine{
+				Client:    fakeClient,
+				Log:       fake.NullLogger(),
+				namespace: "fluid",
+				name:      "hbase",
+				runtime:   tc.runtime,
+				Helper:    ctrlhelper.BuildHelper(runtimeInfo, fakeClient, fake.NullLogger()),
+			}
+			ready := engine.CheckRuntimeReady()
+			if ready != tc.expectedReady {
+				t.Errorf("expected ready=%v, got ready=%v", tc.expectedReady, ready)
+			}
+		})
 	}
 }
