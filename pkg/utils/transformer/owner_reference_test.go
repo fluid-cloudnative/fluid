@@ -239,6 +239,38 @@ var _ = Describe("GenerateOwnerReferenceFromObject", func() {
 			},
 			"DataLoad",
 		),
+
+		Entry("should recover the apiVersion of a dataset when only the kind is set",
+			&datav1alpha1.Dataset{
+				TypeMeta:   metav1.TypeMeta{Kind: "Dataset"},
+				ObjectMeta: metav1.ObjectMeta{Name: "kind-only-dataset", Namespace: "default", UID: "uid-6"},
+			},
+			"Dataset",
+		),
+
+		Entry("should recover the kind of a dataset when only the apiVersion is set",
+			&datav1alpha1.Dataset{
+				TypeMeta:   metav1.TypeMeta{APIVersion: datav1alpha1.GroupVersion.String()},
+				ObjectMeta: metav1.ObjectMeta{Name: "version-only-dataset", Namespace: "default", UID: "uid-7"},
+			},
+			"Dataset",
+		),
+
+		Entry("should recover the apiVersion of an alluxio runtime when only the kind is set",
+			&datav1alpha1.AlluxioRuntime{
+				TypeMeta:   metav1.TypeMeta{Kind: "AlluxioRuntime"},
+				ObjectMeta: metav1.ObjectMeta{Name: "kind-only-runtime", Namespace: "default", UID: "uid-8"},
+			},
+			"AlluxioRuntime",
+		),
+
+		Entry("should recover the kind of an alluxio runtime when only the apiVersion is set",
+			&datav1alpha1.AlluxioRuntime{
+				TypeMeta:   metav1.TypeMeta{APIVersion: datav1alpha1.GroupVersion.String()},
+				ObjectMeta: metav1.ObjectMeta{Name: "version-only-runtime", Namespace: "default", UID: "uid-9"},
+			},
+			"AlluxioRuntime",
+		),
 	)
 
 	It("should leave the reference incomplete for a type the fluid scheme does not know", func() {
@@ -246,7 +278,7 @@ var _ = Describe("GenerateOwnerReferenceFromObject", func() {
 		// log. Callers all pass registered fluid types today, this only guards against a future one that does
 		// not.
 		result := GenerateOwnerReferenceFromObject(&corev1.ConfigMap{
-			ObjectMeta: metav1.ObjectMeta{Name: "unregistered", Namespace: "default", UID: "uid-6"},
+			ObjectMeta: metav1.ObjectMeta{Name: "unregistered", Namespace: "default", UID: "uid-10"},
 		})
 
 		Expect(result.Kind).To(BeEmpty())

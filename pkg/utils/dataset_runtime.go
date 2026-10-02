@@ -23,6 +23,7 @@ import (
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/transformer"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -43,15 +44,16 @@ func GetRuntimeByCategory(runtimes []datav1alpha1.Runtime, category common.Categ
 }
 
 // datasetControllerOwnerReference builds the controller ownerReference which points to the given dataset.
-// Kind and APIVersion come from the dataset's TypeMeta, and fall back to the well-known values of the Dataset
-// CRD when it is empty, which a typed client may hand back depending on how the object was read. The owner
-// based watch of the dataset controller resolves a dependent through those two fields, so they must be set.
+// Kind and APIVersion are resolved via the shared transformer helper (backed by the scheme), falling back to the
+// well-known values of the Dataset CRD as a last resort if unavailable. The owner based watch of the dataset
+// controller resolves a dependent through those two fields, so they must be set.
 func datasetControllerOwnerReference(dataset *datav1alpha1.Dataset) metav1.OwnerReference {
-	kind := dataset.GetObjectKind().GroupVersionKind().Kind
+	ref := transformer.GenerateOwnerReferenceFromObject(dataset)
+	kind := ref.Kind
 	if len(kind) == 0 {
 		kind = datav1alpha1.Datasetkind
 	}
-	apiVersion := dataset.APIVersion
+	apiVersion := ref.APIVersion
 	if len(apiVersion) == 0 {
 		apiVersion = datav1alpha1.GroupVersion.String()
 	}

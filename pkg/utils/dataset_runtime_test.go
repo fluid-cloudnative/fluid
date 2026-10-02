@@ -193,3 +193,97 @@ func TestCreateRuntimeForReferenceDatasetIfNotExist(t *testing.T) {
 		t.Errorf("expected no ownerReference set on the terminating thinRuntime, but got %v", terminatingRuntime.GetOwnerReferences())
 	}
 }
+
+func TestDatasetControllerOwnerReference(t *testing.T) {
+	testCases := map[string]struct {
+		dataset            *datav1alpha1.Dataset
+		expectedKind       string
+		expectedAPIVersion string
+	}{
+		"dataset with complete TypeMeta": {
+			dataset: &datav1alpha1.Dataset{
+				TypeMeta: v1.TypeMeta{
+					Kind:       "Dataset",
+					APIVersion: "data.fluid.io/v1alpha1",
+				},
+				ObjectMeta: v1.ObjectMeta{
+					Name: "complete-dataset",
+					UID:  "uid-complete",
+				},
+			},
+			expectedKind:       "Dataset",
+			expectedAPIVersion: "data.fluid.io/v1alpha1",
+		},
+		"dataset with empty TypeMeta": {
+			dataset: &datav1alpha1.Dataset{
+				ObjectMeta: v1.ObjectMeta{
+					Name: "empty-typemeta-dataset",
+					UID:  "uid-empty",
+				},
+			},
+			expectedKind:       "Dataset",
+			expectedAPIVersion: "data.fluid.io/v1alpha1",
+		},
+		"dataset with only Kind in TypeMeta": {
+			dataset: &datav1alpha1.Dataset{
+				TypeMeta: v1.TypeMeta{
+					Kind: "Dataset",
+				},
+				ObjectMeta: v1.ObjectMeta{
+					Name: "kind-only-dataset",
+					UID:  "uid-kind",
+				},
+			},
+			expectedKind:       "Dataset",
+			expectedAPIVersion: "data.fluid.io/v1alpha1",
+		},
+		"dataset with only APIVersion in TypeMeta": {
+			dataset: &datav1alpha1.Dataset{
+				TypeMeta: v1.TypeMeta{
+					APIVersion: "data.fluid.io/v1alpha1",
+				},
+				ObjectMeta: v1.ObjectMeta{
+					Name: "apiversion-only-dataset",
+					UID:  "uid-apiversion",
+				},
+			},
+			expectedKind:       "Dataset",
+			expectedAPIVersion: "data.fluid.io/v1alpha1",
+		},
+		"dataset with custom APIVersion in TypeMeta": {
+			dataset: &datav1alpha1.Dataset{
+				TypeMeta: v1.TypeMeta{
+					Kind:       "Dataset",
+					APIVersion: "data.fluid.io/v1beta1",
+				},
+				ObjectMeta: v1.ObjectMeta{
+					Name: "custom-apiversion-dataset",
+					UID:  "uid-custom",
+				},
+			},
+			expectedKind:       "Dataset",
+			expectedAPIVersion: "data.fluid.io/v1beta1",
+		},
+	}
+
+	for name, tc := range testCases {
+		t.Run(name, func(t *testing.T) {
+			ownerRef := datasetControllerOwnerReference(tc.dataset)
+			if ownerRef.Kind != tc.expectedKind {
+				t.Errorf("expected Kind %s, got %s", tc.expectedKind, ownerRef.Kind)
+			}
+			if ownerRef.APIVersion != tc.expectedAPIVersion {
+				t.Errorf("expected APIVersion %s, got %s", tc.expectedAPIVersion, ownerRef.APIVersion)
+			}
+			if ownerRef.Name != tc.dataset.GetName() {
+				t.Errorf("expected Name %s, got %s", tc.dataset.GetName(), ownerRef.Name)
+			}
+			if ownerRef.UID != tc.dataset.GetUID() {
+				t.Errorf("expected UID %s, got %s", tc.dataset.GetUID(), ownerRef.UID)
+			}
+			if ownerRef.Controller == nil || !*ownerRef.Controller {
+				t.Errorf("expected Controller to be true, got %v", ownerRef.Controller)
+			}
+		})
+	}
+}
