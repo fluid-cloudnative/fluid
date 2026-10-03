@@ -1,0 +1,37 @@
+apiVersion: data.fluid.io/v1alpha1
+kind: Dataset
+metadata:
+  name: scaledown-demo
+spec:
+  mounts:
+    - mountPoint: s3://scaledown/
+      name: scaledown
+      options:
+        alluxio.underfs.s3.endpoint: "http://scaledown-minio:9000"
+        alluxio.underfs.s3.disable.dns.buckets: "true"
+        alluxio.underfs.s3.inherit.acl: "false"
+      encryptOptions:
+        - name: aws.accessKeyId
+          valueFrom:
+            secretKeyRef:
+              name: scaledown-minio-secret
+              key: aws.accessKeyId
+        - name: aws.secretKey
+          valueFrom:
+            secretKeyRef:
+              name: scaledown-minio-secret
+              key: aws.secretKey
+---
+apiVersion: data.fluid.io/v1alpha1
+kind: AlluxioRuntime
+metadata:
+  name: scaledown-demo
+spec:
+  replicas: 2
+  tieredstore:
+    levels:
+      - mediumtype: SSD
+        path: /tmp/alluxio
+        quota: 1Gi
+        high: "0.95"
+        low: "0.7"
