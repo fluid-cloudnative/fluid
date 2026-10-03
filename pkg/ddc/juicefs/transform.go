@@ -66,7 +66,7 @@ func (j *JuiceFSEngine) transform(runtime *datav1alpha1.JuiceFSRuntime) (value *
 	}
 
 	// generate edition
-	j.genEdition(dataset.Spec.Mounts[0], value, dataset.Spec.Mounts[0].EncryptOptions)
+	j.genEdition(dataset.Spec.Mounts[0], value, dataset.Spec.SharedEncryptOptions)
 
 	// allocate ports
 	err = j.allocatePorts(runtime, value)
