@@ -404,6 +404,14 @@ webhook:
           - FuseSidecar
           - DatasetUsageInjector
         withoutDataset: []
+      # webhook plugins for cache runtimes that have no fuse client, where the app
+      # talks to the cache service through its own SDK instead of a mount point
+      clientless:
+        withDataset:
+          - RuntimeConfigInjector
+        # Nothing is registered here: without the fluid.io/datasets annotation there is
+        # no way to tell whose runtime config should be injected.
+        withoutDataset: []
     pluginConfig:
       - name: NodeAffinityWithCache
         # plugin args is a serialized yaml string.
