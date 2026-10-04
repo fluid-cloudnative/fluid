@@ -228,7 +228,9 @@ func splitImageReference(image string) (repository string, tag string) {
 	}
 
 	lastColon := strings.LastIndex(image, ":")
-	// A colon before the last slash belongs to a registry port, not to a tag.
+	// A colon before the last slash belongs to a registry port, not to a tag:
+	// "registry:5000/myapp" carries no tag, while "registry:5000/myapp:v1" splits
+	// into "registry:5000/myapp" and "v1".
 	if lastColon == -1 || lastColon < strings.LastIndex(image, "/") {
 		return image, ""
 	}
