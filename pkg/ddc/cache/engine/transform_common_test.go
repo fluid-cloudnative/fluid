@@ -183,11 +183,11 @@ var _ = Describe("CacheEngine desiredComponentVersion Tests", Label("pkg.ddc.cac
 	const templateImage = "btxu/mooncake:v3"
 
 	Describe("desiredComponentVersion", func() {
-		It("should leave a version naming neither half untouched", func() {
+		It("should resolve a version naming neither half to the template image", func() {
 			desired := desiredComponentVersion(datav1alpha1.VersionSpec{}, templateImage)
 
-			Expect(desired.Image).To(BeEmpty())
-			Expect(desired.ImageTag).To(BeEmpty())
+			Expect(desired.Image).To(Equal("btxu/mooncake"))
+			Expect(desired.ImageTag).To(Equal("v3"))
 		})
 
 		It("should leave a complete version untouched", func() {
