@@ -158,11 +158,9 @@ func compositionTable() []layerCase {
 			l3: func(w *datav1alpha1.CacheRuntimeWorkerSpec) {
 				w.RuntimeVersion = datav1alpha1.VersionSpec{ImageTag: "v2"}
 			},
-			// CURRENT: the guard wants both image and imageTag, so the tag is dropped.
-			// AFTER #6178: fluid/cache:v2.
-			knownBug: "#6178",
+			// The missing image is completed from L1, so only the tag moves.
 			want: func(g Gomega, t corev1.PodTemplateSpec) {
-				g.Expect(t.Spec.Containers[0].Image).To(Equal("fluid/cache:v1"))
+				g.Expect(t.Spec.Containers[0].Image).To(Equal("fluid/cache:v2"))
 			},
 		},
 
