@@ -194,7 +194,7 @@ func (e *CacheEngine) syncRuntimeSpec(ctx cruntime.ReconcileRequestContext, runt
 		}
 		manager := component.NewComponentHelper(common.ComponentTypeMaster, e.Client)
 		masterSpec := component.ComponentSpec{
-			Version:   runtime.Spec.Master.RuntimeVersion,
+			Version:   desiredComponentVersion(runtime.Spec.Master.RuntimeVersion, componentTemplateImage(runtimeClass.Topology.Master)),
 			Resources: desiredComponentResources(runtime.Spec.Master.Resources, runtimeClass.Topology.Master),
 			Replicas:  &runtime.Spec.Master.Replicas,
 		}
@@ -231,7 +231,7 @@ func (e *CacheEngine) syncRuntimeSpec(ctx cruntime.ReconcileRequestContext, runt
 		}
 
 		workerSpec := component.ComponentSpec{
-			Version:   runtime.Spec.Worker.RuntimeVersion,
+			Version:   desiredComponentVersion(runtime.Spec.Worker.RuntimeVersion, componentTemplateImage(runtimeClass.Topology.Worker)),
 			Resources: workerResources,
 			Replicas:  &runtime.Spec.Worker.Replicas,
 		}

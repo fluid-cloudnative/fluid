@@ -909,6 +909,34 @@ var _ = Describe("CacheEngine Sync Tests", Label("pkg.ddc.cache.engine.sync_test
 			seedTemplateResources(workerSts, &runtimeClass.Topology.Worker.Template)
 		})
 
+		Context("when the CacheRuntime drops a runtimeVersion it had set", func() {
+			imageOfWorker := func() string {
+				sts := &workloadv1alpha1.AdvancedStatefulSet{}
+				key := types.NamespacedName{Name: workerSts, Namespace: "default"}
+				Expect(fakeClient.Get(ctx.Context, key, sts)).To(Succeed())
+				return sts.Spec.Template.Spec.Containers[0].Image
+			}
+
+			syncWorkerVersion := func(version datav1alpha1.VersionSpec) {
+				edited, err := engine.getRuntime()
+				Expect(err).NotTo(HaveOccurred())
+				edited.Spec.Worker.RuntimeVersion = version
+				Expect(fakeClient.Update(ctx.Context, edited)).To(Succeed())
+
+				syncRuntime, err := engine.getRuntime()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(engine.syncRuntimeSpec(ctx, syncRuntime, runtimeClass)).To(Succeed())
+			}
+
+			It("should roll the worker back to the template image", func() {
+				syncWorkerVersion(datav1alpha1.VersionSpec{ImageTag: "v2"})
+				Expect(imageOfWorker()).To(Equal("test-worker:v2"))
+
+				syncWorkerVersion(datav1alpha1.VersionSpec{})
+				Expect(imageOfWorker()).To(Equal("test-worker:latest"))
+			})
+		})
+
 		// The client component runs on a DaemonSet. Neither reconcile path carries a
 		// client spec edit to that workload: syncRuntimeSpec skips the client outright,
 		// and reconcileDaemonSet returns early once the DaemonSet exists. The edit is
