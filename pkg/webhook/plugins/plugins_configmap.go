@@ -24,6 +24,7 @@ type PluginsProfile struct {
 type Plugins struct {
 	Serverful  Serverful  `yaml:"serverful"`
 	Serverless Serverless `yaml:"serverless"`
+	Clientless Clientless `yaml:"clientless"`
 }
 
 type Serverful struct {
@@ -32,6 +33,12 @@ type Serverful struct {
 }
 
 type Serverless struct {
+	WithDataset    []string `yaml:"withDataset"`
+	WithoutDataset []string `yaml:"withoutDataset"`
+}
+
+// Clientless groups the plugins for cacheruntime that have no fuse client
+type Clientless struct {
 	WithDataset    []string `yaml:"withDataset"`
 	WithoutDataset []string `yaml:"withoutDataset"`
 }

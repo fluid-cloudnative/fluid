@@ -286,6 +286,84 @@ A few notes:
 - `POD_IP` is injected via the downward API. The client's `local_hostname` must be the pod's own IP so that other nodes can connect back to fetch data.
 - `nodeName` pins the pod to a specific node so that the cross-node read later is deterministic: the writer stays on one node and the reader on another. Replace `fluid-mooncake-worker2` with a real node name from your cluster (`kubectl get nodes`), and make sure it differs from the node used by client-2 below.
 
+#### Optional: let Fluid inject the runtime config
+
+The example above hardcodes the master's address in the Python code. You can instead have Fluid inject the runtime config into the application pod by adding one label and one annotation:
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: mooncake-client-1
+  namespace: default              # has to match the Dataset's namespace
+  labels:
+    fluid.io/inject: "true"
+  annotations:
+    fluid.io/datasets: "mooncake-demo"
+spec:
+  containers:
+    - name: client
+      image: btxu/mooncake:v3
+      command: ["sleep", "infinity"]
+      env:
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+```
+
+When the pod is created, the webhook injects a read-only volume, a mount and one env var:
+
+```shell
+$ kubectl get pod mooncake-client-1 -o jsonpath='{.spec.containers[0].env}' | jq
+[
+  { "name": "POD_IP", "valueFrom": { "fieldRef": { "fieldPath": "status.podIP" } } },
+  {
+    "name": "FLUID_RUNTIME_CONFIG_PATH_MOONCAKE_DEMO",
+    "value": "/etc/fluid/config/mooncake-demo/runtime.sh"
+  }
+]
+```
+
+The dataset name in the env var is upper-cased and `-` becomes `_` (`mooncake-demo` turns into `MOONCAKE_DEMO`), since shell variable names can't contain `-`.
+
+Sourcing that file inside the container gives you the configuration:
+
+```shell
+$ kubectl exec -it mooncake-client-1 -- sh -c '
+    . "$FLUID_RUNTIME_CONFIG_PATH_MOONCAKE_DEMO"
+    echo "master: ${MASTER_NAME}-0.${MASTER_SERVICE_NAME}"
+  '
+master: mooncake-demo-master-0.svc-mooncake-demo-master
+```
+
+In practice, put the address building in the image's entrypoint so the application only reads env vars:
+
+```sh
+#!/bin/sh
+# Baked into the image and maintained by the integrator.
+if [ -n "$FLUID_RUNTIME_CONFIG_PATH_MOONCAKE_DEMO" ]; then
+    . "$FLUID_RUNTIME_CONFIG_PATH_MOONCAKE_DEMO"
+    MASTER_HOST="${MASTER_NAME}-0.${MASTER_SERVICE_NAME}"
+    # Ports are not part of the runtime config; keep them in step with the containerPort
+    # declared in the CacheRuntimeClass.
+    export MOONCAKE_MASTER_ADDR="${MASTER_HOST}:50051"
+    export MOONCAKE_METADATA_SERVER="http://${MASTER_HOST}:8080/metadata"
+fi
+exec "$@"
+```
+
+```python
+store.setup(
+    local_hostname=os.environ["POD_IP"],
+    metadata_server=os.environ["MOONCAKE_METADATA_SERVER"],
+    master_server_addr=os.environ["MOONCAKE_MASTER_ADDR"],
+    ...
+)
+```
+
+The config comes from the Dataset and the CacheRuntime, so the ConfigMap is updated when, say, the replica count changes. A pod that is already running won't see that, since the application sources the file once at startup. See "Cache Systems Without a Client Component" in the [generic cache system integration guide](../../dev/generic_cache_runtime_integration.md) for how injection works and its limits, such as using several datasets at once.
+
 **Start the application and write data**
 
 ```shell
@@ -461,7 +539,7 @@ Events:
 
 **Cause**: this example's CacheRuntimeClass declares no client component, so there is no FUSE mount point. The CSI plugin waits for a mount point that never appears until it times out, which produces the `timeout waiting for FUSE mount point to be ready` above. Fluid still creates the PVC/PV and reports them as Bound, but application pods cannot consume them through `volumeMounts`.
 
-**Resolution**: remove the PVC mount from the application pod, connect to the cache service directly as shown above, and delete the stuck pod.
+**Resolution**: remove the PVC mount from the application pod and connect to the cache service directly as shown above — see [Optional: let Fluid inject the runtime config](#optional-let-fluid-inject-the-runtime-config) to have Fluid hand the master's address to the pod — then delete the stuck pod.
 
 ```shell
 $ kubectl delete pod <pod-name>
