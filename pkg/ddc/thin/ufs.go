@@ -107,7 +107,7 @@ func (t ThinEngine) updateFuseConfigOnChange(runtime *datav1alpha1.ThinRuntime, 
 	updatedThinValue := &ThinValue{}
 	err = t.transformFuseConfig(runtime, dataset, updatedThinValue)
 	if err != nil {
-		return update, nil
+		return update, err
 	}
 
 	fuseConfigMapToUpdate := fuseConfigMap.DeepCopy()
