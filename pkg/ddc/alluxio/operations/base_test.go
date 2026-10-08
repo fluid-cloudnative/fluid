@@ -42,14 +42,30 @@ const (
 	PARSE_ERR      = "parse err"
 )
 
+// TestNewAlluxioFileUtils verifies the constructor function NewAlluxioFileUtils
+// correctly initializes an AlluxioFileUtils struct with the given parameters.
+//
+// NewAlluxioFileUtils is a factory function located in base.go. It takes four
+// parameters — podName, containerName, namespace, and a logger — and returns
+// an AlluxioFileUtils value whose fields are set accordingly.
+//
+// This test creates an expected AlluxioFileUtils instance with hardcoded values
+// ("hbase" pod, "hbase-container" container, "default" namespace, and a null logger),
+// then calls NewAlluxioFileUtils with the same arguments and uses DeepEqual to
+// assert that the returned value matches the expected one.
 func TestNewAlluxioFileUtils(t *testing.T) {
+	// expectedResult holds the AlluxioFileUtils that NewAlluxioFileUtils should produce
+	// given the same input arguments.
 	var expectedResult = AlluxioFileUtils{
 		podName:   "hbase",
 		namespace: "default",
 		container: "hbase-container",
 		log:       fake.NullLogger(),
 	}
+	// result is the actual AlluxioFileUtils returned by the constructor.
 	result := NewAlluxioFileUtils("hbase", "hbase-container", "default", fake.NullLogger())
+	// Use DeepEqual to compare fields; if they differ, fail the test with a
+	// descriptive message showing both expected and actual values.
 	if !reflect.DeepEqual(expectedResult, result) {
 		t.Errorf("fail to create the AlluxioFileUtils, want: %v, got: %v", expectedResult, result)
 	}
