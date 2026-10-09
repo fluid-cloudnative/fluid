@@ -26,6 +26,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/tieredstore"
+	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 )
@@ -541,7 +542,7 @@ var _ = Describe("CacheEngine TransformRuntimeTieredStore Tests", Label("pkg.ddc
 var _ = Describe("CacheEngine convertToLegacyTieredStore Tests", Label("pkg.ddc.cache.engine.transform_tiered_store_test.go"), func() {
 	Describe("convertToLegacyTieredStore", func() {
 		It("should return no levels for an unset tiered store", func() {
-			Expect(convertToLegacyTieredStore(datav1alpha1.RuntimeTieredStore{}).Levels).To(BeEmpty())
+			Expect(convertToLegacyTieredStore(datav1alpha1.RuntimeTieredStore{}, logr.Discard()).Levels).To(BeEmpty())
 		})
 
 		It("should map process memory to the MEM medium", func() {
@@ -555,7 +556,7 @@ var _ = Describe("CacheEngine convertToLegacyTieredStore Tests", Label("pkg.ddc.
 						Low:  "0.5",
 					},
 				},
-			})
+			}, logr.Discard())
 
 			Expect(legacy.Levels).To(HaveLen(1))
 			Expect(legacy.Levels[0].MediumType).To(Equal(common.Memory))
@@ -575,7 +576,7 @@ var _ = Describe("CacheEngine convertToLegacyTieredStore Tests", Label("pkg.ddc.
 						},
 					},
 				},
-			})
+			}, logr.Discard())
 
 			Expect(legacy.Levels).To(HaveLen(1))
 			Expect(legacy.Levels[0].MediumType).To(Equal(common.Memory))
@@ -591,7 +592,7 @@ var _ = Describe("CacheEngine convertToLegacyTieredStore Tests", Label("pkg.ddc.
 						},
 					},
 				},
-			})
+			}, logr.Discard())
 
 			Expect(legacy.Levels).To(HaveLen(1))
 			Expect(legacy.Levels[0].MediumType).To(Equal(common.HDD))
@@ -609,7 +610,7 @@ var _ = Describe("CacheEngine convertToLegacyTieredStore Tests", Label("pkg.ddc.
 						},
 					},
 				},
-			})
+			}, logr.Discard())
 
 			Expect(legacy.Levels).To(HaveLen(1))
 			Expect(legacy.Levels[0].MediumType).To(Equal(common.HDD))
@@ -629,7 +630,7 @@ var _ = Describe("CacheEngine convertToLegacyTieredStore Tests", Label("pkg.ddc.
 						},
 					},
 				},
-			})
+			}, logr.Discard())
 
 			Expect(legacy.Levels).To(BeEmpty())
 		})
@@ -640,7 +641,7 @@ var _ = Describe("CacheEngine convertToLegacyTieredStore Tests", Label("pkg.ddc.
 					{High: "0.9"},
 					{EmptyDir: &datav1alpha1.EmptyDirMediumSource{Quota: resource.MustParse("1Gi")}},
 				},
-			})
+			}, logr.Discard())
 
 			Expect(legacy.Levels).To(HaveLen(1))
 			Expect(legacy.Levels[0].Quota.String()).To(Equal("1Gi"))
@@ -652,7 +653,7 @@ var _ = Describe("CacheEngine convertToLegacyTieredStore Tests", Label("pkg.ddc.
 					{ProcessMemory: &datav1alpha1.ProcessMemoryMediumSource{Quota: resource.MustParse("4Gi")}},
 					{EmptyDir: &datav1alpha1.EmptyDirMediumSource{Quota: resource.MustParse("1Gi")}},
 				},
-			})
+			}, logr.Discard())
 
 			Expect(legacy.Levels).To(HaveLen(2))
 			Expect(legacy.Levels[0].MediumType).To(Equal(common.Memory))
@@ -671,7 +672,7 @@ var _ = Describe("CacheEngine convertToLegacyTieredStore Tests", Label("pkg.ddc.
 						Quotas: []resource.Quantity{resource.MustParse("1Gi"), resource.MustParse("3Gi")},
 					}},
 				},
-			})
+			}, logr.Discard())
 
 			runtimeInfo, err := base.BuildRuntimeInfo("test", "default", common.CacheRuntime,
 				base.WithTieredStore(legacy))

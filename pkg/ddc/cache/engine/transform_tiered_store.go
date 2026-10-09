@@ -23,6 +23,7 @@ import (
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 )
@@ -278,8 +279,9 @@ func withTieredStoreMemoryQuota(base corev1.ResourceRequirements, quota resource
 //
 // A level naming no medium is skipped rather than emitted. convertToTieredstoreInfo rejects a
 // Level carrying neither Quota nor QuotaList, and that error propagates through WithTieredStore
-// and BuildRuntimeInfo out of getRuntimeInfo, which would fail the whole reconcile.
-func convertToLegacyTieredStore(tieredStore datav1alpha1.RuntimeTieredStore) datav1alpha1.TieredStore {
+// and BuildRuntimeInfo out of getRuntimeInfo, which would fail the whole reconcile. Skipped levels
+// are logged, since otherwise the only symptom is a missing node label.
+func convertToLegacyTieredStore(tieredStore datav1alpha1.RuntimeTieredStore, log logr.Logger) datav1alpha1.TieredStore {
 	legacyTieredStore := datav1alpha1.TieredStore{}
 
 	for levelIndex, level := range tieredStore.Levels {
@@ -299,6 +301,8 @@ func convertToLegacyTieredStore(tieredStore datav1alpha1.RuntimeTieredStore) dat
 			// cannot express that they must have the same length, so guard here: a mismatch
 			// would otherwise be rejected by convertToTieredstoreInfo.
 			if len(level.HostPath.Paths) == 0 || len(level.HostPath.Paths) != len(level.HostPath.Quotas) {
+				log.V(1).Info("Skip tiered store level whose host path paths and quotas differ in length",
+					"level", levelIndex, "paths", len(level.HostPath.Paths), "quotas", len(level.HostPath.Quotas))
 				continue
 			}
 			paths := make([]string, 0, len(level.HostPath.Paths))
@@ -321,6 +325,7 @@ func convertToLegacyTieredStore(tieredStore datav1alpha1.RuntimeTieredStore) dat
 			legacyLevel.Path = GetEmptyDirTieredStoreMountPath(levelIndex)
 			legacyLevel.Quota = &quota
 		default:
+			log.V(1).Info("Skip tiered store level that names no medium", "level", levelIndex)
 			continue
 		}
 

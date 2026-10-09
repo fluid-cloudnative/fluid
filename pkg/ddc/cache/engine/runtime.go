@@ -98,7 +98,7 @@ func (e *CacheEngine) getRuntimeInfo() (base.RuntimeInfoInterface, error) {
 		// keep the same as base.GetRuntimeInfo
 		opts := []base.RuntimeInfoOption{
 			// used for the cache capacity labels put on nodes running worker pods
-			base.WithTieredStore(convertToLegacyTieredStore(runtime.Spec.Worker.TieredStore)),
+			base.WithTieredStore(convertToLegacyTieredStore(runtime.Spec.Worker.TieredStore, e.Log)),
 			// below used for create volume
 			base.WithMetadataList(base.GetMetadataListFromAnnotation(runtime)),
 			base.WithAnnotations(runtime.Annotations),
