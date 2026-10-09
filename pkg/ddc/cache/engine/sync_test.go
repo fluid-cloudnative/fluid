@@ -1040,9 +1040,9 @@ var _ = Describe("CacheEngine Sync Tests", Label("pkg.ddc.cache.engine.sync_test
 				},
 			}
 
-			workerWorkload := func() *workloadv1alpha1.AdvancedStatefulSet {
+			workloadOf := func(stsName string) *workloadv1alpha1.AdvancedStatefulSet {
 				sts := &workloadv1alpha1.AdvancedStatefulSet{}
-				key := types.NamespacedName{Name: workerSts, Namespace: "default"}
+				key := types.NamespacedName{Name: stsName, Namespace: "default"}
 				Expect(fakeClient.Get(ctx.Context, key, sts)).To(Succeed())
 				return sts
 			}
@@ -1060,7 +1060,7 @@ var _ = Describe("CacheEngine Sync Tests", Label("pkg.ddc.cache.engine.sync_test
 				BeforeEach(func() {
 					runtimeClass.Topology.Worker.Template.Spec.Containers[0].Resources = *fullTemplateResources.DeepCopy()
 
-					sts := workerWorkload()
+					sts := workloadOf(workerSts)
 					sts.Spec.Template.Spec.Containers[0].Resources = *fullTemplateResources.DeepCopy()
 					Expect(fakeClient.Update(ctx.Context, sts)).To(Succeed())
 				})
@@ -1068,7 +1068,32 @@ var _ = Describe("CacheEngine Sync Tests", Label("pkg.ddc.cache.engine.sync_test
 				It("should move the key it names and keep the template's other requirements", func() {
 					Expect(engine.syncRuntimeSpec(ctx, runtimeObj, runtimeClass)).To(Succeed())
 
-					synced := workerWorkload().Spec.Template.Spec.Containers[0].Resources
+					synced := workloadOf(workerSts).Spec.Template.Spec.Containers[0].Resources
+					Expect(synced.Limits.Memory().String()).To(Equal("8Gi"))
+					Expect(synced.Limits.Cpu().String()).To(Equal("2"))
+					Expect(synced.Requests.Cpu().String()).To(Equal("1"))
+					Expect(synced.Requests.Memory().String()).To(Equal("2Gi"))
+				})
+			})
+
+			// The master resolves its resources through the same desiredComponentResources
+			// as the worker, without the tiered store quota on top.
+			Context("and the component is the master", func() {
+				BeforeEach(func() {
+					runtimeObj.Spec.Master.Resources = corev1.ResourceRequirements{
+						Limits: corev1.ResourceList{corev1.ResourceMemory: resource.MustParse("8Gi")},
+					}
+					runtimeClass.Topology.Master.Template.Spec.Containers[0].Resources = *fullTemplateResources.DeepCopy()
+
+					sts := workloadOf(masterSts)
+					sts.Spec.Template.Spec.Containers[0].Resources = *fullTemplateResources.DeepCopy()
+					Expect(fakeClient.Update(ctx.Context, sts)).To(Succeed())
+				})
+
+				It("should move the key it names and keep the template's other requirements", func() {
+					Expect(engine.syncRuntimeSpec(ctx, runtimeObj, runtimeClass)).To(Succeed())
+
+					synced := workloadOf(masterSts).Spec.Template.Spec.Containers[0].Resources
 					Expect(synced.Limits.Memory().String()).To(Equal("8Gi"))
 					Expect(synced.Limits.Cpu().String()).To(Equal("2"))
 					Expect(synced.Requests.Cpu().String()).To(Equal("1"))
@@ -1083,13 +1108,13 @@ var _ = Describe("CacheEngine Sync Tests", Label("pkg.ddc.cache.engine.sync_test
 				It("should leave requests unset and stop patching once converged", func() {
 					Expect(engine.syncRuntimeSpec(ctx, runtimeObj, runtimeClass)).To(Succeed())
 
-					synced := workerWorkload().Spec.Template.Spec.Containers[0].Resources
+					synced := workloadOf(workerSts).Spec.Template.Spec.Containers[0].Resources
 					Expect(synced.Limits.Memory().String()).To(Equal("8Gi"))
 					Expect(synced.Requests).To(BeNil())
 
-					converged := workerWorkload().ResourceVersion
+					converged := workloadOf(workerSts).ResourceVersion
 					Expect(engine.syncRuntimeSpec(ctx, runtimeObj, runtimeClass)).To(Succeed())
-					Expect(workerWorkload().ResourceVersion).To(Equal(converged))
+					Expect(workloadOf(workerSts).ResourceVersion).To(Equal(converged))
 				})
 			})
 		})
