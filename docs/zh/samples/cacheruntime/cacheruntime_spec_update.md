@@ -59,6 +59,7 @@ spec:
 - `requests.memory`: 内存请求
 - `limits.cpu`: CPU 限制
 - `limits.memory`: 内存限制
+- `claims`: 动态资源分配（DRA）的资源声明，只能引用模板中声明的 Pod 级 `resourceClaims`，见下方限制
 
 **示例**:
 ```yaml
@@ -90,6 +91,20 @@ spec:
 - ⚠️ CacheRuntimeClass 模板中声明的 key **可以覆盖，但不能删除**：从 CacheRuntime 中省略某个 key 不会
   让组件变为不受限，而是保留模板中的值。如需放宽限制，请显式设置目标值；如需彻底去掉某项资源要求，
   请修改 CacheRuntimeClass 模板——运行时自身的资源要求本就描述在那里。
+- ⚠️ **CacheRuntimeClass 模板中 `resources` 的修改会同步到已有实例**：模板是每次 reconcile 的基线，
+  修改后，所有引用该 CacheRuntimeClass 的 CacheRuntime 中未被覆盖的 key 都会同步到 master 和 worker
+  的工作负载，无需重建 CacheRuntime。控制器不监听 CacheRuntimeClass，因此修改在各 CacheRuntime 的下一次
+  reconcile 时生效，而不是立即生效。client 不同步，模板中 `resources` 以外的字段也不同步。若删除了模板中的
+  全部 `resources`，且 CacheRuntime 也未设置，工作负载会保留原有的值，不会被清空。
+- ⚠️ **升级说明**：在旧版本中，只设置了部分 `resources` 的 CacheRuntime 会丢失模板中的其余资源要求
+  （见 [#6173](https://github.com/fluid-cloudnative/fluid/issues/6173)）。升级后的第一次 reconcile 会补回
+  这些值，相应的 master 和 worker Pod 会经历一次性的资源更新；集群不支持原地更新时，Pod 会被重建。完全未设置
+  `resources` 的 CacheRuntime 不受影响。
+- ⚠️ **`claims` 只能引用模板中声明的 Pod 级 `resourceClaims`**：CacheRuntime 只能设置容器的
+  `resources.claims`，不能添加 Pod 级的 `spec.resourceClaims`。引用 CacheRuntimeClass 模板中未声明的
+  claim 名时，新建或重建的 master/worker Pod 会被 API server 拒绝（`must be one of the names in
+  pod.spec.resourceClaims`），组件会一直处于 NotReady。未启用 `DynamicResourceAllocation` 的集群
+  （K8s 1.34 之前默认关闭）会静默丢弃 `claims`。旧版本会忽略只设置了 `claims` 的 CacheRuntime。
 - ⚠️ **Kubernetes 版本要求**：需要 K8s >= 1.27 且启用 `InPlacePodVerticalScaling` Feature Gate
   ```bash
   # 检查 Feature Gate 是否启用
