@@ -25,10 +25,12 @@ import (
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/tieredstore"
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 var _ = Describe("CacheEngine TransformRuntimeTieredStore Tests", Label("pkg.ddc.cache.engine.transform_tiered_store_test.go"), func() {
@@ -683,5 +685,38 @@ var _ = Describe("CacheEngine convertToLegacyTieredStore Tests", Label("pkg.ddc.
 			// 1Gi and 3Gi must survive as 4Gi rather than being averaged to 2Gi each
 			Expect(storage[common.DiskCacheStore].String()).To(Equal("4Gi"))
 		})
+	})
+})
+
+var _ = Describe("CacheEngine getRuntimeInfo tiered store Tests", Label("pkg.ddc.cache.engine.transform_tiered_store_test.go"), func() {
+	It("should build the runtime info storage map from the worker tiered store", func() {
+		runtime := &datav1alpha1.CacheRuntime{
+			ObjectMeta: metav1.ObjectMeta{Name: "demo", Namespace: "default"},
+			Spec: datav1alpha1.CacheRuntimeSpec{
+				Worker: datav1alpha1.CacheRuntimeWorkerSpec{
+					TieredStore: datav1alpha1.RuntimeTieredStore{
+						Levels: []datav1alpha1.RuntimeTieredStoreLevel{
+							{ProcessMemory: &datav1alpha1.ProcessMemoryMediumSource{Quota: resource.MustParse("4Gi")}},
+							{EmptyDir: &datav1alpha1.EmptyDirMediumSource{Quota: resource.MustParse("1Gi")}},
+						},
+					},
+				},
+			},
+		}
+		engine := &CacheEngine{
+			Client:      fake.NewFakeClientWithScheme(CacheEngineTestScheme, runtime),
+			Log:         logr.Discard(),
+			name:        "demo",
+			namespace:   "default",
+			runtimeType: common.CacheRuntime,
+		}
+
+		runtimeInfo, err := engine.getRuntimeInfo()
+		Expect(err).NotTo(HaveOccurred())
+
+		// An empty TieredStore here left every node capacity label at 0B (#6174)
+		storage := tieredstore.GetLevelStorageMap(runtimeInfo)
+		Expect(storage[common.MemoryCacheStore].String()).To(Equal("4Gi"))
+		Expect(storage[common.DiskCacheStore].String()).To(Equal("1Gi"))
 	})
 })
