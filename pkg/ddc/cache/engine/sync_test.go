@@ -1077,10 +1077,9 @@ var _ = Describe("CacheEngine Sync Tests", Label("pkg.ddc.cache.engine.sync_test
 			})
 
 			Context("and neither side declares requests", func() {
-				// The template the outer BeforeEach installs is limits-only. A merge that
-				// turned the absent requests into an empty map instead of leaving them nil
-				// would never compare equal to the workload, and the sync would patch on
-				// every reconcile.
+				// The template the outer BeforeEach installs is limits-only, so the merge has
+				// no requests to carry over. The sync must leave them unset and converge:
+				// a second pass finds nothing to change and does not patch again.
 				It("should leave requests unset and stop patching once converged", func() {
 					Expect(engine.syncRuntimeSpec(ctx, runtimeObj, runtimeClass)).To(Succeed())
 
