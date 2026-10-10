@@ -147,6 +147,7 @@ func TestCreateRuntimeForReferenceDatasetIfNotExist(t *testing.T) {
 				ObjectMeta: v1.ObjectMeta{
 					Name:      "ThinRuntimeExistWithOwnerReference",
 					Namespace: "default",
+					UID:       "uid-adopted-dataset",
 				},
 			},
 			wantErr: false,
@@ -156,6 +157,7 @@ func TestCreateRuntimeForReferenceDatasetIfNotExist(t *testing.T) {
 				ObjectMeta: v1.ObjectMeta{
 					Name:      "ThinRuntimeDoesnotExist",
 					Namespace: "default",
+					UID:       "c3d4e5f6-a7b8-1234-5678-9abcdef01234",
 				},
 			},
 			wantErr: false,
@@ -181,6 +183,66 @@ func TestCreateRuntimeForReferenceDatasetIfNotExist(t *testing.T) {
 		})
 	}
 
+	// Verify that newly created ThinRuntime has complete owner reference with GVK
+	createdRuntime, err := GetThinRuntime(fakeClient, "ThinRuntimeDoesnotExist", "default")
+	if err != nil {
+		t.Fatalf("failed to get created thinRuntime: %v", err)
+	}
+	if len(createdRuntime.GetOwnerReferences()) != 1 {
+		t.Fatalf("expected 1 ownerReference on created thinRuntime, got %d", len(createdRuntime.GetOwnerReferences()))
+	}
+	createdOwnerRef := createdRuntime.GetOwnerReferences()[0]
+	if createdOwnerRef.Kind != datav1alpha1.Datasetkind || createdOwnerRef.APIVersion != datav1alpha1.GroupVersion.String() {
+		t.Errorf("expected ownerReference Kind=%s APIVersion=%s, got Kind=%s APIVersion=%s",
+			datav1alpha1.Datasetkind, datav1alpha1.GroupVersion.String(), createdOwnerRef.Kind, createdOwnerRef.APIVersion)
+	}
+	if createdOwnerRef.Controller == nil || !*createdOwnerRef.Controller {
+		t.Errorf("expected ownerReference Controller=true, got %v", createdOwnerRef.Controller)
+	}
+	if createdOwnerRef.UID != "c3d4e5f6-a7b8-1234-5678-9abcdef01234" {
+		t.Errorf("expected ownerReference UID=c3d4e5f6-a7b8-1234-5678-9abcdef01234, got %s", createdOwnerRef.UID)
+	}
+
+	// Verify that adopted ThinRuntime has complete owner reference with GVK
+	adoptedRuntime, err := GetThinRuntime(fakeClient, "ThinRuntimeExistWithOwnerReference", "default")
+	if err != nil {
+		t.Fatalf("failed to get adopted thinRuntime: %v", err)
+	}
+	if len(adoptedRuntime.GetOwnerReferences()) != 1 {
+		t.Fatalf("expected 1 ownerReference on adopted thinRuntime, got %d", len(adoptedRuntime.GetOwnerReferences()))
+	}
+	adoptedOwnerRef := adoptedRuntime.GetOwnerReferences()[0]
+	if adoptedOwnerRef.Kind != datav1alpha1.Datasetkind || adoptedOwnerRef.APIVersion != datav1alpha1.GroupVersion.String() {
+		t.Errorf("expected ownerReference Kind=%s APIVersion=%s, got Kind=%s APIVersion=%s",
+			datav1alpha1.Datasetkind, datav1alpha1.GroupVersion.String(), adoptedOwnerRef.Kind, adoptedOwnerRef.APIVersion)
+	}
+	if adoptedOwnerRef.Controller == nil || !*adoptedOwnerRef.Controller {
+		t.Errorf("expected ownerReference Controller=true, got %v", adoptedOwnerRef.Controller)
+	}
+	if adoptedOwnerRef.UID != "uid-adopted-dataset" {
+		t.Errorf("expected ownerReference UID=uid-adopted-dataset, got %s", adoptedOwnerRef.UID)
+	}
+
+	// Verify that existing ThinRuntime with incomplete owner reference is repaired with complete GVK
+	existingRuntime, err := GetThinRuntime(fakeClient, "ThinRuntimeExists", "default")
+	if err != nil {
+		t.Fatalf("failed to get existing thinRuntime: %v", err)
+	}
+	if len(existingRuntime.GetOwnerReferences()) != 1 {
+		t.Fatalf("expected 1 ownerReference on existing thinRuntime, got %d", len(existingRuntime.GetOwnerReferences()))
+	}
+	existingOwnerRef := existingRuntime.GetOwnerReferences()[0]
+	if existingOwnerRef.Kind != datav1alpha1.Datasetkind || existingOwnerRef.APIVersion != datav1alpha1.GroupVersion.String() {
+		t.Errorf("expected ownerReference Kind=%s APIVersion=%s, got Kind=%s APIVersion=%s",
+			datav1alpha1.Datasetkind, datav1alpha1.GroupVersion.String(), existingOwnerRef.Kind, existingOwnerRef.APIVersion)
+	}
+	if existingOwnerRef.Controller == nil || !*existingOwnerRef.Controller {
+		t.Errorf("expected ownerReference Controller=true, got %v", existingOwnerRef.Controller)
+	}
+	if existingOwnerRef.UID != "3e108dcc-9aab-4d0b-99dc-9976d5cd6d5a" {
+		t.Errorf("expected ownerReference UID=3e108dcc-9aab-4d0b-99dc-9976d5cd6d5a, got %s", existingOwnerRef.UID)
+	}
+
 	// The terminating runtime must be left untouched, especially it must not be adopted by the dataset.
 	terminatingRuntime, err := GetThinRuntime(fakeClient, "ThinRuntimeTerminating", "default")
 	if err != nil {
@@ -191,5 +253,113 @@ func TestCreateRuntimeForReferenceDatasetIfNotExist(t *testing.T) {
 	}
 	if len(terminatingRuntime.GetOwnerReferences()) != 0 {
 		t.Errorf("expected no ownerReference set on the terminating thinRuntime, but got %v", terminatingRuntime.GetOwnerReferences())
+	}
+}
+
+func TestDatasetControllerOwnerReference(t *testing.T) {
+	testCases := map[string]struct {
+		dataset            *datav1alpha1.Dataset
+		expectedKind       string
+		expectedAPIVersion string
+	}{
+		"dataset with complete TypeMeta": {
+			dataset: &datav1alpha1.Dataset{
+				TypeMeta: v1.TypeMeta{
+					Kind:       "Dataset",
+					APIVersion: "data.fluid.io/v1alpha1",
+				},
+				ObjectMeta: v1.ObjectMeta{
+					Name: "complete-dataset",
+					UID:  "uid-complete",
+				},
+			},
+			expectedKind:       "Dataset",
+			expectedAPIVersion: "data.fluid.io/v1alpha1",
+		},
+		"dataset with empty TypeMeta": {
+			dataset: &datav1alpha1.Dataset{
+				ObjectMeta: v1.ObjectMeta{
+					Name: "empty-typemeta-dataset",
+					UID:  "uid-empty",
+				},
+			},
+			expectedKind:       "Dataset",
+			expectedAPIVersion: "data.fluid.io/v1alpha1",
+		},
+		"dataset with only Kind in TypeMeta": {
+			dataset: &datav1alpha1.Dataset{
+				TypeMeta: v1.TypeMeta{
+					Kind: "Dataset",
+				},
+				ObjectMeta: v1.ObjectMeta{
+					Name: "kind-only-dataset",
+					UID:  "uid-kind",
+				},
+			},
+			expectedKind:       "Dataset",
+			expectedAPIVersion: "data.fluid.io/v1alpha1",
+		},
+		"dataset with only APIVersion in TypeMeta": {
+			dataset: &datav1alpha1.Dataset{
+				TypeMeta: v1.TypeMeta{
+					APIVersion: "data.fluid.io/v1alpha1",
+				},
+				ObjectMeta: v1.ObjectMeta{
+					Name: "apiversion-only-dataset",
+					UID:  "uid-apiversion",
+				},
+			},
+			expectedKind:       "Dataset",
+			expectedAPIVersion: "data.fluid.io/v1alpha1",
+		},
+		"dataset with custom APIVersion in TypeMeta": {
+			dataset: &datav1alpha1.Dataset{
+				TypeMeta: v1.TypeMeta{
+					Kind:       "Dataset",
+					APIVersion: "data.fluid.io/v1beta1",
+				},
+				ObjectMeta: v1.ObjectMeta{
+					Name: "custom-apiversion-dataset",
+					UID:  "uid-custom",
+				},
+			},
+			expectedKind:       "Dataset",
+			expectedAPIVersion: "data.fluid.io/v1beta1",
+		},
+		"dataset with malformed APIVersion (group only, missing version)": {
+			dataset: &datav1alpha1.Dataset{
+				TypeMeta: v1.TypeMeta{
+					Kind:       "Dataset",
+					APIVersion: "data.fluid.io/",
+				},
+				ObjectMeta: v1.ObjectMeta{
+					Name: "malformed-apiversion-dataset",
+					UID:  "uid-malformed",
+				},
+			},
+			expectedKind:       "Dataset",
+			expectedAPIVersion: "data.fluid.io/v1alpha1",
+		},
+	}
+
+	for name, tc := range testCases {
+		t.Run(name, func(t *testing.T) {
+			ownerRef := datasetControllerOwnerReference(tc.dataset)
+			if ownerRef.Kind != tc.expectedKind {
+				t.Errorf("expected Kind %s, got %s", tc.expectedKind, ownerRef.Kind)
+			}
+			if ownerRef.APIVersion != tc.expectedAPIVersion {
+				t.Errorf("expected APIVersion %s, got %s", tc.expectedAPIVersion, ownerRef.APIVersion)
+			}
+			if ownerRef.Name != tc.dataset.GetName() {
+				t.Errorf("expected Name %s, got %s", tc.dataset.GetName(), ownerRef.Name)
+			}
+			if ownerRef.UID != tc.dataset.GetUID() {
+				t.Errorf("expected UID %s, got %s", tc.dataset.GetUID(), ownerRef.UID)
+			}
+			if ownerRef.Controller == nil || !*ownerRef.Controller {
+				t.Errorf("expected Controller to be true, got %v", ownerRef.Controller)
+			}
+		})
 	}
 }
