@@ -51,16 +51,12 @@ func datasetControllerOwnerReference(dataset *datav1alpha1.Dataset) metav1.Owner
 	ref := transformer.GenerateOwnerReferenceFromObject(dataset)
 	kind := ref.Kind
 	if len(kind) == 0 {
-		// unreachable by design: Dataset is statically registered in fluidScheme,
-		// kept as a defensive fallback if scheme lookup is ever unavailable.
-		log.Info("Failed to resolve kind from scheme for dataset, falling back to default", "dataset", dataset.GetName())
+		// unreachable by design: Dataset is statically registered in fluidScheme.
 		kind = datav1alpha1.Datasetkind
 	}
 	apiVersion := ref.APIVersion
 	if len(apiVersion) == 0 {
-		// unreachable by design: Dataset is statically registered in fluidScheme,
-		// kept as a defensive fallback if scheme lookup is ever unavailable.
-		log.Info("Failed to resolve apiVersion from scheme for dataset, falling back to default", "dataset", dataset.GetName())
+		// unreachable by design: Dataset is statically registered in fluidScheme.
 		apiVersion = datav1alpha1.GroupVersion.String()
 	}
 

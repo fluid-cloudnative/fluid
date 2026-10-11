@@ -22,6 +22,7 @@ import (
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/transformer"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/utils/ptr"
@@ -359,6 +360,24 @@ func TestDatasetControllerOwnerReference(t *testing.T) {
 			}
 			if ownerRef.Controller == nil || !*ownerRef.Controller {
 				t.Errorf("expected Controller to be true, got %v", ownerRef.Controller)
+			}
+
+			// Assert equivalence against the shared transformer helper to pin the delegation
+			transformerRef := transformer.GenerateOwnerReferenceFromObject(tc.dataset)
+			if ownerRef.Kind != transformerRef.Kind {
+				t.Errorf("expected Kind to match transformer (%s), got %s", transformerRef.Kind, ownerRef.Kind)
+			}
+			if ownerRef.APIVersion != transformerRef.APIVersion {
+				t.Errorf("expected APIVersion to match transformer (%s), got %s", transformerRef.APIVersion, ownerRef.APIVersion)
+			}
+			if ownerRef.Name != transformerRef.Name {
+				t.Errorf("expected Name to match transformer (%s), got %s", transformerRef.Name, ownerRef.Name)
+			}
+			if string(ownerRef.UID) != transformerRef.UID {
+				t.Errorf("expected UID to match transformer (%s), got %s", transformerRef.UID, ownerRef.UID)
+			}
+			if ownerRef.Controller == nil || *ownerRef.Controller != transformerRef.Controller {
+				t.Errorf("expected Controller to match transformer (%v), got %v", transformerRef.Controller, ownerRef.Controller)
 			}
 		})
 	}
