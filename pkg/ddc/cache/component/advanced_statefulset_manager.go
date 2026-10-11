@@ -181,17 +181,8 @@ func (s *AdvancedStatefulSetManager) ConstructComponentStatusAndAffinity(ctx con
 }
 
 func (s *AdvancedStatefulSetManager) ConstructComponentStatus(ctx context.Context, identity *common.ComponentIdentity) (datav1alpha1.RuntimeComponentStatus, error) {
-	logger := log.FromContext(ctx)
-	logger.Info("start to ConstructComponentStatus")
-
-	asts := &workloadv1alpha1.AdvancedStatefulSet{}
-	err := s.client.Get(ctx, types.NamespacedName{Name: identity.Name, Namespace: identity.Namespace}, asts)
-	if err != nil {
-		logger.Error(err, fmt.Sprintf("failed to get component: %s/%s", identity.Namespace, identity.Name))
-		return datav1alpha1.RuntimeComponentStatus{}, err
-	}
-
-	return s.constructStatus(asts), nil
+	status, _, err := s.ConstructComponentStatusAndAffinity(ctx, identity)
+	return status, err
 }
 
 // SyncComponentSpec synchronizes component specification changes to the AdvancedStatefulSet

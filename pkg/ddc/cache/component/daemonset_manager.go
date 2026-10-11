@@ -150,17 +150,8 @@ func (s *DaemonSetManager) ConstructComponentStatusAndAffinity(ctx context.Conte
 }
 
 func (s *DaemonSetManager) ConstructComponentStatus(ctx context.Context, identity *common.ComponentIdentity) (datav1alpha1.RuntimeComponentStatus, error) {
-	logger := log.FromContext(ctx)
-	logger.Info("start to ConstructComponentStatus")
-
-	ds := &appsv1.DaemonSet{}
-	err := s.client.Get(ctx, types.NamespacedName{Name: identity.Name, Namespace: identity.Namespace}, ds)
-	if err != nil {
-		logger.Error(err, fmt.Sprintf("failed to get component: %s/%s", identity.Namespace, identity.Name))
-		return datav1alpha1.RuntimeComponentStatus{}, err
-	}
-
-	return s.constructStatus(ds), nil
+	status, _, err := s.ConstructComponentStatusAndAffinity(ctx, identity)
+	return status, err
 }
 
 // SyncComponentSpec is not supported for DaemonSet, Client Component does not support to be modified after created.
