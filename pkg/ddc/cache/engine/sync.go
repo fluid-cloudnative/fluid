@@ -220,15 +220,13 @@ func (e *CacheEngine) syncRuntimeSpec(ctx cruntime.ReconcileRequestContext, runt
 		// only patches resources, so a spec-derived quota would move the container's
 		// memory while the tmpfs volumes kept their original size.
 		workerResources := desiredComponentResources(runtime.Spec.Worker.Resources, runtimeClass.Topology.Worker)
-		if workerResources != nil {
-			podSpec, err := manager.GetPodSpec(ctx.Context, workerIdentity)
-			if err != nil {
-				e.Log.Error(err, "failed to read the worker pod spec", "component", workerIdentity.Name)
-				return err
-			}
-			resources := withTieredStoreMemoryQuota(*workerResources, chargedTieredStoreMemoryQuota(podSpec))
-			workerResources = &resources
+		podSpec, err := manager.GetPodSpec(ctx.Context, workerIdentity)
+		if err != nil {
+			e.Log.Error(err, "failed to read the worker pod spec", "component", workerIdentity.Name)
+			return err
 		}
+		resources := withTieredStoreMemoryQuota(*workerResources, chargedTieredStoreMemoryQuota(podSpec))
+		workerResources = &resources
 
 		workerSpec := component.ComponentSpec{
 			Version:   runtime.Spec.Worker.RuntimeVersion,
@@ -250,9 +248,8 @@ func (e *CacheEngine) syncRuntimeSpec(ctx cruntime.ReconcileRequestContext, runt
 // desiredComponentResources resolves the resources that should be synced to a
 // component's workload. It mirrors the creation path: the values set on the CacheRuntime
 // are overlaid key by key on the CacheRuntimeClass template baseline, so a key the
-// CacheRuntime does not name keeps the template value the creation path rendered into the
-// workload instead of being dropped from it. A nil return means neither declares
-// resources, and the workload's current resources are left untouched.
+// CacheRuntime does not name keeps the template value. When neither side declares a key,
+// it is cleared from the workload.
 //
 // Only the first container is considered, matching the creation path, which also only
 // fills in resources for Containers[0].
@@ -263,10 +260,6 @@ func desiredComponentResources(runtimeResources corev1.ResourceRequirements, com
 	}
 
 	desired := mergeResourceRequirements(templateResources, runtimeResources)
-	if desired.Requests == nil && desired.Limits == nil && desired.Claims == nil {
-		return nil
-	}
-
 	return &desired
 }
 

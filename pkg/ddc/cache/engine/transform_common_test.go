@@ -309,9 +309,17 @@ var _ = Describe("CacheEngine component resources Tests", Label("pkg.ddc.cache.e
 		})
 
 		Context("when neither the CacheRuntime nor the template declares resources", func() {
-			It("should return nil so the workload is left untouched", func() {
-				Expect(desiredComponentResources(corev1.ResourceRequirements{}, workerDefinition(corev1.ResourceRequirements{}))).To(BeNil())
-				Expect(desiredComponentResources(corev1.ResourceRequirements{}, nil)).To(BeNil())
+			It("should resolve to empty resources so the workload is cleared", func() {
+				for _, definition := range []*datav1alpha1.RuntimeComponentDefinition{
+					workerDefinition(corev1.ResourceRequirements{}),
+					nil,
+				} {
+					desired := desiredComponentResources(corev1.ResourceRequirements{}, definition)
+					Expect(desired).NotTo(BeNil())
+					Expect(desired.Requests).To(BeEmpty())
+					Expect(desired.Limits).To(BeEmpty())
+					Expect(desired.Claims).To(BeEmpty())
+				}
 			})
 		})
 

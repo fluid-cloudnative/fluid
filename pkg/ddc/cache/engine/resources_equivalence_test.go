@@ -44,8 +44,7 @@ import (
 // Each row below is checked twice:
 //
 //	resolve   the two resolvers return the same value, compared the way updateResources
-//	          compares it (equality.Semantic); a nil from the sync resolver means "leave the
-//	          workload alone", so the creation path must then have left the template as is
+//	          compares it (equality.Semantic)
 //	converge  a workload rendered by the creation path is left untouched by syncRuntimeSpec
 
 type resourcesEquivalenceCase struct {
@@ -174,11 +173,6 @@ var _ = Describe("CacheRuntime resources creation/sync equivalence",
 					desired := desiredComponentResources(tc.runtime,
 						&datav1alpha1.RuntimeComponentDefinition{Template: workerTemplateWith(tc.template)})
 
-					if desired == nil {
-						Expect(equality.Semantic.DeepEqual(rendered, tc.template)).To(BeTrue(),
-							"sync leaves the workload alone, but creation moved it off the template: %+v", rendered)
-						return
-					}
 					Expect(equality.Semantic.DeepEqual(rendered, *desired)).To(BeTrue(),
 						"creation rendered %+v, sync wants %+v", rendered, *desired)
 				})

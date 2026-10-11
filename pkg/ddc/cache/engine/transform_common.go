@@ -198,12 +198,9 @@ func mergeResourceRequirements(base, overlay corev1.ResourceRequirements) corev1
 	return merged
 }
 
-// mergeResourceList applies the overlay entries onto *base in place. Callers own *base:
-// mergeResourceRequirements hands over a deep copy. A nil *base is kept nil when the
-// overlay declares nothing, and is allocated otherwise. This is what lets
-// desiredComponentResources return nil when neither side declares resources, which tells
-// the sync to leave the workload untouched; an allocated empty list would make it clear
-// the workload's resources instead.
+// mergeResourceList applies the overlay entries onto *base in place: an entry with the
+// same name is replaced and any other entry is added. An empty overlay changes nothing,
+// so `limits: {}` on the CacheRuntime reads the same as leaving limits out.
 func mergeResourceList(base *corev1.ResourceList, overlay corev1.ResourceList) {
 	if len(overlay) == 0 {
 		return

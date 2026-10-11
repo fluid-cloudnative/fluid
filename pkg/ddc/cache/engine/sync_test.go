@@ -1155,7 +1155,7 @@ var _ = Describe("CacheEngine Sync Tests", Label("pkg.ddc.cache.engine.sync_test
 		})
 
 		Context("when neither the CacheRuntime nor the template specifies resources", func() {
-			It("should leave the workload's resources untouched", func() {
+			It("should clear the workload's resources", func() {
 				runtimeClass.Topology.Worker.Template.Spec.Containers[0].Resources = corev1.ResourceRequirements{}
 
 				sts := &workloadv1alpha1.AdvancedStatefulSet{}
@@ -1168,7 +1168,8 @@ var _ = Describe("CacheEngine Sync Tests", Label("pkg.ddc.cache.engine.sync_test
 
 				Expect(engine.syncRuntimeSpec(ctx, runtimeObj, runtimeClass)).To(Succeed())
 
-				Expect(memLimitOf(workerSts)).To(Equal("8Gi"))
+				Expect(fakeClient.Get(ctx.Context, key, sts)).To(Succeed())
+				Expect(sts.Spec.Template.Spec.Containers[0].Resources.Limits).To(BeEmpty())
 			})
 		})
 
