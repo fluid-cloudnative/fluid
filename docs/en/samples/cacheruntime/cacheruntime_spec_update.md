@@ -81,11 +81,15 @@ spec:
 1. the `resources` declared by the CacheRuntimeClass template form the baseline;
 2. the `resources` set on the CacheRuntime are overlaid on that baseline key by key —
    `requests` and `limits` merge by resource name, `claims` by claim name;
-3. when neither declares anything, nothing is synced and the workload keeps its current resources.
+3. a key neither declares is cleared from the workload.
 
 The CacheRuntime therefore expresses only the differences it wants from the template. Naming
 `limits.memory` alone moves that one value and leaves the template's `requests.cpu`,
 `requests.memory` and `limits.cpu` in place.
+
+Removing a key from the CacheRuntime works the same way: it falls back to the template's value,
+or is cleared from the workload when the template does not declare it. An empty list such as
+`limits: {}` names no key, so it reads the same as leaving `limits` out.
 
 **Limitations**:
 - ⚠️ Cannot exceed the node's available resources.
@@ -99,15 +103,17 @@ The CacheRuntime therefore expresses only the differences it wants from the temp
   are synced to the master and worker workloads of every CacheRuntime that uses that class, without
   recreating the CacheRuntime. The controller does not watch CacheRuntimeClass, so the change lands
   on each CacheRuntime's next reconcile rather than immediately. The client is not synced, and
-  template fields other than `resources` are not synced either. If all `resources` are removed from
-  the template and the CacheRuntime sets none, the workload keeps its current values instead of
-  being cleared.
+  template fields other than `resources` are not synced either. A key removed from the template is
+  cleared from the workloads that do not override it.
+- ⚠️ **The CacheRuntime and its template are the source of truth**: resources edited directly on
+  the master or worker AdvancedStatefulSet are reverted on the next reconcile.
 - ⚠️ **Upgrade note**: earlier releases dropped the template's other requirements from a
   CacheRuntime that set only part of `resources` (see
   [#6173](https://github.com/fluid-cloudnative/fluid/issues/6173)). The first reconcile after
   upgrading restores them, so the affected master and worker Pods go through a one-time resources
   update, which recreates the Pods where the cluster cannot resize them in place. A CacheRuntime
-  that sets no `resources` at all is not affected.
+  that sets no `resources` is not affected, unless its template declares none either and its
+  workloads carry resources from an earlier override or a manual edit: those are cleared.
 - ⚠️ **`claims` can only reference pod-level `resourceClaims` the template declares**: the CacheRuntime
   sets the container's `resources.claims` but cannot add pod-level `spec.resourceClaims`. A claim name
   the CacheRuntimeClass template does not declare makes the API server reject every master or worker

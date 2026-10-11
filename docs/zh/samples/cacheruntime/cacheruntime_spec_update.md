@@ -81,10 +81,13 @@ spec:
 1. 以 CacheRuntimeClass 模板中声明的 `resources` 为基线；
 2. 将 CacheRuntime 上设置的 `resources` 按 key 叠加到该基线上——`requests` 与 `limits` 按资源名
    合并，`claims` 按 claim 名合并；
-3. 两者都未声明时不做同步，工作负载保持当前的资源配置。
+3. 两者都未声明的 key 会从工作负载上清除。
 
 也就是说，CacheRuntime 只需要表达相对模板的差异。只设置 `limits.memory` 时，仅该值被修改，模板中的
 `requests.cpu`、`requests.memory` 和 `limits.cpu` 保持不变。
+
+从 CacheRuntime 中删除某个 key 也遵循同样的规则：模板中有该 key 时回到模板的值，没有时从工作负载上清除。
+`limits: {}` 这样的空列表不包含任何 key，效果与不写 `limits` 相同。
 
 **限制**：
 - ⚠️ 不能超过节点可用资源
@@ -94,12 +97,15 @@ spec:
 - ⚠️ **CacheRuntimeClass 模板中 `resources` 的修改会同步到已有实例**：模板是每次 reconcile 的基线，
   修改后，所有引用该 CacheRuntimeClass 的 CacheRuntime 中未被覆盖的 key 都会同步到 master 和 worker
   的工作负载，无需重建 CacheRuntime。控制器不监听 CacheRuntimeClass，因此修改在各 CacheRuntime 的下一次
-  reconcile 时生效，而不是立即生效。client 不同步，模板中 `resources` 以外的字段也不同步。若删除了模板中的
-  全部 `resources`，且 CacheRuntime 也未设置，工作负载会保留原有的值，不会被清空。
+  reconcile 时生效，而不是立即生效。client 不同步，模板中 `resources` 以外的字段也不同步。从模板中删除的 key，
+  会从未覆盖该 key 的工作负载上清除。
+- ⚠️ **以 CacheRuntime 和模板为准**：直接修改 master 或 worker 的 AdvancedStatefulSet 上的 resources，
+  会在下一次 reconcile 时被改回。
 - ⚠️ **升级说明**：在旧版本中，只设置了部分 `resources` 的 CacheRuntime 会丢失模板中的其余资源要求
   （见 [#6173](https://github.com/fluid-cloudnative/fluid/issues/6173)）。升级后的第一次 reconcile 会补回
   这些值，相应的 master 和 worker Pod 会经历一次性的资源更新；集群不支持原地更新时，Pod 会被重建。完全未设置
-  `resources` 的 CacheRuntime 不受影响。
+  `resources` 的 CacheRuntime 不受影响；但如果模板也未声明，而工作负载上有之前覆盖遗留或手动修改的值，
+  这些值会被清除。
 - ⚠️ **`claims` 只能引用模板中声明的 Pod 级 `resourceClaims`**：CacheRuntime 只能设置容器的
   `resources.claims`，不能添加 Pod 级的 `spec.resourceClaims`。引用 CacheRuntimeClass 模板中未声明的
   claim 名时，新建或重建的 master/worker Pod 会被 API server 拒绝（`must be one of the names in
