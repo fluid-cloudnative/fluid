@@ -133,10 +133,7 @@ func (e *CacheEngine) transformComponentPodTemplate(runtimeSpec datav1alpha1.Cac
 	if len(podTemplate.Spec.Containers) > 0 {
 		// transform Container Image name etc. A version naming only one of image and imageTag
 		// takes the other half from the template rather than being dropped.
-		version := desiredComponentVersion(runtimeCompSpec.RuntimeVersion, podTemplate.Spec.Containers[0].Image)
-		if len(version.Image) > 0 && len(version.ImageTag) > 0 {
-			podTemplate.Spec.Containers[0].Image = version.Image + ":" + version.ImageTag
-		}
+		podTemplate.Spec.Containers[0].Image = componentImage(runtimeCompSpec.RuntimeVersion, podTemplate.Spec.Containers[0].Image)
 		if len(runtimeCompSpec.RuntimeVersion.ImagePullPolicy) > 0 {
 			podTemplate.Spec.Containers[0].ImagePullPolicy = (corev1.PullPolicy)(runtimeCompSpec.RuntimeVersion.ImagePullPolicy)
 		}
@@ -219,6 +216,18 @@ func desiredComponentVersion(runtimeVersion datav1alpha1.VersionSpec, templateIm
 	}
 
 	return runtimeVersion
+}
+
+// componentImage resolves the image a component runs: the runtime version completed against
+// the template, or the template image itself when the version cannot be completed. Both the
+// component workload and the data operations that borrow the worker image use it, so the two
+// cannot drift apart.
+func componentImage(runtimeVersion datav1alpha1.VersionSpec, templateImage string) string {
+	version := desiredComponentVersion(runtimeVersion, templateImage)
+	if version.Image != "" && version.ImageTag != "" {
+		return version.Image + ":" + version.ImageTag
+	}
+	return templateImage
 }
 
 // splitImageReference splits a container image reference into its repository and tag. The tag
