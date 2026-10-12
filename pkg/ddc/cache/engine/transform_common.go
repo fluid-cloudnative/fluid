@@ -18,6 +18,8 @@ package engine
 
 import (
 	"fmt"
+	"sort"
+	"strings"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
@@ -229,4 +231,35 @@ func mergeResourceClaims(base *[]corev1.ResourceClaim, overlay []corev1.Resource
 			*base = append(*base, *claim.DeepCopy())
 		}
 	}
+}
+
+// validateResourceRequirements reports every resource whose request exceeds its limit.
+// Merging per key can produce such a pair from a template and a CacheRuntime that are
+// each valid on their own, and the API server would only reject it once a Pod is created.
+func validateResourceRequirements(resources corev1.ResourceRequirements) error {
+	var conflicts []string
+	for name, request := range resources.Requests {
+		limit, ok := resources.Limits[name]
+		if ok && request.Cmp(limit) > 0 {
+			conflicts = append(conflicts, fmt.Sprintf("%s request %s exceeds limit %s", name, request.String(), limit.String()))
+		}
+	}
+	if len(conflicts) == 0 {
+		return nil
+	}
+	sort.Strings(conflicts)
+	return fmt.Errorf("%s", strings.Join(conflicts, "; "))
+}
+
+// validateComponentResources checks the resources the creation path rendered into the
+// component's first container, the only one transformComponentPodTemplate fills in.
+func validateComponentResources(componentValue *common.CacheRuntimeComponentValue) error {
+	containers := componentValue.PodTemplateSpec.Spec.Containers
+	if len(containers) == 0 {
+		return nil
+	}
+	if err := validateResourceRequirements(containers[0].Resources); err != nil {
+		return fmt.Errorf("invalid %s resources: %w", componentValue.ComponentType, err)
+	}
+	return nil
 }

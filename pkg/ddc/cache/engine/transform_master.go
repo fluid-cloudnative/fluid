@@ -42,6 +42,9 @@ func (e *CacheEngine) transformMaster(dataset *datav1alpha1.Dataset, runtime *da
 
 	// transform container related config, currently only modify the first container
 	e.transformComponentPodTemplate(runtime.Spec, runtimeMaster.RuntimeComponentCommonSpec, dataset, value.Master)
+	if err = validateComponentResources(value.Master); err != nil {
+		return err
+	}
 
 	// transform all volume-related configurations
 	err = e.transformVolumes(runtime.Spec.Volumes, runtime.Spec.Master.VolumeMounts, dataset, componentDefinition, commonConfig, true, &value.Master.PodTemplateSpec.Spec)

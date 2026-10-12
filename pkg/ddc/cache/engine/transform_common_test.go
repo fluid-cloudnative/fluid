@@ -344,4 +344,59 @@ var _ = Describe("CacheEngine component resources Tests", Label("pkg.ddc.cache.e
 			Expect(definition.Template.Spec.Containers[0].Resources.Limits.Memory().String()).To(Equal("4Gi"))
 		})
 	})
+
+	Describe("validateResourceRequirements", func() {
+		It("should accept a request equal to its limit, and a request with no limit", func() {
+			Expect(validateResourceRequirements(corev1.ResourceRequirements{
+				Requests: corev1.ResourceList{
+					corev1.ResourceCPU:    resource.MustParse("1"),
+					corev1.ResourceMemory: resource.MustParse("2Gi"),
+				},
+				Limits: corev1.ResourceList{corev1.ResourceCPU: resource.MustParse("1")},
+			})).To(Succeed())
+			Expect(validateResourceRequirements(corev1.ResourceRequirements{})).To(Succeed())
+		})
+
+		It("should name every key whose request exceeds its limit", func() {
+			// The template's requests plus a CacheRuntime that lowers both limits.
+			merged := mergeResourceRequirements(corev1.ResourceRequirements{
+				Requests: corev1.ResourceList{
+					corev1.ResourceCPU:    resource.MustParse("1"),
+					corev1.ResourceMemory: resource.MustParse("2Gi"),
+				},
+			}, corev1.ResourceRequirements{
+				Limits: corev1.ResourceList{
+					corev1.ResourceCPU:    resource.MustParse("500m"),
+					corev1.ResourceMemory: resource.MustParse("1Gi"),
+				},
+			})
+
+			Expect(validateResourceRequirements(merged)).To(
+				MatchError("cpu request 1 exceeds limit 500m; memory request 2Gi exceeds limit 1Gi"))
+		})
+	})
+
+	Describe("validateComponentResources", func() {
+		It("should name the component whose first container conflicts", func() {
+			value := &common.CacheRuntimeComponentValue{
+				ComponentType: common.ComponentTypeWorker,
+				PodTemplateSpec: corev1.PodTemplateSpec{
+					Spec: corev1.PodSpec{Containers: []corev1.Container{{
+						Name: "worker",
+						Resources: corev1.ResourceRequirements{
+							Requests: corev1.ResourceList{corev1.ResourceCPU: resource.MustParse("1")},
+							Limits:   corev1.ResourceList{corev1.ResourceCPU: resource.MustParse("500m")},
+						},
+					}}},
+				},
+			}
+			Expect(validateComponentResources(value)).To(
+				MatchError("invalid worker resources: cpu request 1 exceeds limit 500m"))
+		})
+
+		It("should accept a component without containers", func() {
+			value := &common.CacheRuntimeComponentValue{ComponentType: common.ComponentTypeWorker}
+			Expect(validateComponentResources(value)).To(Succeed())
+		})
+	})
 })

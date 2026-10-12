@@ -33,10 +33,12 @@ import (
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	cclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
@@ -1170,6 +1172,34 @@ var _ = Describe("CacheEngine Sync Tests", Label("pkg.ddc.cache.engine.sync_test
 
 				Expect(fakeClient.Get(ctx.Context, key, sts)).To(Succeed())
 				Expect(sts.Spec.Template.Spec.Containers[0].Resources.Limits).To(BeEmpty())
+			})
+		})
+
+		Context("when the merged resources put a request above its limit", func() {
+			It("should leave the workload's resources alone and emit a Warning event", func() {
+				recorder := record.NewFakeRecorder(10)
+				engine.Recorder = recorder
+
+				runtimeClass.Topology.Worker.Template.Spec.Containers[0].Resources = corev1.ResourceRequirements{
+					Requests: corev1.ResourceList{corev1.ResourceCPU: resource.MustParse("1")},
+					Limits:   corev1.ResourceList{corev1.ResourceCPU: resource.MustParse("2")},
+				}
+				runtimeObj.Spec.Worker.Resources = corev1.ResourceRequirements{
+					Limits: corev1.ResourceList{corev1.ResourceCPU: resource.MustParse("500m")},
+				}
+
+				sts := &workloadv1alpha1.AdvancedStatefulSet{}
+				key := types.NamespacedName{Name: workerSts, Namespace: "default"}
+				Expect(fakeClient.Get(ctx.Context, key, sts)).To(Succeed())
+				before := sts.Spec.Template.Spec.Containers[0].Resources.DeepCopy()
+
+				Expect(engine.syncRuntimeSpec(ctx, runtimeObj, runtimeClass)).To(Succeed())
+
+				Expect(fakeClient.Get(ctx.Context, key, sts)).To(Succeed())
+				Expect(equality.Semantic.DeepEqual(sts.Spec.Template.Spec.Containers[0].Resources, *before)).To(BeTrue())
+				Expect(recorder.Events).To(Receive(And(
+					ContainSubstring(common.RuntimeResourcesConflict),
+					ContainSubstring("cpu request 1 exceeds limit 500m"))))
 			})
 		})
 

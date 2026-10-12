@@ -194,9 +194,10 @@ func (e *CacheEngine) syncRuntimeSpec(ctx cruntime.ReconcileRequestContext, runt
 		}
 		manager := component.NewComponentHelper(common.ComponentTypeMaster, e.Client)
 		masterSpec := component.ComponentSpec{
-			Version:   runtime.Spec.Master.RuntimeVersion,
-			Resources: desiredComponentResources(runtime.Spec.Master.Resources, runtimeClass.Topology.Master),
-			Replicas:  &runtime.Spec.Master.Replicas,
+			Version: runtime.Spec.Master.RuntimeVersion,
+			Resources: e.validDesiredResources(runtime, common.ComponentTypeMaster,
+				desiredComponentResources(runtime.Spec.Master.Resources, runtimeClass.Topology.Master)),
+			Replicas: &runtime.Spec.Master.Replicas,
 		}
 		if err := manager.SyncComponentSpec(ctx.Context, masterIdentity, masterSpec); err != nil {
 			e.Log.Error(err, "failed to sync master component spec", "component", masterIdentity.Name)
@@ -219,14 +220,18 @@ func (e *CacheEngine) syncRuntimeSpec(ctx cruntime.ReconcileRequestContext, runt
 		// spec: tieredStore is not a supported update field, and SyncComponentSpec
 		// only patches resources, so a spec-derived quota would move the container's
 		// memory while the tmpfs volumes kept their original size.
-		workerResources := desiredComponentResources(runtime.Spec.Worker.Resources, runtimeClass.Topology.Worker)
-		podSpec, err := manager.GetPodSpec(ctx.Context, workerIdentity)
-		if err != nil {
-			e.Log.Error(err, "failed to read the worker pod spec", "component", workerIdentity.Name)
-			return err
+		workerResources := e.validDesiredResources(runtime, common.ComponentTypeWorker,
+			desiredComponentResources(runtime.Spec.Worker.Resources, runtimeClass.Topology.Worker))
+		// nil only when the merged resources conflict: leave them unsynced.
+		if workerResources != nil {
+			podSpec, err := manager.GetPodSpec(ctx.Context, workerIdentity)
+			if err != nil {
+				e.Log.Error(err, "failed to read the worker pod spec", "component", workerIdentity.Name)
+				return err
+			}
+			resources := withTieredStoreMemoryQuota(*workerResources, chargedTieredStoreMemoryQuota(podSpec))
+			workerResources = &resources
 		}
-		resources := withTieredStoreMemoryQuota(*workerResources, chargedTieredStoreMemoryQuota(podSpec))
-		workerResources = &resources
 
 		workerSpec := component.ComponentSpec{
 			Version:   runtime.Spec.Worker.RuntimeVersion,
@@ -299,4 +304,23 @@ func (e *CacheEngine) syncDatasetCacheStates(ctx cruntime.ReconcileRequestContex
 	}
 
 	return
+}
+
+// validDesiredResources returns desired when it is a valid pod spec. Otherwise it emits a
+// Warning event on the runtime naming the conflicting keys and returns nil, so the sync
+// leaves the workload's resources as they are while image and replicas still sync.
+func (e *CacheEngine) validDesiredResources(runtime *datav1alpha1.CacheRuntime, componentType common.ComponentType, desired *corev1.ResourceRequirements) *corev1.ResourceRequirements {
+	if desired == nil {
+		return nil
+	}
+	if err := validateResourceRequirements(*desired); err != nil {
+		e.Log.Info("Skip syncing conflicting resources", "component", componentType, "conflicts", err.Error())
+		if e.Recorder != nil {
+			e.Recorder.Eventf(runtime, corev1.EventTypeWarning, common.RuntimeResourcesConflict,
+				"%s resources are not synced: the CacheRuntime and its CacheRuntimeClass template merge into %v",
+				componentType, err)
+		}
+		return nil
+	}
+	return desired
 }
