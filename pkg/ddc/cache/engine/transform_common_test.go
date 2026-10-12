@@ -237,6 +237,14 @@ var _ = Describe("CacheEngine desiredComponentVersion Tests", Label("pkg.ddc.cac
 			Expect(desired.Image).To(BeEmpty())
 			Expect(desired.ImageTag).To(Equal("v9"))
 		})
+
+		It("should stay incomplete when the runtime image pins a digest", func() {
+			digestImage := "btxu/mooncake@sha256:067614b70d25b496e3edc3480747d558ee8a364ef47a67f669f5d96ca5098552"
+			desired := desiredComponentVersion(datav1alpha1.VersionSpec{Image: digestImage}, templateImage)
+
+			Expect(desired.Image).To(Equal(digestImage))
+			Expect(desired.ImageTag).To(BeEmpty())
+		})
 	})
 
 	Describe("splitImageReference", func() {

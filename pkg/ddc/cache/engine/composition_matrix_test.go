@@ -164,6 +164,24 @@ func compositionTable() []layerCase {
 			},
 		},
 
+		{
+			field: "runtimeVersion",
+			desc:  "L3 sets a digest-pinned image only, over an L1 that names a tag",
+			l1: func(t *corev1.PodTemplateSpec) {
+				t.Spec.Containers[0].Image = "fluid/cache:v1"
+			},
+			l3: func(w *datav1alpha1.CacheRuntimeWorkerSpec) {
+				w.RuntimeVersion = datav1alpha1.VersionSpec{
+					Image: "fluid/cache@sha256:067614b70d25b496e3edc3480747d558ee8a364ef47a67f669f5d96ca5098552",
+				}
+			},
+			// A digest takes no tag, so the version stays incomplete and L1 is kept
+			// rather than rendering "fluid/cache@sha256:...:v1".
+			want: func(g Gomega, t corev1.PodTemplateSpec) {
+				g.Expect(t.Spec.Containers[0].Image).To(Equal("fluid/cache:v1"))
+			},
+		},
+
 		// -- args vs env: replace on one, append on the other ------------------------
 		{
 			field: "args",

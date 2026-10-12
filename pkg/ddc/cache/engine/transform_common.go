@@ -201,7 +201,7 @@ func appendMissingImagePullSecrets(existing []corev1.LocalObjectReference,
 // A version naming neither half resolves to the template image itself, so removing a
 // runtimeVersion rolls the component back to the template instead of leaving it on the last
 // override. A version whose missing half cannot be recovered - a template with no image, no tag,
-// or an image pinned by digest - stays incomplete, because guessing there would move the
+// or an image pinned by digest on either side - stays incomplete, because guessing there would move the
 // workload onto something nobody asked for.
 func desiredComponentVersion(runtimeVersion datav1alpha1.VersionSpec, templateImage string) datav1alpha1.VersionSpec {
 	if runtimeVersion.Image != "" && runtimeVersion.ImageTag != "" {
@@ -212,7 +212,9 @@ func desiredComponentVersion(runtimeVersion datav1alpha1.VersionSpec, templateIm
 	if runtimeVersion.Image == "" {
 		runtimeVersion.Image = templateRepository
 	}
-	if runtimeVersion.ImageTag == "" {
+	// An image pinned by digest takes no tag: completing one would render
+	// "repo@sha256:...:v1", which no runtime can parse.
+	if runtimeVersion.ImageTag == "" && !strings.Contains(runtimeVersion.Image, "@") {
 		runtimeVersion.ImageTag = templateTag
 	}
 
