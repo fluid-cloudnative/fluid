@@ -50,7 +50,7 @@ func (e *CacheEngine) setMasterComponentStatus(componentInfo *common.ComponentSt
 func (e *CacheEngine) setWorkerComponentStatus(componentInfo *common.ComponentStatusInfo, status *fluidapi.CacheRuntimeStatus) (ready bool, err error) {
 	manager := component.NewComponentHelper(common.ComponentTypeWorker, e.Client)
 
-	workerStatus, err := manager.ConstructComponentStatus(context.TODO(), &componentInfo.ComponentIdentity)
+	workerStatus, affinity, err := manager.ConstructComponentStatusAndAffinity(context.TODO(), &componentInfo.ComponentIdentity)
 	if err != nil {
 		return false, err
 	}
@@ -70,14 +70,9 @@ func (e *CacheEngine) setWorkerComponentStatus(componentInfo *common.ComponentSt
 		workerStatus.Phase = fluidapi.RuntimePhaseNotReady
 	}
 	status.Worker = workerStatus
-
-	// Worker Affinity
-	affinity, err := manager.GetNodeAffinity(&componentInfo.ComponentIdentity)
-	if err != nil {
-		return false, err
-	}
 	status.CacheAffinity = affinity
-	return ready, err
+
+	return ready, nil
 }
 func (e *CacheEngine) setClientComponentStatus(componentInfo *common.ComponentStatusInfo, status *fluidapi.CacheRuntimeStatus) (fullyReady bool, err error) {
 	manager := component.NewComponentHelper(common.ComponentTypeClient, e.Client)
