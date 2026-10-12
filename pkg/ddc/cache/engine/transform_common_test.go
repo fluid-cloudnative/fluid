@@ -214,7 +214,7 @@ var _ = Describe("CacheEngine desiredComponentVersion Tests", Label("pkg.ddc.cac
 			Expect(desired.ImageTag).To(Equal("v3"))
 		})
 
-		It("should not carry imagePullPolicy into the completion", func() {
+		It("should keep the runtime imagePullPolicy through the completion", func() {
 			desired := desiredComponentVersion(datav1alpha1.VersionSpec{
 				ImageTag:        "v9",
 				ImagePullPolicy: "Always",
