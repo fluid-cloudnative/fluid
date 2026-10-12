@@ -935,6 +935,14 @@ var _ = Describe("CacheEngine Sync Tests", Label("pkg.ddc.cache.engine.sync_test
 				syncWorkerVersion(datav1alpha1.VersionSpec{})
 				Expect(imageOfWorker()).To(Equal("test-worker:latest"))
 			})
+
+			It("should keep the template tag when only the image is set", func() {
+				syncWorkerVersion(datav1alpha1.VersionSpec{Image: "other-worker"})
+				Expect(imageOfWorker()).To(Equal("other-worker:latest"))
+
+				syncWorkerVersion(datav1alpha1.VersionSpec{})
+				Expect(imageOfWorker()).To(Equal("test-worker:latest"))
+			})
 		})
 
 		// The client component runs on a DaemonSet. Neither reconcile path carries a

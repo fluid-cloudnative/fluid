@@ -166,6 +166,20 @@ func compositionTable() []layerCase {
 
 		{
 			field: "runtimeVersion",
+			desc:  "L3 sets image only, over an L1 whose registry carries a port",
+			l1: func(t *corev1.PodTemplateSpec) {
+				t.Spec.Containers[0].Image = "registry:5000/fluid/cache:v1"
+			},
+			l3: func(w *datav1alpha1.CacheRuntimeWorkerSpec) {
+				w.RuntimeVersion = datav1alpha1.VersionSpec{Image: "other/cache"}
+			},
+			// The missing tag is completed from L1; the registry port is not mistaken for it.
+			want: func(g Gomega, t corev1.PodTemplateSpec) {
+				g.Expect(t.Spec.Containers[0].Image).To(Equal("other/cache:v1"))
+			},
+		},
+		{
+			field: "runtimeVersion",
 			desc:  "L3 sets a digest-pinned image only, over an L1 that names a tag",
 			l1: func(t *corev1.PodTemplateSpec) {
 				t.Spec.Containers[0].Image = "fluid/cache:v1"
