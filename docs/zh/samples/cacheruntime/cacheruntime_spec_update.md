@@ -106,6 +106,10 @@ spec:
   这些值，相应的 master 和 worker Pod 会经历一次性的资源更新；集群不支持原地更新时，Pod 会被重建。完全未设置
   `resources` 的 CacheRuntime 不受影响；但如果模板也未声明，而工作负载上有之前覆盖遗留或手动修改的值，
   这些值会被清除。
+- ⚠️ **合并后 request 不能超过 limit**：模板和 CacheRuntime 各自合法，合并后仍可能出现 request 大于 limit，
+  例如模板 `requests.cpu: 1` 加上 CacheRuntime `limits.cpu: 500m`。此时控制器不同步该组件的 `resources`，
+  工作负载保持当前值，并在 CacheRuntime 上发出 `RuntimeResourcesConflict` Warning event，写明冲突的 key；
+  新建的 CacheRuntime 若带有这样的组合，会创建失败。请在 CacheRuntime 上同时调低 request，或修改模板。
 - ⚠️ **`claims` 只能引用模板中声明的 Pod 级 `resourceClaims`**：CacheRuntime 只能设置容器的
   `resources.claims`，不能添加 Pod 级的 `spec.resourceClaims`。引用 CacheRuntimeClass 模板中未声明的
   claim 名时，新建或重建的 master/worker Pod 会被 API server 拒绝（`must be one of the names in

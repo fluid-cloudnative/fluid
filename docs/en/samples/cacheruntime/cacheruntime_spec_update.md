@@ -114,6 +114,13 @@ or is cleared from the workload when the template does not declare it. An empty 
   update, which recreates the Pods where the cluster cannot resize them in place. A CacheRuntime
   that sets no `resources` is not affected, unless its template declares none either and its
   workloads carry resources from an earlier override or a manual edit: those are cleared.
+- ⚠️ **A request must not exceed its limit after the merge**: the template and the CacheRuntime
+  can each be valid and still merge into a request above its limit, for example a template
+  `requests.cpu: 1` with a CacheRuntime `limits.cpu: 500m`. The controller then does not sync
+  that component's `resources`, keeps the workload's current values and emits a
+  `RuntimeResourcesConflict` Warning event on the CacheRuntime naming the conflicting keys; a new
+  CacheRuntime with such a pair fails to set up. Lower the request on the CacheRuntime too, or
+  change the template.
 - ⚠️ **`claims` can only reference pod-level `resourceClaims` the template declares**: the CacheRuntime
   sets the container's `resources.claims` but cannot add pod-level `spec.resourceClaims`. A claim name
   the CacheRuntimeClass template does not declare makes the API server reject every master or worker
