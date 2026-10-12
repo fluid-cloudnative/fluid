@@ -133,6 +133,7 @@ func (e *CacheEngine) transformComponentPodTemplate(runtimeSpec datav1alpha1.Cac
 	if len(podTemplate.Spec.Containers) > 0 {
 		// transform Container Image name etc. A version naming only one of image and imageTag
 		// takes the other half from the template rather than being dropped.
+		e.logIncompleteVersion(componentValue.ComponentType, runtimeCompSpec.RuntimeVersion, podTemplate.Spec.Containers[0].Image)
 		podTemplate.Spec.Containers[0].Image = componentImage(runtimeCompSpec.RuntimeVersion, podTemplate.Spec.Containers[0].Image)
 		if len(runtimeCompSpec.RuntimeVersion.ImagePullPolicy) > 0 {
 			podTemplate.Spec.Containers[0].ImagePullPolicy = (corev1.PullPolicy)(runtimeCompSpec.RuntimeVersion.ImagePullPolicy)
@@ -228,6 +229,26 @@ func componentImage(runtimeVersion datav1alpha1.VersionSpec, templateImage strin
 		return version.Image + ":" + version.ImageTag
 	}
 	return templateImage
+}
+
+// logIncompleteVersion records a runtimeVersion that names only part of the image when the
+// template cannot supply the rest. desiredComponentVersion deliberately does not guess there, so
+// the component keeps its image; without this the edit would be accepted and discarded with
+// nothing to show for it.
+func (e *CacheEngine) logIncompleteVersion(componentType common.ComponentType,
+	runtimeVersion datav1alpha1.VersionSpec, templateImage string) {
+	if runtimeVersion.Image == "" && runtimeVersion.ImageTag == "" {
+		return
+	}
+
+	desired := desiredComponentVersion(runtimeVersion, templateImage)
+	if desired.Image != "" && desired.ImageTag != "" {
+		return
+	}
+
+	e.Log.V(1).Info("runtimeVersion cannot be completed from the CacheRuntimeClass template, leaving the image unchanged",
+		"component", componentType, "image", runtimeVersion.Image, "imageTag", runtimeVersion.ImageTag,
+		"templateImage", templateImage)
 }
 
 // splitImageReference splits a container image reference into its repository and tag. The tag

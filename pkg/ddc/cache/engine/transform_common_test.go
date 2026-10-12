@@ -17,6 +17,7 @@ limitations under the License.
 package engine
 
 import (
+	"github.com/go-logr/logr/funcr"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
@@ -244,6 +245,42 @@ var _ = Describe("CacheEngine desiredComponentVersion Tests", Label("pkg.ddc.cac
 
 			Expect(desired.Image).To(Equal(digestImage))
 			Expect(desired.ImageTag).To(BeEmpty())
+		})
+	})
+
+	Describe("logIncompleteVersion", func() {
+		const digestImage = "btxu/mooncake@sha256:067614b70d25b496e3edc3480747d558ee8a364ef47a67f669f5d96ca5098552"
+
+		// logsOf runs logIncompleteVersion against an engine logging at V(1) and returns
+		// every line it wrote.
+		logsOf := func(runtimeVersion datav1alpha1.VersionSpec, templateImage string) []string {
+			var lines []string
+			e := &CacheEngine{Log: funcr.New(func(prefix, args string) {
+				lines = append(lines, args)
+			}, funcr.Options{Verbosity: 1})}
+
+			e.logIncompleteVersion(common.ComponentTypeWorker, runtimeVersion, templateImage)
+			return lines
+		}
+
+		It("should log a partial version the template cannot complete", func() {
+			lines := logsOf(datav1alpha1.VersionSpec{ImageTag: "v9"}, digestImage)
+
+			Expect(lines).To(HaveLen(1))
+			Expect(lines[0]).To(ContainSubstring(`"component"="worker"`))
+			Expect(lines[0]).To(ContainSubstring(`"imageTag"="v9"`))
+		})
+
+		It("should log a digest-pinned runtime image left without a tag", func() {
+			Expect(logsOf(datav1alpha1.VersionSpec{Image: digestImage}, templateImage)).To(HaveLen(1))
+		})
+
+		It("should stay quiet for a version naming neither half", func() {
+			Expect(logsOf(datav1alpha1.VersionSpec{}, digestImage)).To(BeEmpty())
+		})
+
+		It("should stay quiet for a partial version the template completes", func() {
+			Expect(logsOf(datav1alpha1.VersionSpec{ImageTag: "v9"}, templateImage)).To(BeEmpty())
 		})
 	})
 
