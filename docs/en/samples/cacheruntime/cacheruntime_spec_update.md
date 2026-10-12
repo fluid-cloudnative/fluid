@@ -45,8 +45,20 @@ spec:
       imageTag: v1.1.0
 ```
 
+**Completion rules**:
+- `image` and `imageTag` may be set on their own. The missing half is taken from the image of the component's first container in the CacheRuntimeClass template. With a template image of `fluid-cache:v1.0.0`:
+  - Only `imageTag: v1.1.0`: the template's image name is kept, giving `fluid-cache:v1.1.0`
+  - Only `image: registry.example.com/fluid-cache`: the template's tag is kept (**not `latest`**), giving `registry.example.com/fluid-cache:v1.0.0`
+  - Neither: the template image `fluid-cache:v1.0.0` is used
+- Data operations that name no image of their own (such as DataLoad) use the same completed image as the worker.
+- In the following cases the version cannot be completed, the edit has no effect and the component keeps its current image (logged when the controller runs with `-v=1`): only `image` is set and the template image has no tag, or the template image or `image` is pinned by digest (`@sha256:...`). `runtimeVersion` cannot express a digest reference; to pin a digest, put it in the CacheRuntimeClass template.
+
 **Limitations**:
 - ⚠️ In **cgroupv1** environments, this field cannot be updated simultaneously with `resources` (perform step-by-step; see the resource field section below).
+- ⚠️ **When setting only `image`, make sure the template's tag exists in the new repository.** Otherwise the pods fail with `ImagePullBackOff`; on an in-place update the component is unavailable until the new image can be pulled.
+- ⚠️ **Image edits in the CacheRuntimeClass template reach existing instances**: the template is the baseline on every reconcile. After the template image changes, the master and worker of every CacheRuntime using that CacheRuntimeClass that does not fully set `runtimeVersion` roll to the new image (one that sets only `imageTag` keeps its tag, one that sets only `image` keeps its image name; an instance that cannot be resolved to a `name:tag` image keeps its current image, for example when the new template image is pinned by digest). The controller does not watch CacheRuntimeClass, so the change takes effect on each CacheRuntime's next reconcile rather than immediately. The client is not updated.
+- ⚠️ Removing `runtimeVersion` from a CacheRuntime returns the component to the template image, except when the template image has no tag or is pinned by digest: the component then keeps its current image, and you need to set a full `runtimeVersion` or recreate the CacheRuntime.
+- ⚠️ **Upgrade note**: in earlier releases a `runtimeVersion` setting only one of `image` and `imageTag` was ignored on creation and on update (see [#6178](https://github.com/fluid-cloudnative/fluid/issues/6178)). The first reconcile after upgrading completes and applies it under the rules above, updating the image of the affected master and worker pods once. CacheRuntimes with a full `runtimeVersion` are unaffected; those with no `runtimeVersion` are updated only if the template image changed after they were created.
 
 ---
 
