@@ -1203,6 +1203,35 @@ var _ = Describe("CacheEngine Sync Tests", Label("pkg.ddc.cache.engine.sync_test
 			})
 		})
 
+		Context("when the merged resources make an extended resource request differ from its limit", func() {
+			It("should leave the workload's resources alone and emit a Warning event", func() {
+				recorder := record.NewFakeRecorder(10)
+				engine.Recorder = recorder
+
+				const gpu corev1.ResourceName = "nvidia.com/gpu"
+				runtimeClass.Topology.Worker.Template.Spec.Containers[0].Resources = corev1.ResourceRequirements{
+					Requests: corev1.ResourceList{gpu: resource.MustParse("1")},
+					Limits:   corev1.ResourceList{gpu: resource.MustParse("1")},
+				}
+				runtimeObj.Spec.Worker.Resources = corev1.ResourceRequirements{
+					Limits: corev1.ResourceList{gpu: resource.MustParse("2")},
+				}
+
+				sts := &workloadv1alpha1.AdvancedStatefulSet{}
+				key := types.NamespacedName{Name: workerSts, Namespace: "default"}
+				Expect(fakeClient.Get(ctx.Context, key, sts)).To(Succeed())
+				before := sts.Spec.Template.Spec.Containers[0].Resources.DeepCopy()
+
+				Expect(engine.syncRuntimeSpec(ctx, runtimeObj, runtimeClass)).To(Succeed())
+
+				Expect(fakeClient.Get(ctx.Context, key, sts)).To(Succeed())
+				Expect(equality.Semantic.DeepEqual(sts.Spec.Template.Spec.Containers[0].Resources, *before)).To(BeTrue())
+				Expect(recorder.Events).To(Receive(And(
+					ContainSubstring(common.RuntimeResourcesConflict),
+					ContainSubstring("nvidia.com/gpu request 1 must equal limit 2"))))
+			})
+		})
+
 		Context("when the tiered store baseline comes from the template", func() {
 			// With the CacheRuntime declaring no resources, the baseline the quota is
 			// charged on top of is the CacheRuntimeClass template value. The quota must

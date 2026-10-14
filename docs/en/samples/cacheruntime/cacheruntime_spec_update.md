@@ -116,11 +116,14 @@ or is cleared from the workload when the template does not declare it. An empty 
   workloads carry resources from an earlier override or a manual edit: those are cleared.
 - ⚠️ **A request must not exceed its limit after the merge**: the template and the CacheRuntime
   can each be valid and still merge into a request above its limit, for example a template
-  `requests.cpu: 1` with a CacheRuntime `limits.cpu: 500m`. The controller then does not sync
+  `requests.cpu: 1` with a CacheRuntime `limits.cpu: 500m`. Huge pages (`hugepages-*`) and
+  extended resources (such as `nvidia.com/gpu`) are stricter: their request must equal their
+  limit, and a request needs a limit, so a template setting `nvidia.com/gpu` to 1 for both with
+  a CacheRuntime raising only the limit to 2 conflicts as well. The controller then does not sync
   that component's `resources`, keeps the workload's current values and emits a
   `RuntimeResourcesConflict` Warning event on the CacheRuntime naming the conflicting keys; a new
-  CacheRuntime with such a pair fails to set up. Lower the request on the CacheRuntime too, or
-  change the template.
+  CacheRuntime with such a pair fails to set up. Set the matching request on the CacheRuntime too
+  (equal to the limit for huge pages and extended resources), or change the template.
 - ⚠️ **`claims` can only reference pod-level `resourceClaims` the template declares**: the CacheRuntime
   sets the container's `resources.claims` but cannot add pod-level `spec.resourceClaims`. A claim name
   the CacheRuntimeClass template does not declare makes the API server reject every master or worker

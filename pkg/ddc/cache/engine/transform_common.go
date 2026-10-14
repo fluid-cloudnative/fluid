@@ -233,14 +233,26 @@ func mergeResourceClaims(base *[]corev1.ResourceClaim, overlay []corev1.Resource
 	}
 }
 
-// validateResourceRequirements reports every resource whose request exceeds its limit.
-// Merging per key can produce such a pair from a template and a CacheRuntime that are
-// each valid on their own, and the API server would only reject it once a Pod is created.
+// validateResourceRequirements reports every request whose relation to its limit the API
+// server would reject: a request above its limit, and, for resources that cannot be
+// overcommitted (huge pages and extended resources), a request that differs from its limit
+// or has no limit at all. Merging per key can produce such a pair from a template and a
+// CacheRuntime that are each valid on their own, and the API server would only reject it
+// once a Pod is created. Other Pod resource rules, such as integer extended resources or
+// huge page sizes, are left to the API server: a merge cannot break them when both inputs
+// satisfy them.
 func validateResourceRequirements(resources corev1.ResourceRequirements) error {
 	var conflicts []string
 	for name, request := range resources.Requests {
 		limit, ok := resources.Limits[name]
-		if ok && request.Cmp(limit) > 0 {
+		switch {
+		case !ok:
+			if !isOvercommitAllowed(name) {
+				conflicts = append(conflicts, fmt.Sprintf("%s request %s has no limit", name, request.String()))
+			}
+		case !isOvercommitAllowed(name) && request.Cmp(limit) != 0:
+			conflicts = append(conflicts, fmt.Sprintf("%s request %s must equal limit %s", name, request.String(), limit.String()))
+		case request.Cmp(limit) > 0:
 			conflicts = append(conflicts, fmt.Sprintf("%s request %s exceeds limit %s", name, request.String(), limit.String()))
 		}
 	}
@@ -249,6 +261,15 @@ func validateResourceRequirements(resources corev1.ResourceRequirements) error {
 	}
 	sort.Strings(conflicts)
 	return fmt.Errorf("%s", strings.Join(conflicts, "; "))
+}
+
+// isOvercommitAllowed mirrors k8s.io/kubernetes/pkg/apis/core/v1/helper.IsOvercommitAllowed,
+// which is not vendored: only native resources other than huge pages may set a request
+// below their limit.
+func isOvercommitAllowed(name corev1.ResourceName) bool {
+	native := !strings.Contains(string(name), "/") ||
+		strings.Contains(string(name), corev1.ResourceDefaultNamespacePrefix)
+	return native && !strings.HasPrefix(string(name), corev1.ResourceHugePagesPrefix)
 }
 
 // validateComponentResources checks the resources the creation path rendered into the
