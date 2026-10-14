@@ -1,0 +1,9 @@
+{{- if and (not .Values.csi.useNodeAuthorization) (semverCompare ">=1.30.0-0" .Capabilities.KubeVersion.Version) -}}
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicyBinding
+metadata:
+  name:  "fluid-csi-node-policy-binding"
+spec:
+  policyName:  "fluid-csi-node-policy"
+  validationActions: [Deny]
+{{- end }}
