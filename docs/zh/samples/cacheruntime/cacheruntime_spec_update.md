@@ -45,33 +45,39 @@ spec:
       imageTag: v1.1.0
 ```
 
+**取值规则**：创建时和每次 reconcile 时，都以 CacheRuntimeClass 模板中该组件第一个容器的镜像为基线，用 CacheRuntime 中设置的
+`image` 和 `imageTag` 覆盖。
+
 **补全规则**:
-- `image` 和 `imageTag` 可以只设置其中一个，缺少的一半从 CacheRuntimeClass 模板中该组件第一个容器的镜像补全。
+- `image` 和 `imageTag` 可以只设置其中一个，缺少的一半从模板镜像补全。
   以模板镜像 `fluid-cache:v1.0.0` 为例：
   - 只设置 `imageTag: v1.1.0`：沿用模板的镜像名，得到 `fluid-cache:v1.1.0`
   - 只设置 `image: registry.example.com/fluid-cache`：沿用模板的 tag（**而不是 `latest`**），得到
     `registry.example.com/fluid-cache:v1.0.0`
   - 都不设置：使用模板镜像 `fluid-cache:v1.0.0`
-- 未单独指定镜像的数据操作（如 DataLoad）使用与 worker 相同的补全结果。
-- 以下情况无法补全，修改不会生效，组件保持原有镜像（controller 以 `-v=1` 运行时会输出日志）：
-  只设置了 `image` 而模板镜像没有 tag；模板镜像或 `image` 使用 digest（`@sha256:...`）固定。`runtimeVersion` 无法表达 digest
-  引用，如需固定到 digest，请写在 CacheRuntimeClass 模板中。
+- 同时设置了 `image` 和 `imageTag` 的 `runtimeVersion` 直接使用，即使模板镜像使用 digest 固定。
+- 只设置了其中一半、而另一半无法补全时（只设置了 `image` 而模板镜像没有 tag；模板镜像或 `image` 使用 digest
+  （`@sha256:...`）固定），创建时组件使用模板镜像；更新时修改不会生效，组件保持原有镜像（controller 以 `-v=1`
+  运行时会输出日志）。`runtimeVersion` 无法表达 digest 引用，如需固定到 digest，请写在 CacheRuntimeClass 模板中。
+- 未单独指定镜像的数据操作（如 DataLoad）使用与 worker 相同的补全结果。worker 的版本无法补全时，数据操作使用模板镜像，
+  因此可能与保持原有镜像的 worker 不一致，例如模板镜像改为使用 digest 固定之后。
 
 **限制**:
 - ⚠️ Cgroupv1 环境中，不能与 `resources` 字段同时更新（需分步操作，见下方资源字段说明）
 - ⚠️ **只设置 `image` 时，请确认新仓库中存在模板的 tag**：否则 Pod 会因 `ImagePullBackOff` 无法启动；
   原地更新时，该组件在新镜像拉取成功前不可用。
-- ⚠️ **CacheRuntimeClass 模板中镜像的修改会同步到已有实例**：模板是每次 reconcile 的基线。修改模板中的镜像后，
-  所有引用该 CacheRuntimeClass、且未完整设置 `runtimeVersion` 的 CacheRuntime，其 master 和 worker 都会
-  滚动到新镜像（只设置了 `imageTag` 的保留自己的 tag，只设置了 `image` 的保留自己的镜像名；无法补全为
-  `镜像名:tag` 形式的实例保持原有镜像，例如新模板镜像使用 digest 固定时）。控制器不监听
+- ⚠️ **CacheRuntimeClass 模板中镜像的修改会同步到已有实例**：修改模板中的镜像后，
+  所有引用该 CacheRuntimeClass 的 CacheRuntime 中，未禁用、且未完整设置 `runtimeVersion` 的 master 和 worker
+  会按新模板镜像重新计算，结果变化时滚动到新镜像（只设置了 `imageTag` 的保留自己的 tag，只设置了 `image` 的
+  保留自己的镜像名；无法补全为 `镜像名:tag` 形式的实例保持原有镜像，例如新模板镜像使用 digest 固定时）。控制器不监听
   CacheRuntimeClass，因此修改在各 CacheRuntime 的下一次 reconcile 时生效，而不是立即生效。client 不同步。
 - ⚠️ 从 CacheRuntime 中删除 `runtimeVersion` 会让组件回到模板镜像。模板镜像没有 tag 或使用 digest 固定时
   例外：组件保持当前镜像，需要手动设置完整的 `runtimeVersion` 或重建 CacheRuntime。
 - ⚠️ **升级说明**：在旧版本中，只设置了 `image` 或 `imageTag` 其中之一的 `runtimeVersion` 在创建和更新时都会
-  被忽略（见 [#6178](https://github.com/fluid-cloudnative/fluid/issues/6178)）。升级后的第一次 reconcile
-  会按上述规则补全并应用，相应的 master 和 worker Pod 会更新一次镜像。完整设置了 `runtimeVersion` 的
-  CacheRuntime 不受影响；未设置 `runtimeVersion` 的 CacheRuntime 仅在模板镜像自其创建后被修改过时才会更新。
+  被忽略（见 [#6178](https://github.com/fluid-cloudnative/fluid/issues/6178)），删除 `runtimeVersion` 后组件也会
+  保持最后的镜像。升级后的第一次 reconcile 会按上述规则重新计算每个未禁用的 master 和 worker 的镜像，仅当得到
+  完整的镜像且与当前镜像不同时，相应的 Pod 才会更新一次镜像。通常涉及只设置了一半、删除过 `runtimeVersion`，
+  或所用模板的镜像在其创建后被修改过的 CacheRuntime；完整设置的 `runtimeVersion` 已与工作负载一致的不受影响。
 
 ---
 
