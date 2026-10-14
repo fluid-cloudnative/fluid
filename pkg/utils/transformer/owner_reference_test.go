@@ -248,6 +248,14 @@ var _ = Describe("GenerateOwnerReferenceFromObject", func() {
 			"DataLoad",
 		),
 
+		Entry("should recover the group of a dataset when the apiVersion has no group",
+			&datav1alpha1.Dataset{
+				TypeMeta:   metav1.TypeMeta{Kind: "Dataset", APIVersion: "v1alpha1"},
+				ObjectMeta: metav1.ObjectMeta{Name: "groupless-dataset", Namespace: "default", UID: "uid-groupless"},
+			},
+			"Dataset",
+		),
+
 		Entry("should recover the apiVersion of a dataset when only the kind is set",
 			&datav1alpha1.Dataset{
 				TypeMeta:   metav1.TypeMeta{Kind: "Dataset"},
