@@ -256,6 +256,14 @@ var _ = Describe("GenerateOwnerReferenceFromObject", func() {
 			"Dataset",
 		),
 
+		Entry("should recover the kind and the group of a dataset when the apiVersion has no group and the kind is missing",
+			&datav1alpha1.Dataset{
+				TypeMeta:   metav1.TypeMeta{APIVersion: "v1alpha1"},
+				ObjectMeta: metav1.ObjectMeta{Name: "groupless-nokind-dataset", Namespace: "default", UID: "uid-groupless-nokind"},
+			},
+			"Dataset",
+		),
+
 		Entry("should recover the apiVersion of a dataset when only the kind is set",
 			&datav1alpha1.Dataset{
 				TypeMeta:   metav1.TypeMeta{Kind: "Dataset"},
