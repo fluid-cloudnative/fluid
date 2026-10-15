@@ -37,7 +37,7 @@ func TransformQuantityToAlluxioUnit(q *resource.Quantity) (value string) {
 
 }
 
-// TransfromQuantityToJindoUnit transform a given input quantity to another one
+// TransformQuantityToJindoUnit transform a given input quantity to another one
 // that can be recognized by Jindo.
 func TransformQuantityToJindoUnit(q *resource.Quantity) (value string) {
 	value = q.String()
