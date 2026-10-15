@@ -17,6 +17,7 @@ limitations under the License.
 package runtimeconfiginjector
 
 import (
+	"context"
 	"fmt"
 	"path/filepath"
 	"reflect"
@@ -26,10 +27,12 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	"github.com/fluid-cloudnative/fluid/pkg/webhook/plugins/api"
+	webhookutils "github.com/fluid-cloudnative/fluid/pkg/webhook/utils"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -42,10 +45,6 @@ import (
 */
 
 const Name string = "RuntimeConfigInjector"
-
-// The injected volume is named after the config map, and a volume name must be a
-// DNS-1123 label, so the dataset name cannot use up more than what is left of 63.
-const maxDatasetNameLen = 63 - len("fluid-runtime-config-")
 
 var log = ctrl.Log.WithName(Name)
 
@@ -62,7 +61,7 @@ type configMount struct {
 	env         corev1.EnvVar
 }
 
-var _ api.MutatingHandler = &RuntimeConfigInjector{}
+var _ api.ReaderAwareHandler = &RuntimeConfigInjector{}
 
 func NewPlugin(c client.Client, args string) (api.MutatingHandler, error) {
 	return &RuntimeConfigInjector{
@@ -76,6 +75,10 @@ func (injector *RuntimeConfigInjector) GetName() string {
 }
 
 func (injector *RuntimeConfigInjector) Mutate(pod *corev1.Pod, runtimeInfos map[string]base.RuntimeInfoInterface) (shouldStop bool, err error) {
+	return injector.MutateWithReader(pod, runtimeInfos, injector.client)
+}
+
+func (injector *RuntimeConfigInjector) MutateWithReader(pod *corev1.Pod, runtimeInfos map[string]base.RuntimeInfoInterface, reader client.Reader) (shouldStop bool, err error) {
 	if common.CheckExpectValue(pod.Labels, common.InjectSidecarDone, common.True) {
 		return false, nil
 	}
@@ -84,9 +87,8 @@ func (injector *RuntimeConfigInjector) Mutate(pod *corev1.Pod, runtimeInfos map[
 		return false, nil
 	}
 
-	// Resolve everything before touching the pod. A plain error from a plugin does not
-	// stop the pod from being admitted, so a failure halfway through would otherwise
-	// leave the user with a partially injected pod and no explanation.
+	// Resolve everything before touching the pod, so that a failure halfway through
+	// cannot leave a partially injected pod behind.
 	//
 	// The names are sorted because iterating a map has no stable order, and an unstable
 	// order would make the injected volumes and env vars come out differently on each
@@ -100,30 +102,45 @@ func (injector *RuntimeConfigInjector) Mutate(pod *corev1.Pod, runtimeInfos map[
 	mounts := make([]configMount, 0, len(datasetNames))
 	for _, ds := range datasetNames {
 		// The dataset name is already known to be a valid object name, since the caller
-		// resolved a runtime info for it. What is not guaranteed is that it still fits
-		// once "fluid-runtime-config-" is prepended to form the volume name.
-		if len(ds) > maxDatasetNameLen {
-			return true, fmt.Errorf("dataset name %q is too long (%d > %d): the injected volume name would exceed the 63-character limit",
-				ds, len(ds), maxDatasetNameLen)
+		// resolved a runtime info for it. What is not guaranteed for a dataset that comes
+		// from a PVC is that it still fits once "fluid-runtime-config-" is prepended to
+		// form the volume name.
+		if len(ds) > common.MaxClientlessDatasetNameLength {
+			return true, webhookutils.NewRejectPodError(fmt.Errorf(
+				"dataset name %q is too long (%d > %d): the injected volume name would exceed the 63-character limit",
+				ds, len(ds), common.MaxClientlessDatasetNameLength))
+		}
+
+		mount := buildConfigMount(ds)
+		if conflictErr := checkVolumeNameConflict(pod, mount); conflictErr != nil {
+			return true, webhookutils.NewRejectPodError(conflictErr)
+		}
+		if conflictErr := checkMountPathConflict(pod, mount.volumeMount); conflictErr != nil {
+			return true, webhookutils.NewRejectPodError(conflictErr)
 		}
 
 		cmName := common.GetCacheRuntimeConfigConfigMapName(ds)
-		cm, cmErr := kubeclient.GetConfigmapByName(injector.client, cmName, pod.Namespace)
-		if cmErr != nil {
-			return true, errors.Wrapf(cmErr, "failed to get configmap \"%s/%s\"", pod.Namespace, cmName)
+		cm := &corev1.ConfigMap{}
+		// A missing config map or key is returned as NeedRetryWithApiReaderError: the cached
+		// client may lag behind a dataset that has just been bound, so the handler retries
+		// with the API reader, and rejects the pod if the config is still not there.
+		getErr := reader.Get(context.TODO(), types.NamespacedName{Namespace: pod.Namespace, Name: cmName}, cm)
+		if apierrors.IsNotFound(getErr) {
+			return true, webhookutils.NewNeedRetryWithApiReaderError(fmt.Errorf(
+				"configmap \"%s/%s\" not found, the cache runtime of dataset %q may not be ready yet",
+				pod.Namespace, cmName, ds))
 		}
-		// GetConfigmapByName reports NotFound as (nil, nil), so a nil config map is the
-		// not-found case rather than an error.
-		if cm == nil {
-			return true, fmt.Errorf("configmap \"%s/%s\" not found, the cache runtime of dataset %q may not be ready yet",
-				pod.Namespace, cmName, ds)
+		if getErr != nil {
+			return true, webhookutils.NewNeedRetryWithApiReaderError(
+				errors.Wrapf(getErr, "failed to get configmap \"%s/%s\"", pod.Namespace, cmName))
 		}
 		if _, ok := cm.Data[common.RuntimeConfigShellFileName]; !ok {
-			return true, fmt.Errorf("configmap \"%s/%s\" has no key %q, the runtime may not support clientless access",
-				pod.Namespace, cmName, common.RuntimeConfigShellFileName)
+			return true, webhookutils.NewNeedRetryWithApiReaderError(fmt.Errorf(
+				"configmap \"%s/%s\" has no key %q, the runtime may not support clientless access",
+				pod.Namespace, cmName, common.RuntimeConfigShellFileName))
 		}
 
-		mounts = append(mounts, buildConfigMount(ds))
+		mounts = append(mounts, mount)
 	}
 
 	// From here on nothing can fail, so the pod is either fully injected or untouched.
@@ -170,6 +187,62 @@ func buildConfigMount(ds string) configMount {
 			Value: filepath.Join(dir, common.RuntimeConfigShellFileName),
 		},
 	}
+}
+
+// checkVolumeNameConflict fails if the pod already uses the config's volume name for
+// something else: the injection overrides a volume or mount of the same name, which would
+// silently swap the app's own volume for the config, or move its mount elsewhere. What is
+// left alone is a spec the injection has already produced, possibly with api server
+// defaults filled in.
+func checkVolumeNameConflict(pod *corev1.Pod, mount configMount) error {
+	for _, existing := range pod.Spec.Volumes {
+		if existing.Name != mount.volume.Name {
+			continue
+		}
+		if existing.ConfigMap == nil || existing.ConfigMap.Name != mount.volume.ConfigMap.Name {
+			return fmt.Errorf("the pod already has a volume named %q that is not the config map %q, so the runtime config cannot be injected",
+				existing.Name, mount.volume.ConfigMap.Name)
+		}
+	}
+
+	for _, containers := range [][]corev1.Container{pod.Spec.InitContainers, pod.Spec.Containers} {
+		for _, container := range containers {
+			if strings.HasPrefix(container.Name, common.FuseContainerName) {
+				continue
+			}
+			for _, existing := range container.VolumeMounts {
+				if existing.Name != mount.volumeMount.Name {
+					continue
+				}
+				if filepath.Clean(existing.MountPath) != mount.volumeMount.MountPath || len(existing.SubPath) != 0 || len(existing.SubPathExpr) != 0 {
+					return fmt.Errorf("container %q already mounts volume %q at %s, while the runtime config would be mounted at %s",
+						container.Name, existing.Name, existing.MountPath, mount.volumeMount.MountPath)
+				}
+			}
+		}
+	}
+	return nil
+}
+
+// checkMountPathConflict fails if a container the config would be injected into already
+// mounts another volume at the config's mount path: the injection only replaces a mount
+// of the same volume, so the pod would end up with two mounts at one path, which the API
+// server rejects with an error that does not point at the injection.
+func checkMountPathConflict(pod *corev1.Pod, volumeMount corev1.VolumeMount) error {
+	for _, containers := range [][]corev1.Container{pod.Spec.InitContainers, pod.Spec.Containers} {
+		for _, container := range containers {
+			if strings.HasPrefix(container.Name, common.FuseContainerName) {
+				continue
+			}
+			for _, existing := range container.VolumeMounts {
+				if existing.Name != volumeMount.Name && filepath.Clean(existing.MountPath) == volumeMount.MountPath {
+					return fmt.Errorf("container %q already mounts volume %q at %s, where the runtime config would be injected",
+						container.Name, existing.Name, volumeMount.MountPath)
+				}
+			}
+		}
+	}
+	return nil
 }
 
 // envSuffix turns a dataset name into a shell-safe variable name suffix. A dataset

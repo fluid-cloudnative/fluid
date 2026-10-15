@@ -21,6 +21,7 @@ import (
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
+	webhookutils "github.com/fluid-cloudnative/fluid/pkg/webhook/utils"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
@@ -212,10 +213,13 @@ var _ = Describe("RuntimeConfigInjector", func() {
 				shouldStop, err := injector.Mutate(pod, runtimeInfosFor("demo"))
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("not found"))
+				// The handler retries this error with the API reader and rejects the pod
+				// if the config map is still missing.
+				Expect(webhookutils.IsNeedRetryWithApiReaderError(err)).To(BeTrue())
 				Expect(shouldStop).To(BeTrue())
 
-				// A plain plugin error does not stop the pod from being admitted, so a
-				// failure must leave nothing behind rather than half an injection.
+				// The handler retries from a copy of the original pod, but a failure must
+				// still leave nothing behind rather than half an injection.
 				Expect(pod.Spec.Volumes).To(BeEmpty())
 				Expect(pod.Spec.Containers[0].VolumeMounts).To(BeEmpty())
 				Expect(pod.Spec.Containers[0].Env).To(BeEmpty())
@@ -250,14 +254,34 @@ var _ = Describe("RuntimeConfigInjector", func() {
 				shouldStop, err := injector.Mutate(pod, runtimeInfosFor("demo"))
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring(common.RuntimeConfigShellFileName))
+				Expect(webhookutils.IsNeedRetryWithApiReaderError(err)).To(BeTrue())
 				Expect(shouldStop).To(BeTrue())
 				Expect(pod.Spec.Volumes).To(BeEmpty())
 			})
 		})
 
+		Context("when the config map has not reached the cached client yet", func() {
+			It("should inject from the reader the handler retries with", func() {
+				// The cached client lags behind a dataset that has just been bound, while
+				// the API reader already sees the config map.
+				injector := newInjector()
+				apiReader := fake.NewFakeClient(configMapFor("demo"))
+				pod := podWithContainers("app")
+
+				_, err := injector.Mutate(pod.DeepCopy(), runtimeInfosFor("demo"))
+				Expect(webhookutils.IsNeedRetryWithApiReaderError(err)).To(BeTrue())
+
+				shouldStop, err := injector.MutateWithReader(pod, runtimeInfosFor("demo"), apiReader)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(shouldStop).To(BeFalse())
+				Expect(pod.Spec.Volumes).To(ConsistOf(HaveField("Name", common.GetCacheRuntimeConfigConfigMapName("demo"))))
+				Expect(pod.Labels).To(HaveKeyWithValue(common.InjectSidecarDone, common.True))
+			})
+		})
+
 		Context("when the dataset name is too long for a volume name", func() {
 			It("should fail before touching the pod", func() {
-				longName := strings.Repeat("a", maxDatasetNameLen+1)
+				longName := strings.Repeat("a", common.MaxClientlessDatasetNameLength+1)
 
 				injector := newInjector(configMapFor(longName))
 				pod := podWithContainers("app")
@@ -265,8 +289,112 @@ var _ = Describe("RuntimeConfigInjector", func() {
 				shouldStop, err := injector.Mutate(pod, runtimeInfosFor(longName))
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("too long"))
+				// Retrying cannot make the name shorter, so the pod is rejected right away.
+				Expect(webhookutils.IsRejectPodError(err)).To(BeTrue())
 				Expect(shouldStop).To(BeTrue())
 				Expect(pod.Spec.Volumes).To(BeEmpty())
+			})
+		})
+
+		Context("when a container already mounts another volume at the config's path", func() {
+			conflictingMount := corev1.VolumeMount{Name: "own-config", MountPath: "/etc/fluid/config/demo/"}
+
+			It("should reject the pod for a regular container", func() {
+				injector := newInjector(configMapFor("demo"))
+				pod := podWithContainers("app")
+				pod.Spec.Containers[0].VolumeMounts = []corev1.VolumeMount{conflictingMount}
+
+				shouldStop, err := injector.Mutate(pod, runtimeInfosFor("demo"))
+				Expect(webhookutils.IsRejectPodError(err)).To(BeTrue())
+				Expect(err.Error()).To(ContainSubstring("own-config"))
+				Expect(shouldStop).To(BeTrue())
+				Expect(pod.Spec.Volumes).To(BeEmpty())
+				Expect(pod.Spec.Containers[0].VolumeMounts).To(ConsistOf(conflictingMount))
+			})
+
+			It("should reject the pod for an init container", func() {
+				injector := newInjector(configMapFor("demo"))
+				pod := podWithContainers("app")
+				pod.Spec.InitContainers = []corev1.Container{{Name: "init", VolumeMounts: []corev1.VolumeMount{conflictingMount}}}
+
+				_, err := injector.Mutate(pod, runtimeInfosFor("demo"))
+				Expect(webhookutils.IsRejectPodError(err)).To(BeTrue())
+				Expect(err.Error()).To(ContainSubstring("init"))
+			})
+
+			It("should ignore the fuse sidecar, which is not injected into", func() {
+				injector := newInjector(configMapFor("demo"))
+				pod := podWithContainers("app", common.FuseContainerName+"-0")
+				pod.Spec.Containers[1].VolumeMounts = []corev1.VolumeMount{conflictingMount}
+
+				_, err := injector.Mutate(pod, runtimeInfosFor("demo"))
+				Expect(err).NotTo(HaveOccurred())
+			})
+		})
+
+		Context("when the pod already has a volume under the config's name", func() {
+			volumeName := common.GetCacheRuntimeConfigConfigMapName("demo")
+
+			It("should reject the pod if that volume is not the config map", func() {
+				injector := newInjector(configMapFor("demo"))
+				pod := podWithContainers("app")
+				ownVolume := corev1.Volume{
+					Name:         volumeName,
+					VolumeSource: corev1.VolumeSource{EmptyDir: &corev1.EmptyDirVolumeSource{}},
+				}
+				ownMount := corev1.VolumeMount{Name: volumeName, MountPath: "/data"}
+				pod.Spec.Volumes = []corev1.Volume{ownVolume}
+				pod.Spec.Containers[0].VolumeMounts = []corev1.VolumeMount{ownMount}
+
+				shouldStop, err := injector.Mutate(pod, runtimeInfosFor("demo"))
+				// Overriding it would silently replace the app's own data with the config.
+				Expect(webhookutils.IsRejectPodError(err)).To(BeTrue())
+				Expect(err.Error()).To(ContainSubstring(volumeName))
+				Expect(shouldStop).To(BeTrue())
+				Expect(pod.Spec.Volumes).To(ConsistOf(ownVolume))
+				Expect(pod.Spec.Containers[0].VolumeMounts).To(ConsistOf(ownMount))
+			})
+
+			It("should reject the pod if a container mounts it elsewhere", func() {
+				injector := newInjector(configMapFor("demo"))
+				pod := podWithContainers("app")
+				ownMount := corev1.VolumeMount{Name: volumeName, MountPath: "/data"}
+				pod.Spec.Volumes = []corev1.Volume{buildConfigMount("demo").volume}
+				pod.Spec.InitContainers = []corev1.Container{{Name: "init", VolumeMounts: []corev1.VolumeMount{ownMount}}}
+
+				_, err := injector.Mutate(pod, runtimeInfosFor("demo"))
+				Expect(webhookutils.IsRejectPodError(err)).To(BeTrue())
+				Expect(err.Error()).To(ContainSubstring("/data"))
+				Expect(pod.Spec.InitContainers[0].VolumeMounts).To(ConsistOf(ownMount))
+			})
+
+			It("should accept the config map volume as the api server defaults it", func() {
+				injector := newInjector(configMapFor("demo"))
+				pod := podWithContainers("app")
+				// What a previously injected spec looks like after the api server has
+				// filled in its defaults.
+				defaultMode := corev1.ConfigMapVolumeSourceDefaultMode
+				volume := buildConfigMount("demo").volume
+				volume.ConfigMap.DefaultMode = &defaultMode
+				mount := buildConfigMount("demo").volumeMount
+				mount.MountPath += "/"
+				pod.Spec.Volumes = []corev1.Volume{volume}
+				pod.Spec.Containers[0].VolumeMounts = []corev1.VolumeMount{mount}
+
+				_, err := injector.Mutate(pod, runtimeInfosFor("demo"))
+				Expect(err).NotTo(HaveOccurred())
+				Expect(pod.Spec.Volumes).To(HaveLen(1))
+				Expect(pod.Spec.Containers[0].VolumeMounts).To(HaveLen(1))
+			})
+
+			It("should ignore a mount of it in the fuse sidecar, which is not injected into", func() {
+				injector := newInjector(configMapFor("demo"))
+				pod := podWithContainers("app", common.FuseContainerName+"-0")
+				pod.Spec.Volumes = []corev1.Volume{buildConfigMount("demo").volume}
+				pod.Spec.Containers[1].VolumeMounts = []corev1.VolumeMount{{Name: volumeName, MountPath: "/data"}}
+
+				_, err := injector.Mutate(pod, runtimeInfosFor("demo"))
+				Expect(err).NotTo(HaveOccurred())
 			})
 		})
 

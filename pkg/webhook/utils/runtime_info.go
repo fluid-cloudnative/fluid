@@ -116,6 +116,17 @@ func CollectRuntimeInfosFromAnnotations(client client.Reader, annotations map[st
 			errDatasets = append(errDatasets, datasetName)
 			continue
 		}
+		// The runtime config is mounted as a volume named after its config map, so the
+		// name has to leave room for the config map's prefix within a volume name's limit.
+		if len(datasetName) > common.MaxClientlessDatasetNameLength {
+			setupLog.Error(fmt.Errorf("dataset name is too long (%d > %d) for its runtime config to be mounted",
+				len(datasetName), common.MaxClientlessDatasetNameLength),
+				"invalid dataset name in annotation, ignore and continue to check next dataset",
+				"annotation", common.LabelAnnotationDatasets,
+				"dataset", datasetName)
+			errDatasets = append(errDatasets, datasetName)
+			continue
+		}
 
 		if !skipPrecheck {
 			if boundErr := checkDatasetBound(client, datasetName, namespace); boundErr != nil {

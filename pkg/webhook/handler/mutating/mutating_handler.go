@@ -29,6 +29,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	corev1 "k8s.io/api/core/v1"
@@ -99,6 +100,9 @@ func (a *FluidMutatingHandler) Handle(ctx context.Context, req admission.Request
 	backupPod := pod.DeepCopy()
 	if err := a.MutatePod(pod, false); err != nil {
 		setupLog.Error(err, "failed to mutate pod with cache client", "Pod", pod.Name, "Namespace", pod.Namespace)
+		if webhookutils.IsRejectPodError(err) {
+			return admission.Denied(err.Error())
+		}
 		if webhookutils.IsNeedRetryWithApiReaderError(err) {
 			setupLog.Info("retrying with API reader",
 				"namespace", pod.Namespace,
@@ -107,6 +111,13 @@ func (a *FluidMutatingHandler) Handle(ctx context.Context, req admission.Request
 			)
 			pod = backupPod
 			if err := a.MutatePod(pod, true); err != nil {
+				// For a clientless pod, still needing a retry after reading through the API
+				// reader means its dataset or runtime config is not there yet: the pod has to
+				// wait for it, which is a denial rather than a webhook failure.
+				if webhookutils.IsRejectPodError(err) ||
+					(webhookutils.IsNeedRetryWithApiReaderError(err) && utils.InjectEnabled(pod.GetLabels())) {
+					return admission.Denied(err.Error())
+				}
 				return admission.Errored(http.StatusInternalServerError, err)
 			}
 		}
@@ -140,6 +151,16 @@ func (a *FluidMutatingHandler) MutatePod(pod *corev1.Pod, useDirectReader bool) 
 	}
 	var setupLog = ctrl.Log.WithName("AddScheduleInfoToPod")
 	setupLog.V(1).Info("start to add schedule info", "Pod", pod.Name, "Namespace", pod.Namespace)
+
+	// A pod matching both the clientless rule and a fuse rule would be routed to the fuse
+	// plugins only, silently skipping the runtime config it asked for, so refuse it instead.
+	if utils.InjectEnabled(pod.GetLabels()) &&
+		(utils.ServerlessEnabled(pod.GetLabels()) || utils.ServerfulFuseEnabled(pod.GetLabels())) {
+		return webhookutils.NewRejectPodError(fmt.Errorf(
+			"label %s=true cannot be combined with fuse injection labels (%s, %s, or the deprecated %s and serverless platform label): runtime config injection is only for cache runtimes without a fuse client",
+			common.LabelAnnotationInject, common.InjectServerless, common.InjectServerfulFuse, common.InjectFuseSidecar))
+	}
+
 	pvcNames := kubeclient.GetPVCNamesFromPod(pod)
 	runtimeInfos, err := webhookutils.CollectRuntimeInfosFromPVCs(handlerClient, pvcNames, pod.Namespace, setupLog,
 		utils.SkipPrecheckEnable(pod.Annotations))
@@ -157,12 +178,7 @@ func (a *FluidMutatingHandler) MutatePod(pod *corev1.Pod, useDirectReader bool) 
 			setupLog.Error(annErr, "failed to collect runtime infos from annotation", "annotation", common.LabelAnnotationDatasets)
 			return webhookutils.NewNeedRetryWithApiReaderError(errors.Wrapf(annErr, "failed to collect runtime infos from annotation %s", common.LabelAnnotationDatasets))
 		}
-		for datasetName, runtimeInfo := range annotationRuntimeInfos {
-			// A dataset already resolved from a PVC wins:
-			if _, exists := runtimeInfos[datasetName]; !exists {
-				runtimeInfos[datasetName] = runtimeInfo
-			}
-		}
+		runtimeInfos = mergeClientlessRuntimeInfos(runtimeInfos, annotationRuntimeInfos)
 	}
 
 	// get plugins registry and get the need plugins list from it
@@ -194,7 +210,12 @@ func (a *FluidMutatingHandler) MutatePod(pod *corev1.Pod, useDirectReader bool) 
 	// call every plugin in the plugins list in the defined order
 	// if a plugin return shouldStop, stop to call other plugins
 	for _, plugin := range pluginsList {
-		shouldStop, err := plugin.Mutate(pod, runtimeInfos)
+		var shouldStop bool
+		if readerAware, ok := plugin.(api.ReaderAwareHandler); ok {
+			shouldStop, err = readerAware.MutateWithReader(pod, runtimeInfos, handlerClient)
+		} else {
+			shouldStop, err = plugin.Mutate(pod, runtimeInfos)
+		}
 		if err != nil {
 			setupLog.Error(err, "Failed to mutate pod")
 			return err
@@ -209,4 +230,24 @@ func (a *FluidMutatingHandler) MutatePod(pod *corev1.Pod, useDirectReader bool) 
 
 	return
 
+}
+
+// mergeClientlessRuntimeInfos builds the runtime infos for the clientless plugins, keyed by
+// dataset name like the annotation ones, because those plugins look up per-dataset objects.
+// The PVC ones are keyed by PVC name, which differs from the dataset name for a PVC that a
+// dataset manages, so they are re-keyed. Only cache runtimes have a runtime config to
+// inject; a PVC of any other runtime is left to the fuse that serves it.
+func mergeClientlessRuntimeInfos(pvcRuntimeInfos, annotationRuntimeInfos map[string]base.RuntimeInfoInterface) map[string]base.RuntimeInfoInterface {
+	runtimeInfos := make(map[string]base.RuntimeInfoInterface, len(pvcRuntimeInfos)+len(annotationRuntimeInfos))
+	for datasetName, runtimeInfo := range annotationRuntimeInfos {
+		runtimeInfos[datasetName] = runtimeInfo
+	}
+	for _, runtimeInfo := range pvcRuntimeInfos {
+		if runtimeInfo.GetRuntimeType() != common.CacheRuntime {
+			continue
+		}
+		// A dataset already resolved from a PVC wins.
+		runtimeInfos[runtimeInfo.GetName()] = runtimeInfo
+	}
+	return runtimeInfos
 }

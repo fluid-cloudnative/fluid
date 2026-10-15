@@ -47,6 +47,15 @@ type RegistryHandler interface {
 	GetClientlessPodWithoutDatasetHandler() []MutatingHandler
 }
 
+// ReaderAwareHandler is implemented by plugins that read objects themselves and need to
+// see the same client the handler uses: the cached one first, then the API reader when
+// the handler retries after a NeedRetryWithApiReaderError.
+type ReaderAwareHandler interface {
+	MutatingHandler
+	MutateWithReader(pod *corev1.Pod, runtimeInfos map[string]base.RuntimeInfoInterface,
+		reader client.Reader) (shouldStop bool, err error)
+}
+
 // HandlerFactory is a function that builds a MutatingHandler.
 type HandlerFactory = func(client client.Client, args string) (MutatingHandler, error)
 

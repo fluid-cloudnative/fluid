@@ -128,9 +128,16 @@ func GetCacheComponentName(runtimeName string, componentType ComponentType) stri
 	return fmt.Sprintf("%s-%s", runtimeName, componentType)
 }
 
+const cacheRuntimeConfigConfigMapNamePrefix = "fluid-runtime-config-"
+
+// MaxClientlessDatasetNameLength is the longest dataset name whose runtime config can be
+// injected into an app pod: the injected volume is named after the config map, and a
+// volume name is a DNS-1123 label of at most 63 characters.
+const MaxClientlessDatasetNameLength = 63 - len(cacheRuntimeConfigConfigMapNamePrefix)
+
 // GetCacheRuntimeConfigConfigMapName get the configmap name of the runtime config.
 func GetCacheRuntimeConfigConfigMapName(name string) string {
-	return fmt.Sprintf("fluid-runtime-config-%s", name)
+	return cacheRuntimeConfigConfigMapNamePrefix + name
 }
 
 const (
