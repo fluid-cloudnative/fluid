@@ -39,4 +39,6 @@ const (
 	JindoFuseMountPath = "/jfs/jindofs-fuse"
 
 	DefaultJindoRuntimeImage = "registry.cn-shanghai.aliyuncs.com/jindofs/smartdata:3.8.0"
+
+	WorkerContainerName = "jindofs-worker"
 )
