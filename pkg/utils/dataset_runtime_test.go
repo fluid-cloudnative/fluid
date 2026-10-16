@@ -313,6 +313,20 @@ func TestDatasetControllerOwnerReference(t *testing.T) {
 			expectedKind:       "Dataset",
 			expectedAPIVersion: "data.fluid.io/v1alpha1",
 		},
+		"dataset with group-less APIVersion in TypeMeta": {
+			dataset: &datav1alpha1.Dataset{
+				TypeMeta: v1.TypeMeta{
+					Kind:       "Dataset",
+					APIVersion: "v1alpha1",
+				},
+				ObjectMeta: v1.ObjectMeta{
+					Name: "groupless-dataset",
+					UID:  "uid-groupless",
+				},
+			},
+			expectedKind:       "Dataset",
+			expectedAPIVersion: "data.fluid.io/v1alpha1",
+		},
 		"dataset with custom APIVersion in TypeMeta": {
 			dataset: &datav1alpha1.Dataset{
 				TypeMeta: v1.TypeMeta{
