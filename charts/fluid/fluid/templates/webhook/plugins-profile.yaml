@@ -10,8 +10,25 @@ data:
 {{ toYaml .Values.webhook.pluginsProfile | indent 4 }}
 {{- else }}
 {{- $existing := (lookup "v1" "ConfigMap" (include "fluid.namespace" .)  "webhook-plugins") }}
+{{- $existingProfile := "" }}
 {{- if $existing }}
-{{ $existing.data.pluginsProfile | indent 4 }}
+{{- $existingProfile = dig "data" "pluginsProfile" "" $existing }}
+{{- end }}
+{{- if $existingProfile }}
+{{- /*
+  Keep the existing profile, but add plugin groups introduced after it was written
+  (e.g. clientless), otherwise their webhook rules match pods while no plugin runs.
+  A profile whose plugins are not a map is not something this template can merge
+  into, so it is kept as it is.
+*/}}
+{{- $profile := fromYaml $existingProfile }}
+{{- $plugins := get $profile "plugins" }}
+{{- if and (not (hasKey $profile "Error")) (kindIs "map" $plugins) (not (hasKey $plugins "clientless")) }}
+{{- $_ := set $plugins "clientless" .Values.webhook.pluginsProfile.plugins.clientless }}
+{{ toYaml $profile | indent 4 }}
+{{- else }}
+{{ $existingProfile | indent 4 }}
+{{- end }}
 {{- else }}
 {{ toYaml .Values.webhook.pluginsProfile | indent 4 }}
 {{- end }}
