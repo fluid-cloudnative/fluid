@@ -26,13 +26,9 @@ import (
 func (e *CacheEngine) getDataOperationImage(runtime *v1alpha1.CacheRuntime, runtimeClass *v1alpha1.CacheRuntimeClass) (image string, err error) {
 	// Priority: DataOperationSpecs.image > runtime.Spec.Worker.RuntimeVersion > runtimeClass.Topology.Worker
 
-	if runtimeClass.Topology.Worker != nil && len(runtimeClass.Topology.Worker.Template.Spec.Containers) > 0 {
-		// container [0] is the cache engine image
-		image = runtimeClass.Topology.Worker.Template.Spec.Containers[0].Image
-	}
-	if len(runtime.Spec.Worker.RuntimeVersion.Image) > 0 && len(runtime.Spec.Worker.RuntimeVersion.ImageTag) > 0 {
-		image = runtime.Spec.Worker.RuntimeVersion.Image + ":" + runtime.Spec.Worker.RuntimeVersion.ImageTag
-	}
+	// Resolve the worker image the same way the worker itself does, so a partial
+	// runtimeVersion moves data operations along with the worker.
+	image = componentImage(runtime.Spec.Worker.RuntimeVersion, componentTemplateImage(runtimeClass.Topology.Worker))
 
 	if len(image) == 0 {
 		return "", fmt.Errorf("no image for runtime, name: %s, namespace: %s", runtime.Name, runtime.Namespace)

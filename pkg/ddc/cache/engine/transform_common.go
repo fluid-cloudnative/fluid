@@ -18,6 +18,7 @@ package engine
 
 import (
 	"fmt"
+	"strings"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
@@ -130,10 +131,10 @@ func (e *CacheEngine) transformComponentPodTemplate(runtimeSpec datav1alpha1.Cac
 
 	// transform container related config, currently only modify the first container
 	if len(podTemplate.Spec.Containers) > 0 {
-		// transform Container Image name etc.
-		if len(runtimeCompSpec.RuntimeVersion.Image) > 0 && len(runtimeCompSpec.RuntimeVersion.ImageTag) > 0 {
-			podTemplate.Spec.Containers[0].Image = runtimeCompSpec.RuntimeVersion.Image + ":" + runtimeCompSpec.RuntimeVersion.ImageTag
-		}
+		// transform Container Image name etc. A version naming only one of image and imageTag
+		// takes the other half from the template rather than being dropped.
+		e.logIncompleteVersion(componentValue.ComponentType, runtimeCompSpec.RuntimeVersion, podTemplate.Spec.Containers[0].Image)
+		podTemplate.Spec.Containers[0].Image = componentImage(runtimeCompSpec.RuntimeVersion, podTemplate.Spec.Containers[0].Image)
 		if len(runtimeCompSpec.RuntimeVersion.ImagePullPolicy) > 0 {
 			podTemplate.Spec.Containers[0].ImagePullPolicy = (corev1.PullPolicy)(runtimeCompSpec.RuntimeVersion.ImagePullPolicy)
 		}
@@ -183,4 +184,98 @@ func appendMissingImagePullSecrets(existing []corev1.LocalObjectReference,
 	}
 
 	return existing
+}
+
+// desiredComponentVersion completes a partially specified runtime version against the image
+// carried by the CacheRuntimeClass template.
+//
+// VersionSpec declares image and imageTag as independent optional strings, so naming only one
+// of them is a legal way to say "the same image on a newer tag". Both the creation path and
+// updateImage used to require both halves and otherwise leave the template image alone, which
+// silently discards that edit. Completing the missing half here gives both paths the same
+// desired image, so a component created with a partial version and one updated to it end up
+// identical instead of rolling on the next reconcile.
+//
+// A version naming neither half resolves to the template image itself, so removing a
+// runtimeVersion rolls the component back to the template instead of leaving it on the last
+// override. A version whose missing half cannot be recovered - a template with no image, no tag,
+// or an image pinned by digest on either side - stays incomplete, because guessing there would move the
+// workload onto something nobody asked for.
+func desiredComponentVersion(runtimeVersion datav1alpha1.VersionSpec, templateImage string) datav1alpha1.VersionSpec {
+	if runtimeVersion.Image != "" && runtimeVersion.ImageTag != "" {
+		return runtimeVersion
+	}
+
+	templateRepository, templateTag := splitImageReference(templateImage)
+	if runtimeVersion.Image == "" {
+		runtimeVersion.Image = templateRepository
+	}
+	// An image pinned by digest takes no tag: completing one would render
+	// "repo@sha256:...:v1", which no runtime can parse.
+	if runtimeVersion.ImageTag == "" && !strings.Contains(runtimeVersion.Image, "@") {
+		runtimeVersion.ImageTag = templateTag
+	}
+
+	return runtimeVersion
+}
+
+// componentImage resolves the image a component runs: the runtime version completed against
+// the template, or the template image itself when the version cannot be completed. Both the
+// component workload and the data operations that borrow the worker image use it, so the two
+// cannot drift apart.
+func componentImage(runtimeVersion datav1alpha1.VersionSpec, templateImage string) string {
+	version := desiredComponentVersion(runtimeVersion, templateImage)
+	if version.Image != "" && version.ImageTag != "" {
+		return version.Image + ":" + version.ImageTag
+	}
+	return templateImage
+}
+
+// logIncompleteVersion records a runtimeVersion that names only part of the image when the
+// template cannot supply the rest. desiredComponentVersion deliberately does not guess there, so
+// the component keeps its image; without this the edit would be accepted and discarded with
+// nothing to show for it.
+func (e *CacheEngine) logIncompleteVersion(componentType common.ComponentType,
+	runtimeVersion datav1alpha1.VersionSpec, templateImage string) {
+	if runtimeVersion.Image == "" && runtimeVersion.ImageTag == "" {
+		return
+	}
+
+	desired := desiredComponentVersion(runtimeVersion, templateImage)
+	if desired.Image != "" && desired.ImageTag != "" {
+		return
+	}
+
+	e.Log.V(1).Info("runtimeVersion cannot be completed from the CacheRuntimeClass template, leaving the image unchanged",
+		"component", componentType, "image", runtimeVersion.Image, "imageTag", runtimeVersion.ImageTag,
+		"templateImage", templateImage)
+}
+
+// splitImageReference splits a container image reference into its repository and tag. The tag
+// is empty when the reference carries none, and both are empty for a reference pinned by
+// digest, where there is no tag to complete and appending one would not be valid.
+func splitImageReference(image string) (repository string, tag string) {
+	if image == "" || strings.Contains(image, "@") {
+		return "", ""
+	}
+
+	lastColon := strings.LastIndex(image, ":")
+	// A colon before the last slash belongs to a registry port, not to a tag:
+	// "registry:5000/myapp" carries no tag, while "registry:5000/myapp:v1" splits
+	// into "registry:5000/myapp" and "v1".
+	if lastColon == -1 || lastColon < strings.LastIndex(image, "/") {
+		return image, ""
+	}
+
+	return image[:lastColon], image[lastColon+1:]
+}
+
+// componentTemplateImage returns the image the CacheRuntimeClass declares for a component,
+// which is the baseline a partially specified runtime version is completed against.
+func componentTemplateImage(componentDefinition *datav1alpha1.RuntimeComponentDefinition) string {
+	if componentDefinition == nil || len(componentDefinition.Template.Spec.Containers) == 0 {
+		return ""
+	}
+
+	return componentDefinition.Template.Spec.Containers[0].Image
 }
