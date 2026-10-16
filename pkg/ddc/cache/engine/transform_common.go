@@ -18,6 +18,8 @@ package engine
 
 import (
 	"fmt"
+	"sort"
+	"strings"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
@@ -138,10 +140,11 @@ func (e *CacheEngine) transformComponentPodTemplate(runtimeSpec datav1alpha1.Cac
 			podTemplate.Spec.Containers[0].ImagePullPolicy = (corev1.PullPolicy)(runtimeCompSpec.RuntimeVersion.ImagePullPolicy)
 		}
 
-		// use runtime component resources if specified, otherwise use default resources
-		if runtimeCompSpec.Resources.Limits != nil || runtimeCompSpec.Resources.Requests != nil {
-			podTemplate.Spec.Containers[0].Resources = runtimeCompSpec.Resources
-		}
+		// Overlay the runtime component resources on the CacheRuntimeClass template
+		// baseline key by key: a partially specified resources only moves the keys it
+		// names and leaves the rest of the template's requirements in place.
+		podTemplate.Spec.Containers[0].Resources = mergeResourceRequirements(
+			podTemplate.Spec.Containers[0].Resources, runtimeCompSpec.Resources)
 
 		if runtimeCompSpec.Args != nil {
 			podTemplate.Spec.Containers[0].Args = runtimeCompSpec.Args
@@ -183,4 +186,101 @@ func appendMissingImagePullSecrets(existing []corev1.LocalObjectReference,
 	}
 
 	return existing
+}
+
+// mergeResourceRequirements overlays the CacheRuntime component resources onto the
+// CacheRuntimeClass template baseline key by key: a key the overlay names wins, any other
+// keeps its template value, so a template key can be overridden but not removed. Claims
+// are matched by name, replacing on a match and appending otherwise.
+func mergeResourceRequirements(base, overlay corev1.ResourceRequirements) corev1.ResourceRequirements {
+	merged := *base.DeepCopy()
+	mergeResourceList(&merged.Limits, overlay.Limits)
+	mergeResourceList(&merged.Requests, overlay.Requests)
+	mergeResourceClaims(&merged.Claims, overlay.Claims)
+	return merged
+}
+
+// mergeResourceList applies the overlay entries onto *base in place: an entry with the
+// same name is replaced and any other entry is added. An empty overlay changes nothing,
+// so `limits: {}` on the CacheRuntime reads the same as leaving limits out.
+func mergeResourceList(base *corev1.ResourceList, overlay corev1.ResourceList) {
+	if len(overlay) == 0 {
+		return
+	}
+	if *base == nil {
+		*base = corev1.ResourceList{}
+	}
+	for name, quantity := range overlay {
+		(*base)[name] = quantity.DeepCopy()
+	}
+}
+
+// mergeResourceClaims applies the overlay claims onto *base by name in place: a claim
+// with the same name is replaced and any other claim is appended.
+func mergeResourceClaims(base *[]corev1.ResourceClaim, overlay []corev1.ResourceClaim) {
+	for _, claim := range overlay {
+		replaced := false
+		for i := range *base {
+			if (*base)[i].Name == claim.Name {
+				(*base)[i] = *claim.DeepCopy()
+				replaced = true
+				break
+			}
+		}
+		if !replaced {
+			*base = append(*base, *claim.DeepCopy())
+		}
+	}
+}
+
+// validateResourceRequirements reports every request whose relation to its limit the API
+// server would reject: a request above its limit, and, for resources that cannot be
+// overcommitted (huge pages and extended resources), a request that differs from its limit
+// or has no limit at all. Merging per key can produce such a pair from a template and a
+// CacheRuntime that are each valid on their own, and the API server would only reject it
+// once a Pod is created. Other Pod resource rules, such as integer extended resources or
+// huge page sizes, are left to the API server: a merge cannot break them when both inputs
+// satisfy them.
+func validateResourceRequirements(resources corev1.ResourceRequirements) error {
+	var conflicts []string
+	for name, request := range resources.Requests {
+		limit, ok := resources.Limits[name]
+		switch {
+		case !ok:
+			if !isOvercommitAllowed(name) {
+				conflicts = append(conflicts, fmt.Sprintf("%s request %s has no limit", name, request.String()))
+			}
+		case !isOvercommitAllowed(name) && request.Cmp(limit) != 0:
+			conflicts = append(conflicts, fmt.Sprintf("%s request %s must equal limit %s", name, request.String(), limit.String()))
+		case request.Cmp(limit) > 0:
+			conflicts = append(conflicts, fmt.Sprintf("%s request %s exceeds limit %s", name, request.String(), limit.String()))
+		}
+	}
+	if len(conflicts) == 0 {
+		return nil
+	}
+	sort.Strings(conflicts)
+	return fmt.Errorf("%s", strings.Join(conflicts, "; "))
+}
+
+// isOvercommitAllowed mirrors k8s.io/kubernetes/pkg/apis/core/v1/helper.IsOvercommitAllowed,
+// which is not vendored: only native resources other than huge pages may set a request
+// below their limit.
+func isOvercommitAllowed(name corev1.ResourceName) bool {
+	native := !strings.Contains(string(name), "/") ||
+		strings.Contains(string(name), corev1.ResourceDefaultNamespacePrefix)
+	return native && !strings.HasPrefix(string(name), corev1.ResourceHugePagesPrefix)
+}
+
+// validateComponentResources checks the resources the creation path rendered into the
+// component's first container, the only one transformComponentPodTemplate fills in.
+func validateComponentResources(componentValue *common.CacheRuntimeComponentValue) error {
+	containers := componentValue.PodTemplateSpec.Spec.Containers
+	if len(containers) == 0 {
+		return nil
+	}
+	if err := validateResourceRequirements(containers[0].Resources); err != nil {
+		return fmt.Errorf("invalid %s resources: %w", componentValue.ComponentType, err)
+	}
+	return nil
 }

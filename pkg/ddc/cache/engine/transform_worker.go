@@ -44,6 +44,9 @@ func (e *CacheEngine) transformWorker(dataset *datav1alpha1.Dataset, runtime *da
 
 	// transform container related config, currently only modify the first container
 	e.transformComponentPodTemplate(runtime.Spec, runtimeWorker.RuntimeComponentCommonSpec, dataset, value.Worker)
+	if err = validateComponentResources(value.Worker); err != nil {
+		return err
+	}
 
 	// transform tiered store configuration into pod resource request or volumes .
 	err = e.TransformRuntimeTieredStore(&runtimeWorker.TieredStore, &value.Worker.PodTemplateSpec.Spec)

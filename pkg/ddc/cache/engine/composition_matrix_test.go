@@ -136,15 +136,14 @@ func compositionTable() []layerCase {
 					Limits: corev1.ResourceList{corev1.ResourceMemory: resource.MustParse("8Gi")},
 				}
 			},
-			// CURRENT: the whole struct is replaced, so the three keys L3 did not restate
-			// are lost and the container ends up with no CPU request or limit at all.
-			// AFTER #6173: requests {cpu 1, memory 2Gi}, limits {cpu 2, memory 8Gi}.
-			knownBug: "#6173",
+			// L3 is overlaid on L1 key by key: only limits.memory moves, and the three keys
+			// L3 did not restate keep their template values.
 			want: func(g Gomega, t corev1.PodTemplateSpec) {
 				r := t.Spec.Containers[0].Resources
+				g.Expect(r.Requests).To(HaveKeyWithValue(corev1.ResourceCPU, resource.MustParse("1")))
+				g.Expect(r.Requests).To(HaveKeyWithValue(corev1.ResourceMemory, resource.MustParse("2Gi")))
+				g.Expect(r.Limits).To(HaveKeyWithValue(corev1.ResourceCPU, resource.MustParse("2")))
 				g.Expect(r.Limits).To(HaveKeyWithValue(corev1.ResourceMemory, resource.MustParse("8Gi")))
-				g.Expect(r.Limits).NotTo(HaveKey(corev1.ResourceCPU))
-				g.Expect(r.Requests).To(BeEmpty())
 			},
 		},
 

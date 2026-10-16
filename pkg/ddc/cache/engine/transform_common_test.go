@@ -23,6 +23,7 @@ import (
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -175,6 +176,364 @@ var _ = Describe("CacheEngine Transform Common Tests", Label("pkg.ddc.cache.engi
 				corev1.LocalObjectReference{Name: "shared"},
 				corev1.LocalObjectReference{Name: "from-runtime"},
 			))
+		})
+	})
+})
+
+var _ = Describe("CacheEngine component resources Tests", Label("pkg.ddc.cache.engine.transform_common_test.go"), func() {
+	// The full set of requirements a CacheRuntimeClass template typically declares.
+	templateResources := func() corev1.ResourceRequirements {
+		return corev1.ResourceRequirements{
+			Requests: corev1.ResourceList{
+				corev1.ResourceCPU:    resource.MustParse("1"),
+				corev1.ResourceMemory: resource.MustParse("2Gi"),
+			},
+			Limits: corev1.ResourceList{
+				corev1.ResourceCPU:    resource.MustParse("2"),
+				corev1.ResourceMemory: resource.MustParse("4Gi"),
+			},
+		}
+	}
+
+	workerDefinition := func(resources corev1.ResourceRequirements) *datav1alpha1.RuntimeComponentDefinition {
+		return &datav1alpha1.RuntimeComponentDefinition{
+			Template: corev1.PodTemplateSpec{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{{Name: "worker", Resources: resources}},
+				},
+			},
+		}
+	}
+
+	Describe("mergeResourceRequirements", func() {
+		Context("when the overlay only names one key", func() {
+			It("should move that key and keep the rest of the baseline", func() {
+				merged := mergeResourceRequirements(templateResources(), corev1.ResourceRequirements{
+					Limits: corev1.ResourceList{corev1.ResourceMemory: resource.MustParse("8Gi")},
+				})
+
+				Expect(merged.Limits).To(HaveLen(2))
+				Expect(merged.Limits.Memory().String()).To(Equal("8Gi"))
+				Expect(merged.Limits.Cpu().String()).To(Equal("2"))
+				Expect(merged.Requests).To(HaveLen(2))
+				Expect(merged.Requests.Cpu().String()).To(Equal("1"))
+				Expect(merged.Requests.Memory().String()).To(Equal("2Gi"))
+			})
+		})
+
+		Context("when the overlay names a key the baseline does not declare", func() {
+			It("should add it", func() {
+				merged := mergeResourceRequirements(corev1.ResourceRequirements{
+					Requests: corev1.ResourceList{corev1.ResourceCPU: resource.MustParse("1")},
+				}, corev1.ResourceRequirements{
+					Requests: corev1.ResourceList{corev1.ResourceMemory: resource.MustParse("2Gi")},
+					Limits:   corev1.ResourceList{corev1.ResourceMemory: resource.MustParse("4Gi")},
+				})
+
+				Expect(merged.Requests.Cpu().String()).To(Equal("1"))
+				Expect(merged.Requests.Memory().String()).To(Equal("2Gi"))
+				Expect(merged.Limits.Memory().String()).To(Equal("4Gi"))
+			})
+		})
+
+		Context("when neither side declares anything", func() {
+			It("should leave the lists nil", func() {
+				merged := mergeResourceRequirements(corev1.ResourceRequirements{}, corev1.ResourceRequirements{})
+
+				Expect(merged.Requests).To(BeNil())
+				Expect(merged.Limits).To(BeNil())
+				Expect(merged.Claims).To(BeNil())
+			})
+		})
+
+		It("should not mutate the baseline it was given", func() {
+			base := templateResources()
+			mergeResourceRequirements(base, corev1.ResourceRequirements{
+				Limits: corev1.ResourceList{corev1.ResourceMemory: resource.MustParse("8Gi")},
+			})
+
+			Expect(base.Limits.Memory().String()).To(Equal("4Gi"))
+		})
+
+		Context("with resource claims", func() {
+			It("should keep the baseline claims and add the ones the overlay names", func() {
+				merged := mergeResourceRequirements(corev1.ResourceRequirements{
+					Claims: []corev1.ResourceClaim{{Name: "gpu"}, {Name: "nic"}},
+				}, corev1.ResourceRequirements{
+					Claims: []corev1.ResourceClaim{{Name: "nic"}, {Name: "fpga"}},
+				})
+
+				Expect(merged.Claims).To(Equal([]corev1.ResourceClaim{
+					{Name: "gpu"},
+					{Name: "nic"},
+					{Name: "fpga"},
+				}))
+			})
+
+			It("should keep the baseline claims when the overlay names none", func() {
+				merged := mergeResourceRequirements(corev1.ResourceRequirements{
+					Claims: []corev1.ResourceClaim{{Name: "gpu"}},
+				}, corev1.ResourceRequirements{
+					Limits: corev1.ResourceList{corev1.ResourceMemory: resource.MustParse("8Gi")},
+				})
+
+				Expect(merged.Claims).To(Equal([]corev1.ResourceClaim{{Name: "gpu"}}))
+			})
+		})
+	})
+
+	Describe("desiredComponentResources", func() {
+		Context("when the CacheRuntime sets no resources", func() {
+			It("should resolve to the template values", func() {
+				desired := desiredComponentResources(corev1.ResourceRequirements{}, workerDefinition(templateResources()))
+
+				Expect(desired).NotTo(BeNil())
+				Expect(*desired).To(Equal(templateResources()))
+			})
+		})
+
+		Context("when the CacheRuntime only raises the memory limit", func() {
+			// Issue #6173: the other three values used to be dropped from the workload,
+			// leaving the container with no CPU request and no CPU limit at all.
+			It("should keep the template's other requirements", func() {
+				desired := desiredComponentResources(corev1.ResourceRequirements{
+					Limits: corev1.ResourceList{corev1.ResourceMemory: resource.MustParse("8Gi")},
+				}, workerDefinition(templateResources()))
+
+				Expect(desired).NotTo(BeNil())
+				Expect(desired.Limits.Memory().String()).To(Equal("8Gi"))
+				Expect(desired.Limits.Cpu().String()).To(Equal("2"))
+				Expect(desired.Requests.Cpu().String()).To(Equal("1"))
+				Expect(desired.Requests.Memory().String()).To(Equal("2Gi"))
+			})
+		})
+
+		Context("when neither the CacheRuntime nor the template declares resources", func() {
+			It("should resolve to empty resources so the workload is cleared", func() {
+				for _, definition := range []*datav1alpha1.RuntimeComponentDefinition{
+					workerDefinition(corev1.ResourceRequirements{}),
+					nil,
+				} {
+					desired := desiredComponentResources(corev1.ResourceRequirements{}, definition)
+					Expect(desired).NotTo(BeNil())
+					Expect(desired.Requests).To(BeEmpty())
+					Expect(desired.Limits).To(BeEmpty())
+					Expect(desired.Claims).To(BeEmpty())
+				}
+			})
+		})
+
+		Context("when only the CacheRuntime declares resources", func() {
+			It("should resolve to them", func() {
+				runtimeResources := corev1.ResourceRequirements{
+					Limits: corev1.ResourceList{corev1.ResourceMemory: resource.MustParse("8Gi")},
+				}
+				desired := desiredComponentResources(runtimeResources, workerDefinition(corev1.ResourceRequirements{}))
+
+				Expect(desired).NotTo(BeNil())
+				Expect(*desired).To(Equal(runtimeResources))
+			})
+		})
+
+		It("should not mutate the CacheRuntimeClass template", func() {
+			definition := workerDefinition(templateResources())
+			desiredComponentResources(corev1.ResourceRequirements{
+				Limits: corev1.ResourceList{corev1.ResourceMemory: resource.MustParse("8Gi")},
+			}, definition)
+
+			Expect(definition.Template.Spec.Containers[0].Resources.Limits.Memory().String()).To(Equal("4Gi"))
+		})
+	})
+
+	Describe("validateResourceRequirements", func() {
+		It("should accept a request equal to its limit, and a request with no limit", func() {
+			Expect(validateResourceRequirements(corev1.ResourceRequirements{
+				Requests: corev1.ResourceList{
+					corev1.ResourceCPU:    resource.MustParse("1"),
+					corev1.ResourceMemory: resource.MustParse("2Gi"),
+				},
+				Limits: corev1.ResourceList{corev1.ResourceCPU: resource.MustParse("1")},
+			})).To(Succeed())
+			Expect(validateResourceRequirements(corev1.ResourceRequirements{})).To(Succeed())
+		})
+
+		It("should name every key whose request exceeds its limit", func() {
+			// The template's requests plus a CacheRuntime that lowers both limits.
+			merged := mergeResourceRequirements(corev1.ResourceRequirements{
+				Requests: corev1.ResourceList{
+					corev1.ResourceCPU:    resource.MustParse("1"),
+					corev1.ResourceMemory: resource.MustParse("2Gi"),
+				},
+			}, corev1.ResourceRequirements{
+				Limits: corev1.ResourceList{
+					corev1.ResourceCPU:    resource.MustParse("500m"),
+					corev1.ResourceMemory: resource.MustParse("1Gi"),
+				},
+			})
+
+			Expect(validateResourceRequirements(merged)).To(
+				MatchError("cpu request 1 exceeds limit 500m; memory request 2Gi exceeds limit 1Gi"))
+		})
+
+		It("should accept a native request below its limit, a limit alone and one value spelled two ways", func() {
+			Expect(validateResourceRequirements(corev1.ResourceRequirements{
+				Requests: corev1.ResourceList{corev1.ResourceCPU: resource.MustParse("500m")},
+				Limits:   corev1.ResourceList{corev1.ResourceCPU: resource.MustParse("1")},
+			})).To(Succeed())
+			Expect(validateResourceRequirements(corev1.ResourceRequirements{
+				Limits: corev1.ResourceList{corev1.ResourceMemory: resource.MustParse("1Gi")},
+			})).To(Succeed())
+			Expect(validateResourceRequirements(corev1.ResourceRequirements{
+				Requests: corev1.ResourceList{corev1.ResourceCPU: resource.MustParse("1000m")},
+				Limits:   corev1.ResourceList{corev1.ResourceCPU: resource.MustParse("1")},
+			})).To(Succeed())
+		})
+
+		Context("for a resource that cannot be overcommitted", func() {
+			const gpu corev1.ResourceName = "nvidia.com/gpu"
+			const hugePages corev1.ResourceName = "hugepages-2Mi"
+
+			It("should accept a request equal to its limit", func() {
+				Expect(validateResourceRequirements(corev1.ResourceRequirements{
+					Requests: corev1.ResourceList{
+						gpu:       resource.MustParse("1"),
+						hugePages: resource.MustParse("1024Mi"),
+					},
+					Limits: corev1.ResourceList{
+						gpu:       resource.MustParse("1"),
+						hugePages: resource.MustParse("1Gi"),
+					},
+				})).To(Succeed())
+			})
+
+			It("should accept a limit alone, which the API server copies into the request", func() {
+				Expect(validateResourceRequirements(corev1.ResourceRequirements{
+					Limits: corev1.ResourceList{gpu: resource.MustParse("1")},
+				})).To(Succeed())
+			})
+
+			It("should reject a merged huge pages request that differs from its limit", func() {
+				// A template pinning 1Gi plus a CacheRuntime raising only the limit.
+				merged := mergeResourceRequirements(corev1.ResourceRequirements{
+					Requests: corev1.ResourceList{hugePages: resource.MustParse("1Gi")},
+					Limits:   corev1.ResourceList{hugePages: resource.MustParse("1Gi")},
+				}, corev1.ResourceRequirements{
+					Limits: corev1.ResourceList{hugePages: resource.MustParse("2Gi")},
+				})
+
+				Expect(validateResourceRequirements(merged)).To(
+					MatchError("hugepages-2Mi request 1Gi must equal limit 2Gi"))
+			})
+
+			It("should reject a merged extended resource request that differs from its limit", func() {
+				merged := mergeResourceRequirements(corev1.ResourceRequirements{
+					Requests: corev1.ResourceList{gpu: resource.MustParse("1")},
+					Limits:   corev1.ResourceList{gpu: resource.MustParse("1")},
+				}, corev1.ResourceRequirements{
+					Limits: corev1.ResourceList{gpu: resource.MustParse("2")},
+				})
+
+				Expect(validateResourceRequirements(merged)).To(
+					MatchError("nvidia.com/gpu request 1 must equal limit 2"))
+			})
+
+			It("should report a request above its limit as not equal", func() {
+				Expect(validateResourceRequirements(corev1.ResourceRequirements{
+					Requests: corev1.ResourceList{gpu: resource.MustParse("2")},
+					Limits:   corev1.ResourceList{gpu: resource.MustParse("1")},
+				})).To(MatchError("nvidia.com/gpu request 2 must equal limit 1"))
+			})
+
+			It("should reject a request with no limit", func() {
+				Expect(validateResourceRequirements(corev1.ResourceRequirements{
+					Requests: corev1.ResourceList{gpu: resource.MustParse("1")},
+				})).To(MatchError("nvidia.com/gpu request 1 has no limit"))
+			})
+
+			It("should name every conflict alongside the native ones", func() {
+				Expect(validateResourceRequirements(corev1.ResourceRequirements{
+					Requests: corev1.ResourceList{
+						corev1.ResourceCPU: resource.MustParse("1"),
+						gpu:                resource.MustParse("1"),
+					},
+					Limits: corev1.ResourceList{corev1.ResourceCPU: resource.MustParse("500m")},
+				})).To(MatchError("cpu request 1 exceeds limit 500m; nvidia.com/gpu request 1 has no limit"))
+			})
+
+			It("should apply to any extended resource and huge pages size, not only the ones above", func() {
+				Expect(validateResourceRequirements(corev1.ResourceRequirements{
+					Requests: corev1.ResourceList{
+						"example.com/foo": resource.MustParse("1"),
+						"hugepages-1Gi":   resource.MustParse("1Gi"),
+					},
+					Limits: corev1.ResourceList{"example.com/foo": resource.MustParse("2")},
+				})).To(MatchError("example.com/foo request 1 must equal limit 2; hugepages-1Gi request 1Gi has no limit"))
+			})
+		})
+
+		It("should let a kubernetes.io-prefixed native resource set a request below its limit", func() {
+			Expect(validateResourceRequirements(corev1.ResourceRequirements{
+				Requests: corev1.ResourceList{"example.kubernetes.io/foo": resource.MustParse("1")},
+				Limits:   corev1.ResourceList{"example.kubernetes.io/foo": resource.MustParse("2")},
+			})).To(Succeed())
+		})
+	})
+
+	Describe("isOvercommitAllowed", func() {
+		It("should allow native resources other than huge pages", func() {
+			Expect(isOvercommitAllowed(corev1.ResourceCPU)).To(BeTrue())
+			Expect(isOvercommitAllowed(corev1.ResourceMemory)).To(BeTrue())
+			Expect(isOvercommitAllowed(corev1.ResourceEphemeralStorage)).To(BeTrue())
+			Expect(isOvercommitAllowed("kubernetes.io/batteries")).To(BeTrue())
+			Expect(isOvercommitAllowed("example.kubernetes.io/foo")).To(BeTrue())
+		})
+
+		It("should not allow huge pages or extended resources", func() {
+			Expect(isOvercommitAllowed("hugepages-2Mi")).To(BeFalse())
+			Expect(isOvercommitAllowed("hugepages-1Gi")).To(BeFalse())
+			Expect(isOvercommitAllowed("nvidia.com/gpu")).To(BeFalse())
+			Expect(isOvercommitAllowed("example.com/foo")).To(BeFalse())
+		})
+	})
+
+	Describe("validateComponentResources", func() {
+		It("should name the component whose first container conflicts", func() {
+			value := &common.CacheRuntimeComponentValue{
+				ComponentType: common.ComponentTypeWorker,
+				PodTemplateSpec: corev1.PodTemplateSpec{
+					Spec: corev1.PodSpec{Containers: []corev1.Container{{
+						Name: "worker",
+						Resources: corev1.ResourceRequirements{
+							Requests: corev1.ResourceList{corev1.ResourceCPU: resource.MustParse("1")},
+							Limits:   corev1.ResourceList{corev1.ResourceCPU: resource.MustParse("500m")},
+						},
+					}}},
+				},
+			}
+			Expect(validateComponentResources(value)).To(
+				MatchError("invalid worker resources: cpu request 1 exceeds limit 500m"))
+		})
+
+		It("should reject a non-overcommittable conflict on the creation path too", func() {
+			value := &common.CacheRuntimeComponentValue{
+				ComponentType: common.ComponentTypeMaster,
+				PodTemplateSpec: corev1.PodTemplateSpec{
+					Spec: corev1.PodSpec{Containers: []corev1.Container{{
+						Name: "master",
+						Resources: corev1.ResourceRequirements{
+							Requests: corev1.ResourceList{"nvidia.com/gpu": resource.MustParse("1")},
+							Limits:   corev1.ResourceList{"nvidia.com/gpu": resource.MustParse("2")},
+						},
+					}}},
+				},
+			}
+			Expect(validateComponentResources(value)).To(
+				MatchError("invalid master resources: nvidia.com/gpu request 1 must equal limit 2"))
+		})
+
+		It("should accept a component without containers", func() {
+			value := &common.CacheRuntimeComponentValue{ComponentType: common.ComponentTypeWorker}
+			Expect(validateComponentResources(value)).To(Succeed())
 		})
 	})
 })
