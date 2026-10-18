@@ -326,6 +326,19 @@ var _ = Describe("RuntimeConfigInjector", func() {
 			})
 		})
 
+		Context("when an app container's name merely starts like a fuse sidecar's", func() {
+			It("should inject into it", func() {
+				injector := newInjector(configMapFor("demo"))
+				pod := podWithContainers(common.FuseContainerName+"-proxy", common.FuseContainerName+"-0")
+
+				_, err := injector.Mutate(pod, runtimeInfosFor("demo"))
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(pod.Spec.Containers[0].VolumeMounts).To(HaveLen(1))
+				Expect(pod.Spec.Containers[1].VolumeMounts).To(BeEmpty())
+			})
+		})
+
 		Context("when a container already mounts another volume at the config's path", func() {
 			conflictingMount := corev1.VolumeMount{Name: "own-config", MountPath: "/etc/fluid/config/demo/"}
 
@@ -473,6 +486,19 @@ var _ = Describe("RuntimeConfigInjector", func() {
 				Expect(pod.Spec.Containers[0].VolumeMounts).To(HaveLen(2))
 			})
 		})
+	})
+})
+
+var _ = Describe("isFuseSidecar", func() {
+	It("should match only the names fluid gives its fuse sidecars", func() {
+		Expect(isFuseSidecar(common.FuseContainerName)).To(BeTrue())
+		Expect(isFuseSidecar(common.FuseContainerName + "-0")).To(BeTrue())
+		Expect(isFuseSidecar(common.FuseContainerName + "-12")).To(BeTrue())
+
+		Expect(isFuseSidecar(common.FuseContainerName + "-")).To(BeFalse())
+		Expect(isFuseSidecar(common.FuseContainerName + "-proxy")).To(BeFalse())
+		Expect(isFuseSidecar(common.FuseContainerName + "x")).To(BeFalse())
+		Expect(isFuseSidecar("app")).To(BeFalse())
 	})
 })
 

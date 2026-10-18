@@ -224,7 +224,7 @@ func checkVolumeNameConflict(pod *corev1.Pod, mount configMount) error {
 
 	for _, containers := range [][]corev1.Container{pod.Spec.InitContainers, pod.Spec.Containers} {
 		for _, container := range containers {
-			if strings.HasPrefix(container.Name, common.FuseContainerName) {
+			if isFuseSidecar(container.Name) {
 				continue
 			}
 			for _, existing := range container.VolumeMounts {
@@ -248,7 +248,7 @@ func checkVolumeNameConflict(pod *corev1.Pod, mount configMount) error {
 func checkMountPathConflict(pod *corev1.Pod, volumeMount corev1.VolumeMount) error {
 	for _, containers := range [][]corev1.Container{pod.Spec.InitContainers, pod.Spec.Containers} {
 		for _, container := range containers {
-			if strings.HasPrefix(container.Name, common.FuseContainerName) {
+			if isFuseSidecar(container.Name) {
 				continue
 			}
 			for _, existing := range container.VolumeMounts {
@@ -262,6 +262,29 @@ func checkMountPathConflict(pod *corev1.Pod, volumeMount corev1.VolumeMount) err
 	return nil
 }
 
+// isFuseSidecar reports whether a container is a fuse sidecar fluid injects, which is named
+// fluid-fuse-<index>. Matching the prefix alone would also skip an app container whose name
+// merely starts with it.
+func isFuseSidecar(name string) bool {
+	suffix, ok := strings.CutPrefix(name, common.FuseContainerName)
+	if !ok {
+		return false
+	}
+	if suffix == "" {
+		return true
+	}
+	index, ok := strings.CutPrefix(suffix, "-")
+	if !ok || index == "" {
+		return false
+	}
+	for _, r := range index {
+		if r < '0' || r > '9' {
+			return false
+		}
+	}
+	return true
+}
+
 // envSuffix turns a dataset name into a shell-safe variable name suffix. A dataset
 // name is a DNS-1035 label, which allows '-' but not '_', so mapping '-' to '_'
 // cannot make two different datasets share a suffix.
@@ -271,7 +294,7 @@ func envSuffix(ds string) string {
 
 func injectToContainers(containers []corev1.Container, mounts []configMount) {
 	for i := range containers {
-		if strings.HasPrefix(containers[i].Name, common.FuseContainerName) {
+		if isFuseSidecar(containers[i].Name) {
 			continue
 		}
 		for _, m := range mounts {
