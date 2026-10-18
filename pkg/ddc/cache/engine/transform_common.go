@@ -133,8 +133,6 @@ func (e *CacheEngine) transformComponentPodTemplate(runtimeSpec datav1alpha1.Cac
 	if len(podTemplate.Spec.Containers) > 0 {
 		// transform Container Image name etc. A version naming only one of image and imageTag
 		// takes the other half from the template rather than being dropped.
-		// The sync that follows creation emits the event; creation only logs.
-		e.reportIncompleteVersion(nil, componentValue.ComponentType, runtimeCompSpec.RuntimeVersion, podTemplate.Spec.Containers[0].Image)
 		podTemplate.Spec.Containers[0].Image = componentImage(runtimeCompSpec.RuntimeVersion, podTemplate.Spec.Containers[0].Image)
 		if len(runtimeCompSpec.RuntimeVersion.ImagePullPolicy) > 0 {
 			podTemplate.Spec.Containers[0].ImagePullPolicy = (corev1.PullPolicy)(runtimeCompSpec.RuntimeVersion.ImagePullPolicy)
