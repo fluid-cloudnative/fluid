@@ -96,6 +96,9 @@ func CollectRuntimeInfosFromAnnotations(client client.Reader, annotations map[st
 
 	seen := map[string]struct{}{}
 	errDatasets := []string{}
+	// reasons says why each dataset in errDatasets failed, so the denial the user sees
+	// names the cause rather than only the dataset.
+	reasons := []string{}
 	for _, datasetName := range strings.Split(datasetNames, ",") {
 		datasetName = strings.TrimSpace(datasetName)
 		if len(datasetName) == 0 {
@@ -109,22 +112,26 @@ func CollectRuntimeInfosFromAnnotations(client client.Reader, annotations map[st
 		// A dataset name is a k8s object name, so an invalid one can never resolve. Reject it here
 		// with a message naming the annotation, instead of letting it fail later as a not-found.
 		if nameErrs := validation.IsDNS1035Label(datasetName); len(nameErrs) > 0 {
-			setupLog.Error(errors.New(strings.Join(nameErrs, "; ")),
+			nameErr := errors.New(strings.Join(nameErrs, "; "))
+			setupLog.Error(nameErr,
 				"invalid dataset name in annotation, ignore and continue to check next dataset",
 				"annotation", common.LabelAnnotationDatasets,
 				"dataset", datasetName)
 			errDatasets = append(errDatasets, datasetName)
+			reasons = append(reasons, fmt.Sprintf("%s: %v", datasetName, nameErr))
 			continue
 		}
 		// The runtime config is mounted as a volume named after its config map, so the
 		// name has to leave room for the config map's prefix within a volume name's limit.
 		if len(datasetName) > common.MaxClientlessDatasetNameLength {
-			setupLog.Error(fmt.Errorf("dataset name is too long (%d > %d) for its runtime config to be mounted",
-				len(datasetName), common.MaxClientlessDatasetNameLength),
+			lengthErr := fmt.Errorf("dataset name is too long (%d > %d) for its runtime config to be mounted",
+				len(datasetName), common.MaxClientlessDatasetNameLength)
+			setupLog.Error(lengthErr,
 				"invalid dataset name in annotation, ignore and continue to check next dataset",
 				"annotation", common.LabelAnnotationDatasets,
 				"dataset", datasetName)
 			errDatasets = append(errDatasets, datasetName)
+			reasons = append(reasons, fmt.Sprintf("%s: %v", datasetName, lengthErr))
 			continue
 		}
 
@@ -134,6 +141,7 @@ func CollectRuntimeInfosFromAnnotations(client client.Reader, annotations map[st
 					"dataset", datasetName,
 					"namespace", namespace)
 				errDatasets = append(errDatasets, datasetName)
+				reasons = append(reasons, fmt.Sprintf("%s: %v", datasetName, boundErr))
 				continue
 			}
 		}
@@ -144,6 +152,7 @@ func CollectRuntimeInfosFromAnnotations(client client.Reader, annotations map[st
 				"dataset", datasetName,
 				"namespace", namespace)
 			errDatasets = append(errDatasets, datasetName)
+			reasons = append(reasons, fmt.Sprintf("%s: %v", datasetName, infoErr))
 			continue
 		}
 
@@ -151,8 +160,8 @@ func CollectRuntimeInfosFromAnnotations(client client.Reader, annotations map[st
 	}
 
 	if len(errDatasets) > 0 {
-		err = fmt.Errorf("failed to get the following datasets %v declared in annotation %s",
-			errDatasets, common.LabelAnnotationDatasets)
+		err = fmt.Errorf("failed to get the following datasets %v declared in annotation %s: %s",
+			errDatasets, common.LabelAnnotationDatasets, strings.Join(reasons, "; "))
 		return
 	}
 

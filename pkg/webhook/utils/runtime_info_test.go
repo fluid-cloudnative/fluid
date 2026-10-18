@@ -338,6 +338,7 @@ var _ = Describe("CollectRuntimeInfosFromAnnotations", func() {
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("demo.v1"))
 			Expect(err.Error()).To(ContainSubstring(common.LabelAnnotationDatasets))
+			Expect(err.Error()).To(ContainSubstring("a DNS-1035 label must consist of"))
 		})
 	})
 
@@ -348,6 +349,8 @@ var _ = Describe("CollectRuntimeInfosFromAnnotations", func() {
 				cacheDataset(longName, v1alpha1.BoundDatasetPhase), cacheRuntime(longName))
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring(longName))
+			// The denial carries the reason, not only the name.
+			Expect(err.Error()).To(ContainSubstring("dataset name is too long"))
 		})
 
 		It("should accept the longest name that still fits", func() {
