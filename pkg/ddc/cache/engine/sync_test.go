@@ -1003,6 +1003,20 @@ var _ = Describe("CacheEngine Sync Tests", Label("pkg.ddc.cache.engine.sync_test
 			})
 		})
 
+		Context("when the CacheRuntimeClass has no topology", func() {
+			It("should sync nothing instead of panicking", func() {
+				runtimeObj.Spec.Worker.Resources = corev1.ResourceRequirements{
+					Limits: corev1.ResourceList{corev1.ResourceMemory: resource.MustParse("4Gi")},
+				}
+				runtimeClass.Topology = nil
+
+				Expect(engine.syncRuntimeSpec(ctx, runtimeObj, runtimeClass)).To(Succeed())
+
+				Expect(memLimitOf(masterSts)).To(Equal("2Gi"))
+				Expect(memLimitOf(workerSts)).To(Equal("2Gi"))
+			})
+		})
+
 		Context("when the CacheRuntime specifies resources", func() {
 			It("should apply them to the master workload only", func() {
 				runtimeObj.Spec.Master.Resources = corev1.ResourceRequirements{

@@ -186,6 +186,12 @@ func (e *CacheEngine) syncRuntimeSpec(ctx cruntime.ReconcileRequestContext, runt
 		e.Log.V(1).Info("finished syncing runtime spec")
 	}()
 
+	// getRuntimeClass rejects a class without a topology, so this only guards direct callers;
+	// like the transform path, a missing topology leaves no component to sync.
+	if runtimeClass.Topology == nil {
+		return nil
+	}
+
 	// Sync Master component if enabled (supports in-place update via AdvancedStatefulSet)
 	if runtimeClass.Topology.Master != nil && !runtime.Spec.Master.Disabled {
 		masterIdentity := &common.ComponentIdentity{
