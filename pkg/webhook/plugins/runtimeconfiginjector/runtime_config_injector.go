@@ -286,8 +286,9 @@ func isFuseSidecar(name string) bool {
 }
 
 // envSuffix turns a dataset name into a shell-safe variable name suffix. A dataset
-// name is a DNS-1035 label, which allows '-' but not '_', so mapping '-' to '_'
-// cannot make two different datasets share a suffix.
+// name that gets this far forms a DNS-1123 label volume name, so it holds only lower
+// case letters, digits and '-'. Mapping '-' to '_' therefore cannot make two datasets
+// share a suffix, and a leading digit is harmless behind the fixed variable prefix.
 func envSuffix(ds string) string {
 	return strings.ToUpper(strings.ReplaceAll(ds, "-", "_"))
 }

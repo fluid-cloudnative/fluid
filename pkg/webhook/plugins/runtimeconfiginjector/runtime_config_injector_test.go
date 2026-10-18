@@ -504,10 +504,10 @@ var _ = Describe("isFuseSidecar", func() {
 
 var _ = Describe("envSuffix", func() {
 	It("should upper-case the name and replace hyphens", func() {
-		// A dataset name is a DNS-1035 label: lower case, digits and hyphens, starting
-		// with a letter. Hyphens are the only character a shell variable name rejects,
-		// and since '_' is not a legal dataset name character the mapping cannot make
-		// two different datasets collide.
+		// A dataset name that reaches injection is a DNS-1123 label: lower case, digits
+		// and hyphens. Hyphens are the only character a shell variable name rejects, and
+		// since '_' is not a legal dataset name character the mapping cannot make two
+		// different datasets collide.
 		Expect(envSuffix("demo")).To(Equal("DEMO"))
 		Expect(envSuffix("mooncake-demo")).To(Equal("MOONCAKE_DEMO"))
 		Expect(envSuffix("ds-1-a")).To(Equal("DS_1_A"))
