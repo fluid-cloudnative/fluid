@@ -65,7 +65,8 @@ spec:
 **限制**:
 - ⚠️ Cgroupv1 环境中，不能与 `resources` 字段同时更新（需分步操作，见下方资源字段说明）
 - ⚠️ **只设置 `image` 时，请确认新仓库中存在模板的 tag**：否则 Pod 会因 `ImagePullBackOff` 无法启动；
-  原地更新时，该组件在新镜像拉取成功前不可用。
+  原地更新时，该组件在新镜像拉取成功前不可用。反过来也一样：只设置了 `imageTag` 的实例，在模板的镜像仓库
+  被修改后，会改用新仓库中的这个 tag，请确认新仓库中也存在它。
 - ⚠️ **CacheRuntimeClass 模板中镜像的修改会同步到已有实例**：修改模板中的镜像后，
   所有引用该 CacheRuntimeClass 的 CacheRuntime 中，未禁用、且未完整设置 `runtimeVersion` 的 master 和 worker
   会按新模板镜像重新计算，结果变化时滚动到新镜像（只设置了 `imageTag` 的保留自己的 tag，只设置了 `image` 的
