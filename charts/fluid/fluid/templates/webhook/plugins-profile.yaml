@@ -27,7 +27,11 @@ data:
 {{- $_ := set $plugins "clientless" .Values.webhook.pluginsProfile.plugins.clientless }}
 {{ toYaml $profile | indent 4 }}
 {{- else }}
-{{ $existingProfile | indent 4 }}
+{{- /*
+  The stored profile ends with the newline the block scalar keeps. Trim it, or indent
+  turns it into a whitespace-only line and the checksum on the webhook changes once.
+*/}}
+{{ $existingProfile | trim | indent 4 }}
 {{- end }}
 {{- else }}
 {{ toYaml .Values.webhook.pluginsProfile | indent 4 }}
