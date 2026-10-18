@@ -44,13 +44,15 @@ import (
 // Each row below is checked twice:
 //
 //	resolve   the two resolvers return the same value, compared the way updateResources
-//	          compares it (equality.Semantic)
+//	          compares it (equality.Semantic); the sync side charges the tiered store
+//	          memory quota from the rendered workload, as syncRuntimeSpec does
 //	converge  a workload rendered by the creation path is left untouched by syncRuntimeSpec
 
 type resourcesEquivalenceCase struct {
-	desc     string
-	template corev1.ResourceRequirements
-	runtime  corev1.ResourceRequirements
+	desc        string
+	template    corev1.ResourceRequirements
+	runtime     corev1.ResourceRequirements
+	tieredStore datav1alpha1.RuntimeTieredStore
 }
 
 func resourcesEquivalenceTable() []resourcesEquivalenceCase {
@@ -125,6 +127,35 @@ func resourcesEquivalenceTable() []resourcesEquivalenceCase {
 				Claims: []corev1.ResourceClaim{{Name: "nic"}, {Name: "fpga"}},
 			},
 		},
+		{
+			// The creation path adds the quota to the merged memory; the sync path must
+			// add the same quota instead of reverting to the bare merge.
+			desc:     "a Memory-medium emptyDir tier charges the merged memory",
+			template: full,
+			runtime: corev1.ResourceRequirements{
+				Limits: corev1.ResourceList{corev1.ResourceMemory: resource.MustParse("8Gi")},
+			},
+			tieredStore: datav1alpha1.RuntimeTieredStore{
+				Levels: []datav1alpha1.RuntimeTieredStoreLevel{{
+					EmptyDir: &datav1alpha1.EmptyDirMediumSource{
+						Quota:  resource.MustParse("2Gi"),
+						Medium: corev1.StorageMediumMemory,
+					},
+				}},
+			},
+		},
+		{
+			desc:     "a process memory tier charges the merged memory",
+			template: full,
+			runtime: corev1.ResourceRequirements{
+				Requests: corev1.ResourceList{corev1.ResourceMemory: resource.MustParse("3Gi")},
+			},
+			tieredStore: datav1alpha1.RuntimeTieredStore{
+				Levels: []datav1alpha1.RuntimeTieredStoreLevel{{
+					ProcessMemory: &datav1alpha1.ProcessMemoryMediumSource{Quota: resource.MustParse("1Gi")},
+				}},
+			},
+		},
 	}
 }
 
@@ -157,6 +188,7 @@ func renderWorker(g Gomega, tc resourcesEquivalenceCase) corev1.PodTemplateSpec 
 
 	e.transformComponentPodTemplate(runtimeSpec, runtimeSpec.Worker.RuntimeComponentCommonSpec,
 		&datav1alpha1.Dataset{ObjectMeta: metav1.ObjectMeta{Name: "test", Namespace: "default"}}, value)
+	g.Expect(e.TransformRuntimeTieredStore(tc.tieredStore.DeepCopy(), &value.PodTemplateSpec.Spec)).To(Succeed())
 
 	return value.PodTemplateSpec
 }
@@ -169,12 +201,14 @@ var _ = Describe("CacheRuntime resources creation/sync equivalence",
 
 			Describe(tc.desc, func() {
 				It("resolves to the same resources on both paths", func() {
-					rendered := renderWorker(Default, tc).Spec.Containers[0].Resources
-					desired := desiredComponentResources(tc.runtime,
+					renderedPod := renderWorker(Default, tc)
+					rendered := renderedPod.Spec.Containers[0].Resources
+					merged := desiredComponentResources(tc.runtime,
 						&datav1alpha1.RuntimeComponentDefinition{Template: workerTemplateWith(tc.template)})
+					desired := withTieredStoreMemoryQuota(*merged, chargedTieredStoreMemoryQuota(&renderedPod.Spec))
 
-					Expect(equality.Semantic.DeepEqual(rendered, *desired)).To(BeTrue(),
-						"creation rendered %+v, sync wants %+v", rendered, *desired)
+					Expect(equality.Semantic.DeepEqual(rendered, desired)).To(BeTrue(),
+						"creation rendered %+v, sync wants %+v", rendered, desired)
 				})
 
 				It("leaves a freshly created workload untouched on sync", func() {
@@ -194,6 +228,7 @@ var _ = Describe("CacheRuntime resources creation/sync equivalence",
 							Worker: datav1alpha1.CacheRuntimeWorkerSpec{
 								Replicas:                   1,
 								RuntimeComponentCommonSpec: datav1alpha1.RuntimeComponentCommonSpec{Resources: *tc.runtime.DeepCopy()},
+								TieredStore:                *tc.tieredStore.DeepCopy(),
 							},
 						},
 					}
