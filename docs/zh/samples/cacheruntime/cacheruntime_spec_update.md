@@ -96,16 +96,12 @@ spec:
   请修改 CacheRuntimeClass 模板——运行时自身的资源要求本就描述在那里。
 - ⚠️ **CacheRuntimeClass 模板中 `resources` 的修改会同步到已有实例**：模板是每次 reconcile 的基线，
   修改后，所有引用该 CacheRuntimeClass 的 CacheRuntime 中未被覆盖的 key 都会同步到 master 和 worker
-  的工作负载，无需重建 CacheRuntime。控制器不监听 CacheRuntimeClass，因此修改在各 CacheRuntime 的下一次
+  的工作负载，无需重建 CacheRuntime；这些实例的 master 和 worker Pod 都会随之更新，集群不支持原地更新时，
+  Pod 会被重建。控制器不监听 CacheRuntimeClass，因此修改在各 CacheRuntime 的下一次
   reconcile 时生效，而不是立即生效。client 不同步，模板中 `resources` 以外的字段也不同步。从模板中删除的 key，
   会从未覆盖该 key 的工作负载上清除。
 - ⚠️ **以 CacheRuntime 和模板为准**：直接修改 master 或 worker 的 AdvancedStatefulSet 上的 resources，
   会在下一次 reconcile 时被改回。
-- ⚠️ **升级说明**：在旧版本中，只设置了部分 `resources` 的 CacheRuntime 会丢失模板中的其余资源要求
-  （见 [#6173](https://github.com/fluid-cloudnative/fluid/issues/6173)）。升级后的第一次 reconcile 会补回
-  这些值，相应的 master 和 worker Pod 会经历一次性的资源更新；集群不支持原地更新时，Pod 会被重建。完全未设置
-  `resources` 的 CacheRuntime 不受影响；但如果模板也未声明，而工作负载上有之前覆盖遗留或手动修改的值，
-  这些值会被清除。
 - ⚠️ **合并后 request 不能超过 limit**：模板和 CacheRuntime 各自合法，合并后仍可能出现 request 大于 limit，
   例如模板 `requests.cpu: 1` 加上 CacheRuntime `limits.cpu: 500m`。hugepages（`hugepages-*`）和扩展资源
   （如 `nvidia.com/gpu`）要求更严：request 必须等于 limit，且设置了 request 就必须设置 limit，例如模板
@@ -117,7 +113,7 @@ spec:
   `resources.claims`，不能添加 Pod 级的 `spec.resourceClaims`。引用 CacheRuntimeClass 模板中未声明的
   claim 名时，新建或重建的 master/worker Pod 会被 API server 拒绝（`must be one of the names in
   pod.spec.resourceClaims`），组件会一直处于 NotReady。未启用 `DynamicResourceAllocation` 的集群
-  （K8s 1.34 之前默认关闭）会静默丢弃 `claims`。旧版本会忽略只设置了 `claims` 的 CacheRuntime。
+  （K8s 1.34 之前默认关闭）会静默丢弃 `claims`。
 - ⚠️ **Kubernetes 版本要求**：需要 K8s >= 1.27 且启用 `InPlacePodVerticalScaling` Feature Gate
   ```bash
   # 检查 Feature Gate 是否启用

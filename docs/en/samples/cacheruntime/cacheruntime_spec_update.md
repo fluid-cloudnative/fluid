@@ -101,19 +101,14 @@ or is cleared from the workload when the template does not declare it. An empty 
 - ⚠️ **Edits to the template's `resources` reach existing instances**: the CacheRuntimeClass template
   is the baseline on every reconcile, so after it changes, the keys a CacheRuntime does not override
   are synced to the master and worker workloads of every CacheRuntime that uses that class, without
-  recreating the CacheRuntime. The controller does not watch CacheRuntimeClass, so the change lands
+  recreating the CacheRuntime. The master and worker Pods of those instances are updated
+  accordingly, and recreated where the cluster cannot resize them in place. The controller does not
+  watch CacheRuntimeClass, so the change lands
   on each CacheRuntime's next reconcile rather than immediately. The client is not synced, and
   template fields other than `resources` are not synced either. A key removed from the template is
   cleared from the workloads that do not override it.
 - ⚠️ **The CacheRuntime and its template are the source of truth**: resources edited directly on
   the master or worker AdvancedStatefulSet are reverted on the next reconcile.
-- ⚠️ **Upgrade note**: earlier releases dropped the template's other requirements from a
-  CacheRuntime that set only part of `resources` (see
-  [#6173](https://github.com/fluid-cloudnative/fluid/issues/6173)). The first reconcile after
-  upgrading restores them, so the affected master and worker Pods go through a one-time resources
-  update, which recreates the Pods where the cluster cannot resize them in place. A CacheRuntime
-  that sets no `resources` is not affected, unless its template declares none either and its
-  workloads carry resources from an earlier override or a manual edit: those are cleared.
 - ⚠️ **A request must not exceed its limit after the merge**: the template and the CacheRuntime
   can each be valid and still merge into a request above its limit, for example a template
   `requests.cpu: 1` with a CacheRuntime `limits.cpu: 500m`. Huge pages (`hugepages-*`) and
@@ -129,8 +124,7 @@ or is cleared from the workload when the template does not declare it. An empty 
   the CacheRuntimeClass template does not declare makes the API server reject every master or worker
   Pod that is created or recreated (`must be one of the names in pod.spec.resourceClaims`), and the
   component stays NotReady. Clusters without `DynamicResourceAllocation` enabled (off by default
-  before K8s 1.34) drop `claims` silently instead. Earlier releases ignored a CacheRuntime that set
-  only `claims`.
+  before K8s 1.34) drop `claims` silently instead.
 - ⚠️ **Kubernetes version requirement**: K8s >= 1.27 with the `InPlacePodVerticalScaling` Feature Gate enabled.
   ```bash
   # Check if the Feature Gate is enabled
