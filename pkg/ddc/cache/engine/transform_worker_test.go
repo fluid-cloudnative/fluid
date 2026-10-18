@@ -284,8 +284,9 @@ var _ = Describe("CacheEngine Transform Worker Tests", Label("pkg.ddc.cache.engi
 				err := engine.transformWorker(dataset, runtimeObj, runtimeClass, config, value)
 				Expect(err).To(MatchError("invalid worker resources: cpu request 1 exceeds limit 500m"))
 				Expect(recorder.Events).To(Receive(And(
-					ContainSubstring(common.RuntimeResourcesConflict),
+					HavePrefix(corev1.EventTypeWarning+" "+common.RuntimeResourcesConflict+" "),
 					ContainSubstring("cpu request 1 exceeds limit 500m"))))
+				Expect(recorder.Events).To(BeEmpty())
 			})
 
 			Context("when transforming worker volumes", func() {

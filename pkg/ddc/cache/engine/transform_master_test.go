@@ -212,8 +212,9 @@ var _ = Describe("CacheEngine Transform Master Tests", Label("pkg.ddc.cache.engi
 				err := engine.transformMaster(dataset, runtimeObj, runtimeClass, config, value)
 				Expect(err).To(MatchError("invalid master resources: cpu request 1 exceeds limit 500m"))
 				Expect(recorder.Events).To(Receive(And(
-					ContainSubstring(common.RuntimeResourcesConflict),
+					HavePrefix(corev1.EventTypeWarning+" "+common.RuntimeResourcesConflict+" "),
 					ContainSubstring("cpu request 1 exceeds limit 500m"))))
+				Expect(recorder.Events).To(BeEmpty())
 			})
 		})
 

@@ -209,8 +209,9 @@ var _ = Describe("CacheEngine Transform Client Tests", Label("pkg.ddc.cache.engi
 				err := engine.transformClient(dataset, runtimeObj, runtimeClass, config, value)
 				Expect(err).To(MatchError("invalid client resources: cpu request 1 exceeds limit 500m"))
 				Expect(recorder.Events).To(Receive(And(
-					ContainSubstring(common.RuntimeResourcesConflict),
+					HavePrefix(corev1.EventTypeWarning+" "+common.RuntimeResourcesConflict+" "),
 					ContainSubstring("cpu request 1 exceeds limit 500m"))))
+				Expect(recorder.Events).To(BeEmpty())
 			})
 		})
 
