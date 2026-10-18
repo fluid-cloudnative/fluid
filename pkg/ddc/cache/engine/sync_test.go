@@ -37,6 +37,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	cclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
@@ -934,6 +935,21 @@ var _ = Describe("CacheEngine Sync Tests", Label("pkg.ddc.cache.engine.sync_test
 
 				syncWorkerVersion(datav1alpha1.VersionSpec{})
 				Expect(imageOfWorker()).To(Equal("test-worker:latest"))
+			})
+
+			It("should keep the image and emit a Warning event when the template cannot complete the version", func() {
+				recorder := record.NewFakeRecorder(10)
+				engine.Recorder = recorder
+				runtimeClass.Topology.Worker.Template.Spec.Containers[0].Image =
+					"test-worker@sha256:067614b70d25b496e3edc3480747d558ee8a364ef47a67f669f5d96ca5098552"
+				before := imageOfWorker()
+
+				syncWorkerVersion(datav1alpha1.VersionSpec{ImageTag: "v2"})
+
+				Expect(imageOfWorker()).To(Equal(before))
+				Expect(recorder.Events).To(Receive(And(
+					ContainSubstring(common.RuntimeVersionIncomplete),
+					ContainSubstring(`imageTag "v2"`))))
 			})
 
 			It("should keep the template tag when only the image is set", func() {

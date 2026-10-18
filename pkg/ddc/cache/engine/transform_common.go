@@ -133,7 +133,8 @@ func (e *CacheEngine) transformComponentPodTemplate(runtimeSpec datav1alpha1.Cac
 	if len(podTemplate.Spec.Containers) > 0 {
 		// transform Container Image name etc. A version naming only one of image and imageTag
 		// takes the other half from the template rather than being dropped.
-		e.logIncompleteVersion(componentValue.ComponentType, runtimeCompSpec.RuntimeVersion, podTemplate.Spec.Containers[0].Image)
+		// The sync that follows creation emits the event; creation only logs.
+		e.reportIncompleteVersion(nil, componentValue.ComponentType, runtimeCompSpec.RuntimeVersion, podTemplate.Spec.Containers[0].Image)
 		podTemplate.Spec.Containers[0].Image = componentImage(runtimeCompSpec.RuntimeVersion, podTemplate.Spec.Containers[0].Image)
 		if len(runtimeCompSpec.RuntimeVersion.ImagePullPolicy) > 0 {
 			podTemplate.Spec.Containers[0].ImagePullPolicy = (corev1.PullPolicy)(runtimeCompSpec.RuntimeVersion.ImagePullPolicy)
@@ -231,11 +232,13 @@ func componentImage(runtimeVersion datav1alpha1.VersionSpec, templateImage strin
 	return templateImage
 }
 
-// logIncompleteVersion records a runtimeVersion that names only part of the image when the
+// reportIncompleteVersion records a runtimeVersion that names only part of the image when the
 // template cannot supply the rest. desiredComponentVersion deliberately does not guess there, so
 // the component keeps its image; without this the edit would be accepted and discarded with
-// nothing to show for it.
-func (e *CacheEngine) logIncompleteVersion(componentType common.ComponentType,
+// nothing to show for it. The log is written at the default verbosity because the controller
+// runs without a verbosity flag, and a Warning event is emitted on runtime when it is given, so
+// the user sees why the edit did not land.
+func (e *CacheEngine) reportIncompleteVersion(runtime *datav1alpha1.CacheRuntime, componentType common.ComponentType,
 	runtimeVersion datav1alpha1.VersionSpec, templateImage string) {
 	if runtimeVersion.Image == "" && runtimeVersion.ImageTag == "" {
 		return
@@ -246,9 +249,14 @@ func (e *CacheEngine) logIncompleteVersion(componentType common.ComponentType,
 		return
 	}
 
-	e.Log.V(1).Info("runtimeVersion cannot be completed from the CacheRuntimeClass template, leaving the image unchanged",
+	e.Log.Info("runtimeVersion cannot be completed from the CacheRuntimeClass template, leaving the image unchanged",
 		"component", componentType, "image", runtimeVersion.Image, "imageTag", runtimeVersion.ImageTag,
 		"templateImage", templateImage)
+	if runtime != nil && e.Recorder != nil {
+		e.Recorder.Eventf(runtime, corev1.EventTypeWarning, common.RuntimeVersionIncomplete,
+			"%s runtimeVersion (image %q, imageTag %q) cannot be completed from the CacheRuntimeClass template image %q, so the image is left unchanged; set both image and imageTag",
+			componentType, runtimeVersion.Image, runtimeVersion.ImageTag, templateImage)
+	}
 }
 
 // splitImageReference splits a container image reference into its repository and tag. The tag

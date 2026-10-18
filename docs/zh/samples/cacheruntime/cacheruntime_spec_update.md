@@ -57,8 +57,8 @@ spec:
   - 都不设置：使用模板镜像 `fluid-cache:v1.0.0`
 - 同时设置了 `image` 和 `imageTag` 的 `runtimeVersion` 直接使用，即使模板镜像使用 digest 固定。
 - 只设置了其中一半、而另一半无法补全时（只设置了 `image` 而模板镜像没有 tag；模板镜像或 `image` 使用 digest
-  （`@sha256:...`）固定），创建时组件使用模板镜像；更新时修改不会生效，组件保持原有镜像（controller 以 `-v=1`
-  运行时会输出日志）。`runtimeVersion` 无法表达 digest 引用，如需固定到 digest，请写在 CacheRuntimeClass 模板中。
+  （`@sha256:...`）固定），创建时组件使用模板镜像；更新时修改不会生效，组件保持原有镜像。这两种情况下，控制器都会在
+  CacheRuntime 上发出 `RuntimeVersionIncomplete` Warning event，并输出日志。`runtimeVersion` 无法表达 digest 引用，如需固定到 digest，请写在 CacheRuntimeClass 模板中。
 - 未单独指定镜像的数据操作（如 DataLoad）使用与 worker 相同的补全结果。worker 的版本无法补全时，数据操作使用模板镜像，
   因此可能与保持原有镜像的 worker 不一致，例如模板镜像改为使用 digest 固定之后。
 

@@ -53,7 +53,7 @@ spec:
   - Only `image: registry.example.com/fluid-cache`: the template's tag is kept (**not `latest`**), giving `registry.example.com/fluid-cache:v1.0.0`
   - Neither: the template image `fluid-cache:v1.0.0` is used
 - A `runtimeVersion` setting both `image` and `imageTag` is used as is, even when the template image is pinned by digest.
-- When only one half is set and the other cannot be completed (only `image` is set and the template image has no tag, or the template image or `image` is pinned by digest (`@sha256:...`)), the component uses the template image on creation; on update the edit has no effect and the component keeps its current image (logged when the controller runs with `-v=1`). `runtimeVersion` cannot express a digest reference; to pin a digest, put it in the CacheRuntimeClass template.
+- When only one half is set and the other cannot be completed (only `image` is set and the template image has no tag, or the template image or `image` is pinned by digest (`@sha256:...`)), the component uses the template image on creation; on update the edit has no effect and the component keeps its current image. In both cases the controller emits a `RuntimeVersionIncomplete` Warning event on the CacheRuntime and logs the edit. `runtimeVersion` cannot express a digest reference; to pin a digest, put it in the CacheRuntimeClass template.
 - Data operations that name no image of their own (such as DataLoad) use the same completed image as the worker. When the worker's version cannot be completed they use the template image, so they can differ from a worker that kept its current image, for example after the template image is changed to one pinned by digest.
 
 **Limitations**:
