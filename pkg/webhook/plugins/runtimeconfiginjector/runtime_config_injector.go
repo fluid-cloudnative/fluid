@@ -101,6 +101,15 @@ func (injector *RuntimeConfigInjector) MutateWithReader(pod *corev1.Pod, runtime
 
 	mounts := make([]configMount, 0, len(datasetNames))
 	for _, ds := range datasetNames {
+		// Only a cache runtime renders the config this plugin mounts. A dataset of any other
+		// runtime listed in the annotation would otherwise be reported as a config map that
+		// is not there yet, which points the user at the wrong cause.
+		if runtimeType := runtimeInfos[ds].GetRuntimeType(); runtimeType != common.CacheRuntime {
+			return true, webhookutils.NewRejectPodError(fmt.Errorf(
+				"dataset %q is served by a %q runtime, while runtime config injection only supports cache runtimes; mount the dataset through its PVC instead",
+				ds, runtimeType))
+		}
+
 		// The dataset name is already known to be a valid object name, since the caller
 		// resolved a runtime info for it. What is not guaranteed for a dataset that comes
 		// from a PVC is that it still fits once "fluid-runtime-config-" is prepended to

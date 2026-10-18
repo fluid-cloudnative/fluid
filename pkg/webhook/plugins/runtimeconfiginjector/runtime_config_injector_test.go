@@ -50,7 +50,7 @@ func configMapFor(datasetName string) *corev1.ConfigMap {
 func runtimeInfosFor(datasetNames ...string) map[string]base.RuntimeInfoInterface {
 	runtimeInfos := map[string]base.RuntimeInfoInterface{}
 	for _, datasetName := range datasetNames {
-		runtimeInfo, err := base.BuildRuntimeInfo(datasetName, testNamespace, "")
+		runtimeInfo, err := base.BuildRuntimeInfo(datasetName, testNamespace, common.CacheRuntime)
 		Expect(err).NotTo(HaveOccurred())
 		runtimeInfos[datasetName] = runtimeInfo
 	}
@@ -290,6 +290,21 @@ var _ = Describe("RuntimeConfigInjector", func() {
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("too long"))
 				// Retrying cannot make the name shorter, so the pod is rejected right away.
+				Expect(webhookutils.IsRejectPodError(err)).To(BeTrue())
+				Expect(shouldStop).To(BeTrue())
+				Expect(pod.Spec.Volumes).To(BeEmpty())
+			})
+		})
+
+		Context("when a dataset is served by a runtime other than a cache runtime", func() {
+			It("should reject the pod naming the runtime type", func() {
+				runtimeInfo, err := base.BuildRuntimeInfo("demo", testNamespace, common.AlluxioRuntime)
+				Expect(err).NotTo(HaveOccurred())
+				injector := newInjector(configMapFor("demo"))
+				pod := podWithContainers("app")
+
+				shouldStop, err := injector.Mutate(pod, map[string]base.RuntimeInfoInterface{"demo": runtimeInfo})
+				Expect(err).To(MatchError(ContainSubstring(`served by a "alluxio" runtime`)))
 				Expect(webhookutils.IsRejectPodError(err)).To(BeTrue())
 				Expect(shouldStop).To(BeTrue())
 				Expect(pod.Spec.Volumes).To(BeEmpty())
