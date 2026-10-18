@@ -46,7 +46,7 @@ func (e *CacheEngine) transformClient(dataset *datav1alpha1.Dataset, runtime *da
 
 	// transform container related config, currently only modify the first container
 	e.transformComponentPodTemplate(runtime.Spec, runtimeClient.RuntimeComponentCommonSpec, dataset, value.Client)
-	if err = validateComponentResources(value.Client); err != nil {
+	if err = e.checkComponentResources(runtime, value.Client); err != nil {
 		return err
 	}
 

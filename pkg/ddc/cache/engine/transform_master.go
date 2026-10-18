@@ -42,7 +42,7 @@ func (e *CacheEngine) transformMaster(dataset *datav1alpha1.Dataset, runtime *da
 
 	// transform container related config, currently only modify the first container
 	e.transformComponentPodTemplate(runtime.Spec, runtimeMaster.RuntimeComponentCommonSpec, dataset, value.Master)
-	if err = validateComponentResources(value.Master); err != nil {
+	if err = e.checkComponentResources(runtime, value.Master); err != nil {
 		return err
 	}
 
