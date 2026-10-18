@@ -311,6 +311,21 @@ var _ = Describe("RuntimeConfigInjector", func() {
 			})
 		})
 
+		Context("when the dataset name cannot form a volume name", func() {
+			It("should reject the pod before touching it", func() {
+				// A dataset object name may contain dots; one resolved from a PVC reaches the
+				// plugin without the annotation path's name check.
+				injector := newInjector(configMapFor("demo.v1"))
+				pod := podWithContainers("app")
+
+				shouldStop, err := injector.Mutate(pod, runtimeInfosFor("demo.v1"))
+				Expect(err).To(MatchError(ContainSubstring(`dataset name "demo.v1" cannot form the volume name`)))
+				Expect(webhookutils.IsRejectPodError(err)).To(BeTrue())
+				Expect(shouldStop).To(BeTrue())
+				Expect(pod.Spec.Volumes).To(BeEmpty())
+			})
+		})
+
 		Context("when a container already mounts another volume at the config's path", func() {
 			conflictingMount := corev1.VolumeMount{Name: "own-config", MountPath: "/etc/fluid/config/demo/"}
 

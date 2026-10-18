@@ -33,6 +33,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/validation"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -121,6 +122,13 @@ func (injector *RuntimeConfigInjector) MutateWithReader(pod *corev1.Pod, runtime
 		}
 
 		mount := buildConfigMount(ds)
+		// A dataset object name may contain dots, which a volume name may not. The annotation
+		// path rejects such a name up front; a dataset resolved from a PVC has not been checked.
+		if nameErrs := validation.IsDNS1123Label(mount.volume.Name); len(nameErrs) > 0 {
+			return true, webhookutils.NewRejectPodError(fmt.Errorf(
+				"dataset name %q cannot form the volume name %q of its runtime config: %s",
+				ds, mount.volume.Name, strings.Join(nameErrs, "; ")))
+		}
 		if conflictErr := checkVolumeNameConflict(pod, mount); conflictErr != nil {
 			return true, webhookutils.NewRejectPodError(conflictErr)
 		}
