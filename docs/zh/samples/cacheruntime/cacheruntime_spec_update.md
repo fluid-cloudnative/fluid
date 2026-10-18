@@ -73,11 +73,6 @@ spec:
   CacheRuntimeClass，因此修改在各 CacheRuntime 的下一次 reconcile 时生效，而不是立即生效。client 不同步。
 - ⚠️ 从 CacheRuntime 中删除 `runtimeVersion` 会让组件回到模板镜像。模板镜像没有 tag 或使用 digest 固定时
   例外：组件保持当前镜像，需要手动设置完整的 `runtimeVersion` 或重建 CacheRuntime。
-- ⚠️ **升级说明**：在旧版本中，只设置了 `image` 或 `imageTag` 其中之一的 `runtimeVersion` 在创建和更新时都会
-  被忽略（见 [#6178](https://github.com/fluid-cloudnative/fluid/issues/6178)），删除 `runtimeVersion` 后组件也会
-  保持最后的镜像。升级后的第一次 reconcile 会按上述规则重新计算每个未禁用的 master 和 worker 的镜像，仅当得到
-  完整的镜像且与当前镜像不同时，相应的 Pod 才会更新一次镜像。通常涉及只设置了一半、删除过 `runtimeVersion`，
-  或所用模板的镜像在其创建后被修改过的 CacheRuntime；完整设置的 `runtimeVersion` 已与工作负载一致的不受影响。
 
 ---
 
