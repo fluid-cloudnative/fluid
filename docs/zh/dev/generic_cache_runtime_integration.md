@@ -225,7 +225,7 @@ exec "$@"
 
 - 注解里的数据集要和业务 Pod 在同一个 namespace。ConfigMap 卷不能跨 namespace 引用，所以注解里只写数据集名。
 - 注入只在 Pod 创建时做一次，之后 `volumes` 这些字段就改不了了。注解里的数据集不存在或者还没 Bound 时，Pod 会创建失败，报错里会写明是哪个数据集；Deployment、Job 这类控制器会自己重试，数据集 Bound 之后就能创建成功。
-- 运行时配置的 ConfigMap 不存在，或者里面没有 `runtime.sh` 时，Pod 同样会创建失败，报错里会写明是哪个 ConfigMap、缺了什么。数据集刚 Bound 时 ConfigMap 可能还没生成，控制器重试几次就好；一直缺 `runtime.sh` 的话，通常是 cacheruntime-controller 的版本比较旧，升级 Fluid 时要先升级它，再给业务 Pod 打注入标签。
+- 运行时配置的 ConfigMap 不存在，或者里面没有 `runtime.sh` 时，Pod 同样会创建失败，报错里会写明是哪个 ConfigMap、缺了什么。数据集刚 Bound 时 ConfigMap 可能还没生成，控制器重试几次就好；一直缺 `runtime.sh` 的话，请检查生成这个 ConfigMap 的 cacheruntime-controller 是否正常运行。
 - 以下几种情况 Pod 也会创建失败，报错里会写明原因：`fluid.io/inject` 和 FUSE 注入的标签（`serverless.fluid.io/inject`、`fuse.serverful.fluid.io/inject`，以及已废弃的 `fuse.sidecar.fluid.io/inject` 和 serverless platform 标签）同时出现；数据集名超过 42 个字符（注入的卷以 ConfigMap 命名，要加上 `fluid-runtime-config-` 前缀，而卷名最长 63 个字符）；Pod 自己已经有一个叫 `fluid-runtime-config-<数据集名>` 的卷；容器里已经有别的卷挂在 `/etc/fluid/config/<数据集名>/`。名字以 `fluid-fuse` 开头的容器不会被注入，所以也不检查它们的挂载。
 - Runtime 之后有变化（比如 Master 扩容），ConfigMap 会更新，kubelet 也会同步容器里的文件，但应用只在启动时 `source` 一次，不会重新读。
 - 用 `source` 的方式一次只能用一个数据集。`runtime.sh` 里的变量名不带数据集前缀，连着 `source` 两个，后一个会把前一个覆盖掉。要同时用多个数据集，可以读同目录下的 `runtime.json`，或者每 `source` 一个就先把要用的变量存到别的名字下。
