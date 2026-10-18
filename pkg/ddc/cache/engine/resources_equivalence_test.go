@@ -53,6 +53,9 @@ type resourcesEquivalenceCase struct {
 	template    corev1.ResourceRequirements
 	runtime     corev1.ResourceRequirements
 	tieredStore datav1alpha1.RuntimeTieredStore
+	// For a tiered store row: the quota the creation path must charge and the memory
+	// it must end up with, so the row cannot pass with the quota silently dropped.
+	wantQuota, wantMemoryRequest, wantMemoryLimit string
 }
 
 func resourcesEquivalenceTable() []resourcesEquivalenceCase {
@@ -143,6 +146,9 @@ func resourcesEquivalenceTable() []resourcesEquivalenceCase {
 					},
 				}},
 			},
+			wantQuota:         "2Gi",
+			wantMemoryRequest: "4Gi",
+			wantMemoryLimit:   "10Gi",
 		},
 		{
 			desc:     "a process memory tier charges the merged memory",
@@ -155,6 +161,9 @@ func resourcesEquivalenceTable() []resourcesEquivalenceCase {
 					ProcessMemory: &datav1alpha1.ProcessMemoryMediumSource{Quota: resource.MustParse("1Gi")},
 				}},
 			},
+			wantQuota:         "1Gi",
+			wantMemoryRequest: "4Gi",
+			wantMemoryLimit:   "5Gi",
 		},
 	}
 }
@@ -200,6 +209,20 @@ var _ = Describe("CacheRuntime resources creation/sync equivalence",
 			tc := tc
 
 			Describe(tc.desc, func() {
+				if tc.wantQuota != "" {
+					It("charges the tiered store quota on the creation path", func() {
+						pod := renderWorker(Default, tc)
+						quota := chargedTieredStoreMemoryQuota(&pod.Spec)
+						resources := pod.Spec.Containers[0].Resources
+
+						Expect(quota.Cmp(resource.MustParse(tc.wantQuota))).To(BeZero(), "quota %s", quota.String())
+						Expect(resources.Requests.Memory().Cmp(resource.MustParse(tc.wantMemoryRequest))).To(BeZero(),
+							"memory request %s", resources.Requests.Memory().String())
+						Expect(resources.Limits.Memory().Cmp(resource.MustParse(tc.wantMemoryLimit))).To(BeZero(),
+							"memory limit %s", resources.Limits.Memory().String())
+					})
+				}
+
 				It("resolves to the same resources on both paths", func() {
 					renderedPod := renderWorker(Default, tc)
 					rendered := renderedPod.Spec.Containers[0].Resources
