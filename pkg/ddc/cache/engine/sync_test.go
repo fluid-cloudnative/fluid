@@ -948,8 +948,9 @@ var _ = Describe("CacheEngine Sync Tests", Label("pkg.ddc.cache.engine.sync_test
 
 				Expect(imageOfWorker()).To(Equal(before))
 				Expect(recorder.Events).To(Receive(And(
-					ContainSubstring(common.RuntimeVersionIncomplete),
+					HavePrefix(corev1.EventTypeWarning+" "+common.RuntimeVersionIncomplete+" "),
 					ContainSubstring(`imageTag "v2"`))))
+				Expect(recorder.Events).To(BeEmpty())
 			})
 
 			It("should keep the template tag when only the image is set", func() {

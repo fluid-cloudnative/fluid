@@ -293,8 +293,9 @@ var _ = Describe("CacheEngine desiredComponentVersion Tests", Label("pkg.ddc.cac
 				datav1alpha1.VersionSpec{ImageTag: "v9"}, digestImage)
 
 			Expect(recorder.Events).To(Receive(And(
-				ContainSubstring(common.RuntimeVersionIncomplete),
+				HavePrefix(corev1.EventTypeWarning+" "+common.RuntimeVersionIncomplete+" "),
 				ContainSubstring(`imageTag "v9"`))))
+			Expect(recorder.Events).To(BeEmpty())
 		})
 
 		It("should emit no event for a partial version the template completes", func() {
