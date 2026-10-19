@@ -411,6 +411,37 @@ var _ = Describe("RuntimeConfigInjector", func() {
 				Expect(pod.Spec.InitContainers[0].VolumeMounts).To(ConsistOf(ownMount))
 			})
 
+			DescribeTable("should reject the pod if the config map volume is customized",
+				func(customize func(*corev1.ConfigMapVolumeSource)) {
+					injector := newInjector(configMapFor("demo"))
+					pod := podWithContainers("app")
+					volume := buildConfigMount("demo").volume
+					customize(volume.ConfigMap)
+					mount := buildConfigMount("demo").volumeMount
+					pod.Spec.Volumes = []corev1.Volume{volume}
+					pod.Spec.Containers[0].VolumeMounts = []corev1.VolumeMount{mount}
+					before := pod.DeepCopy()
+
+					shouldStop, err := injector.Mutate(pod, runtimeInfosFor("demo"))
+					// Replacing the volume source would drop what the app projected.
+					Expect(webhookutils.IsRejectPodError(err)).To(BeTrue())
+					Expect(err.Error()).To(ContainSubstring(volumeName))
+					Expect(shouldStop).To(BeTrue())
+					Expect(pod).To(Equal(before))
+				},
+				Entry("with projected items", func(source *corev1.ConfigMapVolumeSource) {
+					source.Items = []corev1.KeyToPath{{Key: common.RuntimeConfigShellFileName, Path: "config.sh"}}
+				}),
+				Entry("with a non-default mode", func(source *corev1.ConfigMapVolumeSource) {
+					mode := int32(0400)
+					source.DefaultMode = &mode
+				}),
+				Entry("as optional", func(source *corev1.ConfigMapVolumeSource) {
+					optional := true
+					source.Optional = &optional
+				}),
+			)
+
 			It("should accept the config map volume as the api server defaults it", func() {
 				injector := newInjector(configMapFor("demo"))
 				pod := podWithContainers("app")

@@ -208,9 +208,9 @@ func buildConfigMount(ds string) configMount {
 
 // checkVolumeNameConflict fails if the pod already uses the config's volume name for
 // something else: the injection overrides a volume or mount of the same name, which would
-// silently swap the app's own volume for the config, or move its mount elsewhere. What is
-// left alone is a spec the injection has already produced, possibly with api server
-// defaults filled in.
+// silently swap the app's own volume for the config, drop the files and modes it projects,
+// or move its mount elsewhere. What is left alone is a spec the injection has already
+// produced, possibly with api server defaults filled in.
 func checkVolumeNameConflict(pod *corev1.Pod, mount configMount) error {
 	for _, existing := range pod.Spec.Volumes {
 		if existing.Name != mount.volume.Name {
@@ -219,6 +219,10 @@ func checkVolumeNameConflict(pod *corev1.Pod, mount configMount) error {
 		if existing.ConfigMap == nil || existing.ConfigMap.Name != mount.volume.ConfigMap.Name {
 			return fmt.Errorf("the pod already has a volume named %q that is not the config map %q, so the runtime config cannot be injected",
 				existing.Name, mount.volume.ConfigMap.Name)
+		}
+		if !isDefaultConfigMapProjection(existing.ConfigMap) {
+			return fmt.Errorf("the pod already has a volume named %q that projects the config map %q with its own items, mode or optional setting, which the runtime config injection would replace",
+				existing.Name, existing.ConfigMap.Name)
 		}
 	}
 
@@ -239,6 +243,15 @@ func checkVolumeNameConflict(pod *corev1.Pod, mount configMount) error {
 		}
 	}
 	return nil
+}
+
+// isDefaultConfigMapProjection reports whether a config map volume projects every key with
+// the default mode and is not optional, i.e. whether it is what the injection builds once
+// the api server has defaulted it.
+func isDefaultConfigMapProjection(source *corev1.ConfigMapVolumeSource) bool {
+	return len(source.Items) == 0 &&
+		(source.DefaultMode == nil || *source.DefaultMode == corev1.ConfigMapVolumeSourceDefaultMode) &&
+		(source.Optional == nil || !*source.Optional)
 }
 
 // checkMountPathConflict fails if a container the config would be injected into already
