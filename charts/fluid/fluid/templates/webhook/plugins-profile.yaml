@@ -10,12 +10,22 @@ data:
   The values may carry no clientless group although the webhook rule for it is always
   rendered, e.g. on `helm upgrade --reuse-values` from a release that predates it, which
   reuses that release's defaults. Fall back to the chart's own group then, so pods
-  matching the rule still get a plugin.
+  matching the rule still get a plugin. Keep the fallback in line with the clientless
+  group in values.yaml.
+  Values that are not maps are left for the paths below to handle as before.
 */}}
-{{- $valuesProfile := deepCopy .Values.webhook.pluginsProfile }}
+{{- $clientless := dict "withDataset" (list "RuntimeConfigInjector") "withoutDataset" (list) }}
+{{- $valuesProfile := .Values.webhook.pluginsProfile }}
+{{- if kindIs "map" $valuesProfile }}
+{{- $valuesProfile = deepCopy $valuesProfile }}
 {{- $valuesPlugins := get $valuesProfile "plugins" }}
-{{- if and (kindIs "map" $valuesPlugins) (not (get $valuesPlugins "clientless")) }}
-{{- $_ := set $valuesPlugins "clientless" (dict "withDataset" (list "RuntimeConfigInjector") "withoutDataset" (list)) }}
+{{- if kindIs "map" $valuesPlugins }}
+{{- if get $valuesPlugins "clientless" }}
+{{- $clientless = get $valuesPlugins "clientless" }}
+{{- else }}
+{{- $_ := set $valuesPlugins "clientless" $clientless }}
+{{- end }}
+{{- end }}
 {{- end }}
 {{- if .Values.webhook.forceReplacePluginsProfile }}
 {{ toYaml $valuesProfile | indent 4 }}
@@ -35,7 +45,7 @@ data:
 {{- $profile := fromYaml $existingProfile }}
 {{- $plugins := get $profile "plugins" }}
 {{- if and (not (hasKey $profile "Error")) (kindIs "map" $plugins) (not (hasKey $plugins "clientless")) }}
-{{- $_ := set $plugins "clientless" (get $valuesPlugins "clientless") }}
+{{- $_ := set $plugins "clientless" $clientless }}
 {{ toYaml $profile | indent 4 }}
 {{- else }}
 {{- /*
