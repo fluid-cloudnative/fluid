@@ -19,6 +19,7 @@ package engine
 import (
 	"os"
 	"reflect"
+	"strings"
 	"time"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
@@ -199,10 +200,15 @@ func (e *CacheEngine) syncRuntimeSpec(ctx cruntime.ReconcileRequestContext, runt
 			Namespace: e.namespace,
 		}
 		manager := component.NewComponentHelper(common.ComponentTypeMaster, e.Client)
+		podSpec, err := manager.GetPodSpec(ctx.Context, masterIdentity)
+		if err != nil {
+			e.Log.Error(err, "failed to read the master pod spec", "component", masterIdentity.Name)
+			return err
+		}
 		masterSpec := component.ComponentSpec{
 			Version: runtime.Spec.Master.RuntimeVersion,
 			Resources: e.validDesiredResources(runtime, common.ComponentTypeMaster,
-				desiredComponentResources(runtime.Spec.Master.Resources, runtimeClass.Topology.Master)),
+				desiredComponentResources(runtime.Spec.Master.Resources, runtimeClass.Topology.Master), podSpec),
 			Replicas: &runtime.Spec.Master.Replicas,
 		}
 		if err := manager.SyncComponentSpec(ctx.Context, masterIdentity, masterSpec); err != nil {
@@ -226,15 +232,15 @@ func (e *CacheEngine) syncRuntimeSpec(ctx cruntime.ReconcileRequestContext, runt
 		// spec: tieredStore is not a supported update field, and SyncComponentSpec
 		// only patches resources, so a spec-derived quota would move the container's
 		// memory while the tmpfs volumes kept their original size.
+		podSpec, err := manager.GetPodSpec(ctx.Context, workerIdentity)
+		if err != nil {
+			e.Log.Error(err, "failed to read the worker pod spec", "component", workerIdentity.Name)
+			return err
+		}
 		workerResources := e.validDesiredResources(runtime, common.ComponentTypeWorker,
-			desiredComponentResources(runtime.Spec.Worker.Resources, runtimeClass.Topology.Worker))
+			desiredComponentResources(runtime.Spec.Worker.Resources, runtimeClass.Topology.Worker), podSpec)
 		// nil only when the merged resources conflict: leave them unsynced.
 		if workerResources != nil {
-			podSpec, err := manager.GetPodSpec(ctx.Context, workerIdentity)
-			if err != nil {
-				e.Log.Error(err, "failed to read the worker pod spec", "component", workerIdentity.Name)
-				return err
-			}
 			resources := withTieredStoreMemoryQuota(*workerResources, chargedTieredStoreMemoryQuota(podSpec))
 			workerResources = &resources
 		}
@@ -312,10 +318,16 @@ func (e *CacheEngine) syncDatasetCacheStates(ctx cruntime.ReconcileRequestContex
 	return
 }
 
-// validDesiredResources returns desired when it is a valid pod spec. Otherwise it emits a
-// Warning event on the runtime naming the conflicting keys and returns nil, so the sync
-// leaves the workload's resources as they are while image and replicas still sync.
-func (e *CacheEngine) validDesiredResources(runtime *datav1alpha1.CacheRuntime, componentType common.ComponentType, desired *corev1.ResourceRequirements) *corev1.ResourceRequirements {
+// validDesiredResources returns the desired resources to sync to the workload whose pod spec
+// is given. When the merged requests and limits conflict it emits a Warning event on the
+// runtime naming the conflicting keys and returns nil, so the sync leaves the workload's
+// resources as they are while image and replicas still sync. Container claims the sync would
+// add without the workload's pod spec declaring them are dropped with a Warning event, and the
+// rest is still synced:
+// without DynamicResourceAllocation the API server ignores claims anyway, so they must not
+// hold back a requests or limits edit.
+func (e *CacheEngine) validDesiredResources(runtime *datav1alpha1.CacheRuntime, componentType common.ComponentType,
+	desired *corev1.ResourceRequirements, podSpec *corev1.PodSpec) *corev1.ResourceRequirements {
 	if desired == nil {
 		return nil
 	}
@@ -328,5 +340,18 @@ func (e *CacheEngine) validDesiredResources(runtime *datav1alpha1.CacheRuntime, 
 		}
 		return nil
 	}
-	return desired
+
+	declared, undeclared := splitDeclaredClaims(desired.Claims, podSpec)
+	if len(undeclared) == 0 {
+		return desired
+	}
+	e.Log.Info("Skip syncing claims the workload does not declare", "component", componentType, "claims", undeclared)
+	if e.Recorder != nil {
+		e.Recorder.Eventf(runtime, corev1.EventTypeWarning, common.RuntimeResourcesConflict,
+			"%s resource claims %s are not synced: the workload's pod-level resourceClaims do not declare them; recreate the CacheRuntime to add them",
+			componentType, strings.Join(undeclared, ", "))
+	}
+	synced := desired.DeepCopy()
+	synced.Claims = declared
+	return synced
 }

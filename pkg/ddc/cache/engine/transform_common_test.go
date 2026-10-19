@@ -496,6 +496,38 @@ var _ = Describe("CacheEngine component resources Tests", Label("pkg.ddc.cache.e
 		})
 	})
 
+	Describe("splitDeclaredClaims", func() {
+		podSpec := &corev1.PodSpec{ResourceClaims: []corev1.PodResourceClaim{{Name: "gpu"}}}
+
+		It("should split nothing, even without a pod spec", func() {
+			declared, undeclared := splitDeclaredClaims(nil, nil)
+			Expect(declared).To(BeEmpty())
+			Expect(undeclared).To(BeEmpty())
+		})
+
+		It("should keep the claims the pod spec declares and name the others in order", func() {
+			declared, undeclared := splitDeclaredClaims(
+				[]corev1.ResourceClaim{{Name: "nic"}, {Name: "gpu"}, {Name: "fpga"}}, podSpec)
+			Expect(declared).To(Equal([]corev1.ResourceClaim{{Name: "gpu"}}))
+			Expect(undeclared).To(Equal([]string{"fpga", "nic"}))
+		})
+
+		It("should keep a claim the container already carries, even if the pod spec does not declare it", func() {
+			carried := &corev1.PodSpec{Containers: []corev1.Container{{
+				Resources: corev1.ResourceRequirements{Claims: []corev1.ResourceClaim{{Name: "nic"}}},
+			}}}
+			declared, undeclared := splitDeclaredClaims([]corev1.ResourceClaim{{Name: "nic"}, {Name: "gpu"}}, carried)
+			Expect(declared).To(Equal([]corev1.ResourceClaim{{Name: "nic"}}))
+			Expect(undeclared).To(Equal([]string{"gpu"}))
+		})
+
+		It("should treat every claim as undeclared without a pod spec", func() {
+			declared, undeclared := splitDeclaredClaims([]corev1.ResourceClaim{{Name: "gpu"}}, nil)
+			Expect(declared).To(BeEmpty())
+			Expect(undeclared).To(Equal([]string{"gpu"}))
+		})
+	})
+
 	Describe("validateComponentResources", func() {
 		It("should name the component whose first container conflicts", func() {
 			value := &common.CacheRuntimeComponentValue{

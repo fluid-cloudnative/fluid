@@ -109,11 +109,14 @@ spec:
   此时控制器不同步该组件的 `resources`，工作负载保持当前值，并在 CacheRuntime 上发出
   `RuntimeResourcesConflict` Warning event，写明冲突的 key；新建的 CacheRuntime 若带有这样的组合，会创建失败。
   请在 CacheRuntime 上同时设置对应的 request（hugepages 和扩展资源设为与 limit 相等），或修改模板。
-- ⚠️ **`claims` 只能引用模板中声明的 Pod 级 `resourceClaims`**：CacheRuntime 只能设置容器的
-  `resources.claims`，不能添加 Pod 级的 `spec.resourceClaims`。引用 CacheRuntimeClass 模板中未声明的
-  claim 名时，新建或重建的 master/worker Pod 会被 API server 拒绝（`must be one of the names in
-  pod.spec.resourceClaims`），组件会一直处于 NotReady。未启用 `DynamicResourceAllocation` 的集群
-  （K8s 1.34 之前默认关闭）会静默丢弃 `claims`。
+- ⚠️ **`claims` 只能引用工作负载已声明的 Pod 级 `resourceClaims`**：CacheRuntime 只能设置容器的
+  `resources.claims`，不能添加 Pod 级的 `spec.resourceClaims`；创建后在 CacheRuntimeClass 模板中新增的
+  Pod 级 `resourceClaims` 也不会同步到已有的工作负载。创建时，引用模板中未声明的 claim 名会导致
+  master/worker Pod 被 API server 拒绝（`must be one of the names in pod.spec.resourceClaims`），组件会
+  一直处于 NotReady；未启用 `DynamicResourceAllocation` 的集群（K8s 1.34 之前默认关闭）则会静默丢弃
+  `claims`。更新时，若某个 claim 既未在工作负载中声明、工作负载上也还没有（无论来自 CacheRuntime 还是模板
+  修改），控制器不同步这个 claim，`resources` 的其余部分照常同步，并在 CacheRuntime 上发出
+  `RuntimeResourcesConflict` Warning event，写明该 claim。如需使用新的 claim，请重建 CacheRuntime。
 - ⚠️ **Kubernetes 版本要求**：需要 K8s >= 1.27 且启用 `InPlacePodVerticalScaling` Feature Gate
   ```bash
   # 检查 Feature Gate 是否启用

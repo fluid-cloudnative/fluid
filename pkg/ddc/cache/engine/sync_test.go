@@ -1246,6 +1246,85 @@ var _ = Describe("CacheEngine Sync Tests", Label("pkg.ddc.cache.engine.sync_test
 			})
 		})
 
+		Context("when the template adds a DRA claim after the workload was created", func() {
+			// The class edit declares the claim at both levels, but the sync only patches
+			// container resources: a container claim the workload's pod spec does not
+			// declare would make the API server reject every replacement Pod.
+			BeforeEach(func() {
+				runtimeClass.Topology.Worker.Template.Spec.ResourceClaims = []corev1.PodResourceClaim{{Name: "gpu"}}
+				runtimeClass.Topology.Worker.Template.Spec.Containers[0].Resources.Claims = []corev1.ResourceClaim{{Name: "gpu"}}
+			})
+
+			It("should sync the resources without the claim and emit a Warning event", func() {
+				recorder := record.NewFakeRecorder(10)
+				engine.Recorder = recorder
+				runtimeObj.Spec.Worker.Resources = corev1.ResourceRequirements{
+					Limits: corev1.ResourceList{corev1.ResourceMemory: resource.MustParse("4Gi")},
+				}
+
+				Expect(engine.syncRuntimeSpec(ctx, runtimeObj, runtimeClass)).To(Succeed())
+
+				sts := &workloadv1alpha1.AdvancedStatefulSet{}
+				key := types.NamespacedName{Name: workerSts, Namespace: "default"}
+				Expect(fakeClient.Get(ctx.Context, key, sts)).To(Succeed())
+				Expect(memLimitOf(workerSts)).To(Equal("4Gi"))
+				Expect(sts.Spec.Template.Spec.Containers[0].Resources.Claims).To(BeEmpty())
+				Expect(recorder.Events).To(HaveLen(1))
+				Expect(<-recorder.Events).To(And(
+					HavePrefix(corev1.EventTypeWarning+" "+common.RuntimeResourcesConflict+" "),
+					ContainSubstring("worker resource claims gpu are not synced")))
+			})
+
+			It("should sync the claim once the workload declares it", func() {
+				recorder := record.NewFakeRecorder(10)
+				engine.Recorder = recorder
+
+				sts := &workloadv1alpha1.AdvancedStatefulSet{}
+				key := types.NamespacedName{Name: workerSts, Namespace: "default"}
+				Expect(fakeClient.Get(ctx.Context, key, sts)).To(Succeed())
+				sts.Spec.Template.Spec.ResourceClaims = []corev1.PodResourceClaim{{Name: "gpu"}}
+				Expect(fakeClient.Update(ctx.Context, sts)).To(Succeed())
+
+				Expect(engine.syncRuntimeSpec(ctx, runtimeObj, runtimeClass)).To(Succeed())
+
+				Expect(fakeClient.Get(ctx.Context, key, sts)).To(Succeed())
+				Expect(sts.Spec.Template.Spec.Containers[0].Resources.Claims).To(Equal([]corev1.ResourceClaim{{Name: "gpu"}}))
+				Expect(recorder.Events).To(BeEmpty())
+			})
+		})
+
+		// Without DynamicResourceAllocation the API server ignores claims, so a claim the
+		// workload does not declare must not hold back the rest of a resources edit.
+		Context("when the CacheRuntime names an undeclared claim along with a memory limit", func() {
+			DescribeTable("should still sync the memory limit and drop only the claim",
+				func(componentType common.ComponentType, stsName string, setResources func(corev1.ResourceRequirements)) {
+					recorder := record.NewFakeRecorder(10)
+					engine.Recorder = recorder
+					setResources(corev1.ResourceRequirements{
+						Limits: corev1.ResourceList{corev1.ResourceMemory: resource.MustParse("4Gi")},
+						Claims: []corev1.ResourceClaim{{Name: "unused"}},
+					})
+
+					Expect(engine.syncRuntimeSpec(ctx, runtimeObj, runtimeClass)).To(Succeed())
+
+					sts := &workloadv1alpha1.AdvancedStatefulSet{}
+					Expect(fakeClient.Get(ctx.Context, types.NamespacedName{Name: stsName, Namespace: "default"}, sts)).To(Succeed())
+					Expect(memLimitOf(stsName)).To(Equal("4Gi"))
+					Expect(sts.Spec.Template.Spec.Containers[0].Resources.Claims).To(BeEmpty())
+					Expect(recorder.Events).To(HaveLen(1))
+					Expect(<-recorder.Events).To(And(
+						HavePrefix(corev1.EventTypeWarning+" "+common.RuntimeResourcesConflict+" "),
+						ContainSubstring(string(componentType)+" resource claims unused are not synced")))
+				},
+				Entry("for the master", common.ComponentTypeMaster, masterSts, func(r corev1.ResourceRequirements) {
+					runtimeObj.Spec.Master.Resources = r
+				}),
+				Entry("for the worker", common.ComponentTypeWorker, workerSts, func(r corev1.ResourceRequirements) {
+					runtimeObj.Spec.Worker.Resources = r
+				}),
+			)
+		})
+
 		Context("when the tiered store baseline comes from the template", func() {
 			// With the CacheRuntime declaring no resources, the baseline the quota is
 			// charged on top of is the CacheRuntimeClass template value. The quota must

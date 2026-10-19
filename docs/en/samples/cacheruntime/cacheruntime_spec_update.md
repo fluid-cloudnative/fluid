@@ -119,12 +119,17 @@ or is cleared from the workload when the template does not declare it. An empty 
   `RuntimeResourcesConflict` Warning event on the CacheRuntime naming the conflicting keys; a new
   CacheRuntime with such a pair fails to set up. Set the matching request on the CacheRuntime too
   (equal to the limit for huge pages and extended resources), or change the template.
-- ⚠️ **`claims` can only reference pod-level `resourceClaims` the template declares**: the CacheRuntime
-  sets the container's `resources.claims` but cannot add pod-level `spec.resourceClaims`. A claim name
-  the CacheRuntimeClass template does not declare makes the API server reject every master or worker
-  Pod that is created or recreated (`must be one of the names in pod.spec.resourceClaims`), and the
-  component stays NotReady. Clusters without `DynamicResourceAllocation` enabled (off by default
-  before K8s 1.34) drop `claims` silently instead.
+- ⚠️ **`claims` can only reference pod-level `resourceClaims` the workload declares**: the CacheRuntime
+  sets the container's `resources.claims` but cannot add pod-level `spec.resourceClaims`, and the sync
+  does not carry pod-level `resourceClaims` added to the CacheRuntimeClass template after creation to
+  existing workloads either. On creation, a claim name the template does not declare makes the API
+  server reject every master or worker Pod (`must be one of the names in pod.spec.resourceClaims`), and
+  the component stays NotReady; clusters without `DynamicResourceAllocation` enabled (off by default
+  before K8s 1.34) drop `claims` silently instead. On update, a claim that the workload neither
+  declares nor already carries, whether it comes from the CacheRuntime or from a template edit, is
+  not synced: the controller leaves it out, still syncs the rest of `resources`, and emits a
+  `RuntimeResourcesConflict` Warning event on the CacheRuntime naming the claim. To use a new claim,
+  recreate the CacheRuntime.
 - ⚠️ **Kubernetes version requirement**: K8s >= 1.27 with the `InPlacePodVerticalScaling` Feature Gate enabled.
   ```bash
   # Check if the Feature Gate is enabled

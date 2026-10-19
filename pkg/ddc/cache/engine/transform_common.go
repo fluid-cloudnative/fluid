@@ -272,6 +272,36 @@ func isOvercommitAllowed(name corev1.ResourceName) bool {
 	return native && !strings.HasPrefix(string(name), corev1.ResourceHugePagesPrefix)
 }
 
+// splitDeclaredClaims splits container claims into those the sync may apply to a workload and
+// the names of those it may not. The sync patches container resources only, never the
+// pod-level resourceClaims entries, so a claim the template added to both after creation would
+// reach the container alone, and with DynamicResourceAllocation enabled the API server would
+// then reject every replacement Pod. A claim is applied when the workload's pod spec declares
+// it, or when its first container already carries it: dropping such a claim would roll the
+// workload without changing what its Pods get.
+func splitDeclaredClaims(claims []corev1.ResourceClaim, podSpec *corev1.PodSpec) (declared []corev1.ResourceClaim, undeclared []string) {
+	known := map[string]bool{}
+	if podSpec != nil {
+		for _, podClaim := range podSpec.ResourceClaims {
+			known[podClaim.Name] = true
+		}
+		if len(podSpec.Containers) > 0 {
+			for _, claim := range podSpec.Containers[0].Resources.Claims {
+				known[claim.Name] = true
+			}
+		}
+	}
+	for _, claim := range claims {
+		if known[claim.Name] {
+			declared = append(declared, claim)
+		} else {
+			undeclared = append(undeclared, claim.Name)
+		}
+	}
+	sort.Strings(undeclared)
+	return declared, undeclared
+}
+
 // validateComponentResources checks the resources the creation path rendered into the
 // component's first container, the only one transformComponentPodTemplate fills in.
 func validateComponentResources(componentValue *common.CacheRuntimeComponentValue) error {
