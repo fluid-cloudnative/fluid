@@ -6,8 +6,19 @@ metadata:
   namespace: {{ include "fluid.namespace" . }}
 data:
   pluginsProfile: |
+{{- /*
+  The values may carry no clientless group although the webhook rule for it is always
+  rendered, e.g. on `helm upgrade --reuse-values` from a release that predates it, which
+  reuses that release's defaults. Fall back to the chart's own group then, so pods
+  matching the rule still get a plugin.
+*/}}
+{{- $valuesProfile := deepCopy .Values.webhook.pluginsProfile }}
+{{- $valuesPlugins := get $valuesProfile "plugins" }}
+{{- if and (kindIs "map" $valuesPlugins) (not (get $valuesPlugins "clientless")) }}
+{{- $_ := set $valuesPlugins "clientless" (dict "withDataset" (list "RuntimeConfigInjector") "withoutDataset" (list)) }}
+{{- end }}
 {{- if .Values.webhook.forceReplacePluginsProfile }}
-{{ toYaml .Values.webhook.pluginsProfile | indent 4 }}
+{{ toYaml $valuesProfile | indent 4 }}
 {{- else }}
 {{- $existing := (lookup "v1" "ConfigMap" (include "fluid.namespace" .)  "webhook-plugins") }}
 {{- $existingProfile := "" }}
@@ -24,7 +35,7 @@ data:
 {{- $profile := fromYaml $existingProfile }}
 {{- $plugins := get $profile "plugins" }}
 {{- if and (not (hasKey $profile "Error")) (kindIs "map" $plugins) (not (hasKey $plugins "clientless")) }}
-{{- $_ := set $plugins "clientless" .Values.webhook.pluginsProfile.plugins.clientless }}
+{{- $_ := set $plugins "clientless" (get $valuesPlugins "clientless") }}
 {{ toYaml $profile | indent 4 }}
 {{- else }}
 {{- /*
@@ -35,7 +46,7 @@ data:
 {{ $existingProfile | trimSuffix "\n" | indent 4 }}
 {{- end }}
 {{- else }}
-{{ toYaml .Values.webhook.pluginsProfile | indent 4 }}
+{{ toYaml $valuesProfile | indent 4 }}
 {{- end }}
 {{- end }}
 {{- end }}
