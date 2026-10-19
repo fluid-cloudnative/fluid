@@ -232,8 +232,9 @@ func componentImage(runtimeVersion datav1alpha1.VersionSpec, templateImage strin
 
 // reportIncompleteVersion records a runtimeVersion that names only part of the image when the
 // template cannot supply the rest. desiredComponentVersion deliberately does not guess there, so
-// the component keeps its image; without this the edit would be accepted and discarded with
-// nothing to show for it. The log is written at the default verbosity because the controller
+// the version is ignored: the component is created from the template image, or keeps its current
+// image on update. Without this the edit would be accepted and discarded with nothing to show for
+// it. The log is written at the default verbosity because the controller
 // runs without a verbosity flag, and a Warning event is emitted on runtime when it is given, so
 // the user sees why the edit did not land.
 func (e *CacheEngine) reportIncompleteVersion(runtime *datav1alpha1.CacheRuntime, componentType common.ComponentType,
@@ -247,12 +248,12 @@ func (e *CacheEngine) reportIncompleteVersion(runtime *datav1alpha1.CacheRuntime
 		return
 	}
 
-	e.Log.Info("runtimeVersion cannot be completed from the CacheRuntimeClass template, leaving the image unchanged",
+	e.Log.Info("runtimeVersion cannot be completed from the CacheRuntimeClass template, ignoring it",
 		"component", componentType, "image", runtimeVersion.Image, "imageTag", runtimeVersion.ImageTag,
 		"templateImage", templateImage)
 	if runtime != nil && e.Recorder != nil {
 		e.Recorder.Eventf(runtime, corev1.EventTypeWarning, common.RuntimeVersionIncomplete,
-			"%s runtimeVersion (image %q, imageTag %q) cannot be completed from the CacheRuntimeClass template image %q, so the image is left unchanged; set both image and imageTag",
+			"%s runtimeVersion (image %q, imageTag %q) cannot be completed from the CacheRuntimeClass template image %q and is ignored; set both image and imageTag",
 			componentType, runtimeVersion.Image, runtimeVersion.ImageTag, templateImage)
 	}
 }
