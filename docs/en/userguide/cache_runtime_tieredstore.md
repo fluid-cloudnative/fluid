@@ -226,3 +226,4 @@ According to the latest API definition, **only HostPath type supports multi-path
    - ProcessMemory: Enforced via container memory limit
    - EmptyDir: Enforced via `sizeLimit`
    - HostPath: `quotas` are for reference only, requires external mechanisms (e.g., XFS project quota, Cgroup)
+8. **Immutability After Creation**: Worker tieredStore configurations (`spec.worker.tieredStore.levels`) cannot be updated in-place after initial creation because Kubernetes pod volume definitions cannot be modified dynamically. Modifying `spec.worker.tieredStore` on an existing CacheRuntime will trigger a `RuntimeTieredStoreConflict` Warning event; deleting and recreating the CacheRuntime is required for changes to take effect.

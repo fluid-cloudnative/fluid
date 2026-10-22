@@ -154,9 +154,16 @@ The new value is synced to the AdvancedStatefulSet's `spec.replicas`, which then
 
 **Any field not listed in section 3 cannot be updated in place**; changes to it are not propagated to the AdvancedStatefulSet.
 
-**Notes**:
-- Such a field takes effect only after the CacheRuntime is redeployed.
-- The system does not automatically detect or propagate these changes.
+### 4.1 Worker Tiered Storage (`spec.worker.tieredStore`)
+
+**Field path**: `spec.worker.tieredStore`
+
+- **Why in-place updates are not supported**: Tiered storage volumes (`emptyDir.sizeLimit`, memory tmpfs `/dev/shm`, hostPath mounts) and container memory adjustments are generated during initial creation (`Setup`). In Kubernetes, pod volume definitions and volume `sizeLimit` properties cannot be modified dynamically in running pods.
+- **Drift warning behavior**: While editing `spec.worker.tieredStore` updates the runtime configuration ConfigMap, the running worker pods retain their creation-time volume configurations and limits. When `spec.worker.tieredStore` quotas or paths diverge from the worker pod volumes, the controller detects the split during reconciliation and emits a `RuntimeTieredStoreConflict` Warning event on the `CacheRuntime`:
+  ```bash
+  kubectl get events -n <namespace> --field-selector type=Warning,reason=RuntimeTieredStoreConflict
+  ```
+- **How to apply changes**: Changes to `spec.worker.tieredStore` require deleting and recreating the CacheRuntime to take effect.
 
 ---
 
@@ -167,9 +174,11 @@ The new value is synced to the AdvancedStatefulSet's `spec.replicas`, which then
 | `runtimeVersion` | ✅ Yes | Automatically synced to AdvancedStatefulSet |
 | `resources` | ✅ Yes | Automatically synced to AdvancedStatefulSet (requires K8s >= 1.27) |
 | `replicas` | ✅ Yes | Automatically synced to AdvancedStatefulSet (scaling in discards that Worker's cache) |
+| `spec.worker.tieredStore` | ❌ No | Emits `RuntimeTieredStoreConflict` Warning event on drift; requires deleting and recreating CacheRuntime |
 | All other fields | ❌ No | Not synced; redeployment required |
 
 **Key Takeaways**:
 1. The current version supports dynamic updates for `runtimeVersion`, `resources` and `replicas`.
 2. In cgroupv1 environments, `runtimeVersion` and `resources` must be updated separately (step-by-step); `replicas` is not subject to this limitation.
-3. Modifications to other fields will not take effect and require redeployment.
+3. `spec.worker.tieredStore` cannot be updated in place; modifying it causes volume drift and emits a `RuntimeTieredStoreConflict` Warning event. Deleting and recreating the CacheRuntime is required.
+4. Modifications to other fields will not take effect and require redeployment.
