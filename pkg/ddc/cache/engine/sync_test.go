@@ -37,6 +37,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	cclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
@@ -1236,6 +1237,377 @@ var _ = Describe("CacheEngine Sync Tests", Label("pkg.ddc.cache.engine.sync_test
 				syncOnce()
 
 				Expect(memLimitOf(workerSts)).To(Equal(desired))
+			})
+		})
+
+		Context("tiered store drift detection and warning", func() {
+			var fakeRecorder *record.FakeRecorder
+
+			createWorkerWithTieredStore := func(tieredStore datav1alpha1.RuntimeTieredStore) {
+				runtimeObj.Spec.Worker.TieredStore = tieredStore
+				Expect(fakeClient.Update(ctx.Context, runtimeObj)).To(Succeed())
+
+				rt, err := engine.getRuntime()
+				Expect(err).NotTo(HaveOccurred())
+				value, err := engine.transform(dataset, rt, runtimeClass)
+				Expect(err).NotTo(HaveOccurred())
+
+				key := types.NamespacedName{Name: workerSts, Namespace: "default"}
+				seeded := &workloadv1alpha1.AdvancedStatefulSet{}
+				Expect(fakeClient.Get(ctx.Context, key, seeded)).To(Succeed())
+				Expect(fakeClient.Delete(ctx.Context, seeded)).To(Succeed())
+				_, err = engine.SetupWorkerComponent(value.Worker)
+				Expect(err).NotTo(HaveOccurred())
+			}
+
+			BeforeEach(func() {
+				fakeRecorder = record.NewFakeRecorder(100)
+				engine.Recorder = fakeRecorder
+				engine.timeOfLastTieredStoreWarning = time.Time{}
+			})
+
+			It("should not emit a warning event when tiered store matches worker pod volumes", func() {
+				createWorkerWithTieredStore(datav1alpha1.RuntimeTieredStore{
+					Levels: []datav1alpha1.RuntimeTieredStoreLevel{
+						{ProcessMemory: &datav1alpha1.ProcessMemoryMediumSource{Quota: resource.MustParse("8Gi")}},
+						{EmptyDir: &datav1alpha1.EmptyDirMediumSource{Quota: resource.MustParse("50Gi"), Medium: corev1.StorageMediumMemory}},
+					},
+				})
+
+				syncRuntime, err := engine.getRuntime()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(engine.syncRuntimeSpec(ctx, syncRuntime, runtimeClass)).To(Succeed())
+
+				Expect(fakeRecorder.Events).To(BeEmpty())
+			})
+
+			It("should emit a Warning event when processMemory quota in spec drifts from worker volume sizeLimit", func() {
+				createWorkerWithTieredStore(datav1alpha1.RuntimeTieredStore{
+					Levels: []datav1alpha1.RuntimeTieredStoreLevel{
+						{ProcessMemory: &datav1alpha1.ProcessMemoryMediumSource{Quota: resource.MustParse("8Gi")}},
+					},
+				})
+
+				// Edit spec quota to 16Gi
+				edited, err := engine.getRuntime()
+				Expect(err).NotTo(HaveOccurred())
+				edited.Spec.Worker.TieredStore.Levels[0].ProcessMemory.Quota = resource.MustParse("16Gi")
+				Expect(fakeClient.Update(ctx.Context, edited)).To(Succeed())
+
+				syncRuntime, err := engine.getRuntime()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(engine.syncRuntimeSpec(ctx, syncRuntime, runtimeClass)).To(Succeed())
+
+				var event string
+				Expect(fakeRecorder.Events).To(Receive(&event))
+				Expect(event).To(ContainSubstring(corev1.EventTypeWarning))
+				Expect(event).To(ContainSubstring(common.RuntimeTieredStoreConflict))
+				Expect(event).To(ContainSubstring("level 0 (processMemory): spec quota 16Gi does not match worker volume tiered-store-level-0-memory sizeLimit 8Gi"))
+				Expect(event).To(ContainSubstring("Worker tieredStore cannot be updated in-place after creation"))
+			})
+
+			It("should emit a Warning event when emptyDir quota in spec drifts from worker volume sizeLimit", func() {
+				createWorkerWithTieredStore(datav1alpha1.RuntimeTieredStore{
+					Levels: []datav1alpha1.RuntimeTieredStoreLevel{
+						{EmptyDir: &datav1alpha1.EmptyDirMediumSource{Quota: resource.MustParse("50Gi")}},
+					},
+				})
+
+				// Edit spec quota to 100Gi
+				edited, err := engine.getRuntime()
+				Expect(err).NotTo(HaveOccurred())
+				edited.Spec.Worker.TieredStore.Levels[0].EmptyDir.Quota = resource.MustParse("100Gi")
+				Expect(fakeClient.Update(ctx.Context, edited)).To(Succeed())
+
+				syncRuntime, err := engine.getRuntime()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(engine.syncRuntimeSpec(ctx, syncRuntime, runtimeClass)).To(Succeed())
+
+				var event string
+				Expect(fakeRecorder.Events).To(Receive(&event))
+				Expect(event).To(ContainSubstring(corev1.EventTypeWarning))
+				Expect(event).To(ContainSubstring(common.RuntimeTieredStoreConflict))
+				Expect(event).To(ContainSubstring("level 0 (emptyDir): spec quota 100Gi does not match worker volume tiered-store-level-0-index-0 sizeLimit 50Gi"))
+			})
+
+			It("should emit a Warning event when hostPath paths are edited", func() {
+				createWorkerWithTieredStore(datav1alpha1.RuntimeTieredStore{
+					Levels: []datav1alpha1.RuntimeTieredStoreLevel{
+						{HostPath: &datav1alpha1.HostPathMediumSource{
+							Paths:  []string{"/mnt/disk1"},
+							Quotas: []resource.Quantity{resource.MustParse("100Gi")},
+						}},
+					},
+				})
+
+				// Edit host path to /mnt/disk2
+				edited, err := engine.getRuntime()
+				Expect(err).NotTo(HaveOccurred())
+				edited.Spec.Worker.TieredStore.Levels[0].HostPath.Paths[0] = "/mnt/disk2"
+				Expect(fakeClient.Update(ctx.Context, edited)).To(Succeed())
+
+				syncRuntime, err := engine.getRuntime()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(engine.syncRuntimeSpec(ctx, syncRuntime, runtimeClass)).To(Succeed())
+
+				var event string
+				Expect(fakeRecorder.Events).To(Receive(&event))
+				Expect(event).To(ContainSubstring(corev1.EventTypeWarning))
+				Expect(event).To(ContainSubstring(common.RuntimeTieredStoreConflict))
+				Expect(event).To(ContainSubstring("level 0 path 0 (hostPath): spec path /mnt/disk2 does not match worker volume tiered-store-level-0-index-0 path /mnt/disk1"))
+			})
+
+			It("should emit a Warning event when a new level is added to spec that worker pod lacks", func() {
+				createWorkerWithTieredStore(datav1alpha1.RuntimeTieredStore{
+					Levels: []datav1alpha1.RuntimeTieredStoreLevel{
+						{ProcessMemory: &datav1alpha1.ProcessMemoryMediumSource{Quota: resource.MustParse("8Gi")}},
+					},
+				})
+
+				// Add a second level to spec
+				edited, err := engine.getRuntime()
+				Expect(err).NotTo(HaveOccurred())
+				edited.Spec.Worker.TieredStore.Levels = append(edited.Spec.Worker.TieredStore.Levels,
+					datav1alpha1.RuntimeTieredStoreLevel{
+						EmptyDir: &datav1alpha1.EmptyDirMediumSource{Quota: resource.MustParse("50Gi")},
+					})
+				Expect(fakeClient.Update(ctx.Context, edited)).To(Succeed())
+
+				syncRuntime, err := engine.getRuntime()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(engine.syncRuntimeSpec(ctx, syncRuntime, runtimeClass)).To(Succeed())
+
+				var event string
+				Expect(fakeRecorder.Events).To(Receive(&event))
+				Expect(event).To(ContainSubstring(corev1.EventTypeWarning))
+				Expect(event).To(ContainSubstring("level 1 (emptyDir): volume tiered-store-level-1-index-0 not found or missing sizeLimit in worker pod"))
+			})
+
+			It("should emit a Warning event when a tieredStore volume exists on pod but was removed from spec", func() {
+				createWorkerWithTieredStore(datav1alpha1.RuntimeTieredStore{
+					Levels: []datav1alpha1.RuntimeTieredStoreLevel{
+						{ProcessMemory: &datav1alpha1.ProcessMemoryMediumSource{Quota: resource.MustParse("8Gi")}},
+					},
+				})
+
+				// Remove tieredStore from spec
+				edited, err := engine.getRuntime()
+				Expect(err).NotTo(HaveOccurred())
+				edited.Spec.Worker.TieredStore.Levels = nil
+				Expect(fakeClient.Update(ctx.Context, edited)).To(Succeed())
+
+				syncRuntime, err := engine.getRuntime()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(engine.syncRuntimeSpec(ctx, syncRuntime, runtimeClass)).To(Succeed())
+
+				var event string
+				Expect(fakeRecorder.Events).To(Receive(&event))
+				Expect(event).To(ContainSubstring(corev1.EventTypeWarning))
+				Expect(event).To(ContainSubstring("worker pod volume tiered-store-level-0-memory is not declared in spec tieredStore"))
+			})
+
+			It("should throttle warning events and re-emit only after interval expires", func() {
+				createWorkerWithTieredStore(datav1alpha1.RuntimeTieredStore{
+					Levels: []datav1alpha1.RuntimeTieredStoreLevel{
+						{ProcessMemory: &datav1alpha1.ProcessMemoryMediumSource{Quota: resource.MustParse("8Gi")}},
+					},
+				})
+
+				edited, err := engine.getRuntime()
+				Expect(err).NotTo(HaveOccurred())
+				edited.Spec.Worker.TieredStore.Levels[0].ProcessMemory.Quota = resource.MustParse("16Gi")
+				Expect(fakeClient.Update(ctx.Context, edited)).To(Succeed())
+
+				// First sync: event emitted
+				syncRuntime, err := engine.getRuntime()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(engine.syncRuntimeSpec(ctx, syncRuntime, runtimeClass)).To(Succeed())
+				Expect(fakeRecorder.Events).To(Receive())
+
+				// Immediate second sync: throttled, no event
+				Expect(engine.syncRuntimeSpec(ctx, syncRuntime, runtimeClass)).To(Succeed())
+				Expect(fakeRecorder.Events).To(BeEmpty())
+
+				// Advance timestamp past interval: event re-emitted
+				engine.timeOfLastTieredStoreWarning = time.Now().Add(-11 * time.Minute)
+				Expect(engine.syncRuntimeSpec(ctx, syncRuntime, runtimeClass)).To(Succeed())
+				Expect(fakeRecorder.Events).To(Receive())
+			})
+
+			It("should reset throttling cooldown when drift is resolved", func() {
+				createWorkerWithTieredStore(datav1alpha1.RuntimeTieredStore{
+					Levels: []datav1alpha1.RuntimeTieredStoreLevel{
+						{ProcessMemory: &datav1alpha1.ProcessMemoryMediumSource{Quota: resource.MustParse("8Gi")}},
+					},
+				})
+
+				edited, err := engine.getRuntime()
+				Expect(err).NotTo(HaveOccurred())
+				edited.Spec.Worker.TieredStore.Levels[0].ProcessMemory.Quota = resource.MustParse("16Gi")
+				Expect(fakeClient.Update(ctx.Context, edited)).To(Succeed())
+
+				// First sync emits event
+				syncRuntime, err := engine.getRuntime()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(engine.syncRuntimeSpec(ctx, syncRuntime, runtimeClass)).To(Succeed())
+				Expect(fakeRecorder.Events).To(Receive())
+				Expect(engine.timeOfLastTieredStoreWarning).NotTo(BeZero())
+
+				// User reverts spec back to 8Gi to resolve drift
+				edited, err = engine.getRuntime()
+				Expect(err).NotTo(HaveOccurred())
+				edited.Spec.Worker.TieredStore.Levels[0].ProcessMemory.Quota = resource.MustParse("8Gi")
+				Expect(fakeClient.Update(ctx.Context, edited)).To(Succeed())
+
+				syncRuntime, err = engine.getRuntime()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(engine.syncRuntimeSpec(ctx, syncRuntime, runtimeClass)).To(Succeed())
+				Expect(fakeRecorder.Events).To(BeEmpty())
+				Expect(engine.timeOfLastTieredStoreWarning).To(BeZero())
+
+				// Re-introducing drift now fires immediately without waiting for cooldown
+				edited, err = engine.getRuntime()
+				Expect(err).NotTo(HaveOccurred())
+				edited.Spec.Worker.TieredStore.Levels[0].ProcessMemory.Quota = resource.MustParse("32Gi")
+				Expect(fakeClient.Update(ctx.Context, edited)).To(Succeed())
+
+				syncRuntime, err = engine.getRuntime()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(engine.syncRuntimeSpec(ctx, syncRuntime, runtimeClass)).To(Succeed())
+				Expect(fakeRecorder.Events).To(Receive())
+			})
+
+			It("should detect drift even when neither CacheRuntime nor template declares worker resources", func() {
+				// Clear worker resources from both runtimeClass template and runtimeObj
+				runtimeClass.Topology.Worker.Template.Spec.Containers[0].Resources = corev1.ResourceRequirements{}
+				runtimeObj.Spec.Worker.Resources = corev1.ResourceRequirements{}
+
+				createWorkerWithTieredStore(datav1alpha1.RuntimeTieredStore{
+					Levels: []datav1alpha1.RuntimeTieredStoreLevel{
+						{ProcessMemory: &datav1alpha1.ProcessMemoryMediumSource{Quota: resource.MustParse("8Gi")}},
+					},
+				})
+
+				// Edit spec quota to 16Gi
+				edited, err := engine.getRuntime()
+				Expect(err).NotTo(HaveOccurred())
+				edited.Spec.Worker.TieredStore.Levels[0].ProcessMemory.Quota = resource.MustParse("16Gi")
+				Expect(fakeClient.Update(ctx.Context, edited)).To(Succeed())
+
+				syncRuntime, err := engine.getRuntime()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(engine.syncRuntimeSpec(ctx, syncRuntime, runtimeClass)).To(Succeed())
+
+				var event string
+				Expect(fakeRecorder.Events).To(Receive(&event))
+				Expect(event).To(ContainSubstring(corev1.EventTypeWarning))
+				Expect(event).To(ContainSubstring(common.RuntimeTieredStoreConflict))
+				Expect(event).To(ContainSubstring("level 0 (processMemory): spec quota 16Gi does not match worker volume tiered-store-level-0-memory sizeLimit 8Gi"))
+			})
+
+			It("should return gracefully when podSpec is nil", func() {
+				engine.checkWorkerTieredStoreDrift(runtimeObj, nil)
+				Expect(fakeRecorder.Events).To(BeEmpty())
+			})
+
+			It("should detect missing volume for processMemory level", func() {
+				runtimeWithPM := runtimeObj.DeepCopy()
+				runtimeWithPM.Spec.Worker.TieredStore = datav1alpha1.RuntimeTieredStore{
+					Levels: []datav1alpha1.RuntimeTieredStoreLevel{
+						{ProcessMemory: &datav1alpha1.ProcessMemoryMediumSource{Quota: resource.MustParse("8Gi")}},
+					},
+				}
+				emptyPodSpec := &corev1.PodSpec{}
+				engine.checkWorkerTieredStoreDrift(runtimeWithPM, emptyPodSpec)
+
+				var event string
+				Expect(fakeRecorder.Events).To(Receive(&event))
+				Expect(event).To(ContainSubstring(corev1.EventTypeWarning))
+				Expect(event).To(ContainSubstring("level 0 (processMemory): volume tiered-store-level-0-memory not found or missing sizeLimit in worker pod"))
+			})
+
+			It("should detect missing volume for hostPath level", func() {
+				runtimeWithHP := runtimeObj.DeepCopy()
+				runtimeWithHP.Spec.Worker.TieredStore = datav1alpha1.RuntimeTieredStore{
+					Levels: []datav1alpha1.RuntimeTieredStoreLevel{
+						{HostPath: &datav1alpha1.HostPathMediumSource{
+							Paths:  []string{"/mnt/disk1"},
+							Quotas: []resource.Quantity{resource.MustParse("100Gi")},
+						}},
+					},
+				}
+				emptyPodSpec := &corev1.PodSpec{}
+				engine.checkWorkerTieredStoreDrift(runtimeWithHP, emptyPodSpec)
+
+				var event string
+				Expect(fakeRecorder.Events).To(Receive(&event))
+				Expect(event).To(ContainSubstring(corev1.EventTypeWarning))
+				Expect(event).To(ContainSubstring("level 0 path 0 (hostPath): volume tiered-store-level-0-index-0 not found in worker pod"))
+			})
+
+			It("should emit a Warning event when emptyDir medium is edited from disk to Memory", func() {
+				createWorkerWithTieredStore(datav1alpha1.RuntimeTieredStore{
+					Levels: []datav1alpha1.RuntimeTieredStoreLevel{
+						{EmptyDir: &datav1alpha1.EmptyDirMediumSource{
+							Quota:  resource.MustParse("50Gi"),
+							Medium: "",
+						}},
+					},
+				})
+
+				edited, err := engine.getRuntime()
+				Expect(err).NotTo(HaveOccurred())
+				edited.Spec.Worker.TieredStore.Levels[0].EmptyDir.Medium = corev1.StorageMediumMemory
+				Expect(fakeClient.Update(ctx.Context, edited)).To(Succeed())
+
+				syncRuntime, err := engine.getRuntime()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(engine.syncRuntimeSpec(ctx, syncRuntime, runtimeClass)).To(Succeed())
+
+				var event string
+				Expect(fakeRecorder.Events).To(Receive(&event))
+				Expect(event).To(ContainSubstring(corev1.EventTypeWarning))
+				Expect(event).To(ContainSubstring(common.RuntimeTieredStoreConflict))
+				Expect(event).To(ContainSubstring(`level 0 (emptyDir): spec medium "Memory" does not match worker volume tiered-store-level-0-index-0 medium ""`))
+				Expect(event).To(ContainSubstring("Delete and recreate the CacheRuntime to apply changes."))
+			})
+
+			It("should emit a Warning event when emptyDir medium is edited from Memory to disk", func() {
+				createWorkerWithTieredStore(datav1alpha1.RuntimeTieredStore{
+					Levels: []datav1alpha1.RuntimeTieredStoreLevel{
+						{EmptyDir: &datav1alpha1.EmptyDirMediumSource{
+							Quota:  resource.MustParse("50Gi"),
+							Medium: corev1.StorageMediumMemory,
+						}},
+					},
+				})
+
+				edited, err := engine.getRuntime()
+				Expect(err).NotTo(HaveOccurred())
+				edited.Spec.Worker.TieredStore.Levels[0].EmptyDir.Medium = ""
+				Expect(fakeClient.Update(ctx.Context, edited)).To(Succeed())
+
+				syncRuntime, err := engine.getRuntime()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(engine.syncRuntimeSpec(ctx, syncRuntime, runtimeClass)).To(Succeed())
+
+				var event string
+				Expect(fakeRecorder.Events).To(Receive(&event))
+				Expect(event).To(ContainSubstring(corev1.EventTypeWarning))
+				Expect(event).To(ContainSubstring(common.RuntimeTieredStoreConflict))
+				Expect(event).To(ContainSubstring(`level 0 (emptyDir): spec medium "" does not match worker volume tiered-store-level-0-index-0 medium "Memory"`))
+				Expect(event).To(ContainSubstring("Delete and recreate the CacheRuntime to apply changes."))
+			})
+
+			It("should return error when reading worker pod spec fails", func() {
+				key := types.NamespacedName{Name: workerSts, Namespace: "default"}
+				worker := &workloadv1alpha1.AdvancedStatefulSet{}
+				Expect(fakeClient.Get(ctx.Context, key, worker)).To(Succeed())
+				Expect(fakeClient.Delete(ctx.Context, worker)).To(Succeed())
+
+				err := engine.syncRuntimeSpec(ctx, runtimeObj, runtimeClass)
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("not found"))
 			})
 		})
 	})
