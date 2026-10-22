@@ -2071,5 +2071,315 @@ var _ = Describe("CacheEngine Sync Tests", Label("pkg.ddc.cache.engine.sync_test
 				Expect(memLimitOf(workerSts)).To(Equal(desired))
 			})
 		})
+
+		Context("tiered store drift detection and condition reporting", func() {
+			var fakeRecorder *record.FakeRecorder
+
+			createWorkerWithTieredStore := func(tieredStore datav1alpha1.RuntimeTieredStore) {
+				runtimeObj.Spec.Worker.TieredStore = tieredStore
+				Expect(fakeClient.Update(ctx.Context, runtimeObj)).To(Succeed())
+
+				rt, err := engine.getRuntime()
+				Expect(err).NotTo(HaveOccurred())
+				value, err := engine.transform(dataset, rt, runtimeClass)
+				Expect(err).NotTo(HaveOccurred())
+
+				key := types.NamespacedName{Name: workerSts, Namespace: "default"}
+				seeded := &workloadv1alpha1.AdvancedStatefulSet{}
+				Expect(fakeClient.Get(ctx.Context, key, seeded)).To(Succeed())
+				Expect(fakeClient.Delete(ctx.Context, seeded)).To(Succeed())
+				_, err = engine.SetupWorkerComponent(value.Worker)
+				Expect(err).NotTo(HaveOccurred())
+			}
+
+			BeforeEach(func() {
+				fakeRecorder = record.NewFakeRecorder(100)
+				engine.Recorder = fakeRecorder
+			})
+
+			DescribeTable("detects drift via TransformRuntimeTieredStore",
+				func(initial datav1alpha1.RuntimeTieredStore, edit func(*datav1alpha1.CacheRuntime, *workloadv1alpha1.AdvancedStatefulSet), wantStatus corev1.ConditionStatus, wantReason string, wantSubstrs ...string) {
+					createWorkerWithTieredStore(initial)
+
+					if edit != nil {
+						rt, err := engine.getRuntime()
+						Expect(err).NotTo(HaveOccurred())
+						workerStsObj := &workloadv1alpha1.AdvancedStatefulSet{}
+						Expect(fakeClient.Get(ctx.Context, types.NamespacedName{Name: workerSts, Namespace: "default"}, workerStsObj)).To(Succeed())
+						edit(rt, workerStsObj)
+						Expect(fakeClient.Update(ctx.Context, rt)).To(Succeed())
+						Expect(fakeClient.Update(ctx.Context, workerStsObj)).To(Succeed())
+					}
+
+					Expect(engine.Sync(ctx)).To(Succeed())
+
+					latest, err := engine.getRuntime()
+					Expect(err).NotTo(HaveOccurred())
+					_, cond := utils.GetRuntimeCondition(latest.Status.Conditions, datav1alpha1.RuntimeTieredStoreSynced)
+					Expect(cond).NotTo(BeNil())
+					Expect(cond.Status).To(Equal(wantStatus))
+					Expect(cond.Reason).To(Equal(wantReason))
+					for _, sub := range wantSubstrs {
+						Expect(cond.Message).To(ContainSubstring(sub))
+					}
+
+					if wantStatus == corev1.ConditionFalse {
+						Expect(cond.Message).To(ContainSubstring("Delete and recreate the CacheRuntime"))
+						var event string
+						Expect(fakeRecorder.Events).To(Receive(&event))
+						Expect(event).To(ContainSubstring(corev1.EventTypeWarning))
+						Expect(event).To(ContainSubstring(wantReason))
+					} else {
+						Expect(fakeRecorder.Events).To(BeEmpty())
+					}
+				},
+				Entry("matching processMemory and emptyDir volumes stay synced",
+					datav1alpha1.RuntimeTieredStore{
+						Levels: []datav1alpha1.RuntimeTieredStoreLevel{
+							{ProcessMemory: &datav1alpha1.ProcessMemoryMediumSource{Quota: resource.MustParse("8Gi")}},
+							{EmptyDir: &datav1alpha1.EmptyDirMediumSource{Quota: resource.MustParse("50Gi"), Medium: corev1.StorageMediumMemory}},
+						},
+					},
+					nil, corev1.ConditionTrue, datav1alpha1.RuntimeTieredStoreSyncedReason),
+				Entry("equivalent hostPath nil Type and HostPathUnset stay synced",
+					datav1alpha1.RuntimeTieredStore{
+						Levels: []datav1alpha1.RuntimeTieredStoreLevel{
+							{HostPath: &datav1alpha1.HostPathMediumSource{
+								Paths:  []string{"/mnt/disk1"},
+								Quotas: []resource.Quantity{resource.MustParse("100Gi")},
+							}},
+						},
+					},
+					func(_ *datav1alpha1.CacheRuntime, worker *workloadv1alpha1.AdvancedStatefulSet) {
+						unset := corev1.HostPathUnset
+						worker.Spec.Template.Spec.Volumes[0].HostPath.Type = &unset
+					},
+					corev1.ConditionTrue, datav1alpha1.RuntimeTieredStoreSyncedReason),
+				Entry("user-supplied volume sharing tiered-store-level- prefix is ignored",
+					datav1alpha1.RuntimeTieredStore{
+						Levels: []datav1alpha1.RuntimeTieredStoreLevel{
+							{ProcessMemory: &datav1alpha1.ProcessMemoryMediumSource{Quota: resource.MustParse("8Gi")}},
+						},
+					},
+					func(_ *datav1alpha1.CacheRuntime, worker *workloadv1alpha1.AdvancedStatefulSet) {
+						worker.Spec.Template.Spec.Volumes = append(worker.Spec.Template.Spec.Volumes, corev1.Volume{
+							Name:         "tiered-store-level-config",
+							VolumeSource: corev1.VolumeSource{ConfigMap: &corev1.ConfigMapVolumeSource{LocalObjectReference: corev1.LocalObjectReference{Name: "custom"}}},
+						})
+					},
+					corev1.ConditionTrue, datav1alpha1.RuntimeTieredStoreSyncedReason),
+				Entry("drifted processMemory quota sets TieredStoreSynced=False",
+					datav1alpha1.RuntimeTieredStore{
+						Levels: []datav1alpha1.RuntimeTieredStoreLevel{
+							{ProcessMemory: &datav1alpha1.ProcessMemoryMediumSource{Quota: resource.MustParse("8Gi")}},
+						},
+					},
+					func(rt *datav1alpha1.CacheRuntime, _ *workloadv1alpha1.AdvancedStatefulSet) {
+						rt.Spec.Worker.TieredStore.Levels[0].ProcessMemory.Quota = resource.MustParse("16Gi")
+					},
+					corev1.ConditionFalse, common.RuntimeTieredStoreConflict, "tiered-store-level-0-memory differs from spec tieredStore"),
+				Entry("drifted emptyDir quota sets TieredStoreSynced=False",
+					datav1alpha1.RuntimeTieredStore{
+						Levels: []datav1alpha1.RuntimeTieredStoreLevel{
+							{EmptyDir: &datav1alpha1.EmptyDirMediumSource{Quota: resource.MustParse("10Gi")}},
+						},
+					},
+					func(rt *datav1alpha1.CacheRuntime, _ *workloadv1alpha1.AdvancedStatefulSet) {
+						rt.Spec.Worker.TieredStore.Levels[0].EmptyDir.Quota = resource.MustParse("20Gi")
+					},
+					corev1.ConditionFalse, common.RuntimeTieredStoreConflict, "tiered-store-level-0-index-0 differs from spec tieredStore"),
+				Entry("drifted emptyDir medium from disk to Memory sets TieredStoreSynced=False",
+					datav1alpha1.RuntimeTieredStore{
+						Levels: []datav1alpha1.RuntimeTieredStoreLevel{
+							{EmptyDir: &datav1alpha1.EmptyDirMediumSource{Quota: resource.MustParse("10Gi")}},
+						},
+					},
+					func(rt *datav1alpha1.CacheRuntime, _ *workloadv1alpha1.AdvancedStatefulSet) {
+						rt.Spec.Worker.TieredStore.Levels[0].EmptyDir.Medium = corev1.StorageMediumMemory
+					},
+					corev1.ConditionFalse, common.RuntimeTieredStoreConflict, "tiered-store-level-0-index-0 differs from spec tieredStore"),
+				Entry("drifted emptyDir medium from Memory to disk sets TieredStoreSynced=False",
+					datav1alpha1.RuntimeTieredStore{
+						Levels: []datav1alpha1.RuntimeTieredStoreLevel{
+							{EmptyDir: &datav1alpha1.EmptyDirMediumSource{Quota: resource.MustParse("10Gi"), Medium: corev1.StorageMediumMemory}},
+						},
+					},
+					func(rt *datav1alpha1.CacheRuntime, _ *workloadv1alpha1.AdvancedStatefulSet) {
+						rt.Spec.Worker.TieredStore.Levels[0].EmptyDir.Medium = corev1.StorageMediumDefault
+					},
+					corev1.ConditionFalse, common.RuntimeTieredStoreConflict, "tiered-store-level-0-index-0 differs from spec tieredStore"),
+				Entry("drifted hostPath paths sets TieredStoreSynced=False",
+					datav1alpha1.RuntimeTieredStore{
+						Levels: []datav1alpha1.RuntimeTieredStoreLevel{
+							{HostPath: &datav1alpha1.HostPathMediumSource{
+								Paths:  []string{"/mnt/disk1"},
+								Quotas: []resource.Quantity{resource.MustParse("100Gi")},
+							}},
+						},
+					},
+					func(rt *datav1alpha1.CacheRuntime, _ *workloadv1alpha1.AdvancedStatefulSet) {
+						rt.Spec.Worker.TieredStore.Levels[0].HostPath.Paths[0] = "/mnt/disk2"
+					},
+					corev1.ConditionFalse, common.RuntimeTieredStoreConflict, "tiered-store-level-0-index-0 differs from spec tieredStore"),
+				Entry("drifted hostPath Type sets TieredStoreSynced=False",
+					datav1alpha1.RuntimeTieredStore{
+						Levels: []datav1alpha1.RuntimeTieredStoreLevel{
+							{HostPath: &datav1alpha1.HostPathMediumSource{
+								Paths:  []string{"/mnt/disk1"},
+								Quotas: []resource.Quantity{resource.MustParse("100Gi")},
+							}},
+						},
+					},
+					func(rt *datav1alpha1.CacheRuntime, _ *workloadv1alpha1.AdvancedStatefulSet) {
+						t := corev1.HostPathDirectory
+						rt.Spec.Worker.TieredStore.Levels[0].HostPath.Type = &t
+					},
+					corev1.ConditionFalse, common.RuntimeTieredStoreConflict, "tiered-store-level-0-index-0 differs from spec tieredStore"),
+				Entry("added level missing on worker pod sets TieredStoreSynced=False",
+					datav1alpha1.RuntimeTieredStore{
+						Levels: []datav1alpha1.RuntimeTieredStoreLevel{
+							{ProcessMemory: &datav1alpha1.ProcessMemoryMediumSource{Quota: resource.MustParse("8Gi")}},
+						},
+					},
+					func(rt *datav1alpha1.CacheRuntime, _ *workloadv1alpha1.AdvancedStatefulSet) {
+						rt.Spec.Worker.TieredStore.Levels = append(rt.Spec.Worker.TieredStore.Levels,
+							datav1alpha1.RuntimeTieredStoreLevel{
+								EmptyDir: &datav1alpha1.EmptyDirMediumSource{Quota: resource.MustParse("20Gi")},
+							})
+					},
+					corev1.ConditionFalse, common.RuntimeTieredStoreConflict, "volume tiered-store-level-1-index-0 expected by spec tieredStore not found"),
+				Entry("removed level orphaned on worker pod sets TieredStoreSynced=False",
+					datav1alpha1.RuntimeTieredStore{
+						Levels: []datav1alpha1.RuntimeTieredStoreLevel{
+							{ProcessMemory: &datav1alpha1.ProcessMemoryMediumSource{Quota: resource.MustParse("8Gi")}},
+						},
+					},
+					func(rt *datav1alpha1.CacheRuntime, _ *workloadv1alpha1.AdvancedStatefulSet) {
+						rt.Spec.Worker.TieredStore.Levels = nil
+					},
+					corev1.ConditionFalse, common.RuntimeTieredStoreConflict, "tiered-store-level-0-memory is not declared in spec tieredStore"),
+			)
+
+			DescribeTable("reports invalid spec.worker.tieredStore as invalid without recreate advice",
+				func(invalidLevels []datav1alpha1.RuntimeTieredStoreLevel, expectedErr string) {
+					createWorkerWithTieredStore(datav1alpha1.RuntimeTieredStore{
+						Levels: []datav1alpha1.RuntimeTieredStoreLevel{
+							{EmptyDir: &datav1alpha1.EmptyDirMediumSource{Quota: resource.MustParse("2Gi"), Medium: corev1.StorageMediumMemory}},
+						},
+					})
+
+					edited, err := engine.getRuntime()
+					Expect(err).NotTo(HaveOccurred())
+					edited.Spec.Worker.TieredStore.Levels = invalidLevels
+					Expect(fakeClient.Update(ctx.Context, edited)).To(Succeed())
+
+					Expect(engine.Sync(ctx)).To(Succeed())
+
+					latest, err := engine.getRuntime()
+					Expect(err).NotTo(HaveOccurred())
+					_, cond := utils.GetRuntimeCondition(latest.Status.Conditions, datav1alpha1.RuntimeTieredStoreSynced)
+					Expect(cond).NotTo(BeNil())
+					Expect(cond.Status).To(Equal(corev1.ConditionFalse))
+					Expect(cond.Reason).To(Equal(common.RuntimeTieredStoreInvalid))
+					Expect(cond.Message).To(ContainSubstring(expectedErr))
+					Expect(cond.Message).NotTo(ContainSubstring("Delete and recreate"))
+
+					var event string
+					Expect(fakeRecorder.Events).To(Receive(&event))
+					Expect(event).To(ContainSubstring(corev1.EventTypeWarning))
+					Expect(event).To(ContainSubstring(common.RuntimeTieredStoreInvalid))
+					Expect(event).NotTo(ContainSubstring("Delete and recreate"))
+				},
+				Entry("multiple storage media on a single level",
+					[]datav1alpha1.RuntimeTieredStoreLevel{
+						{
+							EmptyDir: &datav1alpha1.EmptyDirMediumSource{Quota: resource.MustParse("2Gi")},
+							HostPath: &datav1alpha1.HostPathMediumSource{Paths: []string{"/mnt/cache"}, Quotas: []resource.Quantity{resource.MustParse("2Gi")}},
+						},
+					},
+					"only one storage medium can be specified per level"),
+				Entry("multiple processMemory levels",
+					[]datav1alpha1.RuntimeTieredStoreLevel{
+						{ProcessMemory: &datav1alpha1.ProcessMemoryMediumSource{Quota: resource.MustParse("2Gi")}},
+						{ProcessMemory: &datav1alpha1.ProcessMemoryMediumSource{Quota: resource.MustParse("4Gi")}},
+					},
+					"only one ProcessMemoryMediumSource"),
+			)
+
+			It("emits Warning events only on transition or changed drift, and clears on revert", func() {
+				createWorkerWithTieredStore(datav1alpha1.RuntimeTieredStore{
+					Levels: []datav1alpha1.RuntimeTieredStoreLevel{
+						{ProcessMemory: &datav1alpha1.ProcessMemoryMediumSource{Quota: resource.MustParse("8Gi")}},
+						{EmptyDir: &datav1alpha1.EmptyDirMediumSource{Quota: resource.MustParse("10Gi")}},
+					},
+				})
+
+				// Clean initial sync establishes TieredStoreSynced=True with no event
+				Expect(engine.Sync(ctx)).To(Succeed())
+				Expect(fakeRecorder.Events).To(BeEmpty())
+
+				// Drift 1: processMemory quota changed -> transitions to False + 1 Warning event
+				edited, err := engine.getRuntime()
+				Expect(err).NotTo(HaveOccurred())
+				edited.Spec.Worker.TieredStore.Levels[0].ProcessMemory.Quota = resource.MustParse("16Gi")
+				Expect(fakeClient.Update(ctx.Context, edited)).To(Succeed())
+
+				Expect(engine.Sync(ctx)).To(Succeed())
+				Expect(fakeRecorder.Events).To(Receive())
+				Expect(fakeRecorder.Events).To(BeEmpty())
+
+				// Second reconcile with identical drift emits 0 new events
+				Expect(engine.Sync(ctx)).To(Succeed())
+				Expect(fakeRecorder.Events).To(BeEmpty())
+
+				// Second unrelated edit while drifted updates message & emits fresh Warning event
+				edited2, err := engine.getRuntime()
+				Expect(err).NotTo(HaveOccurred())
+				edited2.Spec.Worker.TieredStore.Levels[1].EmptyDir.Quota = resource.MustParse("20Gi")
+				Expect(fakeClient.Update(ctx.Context, edited2)).To(Succeed())
+
+				Expect(engine.Sync(ctx)).To(Succeed())
+				var updatedEvent string
+				Expect(fakeRecorder.Events).To(Receive(&updatedEvent))
+				Expect(updatedEvent).To(ContainSubstring("tiered-store-level-1-index-0"))
+				Expect(fakeRecorder.Events).To(BeEmpty())
+
+				// Revert both back to matching volumes -> transitions to True with 0 events
+				reverted, err := engine.getRuntime()
+				Expect(err).NotTo(HaveOccurred())
+				reverted.Spec.Worker.TieredStore.Levels[0].ProcessMemory.Quota = resource.MustParse("8Gi")
+				reverted.Spec.Worker.TieredStore.Levels[1].EmptyDir.Quota = resource.MustParse("10Gi")
+				Expect(fakeClient.Update(ctx.Context, reverted)).To(Succeed())
+
+				Expect(engine.Sync(ctx)).To(Succeed())
+				Expect(fakeRecorder.Events).To(BeEmpty())
+
+				latest, err := engine.getRuntime()
+				Expect(err).NotTo(HaveOccurred())
+				_, cond := utils.GetRuntimeCondition(latest.Status.Conditions, datav1alpha1.RuntimeTieredStoreSynced)
+				Expect(cond).NotTo(BeNil())
+				Expect(cond.Status).To(Equal(corev1.ConditionTrue))
+
+				// Immediate re-drift emits a fresh Warning event
+				reDrifted, err := engine.getRuntime()
+				Expect(err).NotTo(HaveOccurred())
+				reDrifted.Spec.Worker.TieredStore.Levels[0].ProcessMemory.Quota = resource.MustParse("12Gi")
+				Expect(fakeClient.Update(ctx.Context, reDrifted)).To(Succeed())
+
+				Expect(engine.Sync(ctx)).To(Succeed())
+				Expect(fakeRecorder.Events).To(Receive())
+			})
+
+			It("omits TieredStoreSynced condition when tieredStore was never configured, and returns nil on nil podSpec", func() {
+				Expect(engine.checkWorkerTieredStoreDrift(runtimeObj, nil)).To(BeNil())
+
+				Expect(engine.Sync(ctx)).To(Succeed())
+				latest, err := engine.getRuntime()
+				Expect(err).NotTo(HaveOccurred())
+				_, cond := utils.GetRuntimeCondition(latest.Status.Conditions, datav1alpha1.RuntimeTieredStoreSynced)
+				Expect(cond).To(BeNil())
+				Expect(fakeRecorder.Events).To(BeEmpty())
+			})
+		})
 	})
 })

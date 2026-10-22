@@ -715,6 +715,36 @@ function verify_scale_subresource() {
     syslog "Verified scale subresource of cacheruntime $dataset_name (spec.replicas=${spec_replicas}, status.replicas=${pod_count} selector-matched pods, selector=${expected_selector})"
 }
 
+function verify_tieredstore_drift_warning() {
+    syslog "verify tieredStore drift condition and warning event on CacheRuntime"
+    local runtime_uid
+    runtime_uid=$(kubectl get cacheruntime $dataset_name -n default -o jsonpath='{.metadata.uid}')
+    if [[ -z "$runtime_uid" ]]; then
+        panic "failed to get UID of CacheRuntime $dataset_name"
+    fi
+
+    # Patch worker tieredStore emptyDir quota from 1Gi to 2Gi (preserving high/low) to trigger drift detection
+    kubectl patch cacheruntime $dataset_name -n default --type=merge -p '{"spec":{"worker":{"tieredStore":{"levels":[{"emptyDir":{"quota":"2Gi"},"high":"0.8","low":"0.5"}]}}}}'
+
+    kubectl wait --for=condition=TieredStoreSynced=False "cacheruntime/$dataset_name" -n default --timeout=120s \
+        || panic "TieredStoreSynced condition did not become False after tieredStore patch"
+
+    local event_found=""
+    event_found=$(kubectl get events -n default \
+        --field-selector "involvedObject.uid=${runtime_uid},type=Warning,reason=RuntimeTieredStoreConflict" \
+        -o jsonpath='{.items[0].message}' 2>/dev/null || true)
+    if [[ -z "$event_found" ]]; then
+        panic "expected RuntimeTieredStoreConflict Warning event after TieredStoreSynced became False"
+    fi
+    syslog "Verified TieredStoreSynced=False and event: $event_found"
+
+    # Restore original 1Gi level and wait for TieredStoreSynced to recover to True
+    kubectl patch cacheruntime $dataset_name -n default --type=merge -p '{"spec":{"worker":{"tieredStore":{"levels":[{"emptyDir":{"quota":"1Gi"},"high":"0.8","low":"0.5"}]}}}}'
+    kubectl wait --for=condition=TieredStoreSynced=True "cacheruntime/$dataset_name" -n default --timeout=120s \
+        || panic "TieredStoreSynced condition did not recover to True after restoring tieredStore"
+    syslog "Verified TieredStoreSynced recovered to True"
+}
+
 function main() {
     syslog "[TESTCASE $testname STARTS AT $(date)]"
     trap dump_env_and_clean_up EXIT
@@ -764,6 +794,9 @@ function main() {
         scale_worker_and_verify 2 scale false
         scale_worker_and_verify 1 patch false
     fi
+
+    # verify tieredStore drift warning event on CacheRuntime
+    verify_tieredstore_drift_warning
 
     # verify deletion and cleanup
     delete_dataset_and_runtime

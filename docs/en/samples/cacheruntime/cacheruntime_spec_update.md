@@ -255,7 +255,21 @@ kubectl get cm fluid-runtime-class-snapshot-my-cache -o jsonpath='{.data.runtime
 
 **Notes**:
 - Such a field takes effect only after the CacheRuntime is redeployed.
-- The system does not automatically detect or propagate these changes.
+- The system does not automatically detect or propagate these changes (except `spec.worker.tieredStore` pod-volume drift below).
+
+### 5.1 Worker Tiered Storage (`spec.worker.tieredStore`)
+
+**Field path**: `spec.worker.tieredStore`
+
+- **Why in-place updates are not supported**: Tiered storage volumes (`emptyDir.sizeLimit` / `emptyDir.medium`, memory tmpfs `/dev/shm`, `hostPath` mounts / types) and container memory adjustments are generated during initial creation (`Setup`). In Kubernetes, pod volume definitions cannot be modified dynamically in running pods.
+- **Drift & validation reporting**: Fluid checks `spec.worker.tieredStore` against the worker PodSpec during reconciliation via `TransformRuntimeTieredStore`:
+  - **Volume drift** (editing `processMemory.quota`, `emptyDir.quota` / `medium`, `hostPath.paths` / `type`, or adding/removing levels): sets condition `TieredStoreSynced=False` (`Reason: RuntimeTieredStoreConflict`) and emits a `RuntimeTieredStoreConflict` Warning event on transition:
+    ```bash
+    kubectl get events -n <namespace> --field-selector type=Warning,reason=RuntimeTieredStoreConflict
+    ```
+  - **Invalid spec** (such as multiple media on one level or multiple `processMemory` levels): sets condition `TieredStoreSynced=False` (`Reason: RuntimeTieredStoreInvalid`) and emits a `RuntimeTieredStoreInvalid` Warning event instructing you to fix `spec.worker.tieredStore`.
+  - **ConfigMap-only fields**: Edits to `hostPath.quotas`, `high`, and `low` do not alter worker pod volumes, so they update the runtime ConfigMap without triggering pod-volume drift warnings.
+- **How to apply changes**: Changes to `spec.worker.tieredStore` pod-volume settings require deleting and recreating the CacheRuntime to take effect.
 
 ---
 
@@ -266,10 +280,12 @@ kubectl get cm fluid-runtime-class-snapshot-my-cache -o jsonpath='{.data.runtime
 | `runtimeVersion` | ✅ Yes | Automatically synced to AdvancedStatefulSet (restarts the containers) |
 | `resources` | ✅ Yes | Automatically synced to AdvancedStatefulSet (recreates the Pods) |
 | `replicas` | ✅ Yes | Automatically synced to AdvancedStatefulSet (scaling in discards that Worker's cache) |
+| `spec.worker.tieredStore` | ❌ No | Sets `TieredStoreSynced=False` and emits `RuntimeTieredStoreConflict` / `RuntimeTieredStoreInvalid` on transition; requires deleting and recreating CacheRuntime for volume changes |
 | All other fields | ❌ No | Not synced; redeployment required |
 
 **Key Takeaways**:
 1. The current version supports dynamic updates for `runtimeVersion`, `resources` and `replicas`.
 2. An image-only `runtimeVersion` update restarts the affected container in the same Pod. Its in-process cache is lost, and its `emptyDir` cache survives. A `resources` change recreates the Pod, so both caches are lost.
-3. Modifications to other fields will not take effect and require redeployment.
-4. A CacheRuntime is bound to its CacheRuntimeClass as it was when the CacheRuntime was set up; editing the class only affects CacheRuntimes created afterwards.
+3. `spec.worker.tieredStore` pod-volume fields cannot be updated in place; modifying them sets `TieredStoreSynced=False`, emits a `RuntimeTieredStoreConflict` Warning event, and requires deleting and recreating the CacheRuntime.
+4. Modifications to other fields will not take effect and require redeployment.
+5. A CacheRuntime is bound to its CacheRuntimeClass as it was when the CacheRuntime was set up; editing the class only affects CacheRuntimes created afterwards.

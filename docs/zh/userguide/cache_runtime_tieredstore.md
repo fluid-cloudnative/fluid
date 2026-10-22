@@ -226,3 +226,4 @@ spec:
    - ProcessMemory：通过容器 memory limit 强制限制
    - EmptyDir：通过 `sizeLimit` 强制限制
    - HostPath：`quotas` 仅供参考，需要依赖外部机制（如 XFS project quota、Cgroup 等）
+8. **创建后不可原地更新**：涉及 Pod Volume 的 Worker 分层存储配置（`processMemory.quota`、`emptyDir.quota` / `medium`、`hostPath.paths` / `type` 以及增减层级）在初次创建后不支持动态原地更新，因为 Kubernetes Pod 的 Volume 定义无法动态修改。修改上述字段会将 `TieredStoreSynced` 条件置为 `False` 并在状态变化时触发 `RuntimeTieredStoreConflict` Warning 告警事件（无效配置会触发 `RuntimeTieredStoreInvalid`）；需要删除并重新创建 CacheRuntime 才能使修改生效。匹配 `tiered-store-level-<N>-index-<M>` 和 `tiered-store-level-<N>-memory` 的卷名称保留给引擎自动生成的分层存储卷使用。

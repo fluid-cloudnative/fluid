@@ -26,6 +26,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/cache/component"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/retry"
 )
@@ -95,17 +96,21 @@ func (e *CacheEngine) setClientComponentStatus(componentInfo *common.ComponentSt
 }
 
 func (e *CacheEngine) CheckAndUpdateRuntimeStatus(value *common.CacheRuntimeStatusValue) (bool, error) {
-	return e.checkAndUpdateRuntimeStatus(context.TODO(), value, nil)
+	return e.checkAndUpdateRuntimeStatus(context.TODO(), value)
 }
 
 func (e *CacheEngine) checkAndUpdateRuntimeStatus(ctx context.Context, value *common.CacheRuntimeStatusValue,
-	resources *fluidapi.RuntimeCondition) (bool, error) {
+	conditions ...*fluidapi.RuntimeCondition) (bool, error) {
 	runtimeReady := false
+	var latestRuntime *fluidapi.CacheRuntime
+	var pendingEvents []fluidapi.RuntimeCondition
 
 	err := retry.RetryOnConflict(retry.DefaultBackoff, func() error {
-		// Reset readiness on each retry to avoid stale state after conflicts.
+		// Reset readiness and transition events on each retry to avoid stale state after conflicts.
 		masterReady, workerReady, clientFullyReady := true, true, false
 		runtimeReady = false
+		latestRuntime = nil
+		pendingEvents = nil
 
 		runtime, err := e.getRuntime()
 		if err != nil {
@@ -157,11 +162,12 @@ func (e *CacheEngine) checkAndUpdateRuntimeStatus(ctx context.Context, value *co
 		runtimeToUpdate.Status.Selector = selector
 
 		runtimeToUpdate.Status.ValueFile = common.GetCacheRuntimeConfigConfigMapName(e.name)
-		if resources != nil {
-			applyResourcesSyncedCondition(&runtimeToUpdate.Status, *resources)
-		}
+		pendingEvents = applyRuntimeConditions(&runtimeToUpdate.Status, conditions...)
 		if !reflect.DeepEqual(runtime.Status, runtimeToUpdate.Status) {
 			err = e.Client.Status().Update(ctx, runtimeToUpdate)
+			if err == nil {
+				latestRuntime = runtimeToUpdate
+			}
 		} else {
 			e.Log.Info("Do nothing because the runtime status is not changed.")
 		}
@@ -173,11 +179,41 @@ func (e *CacheEngine) checkAndUpdateRuntimeStatus(ctx context.Context, value *co
 		_ = utils.LoggingErrorExceptConflict(e.Log, err, "Failed to update runtime status", types.NamespacedName{Namespace: e.namespace, Name: e.name})
 		return false, err
 	}
+	e.recordConditionEvents(latestRuntime, pendingEvents)
 
 	return runtimeReady, nil
 }
 
-func applyResourcesSyncedCondition(status *fluidapi.CacheRuntimeStatus, cond fluidapi.RuntimeCondition) bool {
+// applyRuntimeConditions updates each non-nil condition in status and returns
+// tieredStore conflict conditions that transitioned or changed message.
+func applyRuntimeConditions(status *fluidapi.CacheRuntimeStatus, conditions ...*fluidapi.RuntimeCondition) []fluidapi.RuntimeCondition {
+	var events []fluidapi.RuntimeCondition
+	for _, cond := range conditions {
+		if cond == nil {
+			continue
+		}
+		_, old := utils.GetRuntimeCondition(status.Conditions, cond.Type)
+		if !applyRuntimeCondition(status, *cond) {
+			continue
+		}
+		if cond.Type == fluidapi.RuntimeTieredStoreSynced && cond.Status == corev1.ConditionFalse &&
+			(old == nil || old.Status != corev1.ConditionFalse || old.Reason != cond.Reason || old.Message != cond.Message) {
+			events = append(events, *cond)
+		}
+	}
+	return events
+}
+
+func (e *CacheEngine) recordConditionEvents(runtime *fluidapi.CacheRuntime, conditions []fluidapi.RuntimeCondition) {
+	if e.Recorder == nil || runtime == nil {
+		return
+	}
+	for _, cond := range conditions {
+		e.Recorder.Eventf(runtime, corev1.EventTypeWarning, cond.Reason, "%s", cond.Message)
+	}
+}
+
+func applyRuntimeCondition(status *fluidapi.CacheRuntimeStatus, cond fluidapi.RuntimeCondition) bool {
 	_, old := utils.GetRuntimeCondition(status.Conditions, cond.Type)
 	if old != nil && old.Status == cond.Status {
 		if old.Reason == cond.Reason && old.Message == cond.Message {

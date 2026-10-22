@@ -20,6 +20,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
+	"regexp"
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
@@ -144,4 +145,12 @@ func getTieredStoreVolumeName(levelIndex int, pathIndex int) string {
 // getMemoryTieredStoreVolumeName generates the volume name for the process memory medium
 func getMemoryTieredStoreVolumeName(levelIndex int) string {
 	return fmt.Sprintf("%s%d-memory", tieredStoreVolumeNamePrefix, levelIndex)
+}
+
+var tieredStoreVolumeNameRegex = regexp.MustCompile(`^` + regexp.QuoteMeta(tieredStoreVolumeNamePrefix) + `\d+-(index-\d+|memory)$`)
+
+// isGeneratedTieredStoreVolumeName checks if a volume name matches the engine-generated tiered store volume naming pattern
+// (tiered-store-level-<N>-index-<M> or tiered-store-level-<N>-memory).
+func isGeneratedTieredStoreVolumeName(name string) bool {
+	return tieredStoreVolumeNameRegex.MatchString(name)
 }
