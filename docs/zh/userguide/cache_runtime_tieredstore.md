@@ -226,3 +226,4 @@ spec:
    - ProcessMemory：通过容器 memory limit 强制限制
    - EmptyDir：通过 `sizeLimit` 强制限制
    - HostPath：`quotas` 仅供参考，需要依赖外部机制（如 XFS project quota、Cgroup 等）
+8. **创建后不可原地更新**：Worker 分层存储配置（`spec.worker.tieredStore.levels`）在初次创建后不支持动态原地更新，因为 Kubernetes Pod 的 Volume 定义无法动态修改。修改已存在的 CacheRuntime 的 `spec.worker.tieredStore` 会触发 `RuntimeTieredStoreConflict` Warning 告警事件；需要删除并重新创建 CacheRuntime 才能使修改生效。
