@@ -28,6 +28,12 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 )
 
+// TestGetAPIGatewayStatus tests whether the Alluxio engine's GetAPIGatewayStatus method
+// correctly returns the API gateway status with the expected endpoint.
+// It uses two different test cases with varying engineName, engineNamespace, and port values,
+// and verifies that the generated APIGatewayStatus.Endpoint matches the expected format "%s-master-0.%s:%d".
+// The test cases cover both the default namespace and the system namespace scenarios.
+
 func TestGetAPIGatewayStatus(t *testing.T) {
 	endpointFormat := "%s-master-0.%s:%d"
 	testCases := map[string]struct {
