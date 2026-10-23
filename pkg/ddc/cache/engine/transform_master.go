@@ -41,6 +41,9 @@ func (e *CacheEngine) transformMaster(dataset *datav1alpha1.Dataset, runtime *da
 	// TODO: TieredStore handling
 
 	// transform container related config, currently only modify the first container
+	// Report here rather than leave it to the sync: Setup waits for the components to be ready
+	// before the reconcile reaches Sync, so an image that never becomes ready would hide it.
+	e.reportIncompleteVersion(runtime, common.ComponentTypeMaster, runtimeMaster.RuntimeVersion, componentTemplateImage(componentDefinition))
 	e.transformComponentPodTemplate(runtime.Spec, runtimeMaster.RuntimeComponentCommonSpec, dataset, value.Master)
 
 	// transform all volume-related configurations

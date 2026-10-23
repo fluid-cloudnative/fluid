@@ -25,6 +25,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
@@ -190,6 +191,25 @@ var _ = Describe("CacheEngine Transform Worker Tests", Label("pkg.ddc.cache.engi
 				Expect(runtimeClass.Topology.Worker.Template).To(Equal(*originalPodTemplate))
 				Expect(*dataset).To(Equal(*originDataset))
 				Expect(*runtimeObj).To(Equal(*originRuntime))
+			})
+
+			It("should emit a Warning event on creation when the template cannot complete the version", func() {
+				// Setup waits for the components to be ready before the reconcile reaches Sync,
+				// so the creation path has to report on its own.
+				recorder := record.NewFakeRecorder(10)
+				engine.Recorder = recorder
+				const digestImage = "test-image@sha256:067614b70d25b496e3edc3480747d558ee8a364ef47a67f669f5d96ca5098552"
+				runtimeClass.Topology.Worker.Template.Spec.Containers[0].Image = digestImage
+				runtimeObj.Spec.Worker.RuntimeVersion = datav1alpha1.VersionSpec{ImageTag: "v2"}
+
+				err := engine.transformWorker(dataset, runtimeObj, runtimeClass, config, value)
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(value.Worker.PodTemplateSpec.Spec.Containers[0].Image).To(Equal(digestImage))
+				Expect(recorder.Events).To(Receive(And(
+					HavePrefix(corev1.EventTypeWarning+" "+common.RuntimeVersionIncomplete+" "),
+					ContainSubstring(`imageTag "v2"`))))
+				Expect(recorder.Events).To(BeEmpty())
 			})
 
 			It("should merge affinities correctly in the worker value without affecting runtimeClass", func() {

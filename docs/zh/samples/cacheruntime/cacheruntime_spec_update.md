@@ -46,8 +46,35 @@ spec:
       imageTag: v1.1.0
 ```
 
+**取值规则**：创建时和每次 reconcile 时，都以 CacheRuntimeClass 模板中该组件第一个容器的镜像为基线，用 CacheRuntime 中设置的
+`image` 和 `imageTag` 覆盖。
+
+**补全规则**:
+- `image` 和 `imageTag` 可以只设置其中一个，缺少的一半从模板镜像补全。
+  以模板镜像 `fluid-cache:v1.0.0` 为例：
+  - 只设置 `imageTag: v1.1.0`：沿用模板的镜像名，得到 `fluid-cache:v1.1.0`
+  - 只设置 `image: registry.example.com/fluid-cache`：沿用模板的 tag（**而不是 `latest`**），得到
+    `registry.example.com/fluid-cache:v1.0.0`
+  - 都不设置：使用模板镜像 `fluid-cache:v1.0.0`
+- 同时设置了 `image` 和 `imageTag` 的 `runtimeVersion` 直接使用，即使模板镜像使用 digest 固定。
+- 只设置了其中一半、而另一半无法补全时（只设置了 `image` 而模板镜像没有 tag；模板镜像或 `image` 使用 digest
+  （`@sha256:...`）固定），创建时组件使用模板镜像；更新时修改不会生效，组件保持原有镜像。这两种情况下，控制器都会在
+  CacheRuntime 上发出 `RuntimeVersionIncomplete` Warning event，并输出日志；client 不参与更新同步，只在创建时报告。`runtimeVersion` 无法表达 digest 引用，如需固定到 digest，请写在 CacheRuntimeClass 模板中。
+- 未单独指定镜像的数据操作（如 DataLoad）使用与 worker 相同的补全结果。worker 的版本无法补全时，数据操作使用模板镜像，
+  因此可能与保持原有镜像的 worker 不一致，例如模板镜像改为使用 digest 固定之后。
+
 **限制**:
 - ⚠️ Cgroupv1 环境中，不能与 `resources` 字段同时更新（需分步操作，见下方资源字段说明）
+- ⚠️ **只设置 `image` 时，请确认新仓库中存在模板的 tag**：否则 Pod 会因 `ImagePullBackOff` 无法启动；
+  原地更新时，该组件在新镜像拉取成功前不可用。反过来也一样：只设置了 `imageTag` 的实例，在模板的镜像仓库
+  被修改后，会改用新仓库中的这个 tag，请确认新仓库中也存在它。
+- ⚠️ **CacheRuntimeClass 模板中镜像的修改会同步到已有实例**：修改模板中的镜像后，
+  所有引用该 CacheRuntimeClass 的 CacheRuntime 中，未禁用、且未完整设置 `runtimeVersion` 的 master 和 worker
+  会按新模板镜像重新计算，结果变化时滚动到新镜像（只设置了 `imageTag` 的保留自己的 tag，只设置了 `image` 的
+  保留自己的镜像名；无法补全为 `镜像名:tag` 形式的实例保持原有镜像，例如新模板镜像使用 digest 固定时）。控制器不监听
+  CacheRuntimeClass，因此修改在各 CacheRuntime 的下一次 reconcile 时生效，而不是立即生效。client 不同步。
+- ⚠️ 从 CacheRuntime 中删除 `runtimeVersion` 会让组件回到模板镜像。模板镜像没有 tag 或使用 digest 固定时
+  例外：组件保持当前镜像，需要手动设置完整的 `runtimeVersion` 或重建 CacheRuntime。
 
 ---
 
