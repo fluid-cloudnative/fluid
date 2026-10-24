@@ -23,8 +23,10 @@ import (
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
@@ -193,6 +195,26 @@ var _ = Describe("CacheEngine Transform Master Tests", Label("pkg.ddc.cache.engi
 				// Verify node selector merging (runtime takes higher priority)
 				Expect(value.Master.PodTemplateSpec.Spec.NodeSelector).To(HaveKey("original-selector"))
 				Expect(value.Master.PodTemplateSpec.Spec.NodeSelector).To(HaveKey("runtime-master-label"))
+			})
+
+			It("should fail and emit a Warning event when the merged resources conflict", func() {
+				recorder := record.NewFakeRecorder(10)
+				engine.Recorder = recorder
+				// Each side is valid on its own; only the per-key merge conflicts.
+				runtimeClass.Topology.Master.Template.Spec.Containers[0].Resources = corev1.ResourceRequirements{
+					Requests: corev1.ResourceList{corev1.ResourceCPU: resource.MustParse("1")},
+					Limits:   corev1.ResourceList{corev1.ResourceCPU: resource.MustParse("2")},
+				}
+				runtimeObj.Spec.Master.Resources = corev1.ResourceRequirements{
+					Limits: corev1.ResourceList{corev1.ResourceCPU: resource.MustParse("500m")},
+				}
+
+				err := engine.transformMaster(dataset, runtimeObj, runtimeClass, config, value)
+				Expect(err).To(MatchError("invalid master resources: cpu request 1 exceeds limit 500m"))
+				Expect(recorder.Events).To(Receive(And(
+					HavePrefix(corev1.EventTypeWarning+" "+common.RuntimeResourcesConflict+" "),
+					ContainSubstring("cpu request 1 exceeds limit 500m"))))
+				Expect(recorder.Events).To(BeEmpty())
 			})
 		})
 

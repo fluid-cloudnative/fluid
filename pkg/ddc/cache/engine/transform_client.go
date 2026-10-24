@@ -46,6 +46,9 @@ func (e *CacheEngine) transformClient(dataset *datav1alpha1.Dataset, runtime *da
 
 	// transform container related config, currently only modify the first container
 	e.transformComponentPodTemplate(runtime.Spec, runtimeClient.RuntimeComponentCommonSpec, dataset, value.Client)
+	if err = e.checkComponentResources(runtime, value.Client); err != nil {
+		return err
+	}
 
 	// transform tiered store configuration into pod resource request or volumes .
 	err = e.TransformRuntimeTieredStore(&runtimeClient.TieredStore, &value.Client.PodTemplateSpec.Spec)

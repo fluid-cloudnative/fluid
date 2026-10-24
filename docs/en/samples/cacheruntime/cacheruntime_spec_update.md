@@ -60,6 +60,7 @@ spec:
 - `requests.memory`: Memory request
 - `limits.cpu`: CPU limit
 - `limits.memory`: Memory limit
+- `claims`: Dynamic Resource Allocation (DRA) claims; they can only reference pod-level `resourceClaims` the template declares, see the limitations below
 
 **Example**:
 ```yaml
@@ -78,15 +79,58 @@ spec:
 
 `resources` is resolved as follows on every reconcile:
 
-1. the value set on the CacheRuntime, if it declares any `requests` or `limits`;
-2. otherwise the value declared by the CacheRuntimeClass template;
-3. otherwise nothing is synced and the workload keeps its current resources.
+1. the `resources` declared by the CacheRuntimeClass template form the baseline;
+2. the `resources` set on the CacheRuntime are overlaid on that baseline key by key —
+   `requests` and `limits` merge by resource name, `claims` by claim name;
+3. a key neither declares is cleared from the workload.
+
+The CacheRuntime therefore expresses only the differences it wants from the template. Naming
+`limits.memory` alone moves that one value and leaves the template's `requests.cpu`,
+`requests.memory` and `limits.cpu` in place.
+
+Removing a key from the CacheRuntime works the same way: it falls back to the template's value,
+or is cleared from the workload when the template does not declare it. An empty list such as
+`limits: {}` names no key, so it reads the same as leaving `limits` out.
 
 **Limitations**:
 - ⚠️ Cannot exceed the node's available resources.
-- ⚠️ When the CacheRuntimeClass template declares `resources`, removing `resources` from the
-  CacheRuntime does **not** leave the component unconstrained — it falls back to the template value.
-  To relax a limit, set the value you want explicitly instead of removing the field.
+- ⚠️ A key the CacheRuntimeClass template declares can be **overridden but not removed**: omitting it
+  from the CacheRuntime leaves the template's value in place rather than leaving the component
+  unconstrained. To relax a limit, set the value you want explicitly; to drop a requirement
+  altogether, change the CacheRuntimeClass template, which is where the runtime's own requirements
+  are described.
+- ⚠️ **Edits to the template's `resources` reach existing instances**: the CacheRuntimeClass template
+  is the baseline on every reconcile, so after it changes, the keys a CacheRuntime does not override
+  are synced to the master and worker workloads of every CacheRuntime that uses that class, without
+  recreating the CacheRuntime. The master and worker Pods of those instances are updated
+  accordingly, and recreated where the cluster cannot resize them in place. The controller does not
+  watch CacheRuntimeClass, so the change lands
+  on each CacheRuntime's next reconcile rather than immediately. The client is not synced, and
+  template fields other than `resources` are not synced either. A key removed from the template is
+  cleared from the workloads that do not override it.
+- ⚠️ **The CacheRuntime and its template are the source of truth**: resources edited directly on
+  the master or worker AdvancedStatefulSet are reverted on the next reconcile.
+- ⚠️ **A request must not exceed its limit after the merge**: the template and the CacheRuntime
+  can each be valid and still merge into a request above its limit, for example a template
+  `requests.cpu: 1` with a CacheRuntime `limits.cpu: 500m`. Huge pages (`hugepages-*`) and
+  extended resources (such as `nvidia.com/gpu`) are stricter: their request must equal their
+  limit, and a request needs a limit, so a template setting `nvidia.com/gpu` to 1 for both with
+  a CacheRuntime raising only the limit to 2 conflicts as well. The controller then does not sync
+  that component's `resources`, keeps the workload's current values and emits a
+  `RuntimeResourcesConflict` Warning event on the CacheRuntime naming the conflicting keys; a new
+  CacheRuntime with such a pair fails to set up. Set the matching request on the CacheRuntime too
+  (equal to the limit for huge pages and extended resources), or change the template.
+- ⚠️ **`claims` can only reference pod-level `resourceClaims` the workload declares**: the CacheRuntime
+  sets the container's `resources.claims` but cannot add pod-level `spec.resourceClaims`, and the sync
+  does not carry pod-level `resourceClaims` added to the CacheRuntimeClass template after creation to
+  existing workloads either. On creation, a claim name the template does not declare makes the API
+  server reject every master or worker Pod (`must be one of the names in pod.spec.resourceClaims`), and
+  the component stays NotReady; clusters without `DynamicResourceAllocation` enabled (off by default
+  before K8s 1.34) drop `claims` silently instead. On update, a claim that the workload neither
+  declares nor already carries, whether it comes from the CacheRuntime or from a template edit, is
+  not synced: the controller leaves it out, still syncs the rest of `resources`, and emits a
+  `RuntimeResourcesConflict` Warning event on the CacheRuntime naming the claim. To use a new claim,
+  recreate the CacheRuntime.
 - ⚠️ **Kubernetes version requirement**: K8s >= 1.27 with the `InPlacePodVerticalScaling` Feature Gate enabled.
   ```bash
   # Check if the Feature Gate is enabled

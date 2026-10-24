@@ -331,6 +331,76 @@ function scale_worker_and_verify() {
     syslog "Worker scaled to $target_replicas replicas successfully (asts replicas=$asts_replicas, ready=$asts_ready)"
 }
 
+function update_worker_resources_and_verify() {
+    local worker_component_name="${dataset_name}-worker"
+    local worker_selector="cacheruntime.fluid.io/component-name=${worker_component_name}"
+    local resources_path="{.spec.template.spec.containers[0].resources}"
+    local deadline=300
+    local counter=0
+
+    # The CacheRuntimeClass template declares requests {cpu 100m, memory 256Mi} and
+    # limits {cpu 1, memory 2Gi}. Name only limits.memory on the CacheRuntime: the other
+    # three keys must keep their template values (#6173).
+    syslog "Raising worker limits.memory to 3Gi on the CacheRuntime"
+    kubectl patch cacheruntime $dataset_name --type merge -p '{"spec":{"worker":{"resources":{"limits":{"memory":"3Gi"}}}}}'
+
+    while true; do
+        local limits_memory=""
+        limits_memory=$(kubectl get advancedstatefulset "$worker_component_name" -ojsonpath='{.spec.template.spec.containers[0].resources.limits.memory}' 2>/dev/null)
+        if [[ "$limits_memory" == "3Gi" ]]; then
+            break
+        fi
+
+        counter=$((counter + 1))
+        if [[ $((counter * 5)) -ge $deadline ]]; then
+            panic "timeout ${deadline}s waiting for worker limits.memory to sync to 3Gi (got: ${limits_memory:-<empty>}, resources: $(kubectl get advancedstatefulset "$worker_component_name" -ojsonpath="$resources_path" 2>/dev/null))"
+        fi
+        sleep 5
+    done
+
+    local key want got
+    for key in "limits.cpu=1" "requests.cpu=100m" "requests.memory=256Mi"; do
+        want=${key#*=}
+        got=$(kubectl get advancedstatefulset "$worker_component_name" -ojsonpath="{.spec.template.spec.containers[0].resources.${key%%=*}}" 2>/dev/null)
+        if [[ "$got" != "$want" ]]; then
+            panic "worker ${key%%=*} lost the template value: expected $want, got ${got:-<empty>} (resources: $(kubectl get advancedstatefulset "$worker_component_name" -ojsonpath="$resources_path" 2>/dev/null))"
+        fi
+    done
+    syslog "AdvancedStatefulSet resources merged: $(kubectl get advancedstatefulset "$worker_component_name" -ojsonpath="$resources_path")"
+
+    # Wait for the update to reach the pods, in place or by recreation depending on the
+    # cluster's support for InPlacePodVerticalScaling.
+    counter=0
+    while true; do
+        local generation="" observed="" replicas="" updated="" ready=""
+        generation=$(kubectl get advancedstatefulset "$worker_component_name" -ojsonpath='{.metadata.generation}' 2>/dev/null)
+        observed=$(kubectl get advancedstatefulset "$worker_component_name" -ojsonpath='{.status.observedGeneration}' 2>/dev/null)
+        replicas=$(kubectl get advancedstatefulset "$worker_component_name" -ojsonpath='{.spec.replicas}' 2>/dev/null)
+        updated=$(kubectl get advancedstatefulset "$worker_component_name" -ojsonpath='{.status.updatedReplicas}' 2>/dev/null)
+        ready=$(kubectl get advancedstatefulset "$worker_component_name" -ojsonpath='{.status.readyReplicas}' 2>/dev/null)
+        if [[ -n "$generation" ]] && [[ "$observed" == "$generation" ]] && \
+            [[ "$updated" == "$replicas" ]] && [[ "$ready" == "$replicas" ]]; then
+            break
+        fi
+
+        counter=$((counter + 1))
+        if [[ $((counter * 5)) -ge $deadline ]]; then
+            panic "timeout ${deadline}s waiting for worker resources update to roll out (generation: $generation, observed: ${observed:-<empty>}, replicas: $replicas, updated: ${updated:-<empty>}, ready: ${ready:-<empty>})"
+        fi
+        sleep 5
+    done
+
+    local pod_limits_memory="" pod_requests_cpu=""
+    pod_limits_memory=$(kubectl get pod -l "$worker_selector" -ojsonpath='{.items[0].spec.containers[0].resources.limits.memory}')
+    pod_requests_cpu=$(kubectl get pod -l "$worker_selector" -ojsonpath='{.items[0].spec.containers[0].resources.requests.cpu}')
+    if [[ "$pod_limits_memory" != "3Gi" ]] || [[ "$pod_requests_cpu" != "100m" ]]; then
+        panic "worker pod resources not updated: limits.memory=${pod_limits_memory:-<empty>}, requests.cpu=${pod_requests_cpu:-<empty>}"
+    fi
+
+    wait_cache_worker_ready
+    syslog "Worker resources merged onto the template baseline and rolled out"
+}
+
 function delete_dataset_and_runtime() {
     kubectl delete --ignore-not-found -f test/gha-e2e/curvine/dataload.yaml
     kubectl delete --ignore-not-found -f test/gha-e2e/curvine/ref-dataset.yaml
@@ -403,6 +473,9 @@ function main() {
     wait_job_completed $read_job_name
     create_job test/gha-e2e/curvine/read_ref_job.yaml $read_ref_job_name
     wait_job_completed $read_ref_job_name
+
+    # verify a partial resources update keeps the template's other requirements
+    update_worker_resources_and_verify
 
     # verify scale-up and scale-down (exercises patch on advancedstatefulsets and delete on pods)
     # skip on single-node clusters where anti-affinity prevents scheduling the second pod

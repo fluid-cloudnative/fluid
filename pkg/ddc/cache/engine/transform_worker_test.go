@@ -23,8 +23,10 @@ import (
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
@@ -265,6 +267,26 @@ var _ = Describe("CacheEngine Transform Worker Tests", Label("pkg.ddc.cache.engi
 				originalTerms := runtimeClass.Topology.Worker.Template.Spec.Affinity.
 					NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms
 				Expect(originalTerms).To(HaveLen(1))
+			})
+
+			It("should fail and emit a Warning event when the merged resources put a request above its limit", func() {
+				recorder := record.NewFakeRecorder(10)
+				engine.Recorder = recorder
+				// Each side is valid on its own; only the per-key merge conflicts.
+				runtimeClass.Topology.Worker.Template.Spec.Containers[0].Resources = corev1.ResourceRequirements{
+					Requests: corev1.ResourceList{corev1.ResourceCPU: resource.MustParse("1")},
+					Limits:   corev1.ResourceList{corev1.ResourceCPU: resource.MustParse("2")},
+				}
+				runtimeObj.Spec.Worker.Resources = corev1.ResourceRequirements{
+					Limits: corev1.ResourceList{corev1.ResourceCPU: resource.MustParse("500m")},
+				}
+
+				err := engine.transformWorker(dataset, runtimeObj, runtimeClass, config, value)
+				Expect(err).To(MatchError("invalid worker resources: cpu request 1 exceeds limit 500m"))
+				Expect(recorder.Events).To(Receive(And(
+					HavePrefix(corev1.EventTypeWarning+" "+common.RuntimeResourcesConflict+" "),
+					ContainSubstring("cpu request 1 exceeds limit 500m"))))
+				Expect(recorder.Events).To(BeEmpty())
 			})
 
 			Context("when transforming worker volumes", func() {

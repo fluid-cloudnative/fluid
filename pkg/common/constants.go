@@ -45,6 +45,8 @@ const (
 	RuntimeWithSecretNotSupported = "RuntimeWithSecretNotSupported"
 
 	RuntimeMountUfsFailed = "RuntimeMountUfsFailed"
+
+	RuntimeResourcesConflict = "RuntimeResourcesConflict"
 )
 
 // Events related to all type of Data Operations
