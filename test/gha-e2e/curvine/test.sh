@@ -382,6 +382,32 @@ function check_dataset_cache_state() {
     fi
 }
 
+function verify_tieredstore_drift_warning() {
+    syslog "verify tieredStore drift warning event on CacheRuntime"
+    # Patch worker tieredStore emptyDir quota from 1Gi to 2Gi to trigger drift detection
+    kubectl patch cacheruntime $dataset_name --type=merge -p '{"spec":{"worker":{"tieredStore":{"levels":[{"emptyDir":{"quota":"2Gi"}}]}}}}'
+
+    local deadline=120
+    local counter=0
+    local event_found=""
+    while true; do
+        event_found=$(kubectl get events --field-selector reason=RuntimeTieredStoreConflict -o jsonpath='{.items[0].message}' 2>/dev/null || true)
+        if [[ -n "$event_found" ]]; then
+            break
+        fi
+        counter=$((counter + 1))
+        if [[ $((counter * 5)) -ge $deadline ]]; then
+            panic "timeout ${deadline}s waiting for RuntimeTieredStoreConflict event after tieredStore patch"
+        fi
+        sleep 5
+    done
+    syslog "Found expected RuntimeTieredStoreConflict event: $event_found"
+
+    # Revert quota back to 1Gi to verify drift resolution and cooldown reset
+    kubectl patch cacheruntime $dataset_name --type=merge -p '{"spec":{"worker":{"tieredStore":{"levels":[{"emptyDir":{"quota":"1Gi"}}]}}}}'
+    sleep 5
+}
+
 function main() {
     syslog "[TESTCASE $testname STARTS AT $(date)]"
     trap dump_env_and_clean_up EXIT
@@ -414,6 +440,9 @@ function main() {
     else
         syslog "Skipping scale test: single-node cluster ($node_count node)"
     fi
+
+    # verify tieredStore drift warning event on CacheRuntime
+    verify_tieredstore_drift_warning
 
     # verify deletion and cleanup
     delete_dataset_and_runtime

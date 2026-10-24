@@ -139,9 +139,16 @@ kubectl patch cacheruntime my-cache --type='merge' -p '{"spec":{"worker":{"repli
 
 **第 3 节未列出的字段一律不支持原地更新**，修改后不会同步到 AdvancedStatefulSet。
 
-**说明**：
-- 这类字段修改后，需要重新部署 CacheRuntime 才能生效
-- 系统不会自动检测或同步这类变更
+### 4.1 Worker 分层存储 (`spec.worker.tieredStore`)
+
+**字段路径**: `spec.worker.tieredStore`
+
+- **为什么不支持原地更新**：分层存储的 Volume 定义（`emptyDir.sizeLimit`、内存 tmpfs `/dev/shm`、hostPath 挂载等）以及容器内存计算在 Worker 初次创建时（`Setup`）完成生成。在 Kubernetes 中，运行中 Pod 的 Volume 定义和 `sizeLimit` 无法动态修改。
+- **配置漂移告警行为**：虽然修改 `spec.worker.tieredStore` 会同步更新 ConfigMap 中的运行时配置，但运行中的 Worker Pod 仍保持创建时的 Volume 大小和限制。当 `spec.worker.tieredStore` 中的配额或路径与 Worker Pod 发生分歧（漂移）时，Controller 会在调谐循环中检测到该状态，并在 `CacheRuntime` 对象上发出 `RuntimeTieredStoreConflict` Warning 事件：
+  ```bash
+  kubectl get events -n <namespace> --field-selector type=Warning,reason=RuntimeTieredStoreConflict
+  ```
+- **如何使修改生效**：如需调整 `spec.worker.tieredStore`，需要删除并重新创建 CacheRuntime。
 
 ---
 
@@ -152,9 +159,11 @@ kubectl patch cacheruntime my-cache --type='merge' -p '{"spec":{"worker":{"repli
 | `runtimeVersion` | ✅ 支持 | 自动同步到 AdvancedStatefulSet |
 | `resources` | ✅ 支持 | 自动同步到 AdvancedStatefulSet（需 K8s >= 1.27） |
 | `replicas` | ✅ 支持 | 自动同步到 AdvancedStatefulSet（缩容会丢失该 Worker 上的缓存） |
+| `spec.worker.tieredStore` | ❌ 不支持 | 发生漂移时产生 `RuntimeTieredStoreConflict` Warning 事件；需删除并重新创建 CacheRuntime |
 | 其他所有字段 | ❌ 不支持 | 不会同步，需重新部署 |
 
 **关键要点**：
 1. 当前版本支持 `runtimeVersion`、`resources` 和 `replicas` 三个字段的动态更新
 2. Cgroupv1 环境需分步更新 `runtimeVersion` 和 `resources`，`replicas` 不受此限制
-3. 其他字段的修改不会生效，必须重新部署
+3. `spec.worker.tieredStore` 不支持原地更新；修改后会产生 Volume 配置漂移并触发 `RuntimeTieredStoreConflict` 告警事件，需删除并重新创建 CacheRuntime 生效
+4. 其他字段的修改不会生效，必须重新部署
