@@ -128,10 +128,33 @@ func GetCacheComponentName(runtimeName string, componentType ComponentType) stri
 	return fmt.Sprintf("%s-%s", runtimeName, componentType)
 }
 
+const cacheRuntimeConfigConfigMapNamePrefix = "fluid-runtime-config-"
+
+// MaxClientlessDatasetNameLength is the longest dataset name whose runtime config can be
+// injected into an app pod: the injected volume is named after the config map, and a
+// volume name is a DNS-1123 label of at most 63 characters.
+const MaxClientlessDatasetNameLength = 63 - len(cacheRuntimeConfigConfigMapNamePrefix)
+
 // GetCacheRuntimeConfigConfigMapName get the configmap name of the runtime config.
 func GetCacheRuntimeConfigConfigMapName(name string) string {
-	return fmt.Sprintf("fluid-runtime-config-%s", name)
+	return cacheRuntimeConfigConfigMapNamePrefix + name
 }
+
+const (
+	// RuntimeConfigDir is where fluid mounts the runtime config ConfigMap. Component
+	// pods mount it directly; app pods of a clientless runtime get a per-dataset
+	// subdirectory under it, so that several datasets do not collide.
+	RuntimeConfigDir = "/etc/fluid/config"
+
+	RuntimeConfigJSONFileName  = "runtime.json"
+	RuntimeConfigShellFileName = "runtime.sh"
+
+	// EnvRuntimeConfigPath points a component pod at its runtime config.
+	EnvRuntimeConfigPath = "FLUID_RUNTIME_CONFIG_PATH"
+	// EnvRuntimeConfigPathPrefix is the app pod form of the above: an upper-cased
+	// dataset name is appended, e.g. FLUID_RUNTIME_CONFIG_PATH_MY_DATASET.
+	EnvRuntimeConfigPathPrefix = EnvRuntimeConfigPath + "_"
+)
 
 // TieredStoreLevelConfig defines the configuration for a single tier in the tiered storage.
 // This config will be mounted into the worker container via ConfigMap.

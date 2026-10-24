@@ -110,7 +110,7 @@ func (e *CacheEngine) transformComponentPodTemplate(runtimeSpec datav1alpha1.Cac
 			Value: e.namespace,
 		},
 		{
-			Name:  "FLUID_RUNTIME_CONFIG_PATH",
+			Name:  common.EnvRuntimeConfigPath,
 			Value: e.getRuntimeConfigPath(),
 		},
 		{

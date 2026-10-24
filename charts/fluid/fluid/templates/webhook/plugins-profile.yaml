@@ -6,14 +6,57 @@ metadata:
   namespace: {{ include "fluid.namespace" . }}
 data:
   pluginsProfile: |
+{{- /*
+  The values may carry no clientless group although the webhook rule for it is always
+  rendered, e.g. on `helm upgrade --reuse-values` from a release that predates it, which
+  reuses that release's defaults. Fall back to the chart's own group then, so pods
+  matching the rule still get a plugin. Keep the fallback in line with the clientless
+  group in values.yaml.
+  Values that are not maps are left for the paths below to handle as before.
+*/}}
+{{- $clientless := dict "withDataset" (list "RuntimeConfigInjector") "withoutDataset" (list) }}
+{{- $valuesProfile := .Values.webhook.pluginsProfile }}
+{{- if kindIs "map" $valuesProfile }}
+{{- $valuesProfile = deepCopy $valuesProfile }}
+{{- $valuesPlugins := get $valuesProfile "plugins" }}
+{{- if kindIs "map" $valuesPlugins }}
+{{- if get $valuesPlugins "clientless" }}
+{{- $clientless = get $valuesPlugins "clientless" }}
+{{- else }}
+{{- $_ := set $valuesPlugins "clientless" $clientless }}
+{{- end }}
+{{- end }}
+{{- end }}
 {{- if .Values.webhook.forceReplacePluginsProfile }}
-{{ toYaml .Values.webhook.pluginsProfile | indent 4 }}
+{{ toYaml $valuesProfile | indent 4 }}
 {{- else }}
 {{- $existing := (lookup "v1" "ConfigMap" (include "fluid.namespace" .)  "webhook-plugins") }}
+{{- $existingProfile := "" }}
 {{- if $existing }}
-{{ $existing.data.pluginsProfile | indent 4 }}
+{{- $existingProfile = dig "data" "pluginsProfile" "" $existing }}
+{{- end }}
+{{- if $existingProfile }}
+{{- /*
+  Keep the existing profile, but add plugin groups introduced after it was written
+  (e.g. clientless), otherwise their webhook rules match pods while no plugin runs.
+  A profile whose plugins are not a map is not something this template can merge
+  into, so it is kept as it is.
+*/}}
+{{- $profile := fromYaml $existingProfile }}
+{{- $plugins := get $profile "plugins" }}
+{{- if and (not (hasKey $profile "Error")) (kindIs "map" $plugins) (not (hasKey $plugins "clientless")) }}
+{{- $_ := set $plugins "clientless" $clientless }}
+{{ toYaml $profile | indent 4 }}
 {{- else }}
-{{ toYaml .Values.webhook.pluginsProfile | indent 4 }}
+{{- /*
+  The stored profile ends with the newline the block scalar keeps. Drop it, or indent
+  turns it into a whitespace-only line and the checksum on the webhook changes once.
+  Only that newline goes: a profile indented as a whole must keep its first line's indent.
+*/}}
+{{ $existingProfile | trimSuffix "\n" | indent 4 }}
+{{- end }}
+{{- else }}
+{{ toYaml $valuesProfile | indent 4 }}
 {{- end }}
 {{- end }}
 {{- end }}
