@@ -46,8 +46,22 @@ spec:
       imageTag: v1.1.0
 ```
 
+**Resolution**: on creation and on every reconcile, the image of the component's first container in the CacheRuntimeClass template is the baseline, and the `image` and `imageTag` set in the CacheRuntime override it.
+
+**Completion rules**:
+- `image` and `imageTag` may be set on their own. The missing half is taken from the template image. With a template image of `fluid-cache:v1.0.0`:
+  - Only `imageTag: v1.1.0`: the template's image name is kept, giving `fluid-cache:v1.1.0`
+  - Only `image: registry.example.com/fluid-cache`: the template's tag is kept (**not `latest`**), giving `registry.example.com/fluid-cache:v1.0.0`
+  - Neither: the template image `fluid-cache:v1.0.0` is used
+- A `runtimeVersion` setting both `image` and `imageTag` is used as is, even when the template image is pinned by digest.
+- When only one half is set and the other cannot be completed (only `image` is set and the template image has no tag, or the template image or `image` is pinned by digest (`@sha256:...`)), the component uses the template image on creation; on update the edit has no effect and the component keeps its current image. In both cases the controller emits a `RuntimeVersionIncomplete` Warning event on the CacheRuntime and logs the edit; the client, which is not updated in place, reports it on creation only. `runtimeVersion` cannot express a digest reference; to pin a digest, put it in the CacheRuntimeClass template.
+- Data operations that name no image of their own (such as DataLoad) use the same completed image as the worker. When the worker's version cannot be completed they use the template image, so they can differ from a worker that kept its current image, for example after the template image is changed to one pinned by digest.
+
 **Limitations**:
 - ⚠️ In **cgroupv1** environments, this field cannot be updated simultaneously with `resources` (perform step-by-step; see the resource field section below).
+- ⚠️ **When setting only `image`, make sure the template's tag exists in the new repository.** Otherwise the pods fail with `ImagePullBackOff`; on an in-place update the component is unavailable until the new image can be pulled. The same holds the other way round: an instance that sets only `imageTag` moves to that tag in the new repository when the template's image repository changes, so make sure the tag exists there too.
+- ⚠️ **Image edits in the CacheRuntimeClass template reach existing instances**: after the template image changes, each enabled master and worker of a CacheRuntime using that CacheRuntimeClass that does not fully set `runtimeVersion` is re-resolved against the new template image, and rolls only if the resolved image changes (one that sets only `imageTag` keeps its tag, one that sets only `image` keeps its image name; an instance that cannot be resolved to a `name:tag` image keeps its current image, for example when the new template image is pinned by digest). The controller does not watch CacheRuntimeClass, so the change takes effect on each CacheRuntime's next reconcile rather than immediately. The client is not updated.
+- ⚠️ Removing `runtimeVersion` from a CacheRuntime returns the component to the template image, except when the template image has no tag or is pinned by digest: the component then keeps its current image, and you need to set a full `runtimeVersion` or recreate the CacheRuntime.
 
 ---
 

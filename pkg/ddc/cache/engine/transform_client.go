@@ -45,6 +45,9 @@ func (e *CacheEngine) transformClient(dataset *datav1alpha1.Dataset, runtime *da
 	// TODO: TieredStore handling
 
 	// transform container related config, currently only modify the first container
+	// Report here rather than leave it to the sync: Setup waits for the components to be ready
+	// before the reconcile reaches Sync, so an image that never becomes ready would hide it.
+	e.reportIncompleteVersion(runtime, common.ComponentTypeClient, runtimeClient.RuntimeVersion, componentTemplateImage(componentDefinition))
 	e.transformComponentPodTemplate(runtime.Spec, runtimeClient.RuntimeComponentCommonSpec, dataset, value.Client)
 
 	// transform tiered store configuration into pod resource request or volumes .
