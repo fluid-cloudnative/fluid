@@ -18,6 +18,7 @@ package kubeclient
 
 import (
 	"context"
+	"sort"
 
 	corev1 "k8s.io/api/core/v1"
 	apierrs "k8s.io/apimachinery/pkg/api/errors"
@@ -118,12 +119,18 @@ func MergeNodeSelectorAndNodeAffinity(nodeSelector map[string]string, podAffinit
 	}
 
 	var expressions []corev1.NodeSelectorRequirement
-	for key, value := range nodeSelector {
+	keys := make([]string, 0, len(nodeSelector))
+	for key := range nodeSelector {
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
+
+	for _, key := range keys {
 		expressions = append(expressions,
 			corev1.NodeSelectorRequirement{
 				Key:      key,
 				Operator: corev1.NodeSelectorOpIn,
-				Values:   []string{value},
+				Values:   []string{nodeSelector[key]},
 			},
 		)
 	}
