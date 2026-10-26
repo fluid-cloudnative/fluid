@@ -605,4 +605,163 @@ var _ = Describe("ThinEngine Health Check", Label("pkg.ddc.thin.health_check_tes
 			Expect(count).To(BeEmpty())
 		})
 	})
+
+	Describe("CheckRuntimeReady", func() {
+		Context("when workers and fuse are both ready", func() {
+			It("returns true", func() {
+				healthyFuse := &appsv1.DaemonSet{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      healthCheckTestHbase + "-fuse",
+						Namespace: healthCheckTestNamespace,
+					},
+					Status: appsv1.DaemonSetStatus{
+						NumberUnavailable: 0,
+						NumberReady:       1,
+						NumberAvailable:   1,
+					},
+				}
+				healthyWorker := &appsv1.StatefulSet{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      healthCheckTestHbase + "-worker",
+						Namespace: healthCheckTestNamespace,
+					},
+					Status: appsv1.StatefulSetStatus{
+						Replicas:          1,
+						ReadyReplicas:     1,
+						AvailableReplicas: 1,
+					},
+				}
+				runtimeObj := &datav1alpha1.ThinRuntime{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      healthCheckTestHbase,
+						Namespace: healthCheckTestNamespace,
+					},
+					Spec: datav1alpha1.ThinRuntimeSpec{
+						Replicas: 1,
+						Worker: datav1alpha1.ThinCompTemplateSpec{
+							Enabled: true,
+						},
+					},
+				}
+				datasetObj := &datav1alpha1.Dataset{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      healthCheckTestHbase,
+						Namespace: healthCheckTestNamespace,
+					},
+				}
+				c := fake.NewFakeClientWithScheme(testScheme, healthyFuse, healthyWorker, runtimeObj, datasetObj)
+				runtimeInfo, err := base.BuildRuntimeInfo(healthCheckTestHbase, healthCheckTestNamespace, common.ThinRuntime)
+				Expect(err).NotTo(HaveOccurred())
+				engine := ThinEngine{
+					Client:    c,
+					Log:       fake.NullLogger(),
+					namespace: healthCheckTestNamespace,
+					name:      healthCheckTestHbase,
+					runtime:   runtimeObj,
+					Helper:    ctrl.BuildHelper(runtimeInfo, c, fake.NullLogger()),
+				}
+
+				ready := engine.CheckRuntimeReady()
+				Expect(ready).To(BeTrue())
+			})
+		})
+
+		Context("when workers are not ready", func() {
+			It("returns false", func() {
+				healthyFuse := &appsv1.DaemonSet{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      healthCheckTestHbase + "-fuse",
+						Namespace: healthCheckTestNamespace,
+					},
+					Status: appsv1.DaemonSetStatus{
+						NumberUnavailable: 0,
+						NumberReady:       1,
+						NumberAvailable:   1,
+					},
+				}
+				notReadyWorker := &appsv1.StatefulSet{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      healthCheckTestHbase + "-worker",
+						Namespace: healthCheckTestNamespace,
+					},
+					Spec: appsv1.StatefulSetSpec{
+						Replicas: ptr.To[int32](1),
+					},
+					Status: appsv1.StatefulSetStatus{
+						Replicas:          1,
+						ReadyReplicas:     0,
+						AvailableReplicas: 0,
+					},
+				}
+				runtimeObj := &datav1alpha1.ThinRuntime{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      healthCheckTestHbase,
+						Namespace: healthCheckTestNamespace,
+					},
+					Spec: datav1alpha1.ThinRuntimeSpec{
+						Replicas: 1,
+						Worker: datav1alpha1.ThinCompTemplateSpec{
+							Enabled: true,
+						},
+					},
+				}
+				datasetObj := &datav1alpha1.Dataset{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      healthCheckTestHbase,
+						Namespace: healthCheckTestNamespace,
+					},
+				}
+				c := fake.NewFakeClientWithScheme(testScheme, healthyFuse, notReadyWorker, runtimeObj, datasetObj)
+				runtimeInfo, err := base.BuildRuntimeInfo(healthCheckTestHbase, healthCheckTestNamespace, common.ThinRuntime)
+				Expect(err).NotTo(HaveOccurred())
+				engine := ThinEngine{
+					Client:    c,
+					Log:       fake.NullLogger(),
+					namespace: healthCheckTestNamespace,
+					name:      healthCheckTestHbase,
+					runtime:   runtimeObj,
+					Helper:    ctrl.BuildHelper(runtimeInfo, c, fake.NullLogger()),
+				}
+
+				ready := engine.CheckRuntimeReady()
+				Expect(ready).To(BeFalse())
+			})
+		})
+
+		Context("when worker is disabled (fuse-only runtime)", func() {
+			It("returns true because fluid treats fuse as always-ready", func() {
+				// ThinRuntime with no worker enabled: isWorkerEnable() returns false,
+				// so CheckWorkersReady() short-circuits to (true, nil).
+				// Fuse is intentionally excluded from CheckRuntimeReady because
+				// fluid assumes fuse components are always ready (pkg/ctrl/fuse.go).
+				runtimeObj := &datav1alpha1.ThinRuntime{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      healthCheckTestSpark,
+						Namespace: healthCheckTestNamespace,
+					},
+					Spec: datav1alpha1.ThinRuntimeSpec{},
+				}
+				datasetObj := &datav1alpha1.Dataset{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      healthCheckTestSpark,
+						Namespace: healthCheckTestNamespace,
+					},
+				}
+				c := fake.NewFakeClientWithScheme(testScheme, runtimeObj, datasetObj)
+				runtimeInfo, err := base.BuildRuntimeInfo(healthCheckTestSpark, healthCheckTestNamespace, common.ThinRuntime)
+				Expect(err).NotTo(HaveOccurred())
+				engine := ThinEngine{
+					Client:    c,
+					Log:       fake.NullLogger(),
+					namespace: healthCheckTestNamespace,
+					name:      healthCheckTestSpark,
+					runtime:   runtimeObj,
+					Helper:    ctrl.BuildHelper(runtimeInfo, c, fake.NullLogger()),
+				}
+
+				ready := engine.CheckRuntimeReady()
+				Expect(ready).To(BeTrue())
+			})
+		})
+	})
 })
