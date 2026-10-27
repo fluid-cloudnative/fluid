@@ -382,6 +382,100 @@ function check_dataset_cache_state() {
     fi
 }
 
+function verify_tieredstore_drift_warning() {
+    syslog "verify tieredStore drift warning event on CacheRuntime"
+    local runtime_uid
+    runtime_uid=$(kubectl get cacheruntime $dataset_name -n default -o jsonpath='{.metadata.uid}')
+    if [[ -z "$runtime_uid" ]]; then
+        panic "failed to get UID of CacheRuntime $dataset_name"
+    fi
+
+    # Patch worker tieredStore emptyDir quota from 1Gi to 2Gi to trigger drift detection
+    kubectl patch cacheruntime $dataset_name -n default --type=merge -p '{"spec":{"worker":{"tieredStore":{"levels":[{"emptyDir":{"quota":"2Gi"}}]}}}}'
+
+    local deadline=120
+    local counter=0
+    local event_found=""
+    while true; do
+        event_found=$(kubectl get events -n default \
+            --field-selector "involvedObject.uid=${runtime_uid},type=Warning,reason=RuntimeTieredStoreConflict" \
+            -o jsonpath='{.items[0].message}' 2>/dev/null || true)
+        if [[ -n "$event_found" ]]; then
+            break
+        fi
+        counter=$((counter + 1))
+        if [[ $((counter * 5)) -ge $deadline ]]; then
+            panic "timeout ${deadline}s waiting for RuntimeTieredStoreConflict event after tieredStore patch"
+        fi
+        sleep 5
+    done
+    syslog "Found expected RuntimeTieredStoreConflict event: $event_found"
+
+    # While drift persists, assert event count stays 1 across reconcile cycles, pinning the 10-minute throttle
+    for i in 1 2; do
+        sleep 2
+        kubectl annotate cacheruntime $dataset_name -n default test.fluid.io/reconcile-trigger="$i" --overwrite
+        sleep 3
+    done
+    local initial_count
+    initial_count=$(kubectl get events -n default \
+        --field-selector "involvedObject.uid=${runtime_uid},type=Warning,reason=RuntimeTieredStoreConflict" \
+        -o jsonpath='{.items[0].count}' 2>/dev/null || true)
+    if [[ "${initial_count:-1}" != "1" ]]; then
+        panic "expected RuntimeTieredStoreConflict event count to remain 1 due to 10-minute throttling, but got: $initial_count"
+    fi
+    syslog "Throttling verified: event count remained 1 across reconcile cycles under persistent drift"
+
+    # Revert quota back to full original level (including high/low) to resolve drift and reset cooldown
+    kubectl patch cacheruntime $dataset_name -n default --type=merge -p '{"spec":{"worker":{"tieredStore":{"levels":[{"emptyDir":{"quota":"1Gi"},"high":"0.8","low":"0.5"}]}}}}'
+
+    # Trigger reconcile after revert and assert no further conflict events while resolved
+    sleep 5
+    kubectl annotate cacheruntime $dataset_name -n default test.fluid.io/reconcile-trigger="reverted" --overwrite
+    sleep 5
+    local after_revert_count
+    after_revert_count=$(kubectl get events -n default \
+        --field-selector "involvedObject.uid=${runtime_uid},type=Warning,reason=RuntimeTieredStoreConflict" \
+        -o jsonpath='{.items[0].count}' 2>/dev/null || true)
+    if [[ "${after_revert_count:-1}" != "1" ]]; then
+        panic "unexpected RuntimeTieredStoreConflict event after revert: count was $after_revert_count"
+    fi
+    syslog "Revert verified: no new conflict events emitted after drift resolved"
+
+    # Verify cooldown reset upon reversal: re-patch drift and assert fresh warning is emitted immediately
+    kubectl patch cacheruntime $dataset_name -n default --type=merge -p '{"spec":{"worker":{"tieredStore":{"levels":[{"emptyDir":{"quota":"2Gi"}}]}}}}'
+
+    local reset_reemit=false
+    counter=0
+    while true; do
+        local fresh_count
+        fresh_count=$(kubectl get events -n default \
+            --field-selector "involvedObject.uid=${runtime_uid},type=Warning,reason=RuntimeTieredStoreConflict" \
+            -o jsonpath='{.items[0].count}' 2>/dev/null || true)
+        local items_len
+        items_len=$(kubectl get events -n default \
+            --field-selector "involvedObject.uid=${runtime_uid},type=Warning,reason=RuntimeTieredStoreConflict" \
+            -o jsonpath='{len(.items)}' 2>/dev/null || true)
+        if [[ "${fresh_count:-0}" -ge 2 ]] || [[ "${items_len:-0}" -ge 2 ]]; then
+            reset_reemit=true
+            break
+        fi
+        counter=$((counter + 1))
+        if [[ $((counter * 5)) -ge 60 ]]; then
+            break
+        fi
+        sleep 5
+    done
+    if [[ "$reset_reemit" != "true" ]]; then
+        panic "expected fresh RuntimeTieredStoreConflict event emission immediately upon re-drift (cooldown reset verification failed)"
+    fi
+    syslog "Cooldown reset verified: fresh drift re-warned immediately without waiting 10m"
+
+    # Final restore to original 1Gi level
+    kubectl patch cacheruntime $dataset_name -n default --type=merge -p '{"spec":{"worker":{"tieredStore":{"levels":[{"emptyDir":{"quota":"1Gi"},"high":"0.8","low":"0.5"}]}}}}'
+    sleep 5
+}
+
 function main() {
     syslog "[TESTCASE $testname STARTS AT $(date)]"
     trap dump_env_and_clean_up EXIT
@@ -414,6 +508,9 @@ function main() {
     else
         syslog "Skipping scale test: single-node cluster ($node_count node)"
     fi
+
+    # verify tieredStore drift warning event on CacheRuntime
+    verify_tieredstore_drift_warning
 
     # verify deletion and cleanup
     delete_dataset_and_runtime

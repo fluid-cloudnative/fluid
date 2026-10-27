@@ -17,8 +17,10 @@
 package engine
 
 import (
+	"fmt"
 	"os"
 	"reflect"
+	"strings"
 	"time"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
@@ -220,18 +222,22 @@ func (e *CacheEngine) syncRuntimeSpec(ctx cruntime.ReconcileRequestContext, runt
 		// only patches resources, so a spec-derived quota would move the container's
 		// memory while the tmpfs volumes kept their original size.
 		workerResources := desiredComponentResources(runtime.Spec.Worker.Resources, runtimeClass.Topology.Worker)
+		podSpec, err := manager.GetPodSpec(ctx.Context, workerIdentity)
+		if err != nil {
+			e.Log.Error(err, "failed to read the worker pod spec", "component", workerIdentity.Name)
+			return err
+		}
+
 		if workerResources != nil {
-			podSpec, err := manager.GetPodSpec(ctx.Context, workerIdentity)
-			if err != nil {
-				e.Log.Error(err, "failed to read the worker pod spec", "component", workerIdentity.Name)
-				return err
-			}
 			resources := withTieredStoreMemoryQuota(*workerResources, chargedTieredStoreMemoryQuota(podSpec))
 			workerResources = &resources
 		}
 
 		workerTemplateImage := componentTemplateImage(runtimeClass.Topology.Worker)
 		e.reportIncompleteVersion(runtime, common.ComponentTypeWorker, runtime.Spec.Worker.RuntimeVersion, workerTemplateImage)
+
+		e.checkWorkerTieredStoreDrift(runtime, podSpec)
+
 		workerSpec := component.ComponentSpec{
 			Version:   desiredComponentVersion(runtime.Spec.Worker.RuntimeVersion, workerTemplateImage),
 			Resources: workerResources,
@@ -246,6 +252,116 @@ func (e *CacheEngine) syncRuntimeSpec(ctx cruntime.ReconcileRequestContext, runt
 	// Note: Client component is NOT synced here because it uses DaemonSet which does not support in-place update
 	// Client component will be recreated when spec changes
 
+	return nil
+}
+
+// checkWorkerTieredStoreDrift detects whether the worker pod's tiered store volumes match
+// the quotas declared in runtime.Spec.Worker.TieredStore. Because tieredStore volumes cannot
+// be updated in-place without pod recreation, any split between the spec (recomputed into
+// the runtime ConfigMap) and the worker pod volume sizeLimits is reported as a Warning event.
+func (e *CacheEngine) checkWorkerTieredStoreDrift(runtime *datav1alpha1.CacheRuntime, podSpec *corev1.PodSpec) {
+	if podSpec == nil {
+		return
+	}
+
+	var driftMsgs []string
+	expectedVolumes := make(map[string]bool)
+
+	for levelIndex, level := range runtime.Spec.Worker.TieredStore.Levels {
+		switch {
+		case level.ProcessMemory != nil:
+			volName, msg := checkProcessMemoryDrift(levelIndex, level, podSpec.Volumes)
+			expectedVolumes[volName] = true
+			if msg != "" {
+				driftMsgs = append(driftMsgs, msg)
+			}
+		case level.HostPath != nil:
+			volNames, msgs := checkHostPathDrift(levelIndex, level, podSpec.Volumes)
+			for _, vn := range volNames {
+				expectedVolumes[vn] = true
+			}
+			driftMsgs = append(driftMsgs, msgs...)
+		case level.EmptyDir != nil:
+			volName, msg := checkEmptyDirDrift(levelIndex, level, podSpec.Volumes)
+			expectedVolumes[volName] = true
+			if msg != "" {
+				driftMsgs = append(driftMsgs, msg)
+			}
+		}
+	}
+
+	// Check for orphaned tiered store volumes on the worker pod that are no longer declared in spec
+	for _, vol := range podSpec.Volumes {
+		if strings.HasPrefix(vol.Name, tieredStoreVolumeNamePrefix) && !expectedVolumes[vol.Name] {
+			driftMsgs = append(driftMsgs, fmt.Sprintf("worker pod volume %s is not declared in spec tieredStore", vol.Name))
+		}
+	}
+
+	if len(driftMsgs) == 0 {
+		e.timeOfLastTieredStoreWarning = time.Time{}
+		return
+	}
+
+	interval := e.getTieredStoreWarningInterval()
+	if e.timeOfLastTieredStoreWarning.IsZero() || time.Since(e.timeOfLastTieredStoreWarning) >= interval {
+		msg := fmt.Sprintf("Worker tieredStore cannot be updated in-place after creation: %s. Delete and recreate the CacheRuntime to apply changes.", strings.Join(driftMsgs, "; "))
+		e.Log.Info("worker tieredStore drift detected", "reasons", driftMsgs)
+		if e.Recorder != nil {
+			e.Recorder.Eventf(runtime, corev1.EventTypeWarning, common.RuntimeTieredStoreConflict, "%s", msg)
+		}
+		e.timeOfLastTieredStoreWarning = time.Now()
+	}
+}
+
+func checkProcessMemoryDrift(levelIndex int, level datav1alpha1.RuntimeTieredStoreLevel, podVolumes []corev1.Volume) (string, string) {
+	volName := getMemoryTieredStoreVolumeName(levelIndex)
+	vol := findVolume(podVolumes, volName)
+	if vol == nil || vol.EmptyDir == nil || vol.EmptyDir.SizeLimit == nil {
+		return volName, fmt.Sprintf("level %d (processMemory): volume %s not found or missing sizeLimit in worker pod", levelIndex, volName)
+	}
+	if vol.EmptyDir.SizeLimit.Cmp(level.ProcessMemory.Quota) != 0 {
+		return volName, fmt.Sprintf("level %d (processMemory): spec quota %s does not match worker volume %s sizeLimit %s", levelIndex, level.ProcessMemory.Quota.String(), volName, vol.EmptyDir.SizeLimit.String())
+	}
+	return volName, ""
+}
+
+func checkEmptyDirDrift(levelIndex int, level datav1alpha1.RuntimeTieredStoreLevel, podVolumes []corev1.Volume) (string, string) {
+	volName := getTieredStoreVolumeName(levelIndex, 0)
+	vol := findVolume(podVolumes, volName)
+	if vol == nil || vol.EmptyDir == nil || vol.EmptyDir.SizeLimit == nil {
+		return volName, fmt.Sprintf("level %d (emptyDir): volume %s not found or missing sizeLimit in worker pod", levelIndex, volName)
+	}
+	if vol.EmptyDir.Medium != level.EmptyDir.Medium {
+		return volName, fmt.Sprintf("level %d (emptyDir): spec medium %q does not match worker volume %s medium %q", levelIndex, string(level.EmptyDir.Medium), volName, string(vol.EmptyDir.Medium))
+	}
+	if vol.EmptyDir.SizeLimit.Cmp(level.EmptyDir.Quota) != 0 {
+		return volName, fmt.Sprintf("level %d (emptyDir): spec quota %s does not match worker volume %s sizeLimit %s", levelIndex, level.EmptyDir.Quota.String(), volName, vol.EmptyDir.SizeLimit.String())
+	}
+	return volName, ""
+}
+
+func checkHostPathDrift(levelIndex int, level datav1alpha1.RuntimeTieredStoreLevel, podVolumes []corev1.Volume) ([]string, []string) {
+	var volNames []string
+	var msgs []string
+	for pathIndex, path := range level.HostPath.Paths {
+		volName := getTieredStoreVolumeName(levelIndex, pathIndex)
+		volNames = append(volNames, volName)
+		vol := findVolume(podVolumes, volName)
+		if vol == nil || vol.HostPath == nil {
+			msgs = append(msgs, fmt.Sprintf("level %d path %d (hostPath): volume %s not found in worker pod", levelIndex, pathIndex, volName))
+		} else if vol.HostPath.Path != path {
+			msgs = append(msgs, fmt.Sprintf("level %d path %d (hostPath): spec path %s does not match worker volume %s path %s", levelIndex, pathIndex, path, volName, vol.HostPath.Path))
+		}
+	}
+	return volNames, msgs
+}
+
+func findVolume(volumes []corev1.Volume, name string) *corev1.Volume {
+	for i := range volumes {
+		if volumes[i].Name == name {
+			return &volumes[i]
+		}
+	}
 	return nil
 }
 
