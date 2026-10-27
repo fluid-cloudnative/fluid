@@ -291,12 +291,18 @@ function wait_dataload_completed() {
 }
 function scale_worker_and_verify() {
     local target_replicas=$1
+    local method=${2:-patch}
     local worker_component_name="${dataset_name}-worker"
     local deadline=180
     local counter=0
 
-    syslog "Scaling worker to $target_replicas replicas"
-    kubectl patch cacheruntime $dataset_name --type merge -p "{\"spec\":{\"worker\":{\"replicas\":$target_replicas}}}"
+    syslog "Scaling worker to $target_replicas replicas (method=$method)"
+    if [[ "$method" == "scale" ]]; then
+        # write through the scale subresource, the same path an HPA takes
+        kubectl scale cacheruntime/${dataset_name} --replicas=$target_replicas
+    else
+        kubectl patch cacheruntime $dataset_name --type merge -p "{\"spec\":{\"worker\":{\"replicas\":$target_replicas}}}"
+    fi
 
     while true; do
         local ready_replicas=""
@@ -328,7 +334,14 @@ function scale_worker_and_verify() {
         panic "AdvancedStatefulSet readyReplicas mismatch: expected $target_replicas, got $asts_ready"
     fi
 
-    syslog "Worker scaled to $target_replicas replicas successfully (asts replicas=$asts_replicas, ready=$asts_ready)"
+    # read back through the scale subresource to confirm the write is visible the way an HPA reads it
+    local scale_spec_replicas=""
+    scale_spec_replicas=$(kubectl get --raw "/apis/data.fluid.io/v1alpha1/namespaces/default/cacheruntimes/${dataset_name}/scale" 2>/dev/null | grep -o '"spec":{"replicas":[0-9]*' | grep -o '[0-9]*$')
+    if [[ "$scale_spec_replicas" != "$target_replicas" ]]; then
+        panic "scale subresource spec.replicas mismatch: expected $target_replicas, got ${scale_spec_replicas:-<empty>}"
+    fi
+
+    syslog "Worker scaled to $target_replicas replicas successfully (asts replicas=$asts_replicas, ready=$asts_ready, scale subresource spec.replicas=$scale_spec_replicas)"
 }
 
 function delete_dataset_and_runtime() {
@@ -382,6 +395,58 @@ function check_dataset_cache_state() {
     fi
 }
 
+function verify_status_selector() {
+    local expected_selector="cacheruntime.fluid.io/component-name=${dataset_name}-worker,cacheruntime.fluid.io/name=${dataset_name}"
+    local selector=""
+    selector=$(kubectl get cacheruntime $dataset_name -ojsonpath='{@.status.selector}' 2>/dev/null)
+    if [[ -z "$selector" ]]; then
+        panic "cacheruntime $dataset_name status.selector is empty, expected \"$expected_selector\""
+    fi
+    if [[ "$selector" != "$expected_selector" ]]; then
+        panic "cacheruntime $dataset_name status.selector mismatch: expected \"$expected_selector\", got \"$selector\""
+    fi
+
+    # the selector must actually discover the worker pods, which is what HPA relies on
+    local matched_pods=""
+    matched_pods=$(kubectl get pod -l "$selector" -oname 2>/dev/null)
+    if [[ -z "$matched_pods" ]]; then
+        panic "no pod matched cacheruntime $dataset_name status.selector \"$selector\""
+    fi
+    syslog "Verified cacheruntime $dataset_name status.selector=\"$selector\" (matches worker pods: $(echo $matched_pods | tr '\n' ' '))"
+}
+
+function verify_scale_subresource() {
+    # Verify the scale subresource contract an HPA relies on, without running a real HPA:
+    # a GET on .../scale must report the worker selector and replicas derived from the CR.
+    local scale_path="/apis/data.fluid.io/v1alpha1/namespaces/default/cacheruntimes/${dataset_name}/scale"
+    local scale_json=""
+    scale_json=$(kubectl get --raw "$scale_path" 2>/dev/null)
+    if [[ -z "$scale_json" ]]; then
+        panic "failed to read scale subresource of cacheruntime $dataset_name"
+    fi
+
+    local expected_selector=""
+    expected_selector=$(kubectl get cacheruntime $dataset_name -ojsonpath='{@.status.selector}')
+    # the API server exposes the labelSelectorPath string via scale.status.targetSelector
+    # (and parses it into scale.status.selector as a map); the HPA reads the string form
+    if ! grep -q "\"targetSelector\":\"${expected_selector}\"" <<< "$scale_json"; then
+        panic "scale subresource targetSelector mismatch: expected \"${expected_selector}\", got scale: $scale_json"
+    fi
+
+    local spec_replicas=""
+    spec_replicas=$(kubectl get cacheruntime $dataset_name -ojsonpath='{@.spec.worker.replicas}')
+    if ! grep -q "\"spec\":{\"replicas\":${spec_replicas}}" <<< "$scale_json"; then
+        panic "scale subresource spec.replicas mismatch: expected ${spec_replicas}, got scale: $scale_json"
+    fi
+
+    local current_replicas=""
+    current_replicas=$(kubectl get cacheruntime $dataset_name -ojsonpath='{@.status.worker.currentReplicas}')
+    if ! grep -q "\"status\":{\"replicas\":${current_replicas}," <<< "$scale_json"; then
+        panic "scale subresource status.replicas mismatch: expected ${current_replicas}, got scale: $scale_json"
+    fi
+    syslog "Verified scale subresource of cacheruntime $dataset_name (spec.replicas=${spec_replicas}, status.replicas=${current_replicas}, selector=${expected_selector})"
+}
+
 function main() {
     syslog "[TESTCASE $testname STARTS AT $(date)]"
     trap dump_env_and_clean_up EXIT
@@ -391,6 +456,9 @@ function main() {
     create_reference_dataset
     wait_reference_dataset_bound
     wait_cache_worker_ready
+
+    verify_status_selector
+    verify_scale_subresource
 
     check_dataset_cache_state
 
@@ -404,13 +472,14 @@ function main() {
     create_job test/gha-e2e/curvine/read_ref_job.yaml $read_ref_job_name
     wait_job_completed $read_ref_job_name
 
-    # verify scale-up and scale-down (exercises patch on advancedstatefulsets and delete on pods)
+    # verify scale-up and scale-down: scale up writes through the scale subresource (the same
+    # path an HPA takes), scale down writes spec directly via patch; both exercise delete on pods
     # skip on single-node clusters where anti-affinity prevents scheduling the second pod
     local node_count=""
     node_count=$(kubectl get nodes --no-headers 2>/dev/null | wc -l | tr -d ' ')
     if [[ "$node_count" -ge 2 ]]; then
-        scale_worker_and_verify 2
-        scale_worker_and_verify 1
+        scale_worker_and_verify 2 scale
+        scale_worker_and_verify 1 patch
     else
         syslog "Skipping scale test: single-node cluster ($node_count node)"
     fi
