@@ -25,8 +25,24 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/cache/component"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/util/retry"
 )
+
+// getWorkerSelectors returns the label selector in string form for discovering the worker
+// pods, e.g. for auto-scaling. It is derived from the same labels as the worker workload's
+// spec.selector built by component.GetComponentMatchLabels, so no API read is needed.
+func (e *CacheEngine) getWorkerSelectors() (string, error) {
+	labelSelector := &metav1.LabelSelector{
+		MatchLabels: component.GetComponentMatchLabels(e.name, common.GetCacheComponentName(e.name, common.ComponentTypeWorker)),
+	}
+	selector, err := metav1.LabelSelectorAsSelector(labelSelector)
+	if err != nil {
+		return "", err
+	}
+
+	return selector.String(), nil
+}
 
 func (e *CacheEngine) SetupWorkerComponent(workerValue *common.CacheRuntimeComponentValue) (bool, error) {
 	shouldSetupWorker, err := e.ShouldSetupWorker()
