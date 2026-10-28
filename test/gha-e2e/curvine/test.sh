@@ -427,10 +427,11 @@ function verify_scale_subresource() {
 
     local expected_selector=""
     expected_selector=$(kubectl get cacheruntime $dataset_name -ojsonpath='{@.status.selector}')
-    # the API server exposes the labelSelectorPath string via scale.status.targetSelector
-    # (and parses it into scale.status.selector as a map); the HPA reads the string form
-    if ! grep -q "\"targetSelector\":\"${expected_selector}\"" <<< "$scale_json"; then
-        panic "scale subresource targetSelector mismatch: expected \"${expected_selector}\", got scale: $scale_json"
+    # autoscaling/v1 ScaleStatus has a single string field "selector": the API server
+    # fills it verbatim from the CRD's labelSelectorPath (here .status.selector) and
+    # the HPA reads that string to discover the target pods
+    if ! grep -Fq "\"selector\":\"${expected_selector}\"" <<< "$scale_json"; then
+        panic "scale subresource selector mismatch: expected \"${expected_selector}\", got scale: $scale_json"
     fi
 
     local spec_replicas=""
