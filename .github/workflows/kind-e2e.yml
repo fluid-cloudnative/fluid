@@ -22,7 +22,8 @@ env:
 
 jobs:
   kind-e2e-test:
-    runs-on: ubuntu-latest
+    # TODO(#6224): switch back to ubuntu-latest once JindoRuntime FUSE mounts work with the host AppArmor fusermount3 profile on ubuntu-26.04 runners.
+    runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       matrix:
