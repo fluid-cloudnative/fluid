@@ -92,6 +92,18 @@ var _ = Describe("ComponentManager", func() {
 			Expect(labels[common.LabelCacheRuntimeComponentName]).To(Equal("test-runtime-master"))
 			Expect(len(labels)).To(Equal(2))
 		})
+
+		It("should stay in sync with GetComponentMatchLabels", func() {
+			component := &common.CacheRuntimeComponentValue{
+				Name: "test-runtime-worker",
+				Owner: &common.OwnerReference{
+					Name: "test-runtime",
+				},
+			}
+
+			labels := getCommonLabelsFromComponent(component)
+			Expect(labels).To(Equal(GetComponentMatchLabels("test-runtime", "test-runtime-worker")))
+		})
 	})
 })
 

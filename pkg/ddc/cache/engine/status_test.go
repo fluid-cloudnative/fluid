@@ -157,6 +157,55 @@ var _ = Describe("CheckAndUpdateRuntimeStatus", func() {
 		})
 	})
 
+	Describe("Worker selector population", func() {
+		It("should populate Status.Selector with the worker label selector for pod discovery", func() {
+			engine, client = newStatusTestEngineWithClient(
+				fake.NewFakeClientWithScheme(
+					CacheEngineTestScheme,
+					newStatusTestRuntime(),
+					newAdvancedStatefulSetComponent(testStatusMaster, testStatusNamespace, 1, 1),
+					newAdvancedStatefulSetComponent(testStatusWorker, testStatusNamespace, 1, 1),
+				),
+			)
+
+			ready, err := engine.CheckAndUpdateRuntimeStatus(newStatusTestRuntimeValue(false))
+			Expect(err).NotTo(HaveOccurred())
+			Expect(ready).To(BeTrue())
+
+			updatedRuntime := getUpdatedRuntime(client)
+			Expect(updatedRuntime.Status.Selector).To(Equal(
+				"cacheruntime.fluid.io/component-name=curvine-demo-worker,cacheruntime.fluid.io/name=curvine-demo"))
+		})
+
+		It("should keep Status.Selector stable across status cycles", func() {
+			engine, client = newStatusTestEngineWithClient(
+				fake.NewFakeClientWithScheme(
+					CacheEngineTestScheme,
+					newStatusTestRuntime(),
+					newAdvancedStatefulSetComponent(testStatusMaster, testStatusNamespace, 1, 1),
+					newAdvancedStatefulSetComponent(testStatusWorker, testStatusNamespace, 1, 1),
+				),
+			)
+
+			_, err := engine.CheckAndUpdateRuntimeStatus(newStatusTestRuntimeValue(false))
+			Expect(err).NotTo(HaveOccurred())
+			first := getUpdatedRuntime(client)
+
+			// Second cycle: worker becomes partially ready, status changes but selector must stay
+			worker := &workloadv1alpha1.AdvancedStatefulSet{}
+			Expect(client.Get(context.TODO(), types.NamespacedName{Name: testStatusWorker, Namespace: testStatusNamespace}, worker)).To(Succeed())
+			worker.Status.ReadyReplicas = 0
+			worker.Status.AvailableReplicas = 0
+			Expect(client.Status().Update(context.TODO(), worker)).To(Succeed())
+
+			_, err = engine.CheckAndUpdateRuntimeStatus(newStatusTestRuntimeValue(false))
+			Expect(err).NotTo(HaveOccurred())
+
+			second := getUpdatedRuntime(client)
+			Expect(second.Status.Selector).To(Equal(first.Status.Selector))
+		})
+	})
+
 	Describe("Runtime status recomputation on retry", func() {
 		Context("when conflict occurs during status update", func() {
 			It("should recompute runtime ready status after retry", func() {
