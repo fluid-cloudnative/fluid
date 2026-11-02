@@ -453,12 +453,23 @@ function verify_scale_subresource() {
         panic "scale subresource spec.replicas mismatch: expected ${spec_replicas}, got scale: $scale_json"
     fi
 
+    # the CR field feeds statusReplicasPath, so comparing the scale response against
+    # it would only prove the plumbing; compare both against the pods the selector
+    # actually matches - the observed-pod count the HPA relies on
     local current_replicas=""
     current_replicas=$(kubectl get cacheruntime $dataset_name -ojsonpath='{@.status.worker.currentReplicas}')
-    if ! grep -q "\"status\":{\"replicas\":${current_replicas}," <<< "$scale_json"; then
-        panic "scale subresource status.replicas mismatch: expected ${current_replicas}, got scale: $scale_json"
+    local pod_count=""
+    pod_count=$(kubectl get pod -l "$expected_selector" --no-headers 2>/dev/null | wc -l | tr -d ' ')
+    if [[ -z "$pod_count" ]]; then
+        pod_count=0
     fi
-    syslog "Verified scale subresource of cacheruntime $dataset_name (spec.replicas=${spec_replicas}, status.replicas=${current_replicas}, selector=${expected_selector})"
+    if [[ "$current_replicas" != "$pod_count" ]]; then
+        panic "cacheruntime status.worker.currentReplicas ($current_replicas) != selector-matched pod count ($pod_count)"
+    fi
+    if ! grep -q "\"status\":{\"replicas\":${pod_count}," <<< "$scale_json"; then
+        panic "scale subresource status.replicas != selector-matched pod count ${pod_count}, got scale: $scale_json"
+    fi
+    syslog "Verified scale subresource of cacheruntime $dataset_name (spec.replicas=${spec_replicas}, status.replicas=${pod_count} selector-matched pods, selector=${expected_selector})"
 }
 
 function main() {

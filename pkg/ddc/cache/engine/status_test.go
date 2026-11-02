@@ -407,6 +407,7 @@ func newAdvancedStatefulSetComponent(name, namespace string, desiredReplicas, re
 			Replicas: &replicas,
 		},
 		Status: workloadv1alpha1.AdvancedStatefulSetStatus{
+			Replicas:          desiredReplicas,
 			CurrentReplicas:   desiredReplicas,
 			AvailableReplicas: readyReplicas,
 			ReadyReplicas:     readyReplicas,
