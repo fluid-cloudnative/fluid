@@ -21,6 +21,7 @@ import (
 
 	"github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/dataflow"
 	"github.com/fluid-cloudnative/fluid/pkg/dataoperation"
 	"github.com/fluid-cloudnative/fluid/pkg/runtime"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
@@ -52,7 +53,13 @@ func (o *OnceHandler) GetOperationStatus(ctx runtime.ReconcileRequestContext, op
 		return
 	}
 
-	// TODO: inject nodeaffinity like other data operations when using job instead of pod
+	if kubeclient.IsSucceededPod(backupPod) && result.NodeAffinity == nil {
+		result.NodeAffinity, err = dataflow.GenerateNodeAffinityFromPod(backupPod)
+		if err != nil {
+			ctx.Log.V(1).Info("NodeAffinity not injected", "reason", err.Error())
+			err = nil
+		}
+	}
 
 	var finishTime time.Time
 	if len(backupPod.Status.Conditions) != 0 {
