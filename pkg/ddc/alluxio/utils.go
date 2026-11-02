@@ -75,6 +75,16 @@ func (e *AlluxioEngine) getMasterPod(name string, namespace string) (pod *v1.Pod
 	return pod, err
 }
 
+// getMasterStatefulset retrieves the Alluxio Master StatefulSet with the specified name
+// and namespace from the Kubernetes cluster using the embedded client.
+//
+// Parameters:
+//   - name:      the name of the StatefulSet resource.
+//   - namespace: the Kubernetes namespace where the StatefulSet resides.
+//
+// Returns:
+//   - master: a pointer to the appsv1.StatefulSet object if found; nil on error.
+//   - err:    non-nil if the retrieval fails (e.g., resource not found, network issue).
 func (e *AlluxioEngine) getMasterStatefulset(name string, namespace string) (master *appsv1.StatefulSet, err error) {
 	master = &appsv1.StatefulSet{}
 	err = e.Client.Get(context.TODO(), types.NamespacedName{
