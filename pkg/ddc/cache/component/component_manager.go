@@ -66,11 +66,17 @@ func NewComponentHelper(componentType common.ComponentType, client client.Client
 
 // getCommonLabelsFromComponent returns the common labels for component used for stateful
 func getCommonLabelsFromComponent(component *common.CacheRuntimeComponentValue) map[string]string {
-	// These labels are used as sts.spec.selector which cannot be updated.
-	// If changed, may cause all exist runtime failed.
+	return GetComponentMatchLabels(component.Owner.Name, component.Name)
+}
+
+// GetComponentMatchLabels returns the match labels of a cache runtime component. They are set
+// as the component workload's spec.selector (which cannot be updated once created; if changed,
+// may cause all existing runtimes failed) and on the component pods, so they also serve as the
+// selector to discover the component's pods (e.g. worker pods for auto-scaling).
+func GetComponentMatchLabels(runtimeName string, componentName string) map[string]string {
 	return map[string]string{
-		common.LabelCacheRuntimeName: component.Owner.Name,
+		common.LabelCacheRuntimeName: runtimeName,
 		// format: runtimeName-componentType
-		common.LabelCacheRuntimeComponentName: component.Name,
+		common.LabelCacheRuntimeComponentName: componentName,
 	}
 }

@@ -147,8 +147,14 @@ func (s *AdvancedStatefulSetManager) constructStatus(asts *workloadv1alpha1.Adva
 		runtimePhase = datav1alpha1.RuntimePhaseReady
 	}
 
-	// AvailableReplicas can be greater than CurrentReplicas (Kubernetes API allows this)
-	unavailableReplicas := asts.Status.CurrentReplicas - asts.Status.AvailableReplicas
+	// asts.Status.CurrentReplicas counts only pods on the current revision, so during
+	// a rolling update it undercounts; expose Status.Replicas (all observed pods).
+	// This field feeds the scale subresource's statusReplicasPath, and the HPA
+	// expects observed instances - the same population as CurrentWorkerNumberScheduled
+	// for the existing runtimes (pkg/ctrl/worker.go).
+	observedReplicas := asts.Status.Replicas
+
+	unavailableReplicas := observedReplicas - asts.Status.AvailableReplicas
 	if unavailableReplicas < 0 {
 		unavailableReplicas = 0
 	}
@@ -156,7 +162,7 @@ func (s *AdvancedStatefulSetManager) constructStatus(asts *workloadv1alpha1.Adva
 	return datav1alpha1.RuntimeComponentStatus{
 		Phase:               runtimePhase,
 		DesiredReplicas:     desiredReplicas,
-		CurrentReplicas:     asts.Status.CurrentReplicas,
+		CurrentReplicas:     observedReplicas,
 		AvailableReplicas:   asts.Status.AvailableReplicas,
 		UnavailableReplicas: unavailableReplicas,
 		ReadyReplicas:       readyReplicas,
