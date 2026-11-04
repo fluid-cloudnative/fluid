@@ -1,7 +1,7 @@
 # github.com/Masterminds/semver/v3 v3.4.0
 ## explicit; go 1.21
 github.com/Masterminds/semver/v3
-# github.com/agiledragon/gomonkey/v2 v2.13.0
+# github.com/agiledragon/gomonkey/v2 v2.14.4
 ## explicit; go 1.14
 github.com/agiledragon/gomonkey/v2
 github.com/agiledragon/gomonkey/v2/creflect
