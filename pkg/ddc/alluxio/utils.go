@@ -111,7 +111,9 @@ func (e *AlluxioEngine) getMasterPodInfo() (podName string, containerName string
 
 	return
 }
-
+// getMasterName returns the name of the Alluxio master StatefulSet.
+// It constructs the name by appending "-master" to the engine's base name.
+// This name is used to identify the master StatefulSet resource in Kubernetes.
 func (e *AlluxioEngine) getMasterName() (dsName string) {
 	return e.name + "-master"
 }
