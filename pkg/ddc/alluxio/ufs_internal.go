@@ -46,6 +46,10 @@ func (e *AlluxioEngine) usedStorageBytesInternal() (value int64, err error) {
 	return
 }
 
+
+// freeStorageBytesInternal returns the amount of free storage space (in bytes) within the Alluxio filesystem.
+// It currently returns zero values as the implementation has not been completed.
+// TODO: implement the query logic to retrieve the actual free bytes from the Alluxio master.
 func (e *AlluxioEngine) freeStorageBytesInternal() (value int64, err error) {
 	return
 }
