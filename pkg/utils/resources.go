@@ -17,8 +17,11 @@ limitations under the License.
 package utils
 
 import (
-	"github.com/fluid-cloudnative/fluid/pkg/common"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
+
+	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/pkg/errors"
 )
 
 func TransformCoreV1ResourcesToInternalResources(res corev1.ResourceRequirements) (cRes common.Resources) {
@@ -41,6 +44,40 @@ func TransformCoreV1ResourcesToInternalResources(res corev1.ResourceRequirements
 	}
 
 	return
+}
+
+// TransformInternalResourcesToCoreV1Resources is the inverse of
+// TransformCoreV1ResourcesToInternalResources. It is needed when a value rendered into a Helm
+// values ConfigMap has to be compared against or written back to a live workload spec.
+func TransformInternalResourcesToCoreV1Resources(cRes common.Resources) (res corev1.ResourceRequirements, err error) {
+	res.Requests, err = transformInternalResourceListToCoreV1ResourceList(cRes.Requests)
+	if err != nil {
+		return res, errors.Wrap(err, "failed to parse resource requests")
+	}
+
+	res.Limits, err = transformInternalResourceListToCoreV1ResourceList(cRes.Limits)
+	if err != nil {
+		return res, errors.Wrap(err, "failed to parse resource limits")
+	}
+
+	return res, nil
+}
+
+func transformInternalResourceListToCoreV1ResourceList(cList common.ResourceList) (list corev1.ResourceList, err error) {
+	if len(cList) == 0 {
+		return nil, nil
+	}
+
+	list = make(corev1.ResourceList, len(cList))
+	for k, v := range cList {
+		quantity, parseErr := resource.ParseQuantity(v)
+		if parseErr != nil {
+			return nil, errors.Wrapf(parseErr, "failed to parse quantity %q of resource %q", v, k)
+		}
+		list[k] = quantity
+	}
+
+	return list, nil
 }
 
 func ResourceRequirementsEqual(source corev1.ResourceRequirements,
