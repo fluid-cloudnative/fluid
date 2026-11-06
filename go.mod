@@ -58,7 +58,7 @@ replace k8s.io/sample-controller => k8s.io/sample-controller v0.29.15
 
 require (
 	github.com/agiledragon/gomonkey/v2 v2.14.4
-	github.com/container-storage-interface/spec v1.8.0
+	github.com/container-storage-interface/spec v1.13.0
 	github.com/docker/go-units v0.5.0
 	github.com/felixge/fgprof v0.9.5
 	github.com/fluid-cloudnative/advanced-statefulset v0.0.0-20260518081011-ad1ab7583915
