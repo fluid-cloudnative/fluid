@@ -90,6 +90,11 @@ function alluxio_e2e() {
     bash test/gha-e2e/alluxio/test.sh
 }
 
+function alluxio_scaledown_e2e() {
+    set -e
+    bash test/gha-e2e/alluxio-scaledown/test.sh
+}
+
 function jindo_e2e() {
     set -e
     bash test/gha-e2e/jindo/test.sh
@@ -117,5 +122,6 @@ curvine_e2e
 mooncake_e2e
 # other runtime tests
 alluxio_e2e
+alluxio_scaledown_e2e
 jindo_e2e
 juicefs_e2e

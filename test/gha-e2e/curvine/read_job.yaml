@@ -24,7 +24,14 @@ spec:
         command: ['sh']
         args:
         - -c
-        - set -ex; test -n "$(cat /data/minio/bar)"
+        - |
+          for i in $(seq 1 12); do
+            content=$(cat /data/minio/bar 2>/dev/null) && [ -n "$content" ] && exit 0
+            echo "Attempt $i: /data/minio/bar not readable yet, retrying in 5s..."
+            sleep 5
+          done
+          echo "ERROR: /data/minio/bar is not readable after 60 seconds"
+          exit 1
         volumeMounts:
         - name: data-vol
           mountPath: /data
