@@ -146,14 +146,7 @@ func (e *EFCEngine) createPersistentVolumeForRuntime(ctx context.Context, runtim
 		nodeSelector := runtime.GetFuseNodeSelector()
 		e.Log.Info("Enable global mode for fuse in volume")
 		if len(nodeSelector) > 0 {
-			nodeSelectorRequirements := []corev1.NodeSelectorRequirement{}
-			for key, value := range nodeSelector {
-				nodeSelectorRequirements = append(nodeSelectorRequirements, corev1.NodeSelectorRequirement{
-					Key:      key,
-					Operator: corev1.NodeSelectorOpIn,
-					Values:   []string{value},
-				})
-			}
+			nodeSelectorRequirements := utils.ToNodeSelectorRequirements(nodeSelector)
 			pv.Spec.NodeAffinity = &corev1.VolumeNodeAffinity{
 				Required: &corev1.NodeSelector{
 					NodeSelectorTerms: []corev1.NodeSelectorTerm{

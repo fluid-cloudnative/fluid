@@ -58,8 +58,8 @@ func (p *RequireNodeWithFuse) Mutate(pod *corev1.Pod, runtimeInfos map[string]ba
 
 	requiredSchedulingTerms := []corev1.NodeSelectorTerm{}
 
-	for _, runtime := range runtimeInfos {
-		term, err := getRequiredSchedulingTerm(runtime)
+	for _, name := range utils.OrderedKeys(runtimeInfos) {
+		term, err := getRequiredSchedulingTerm(runtimeInfos[name])
 		if err != nil {
 			return true, fmt.Errorf("should stop mutating pod %s in namespace %s due to %v",
 				pod.Name,
@@ -90,13 +90,7 @@ func getRequiredSchedulingTerm(runtimeInfo base.RuntimeInfoInterface) (requiredS
 	}
 
 	selectors := runtimeInfo.GetFuseNodeSelector()
-	for key, value := range selectors {
-		requiredSchedulingTerm.MatchExpressions = append(requiredSchedulingTerm.MatchExpressions, corev1.NodeSelectorRequirement{
-			Key:      key,
-			Operator: corev1.NodeSelectorOpIn,
-			Values:   []string{value},
-		})
-	}
+	requiredSchedulingTerm.MatchExpressions = append(requiredSchedulingTerm.MatchExpressions, utils.ToNodeSelectorRequirements(selectors)...)
 
 	return
 }

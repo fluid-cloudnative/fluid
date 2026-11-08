@@ -18,13 +18,13 @@ package kubeclient
 
 import (
 	"context"
-	"sort"
 
 	corev1 "k8s.io/api/core/v1"
 	apierrs "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	podutil "k8s.io/kubernetes/pkg/api/v1/pod"
 )
 
@@ -118,22 +118,7 @@ func MergeNodeSelectorAndNodeAffinity(nodeSelector map[string]string, podAffinit
 		}
 	}
 
-	var expressions []corev1.NodeSelectorRequirement
-	keys := make([]string, 0, len(nodeSelector))
-	for key := range nodeSelector {
-		keys = append(keys, key)
-	}
-	sort.Strings(keys)
-
-	for _, key := range keys {
-		expressions = append(expressions,
-			corev1.NodeSelectorRequirement{
-				Key:      key,
-				Operator: corev1.NodeSelectorOpIn,
-				Values:   []string{nodeSelector[key]},
-			},
-		)
-	}
+	expressions := utils.ToNodeSelectorRequirements(nodeSelector)
 	// inject to MatchExpressions for And relation.
 	if len(expressions) > 0 {
 		if len(nodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms) == 0 {
