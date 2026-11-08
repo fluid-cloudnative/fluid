@@ -18,6 +18,7 @@ package thin
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"reflect"
 	"strconv"
@@ -67,7 +68,11 @@ func (t ThinEngine) ShouldUpdateUFS() (ufsToUpdate *utils.UFSToUpdate) {
 	// 2. update fuse-conf configmap
 	update, err := t.updateFuseConfigOnChange(t.runtime, dataset)
 	if err != nil {
-		t.Log.Error(err, "Failed to update fuse config")
+		if errors.Is(err, ErrPVCNotBound) {
+			t.Log.V(1).Info("PVC is not bounded yet, will update fuse config once bounded", "error", err)
+		} else {
+			t.Log.Error(err, "Failed to update fuse config")
+		}
 		return
 	}
 
