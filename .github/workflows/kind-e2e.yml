@@ -73,8 +73,9 @@ jobs:
             exit 0
           fi
           echo ">>> fusermount3 profile found, unloading it"
-          sudo aa-status 2>/dev/null | grep -i fusermount || true
-          if ! sudo apparmor_parser -R /etc/apparmor.d/fusermount3; then
+          sudo grep -h "^fusermount3 " /sys/kernel/security/apparmor/profiles || true
+          parser="$(command -v apparmor_parser || echo /usr/sbin/apparmor_parser)"
+          if ! sudo "$parser" -R /etc/apparmor.d/fusermount3; then
             echo ">>> failed to unload /etc/apparmor.d/fusermount3; without it the JindoRuntime FUSE e2e hangs until the step timeout (#6224)" >&2
             exit 1
           fi
