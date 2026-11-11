@@ -187,6 +187,10 @@ In that case the Master and Worker components start as usual, the Dataset reache
 
 Note that Fluid still creates a PVC/PV for such a Dataset and reports them as Bound, but an application pod that mounts the PVC stays in ContainerCreating forever (reporting `timeout waiting for FUSE mount point`). For this kind of cache system, applications should talk to the cache service directly instead of going through the Dataset → PVC → volumeMounts path. For a complete configuration example, see [Deploy Mooncake with CacheRuntime](../samples/cacheruntime/mooncake_cache_runtime.md).
 
+#### Editing a CacheRuntimeClass
+
+A CacheRuntime is bound to its CacheRuntimeClass as the class is when the CacheRuntime is first set up: Fluid keeps a snapshot of the class in the ConfigMap `fluid-runtime-class-snapshot-<CacheRuntime name>` and reads the class only from there afterwards. Editing or deleting a CacheRuntimeClass therefore only affects the CacheRuntimes created after the change. Existing CacheRuntimes keep the images, templates, `options`, `executionEntries` and `dataOperationSpecs` they were created with, so a class can move to a new version of the cache system, with new images, scripts and options, without running instances receiving a mix of old and new. Users move an existing CacheRuntime to the new version by recreating it. See [CacheRuntime Spec Field Update Capabilities](../samples/cacheruntime/cacheruntime_spec_update.md#4-changes-to-the-cacheruntimeclass).
+
 ### Step 2.5 User Creates Runtime
 
 ```yaml

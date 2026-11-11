@@ -186,6 +186,10 @@ topology 中的 master、worker、client 三个组件在 API 上均为可选。�
 
 需要注意的是，Fluid 仍会为该 Dataset 创建 PVC/PV 且状态为 Bound，但业务 Pod 挂载该 PVC 会一直停留在 ContainerCreating（报 timeout waiting for FUSE mount point）。这类缓存系统应由应用直连缓存服务读写，不要走 Dataset → PVC → volumeMounts 这条路径。完整配置示例参见 [使用 CacheRuntime 部署 Mooncake](../samples/cacheruntime/mooncake_cache_runtime.md)。
 
+#### 修改 CacheRuntimeClass
+
+CacheRuntime 绑定的是它首次 Setup 时的 CacheRuntimeClass：Fluid 会把 class 的快照保存在 ConfigMap `fluid-runtime-class-snapshot-<CacheRuntime 名称>` 中，此后只从这份快照读取 class。因此修改或删除 CacheRuntimeClass 只影响之后创建的 CacheRuntime；已有的 CacheRuntime 保持创建时的镜像、模板、`options`、`executionEntries` 和 `dataOperationSpecs`。这样 class 可以升级到缓存系统的新版本（新的镜像、脚本和参数），而运行中的实例不会混用新旧配置。用户如需让已有 CacheRuntime 使用新版本，请重建它。详见 [CacheRuntime Spec 字段更新能力说明](../samples/cacheruntime/cacheruntime_spec_update.md#4-cacheruntimeclass-的修改)。
+
 
 ### 步骤2.5 用户创建Runtime
 
