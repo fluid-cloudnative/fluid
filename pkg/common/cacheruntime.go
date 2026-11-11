@@ -133,6 +133,12 @@ func GetCacheRuntimeConfigConfigMapName(name string) string {
 	return fmt.Sprintf("fluid-runtime-config-%s", name)
 }
 
+// GetCacheRuntimeClassSnapshotConfigMapName gets the name of the configmap holding the snapshot
+// of the CacheRuntimeClass a CacheRuntime is bound to.
+func GetCacheRuntimeClassSnapshotConfigMapName(name string) string {
+	return fmt.Sprintf("fluid-runtime-class-snapshot-%s", name)
+}
+
 // TieredStoreLevelConfig defines the configuration for a single tier in the tiered storage.
 // This config will be mounted into the worker container via ConfigMap.
 type TieredStoreLevelConfig struct {

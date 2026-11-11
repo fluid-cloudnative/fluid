@@ -277,7 +277,7 @@ var _ = Describe("CacheRuntime resources creation/sync equivalence",
 					created := &workloadv1alpha1.AdvancedStatefulSet{}
 					Expect(client.Get(context.TODO(), key, created)).To(Succeed())
 
-					Expect(e.syncRuntimeSpec(cruntime.ReconcileRequestContext{}, runtimeObj, runtimeClass)).To(Succeed())
+					Expect(e.syncRuntimeSpec(cruntime.ReconcileRequestContext{}, runtimeObj, runtimeClass, nil)).To(Succeed())
 
 					synced := &workloadv1alpha1.AdvancedStatefulSet{}
 					Expect(client.Get(context.TODO(), key, synced)).To(Succeed())

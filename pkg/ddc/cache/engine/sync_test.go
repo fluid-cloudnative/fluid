@@ -685,7 +685,7 @@ var _ = Describe("CacheEngine Sync Tests", Label("pkg.ddc.cache.engine.sync_test
 	Describe("syncRuntimeValueConfigMap", func() {
 		Context("when configmap does not exist", func() {
 			It("should create new configmap", func() {
-				err := engine.syncRuntimeValueConfigMap(ctx, runtimeObj)
+				err := engine.syncRuntimeValueConfigMap(ctx, runtimeObj, runtimeClass)
 				Expect(err).NotTo(HaveOccurred())
 
 				// Verify configmap was created
@@ -756,7 +756,7 @@ var _ = Describe("CacheEngine Sync Tests", Label("pkg.ddc.cache.engine.sync_test
 			})
 
 			It("should update existing configmap", func() {
-				err := engine.syncRuntimeValueConfigMap(ctx, runtimeObj)
+				err := engine.syncRuntimeValueConfigMap(ctx, runtimeObj, runtimeClass)
 				Expect(err).NotTo(HaveOccurred())
 
 				// Verify configmap was updated
@@ -773,7 +773,7 @@ var _ = Describe("CacheEngine Sync Tests", Label("pkg.ddc.cache.engine.sync_test
 		Context("when configmap data is unchanged", func() {
 			BeforeEach(func() {
 				// First sync to create configmap
-				err := engine.syncRuntimeValueConfigMap(ctx, runtimeObj)
+				err := engine.syncRuntimeValueConfigMap(ctx, runtimeObj, runtimeClass)
 				Expect(err).NotTo(HaveOccurred())
 
 				// Get the created configmap
@@ -830,7 +830,7 @@ var _ = Describe("CacheEngine Sync Tests", Label("pkg.ddc.cache.engine.sync_test
 
 			It("should not update configmap when data is same", func() {
 				// Second sync with same data
-				err := engine.syncRuntimeValueConfigMap(ctx, runtimeObj)
+				err := engine.syncRuntimeValueConfigMap(ctx, runtimeObj, runtimeClass)
 				Expect(err).NotTo(HaveOccurred())
 
 				// Verify configmap still exists
@@ -897,7 +897,7 @@ var _ = Describe("CacheEngine Sync Tests", Label("pkg.ddc.cache.engine.sync_test
 					WithStatusSubresource(minimalRuntime).
 					Build()
 
-				err := engine.syncRuntimeValueConfigMap(ctx, minimalRuntime)
+				err := engine.syncRuntimeValueConfigMap(ctx, minimalRuntime, runtimeClass)
 				Expect(err).NotTo(HaveOccurred())
 			})
 		})
@@ -1044,7 +1044,7 @@ var _ = Describe("CacheEngine Sync Tests", Label("pkg.ddc.cache.engine.sync_test
 
 				syncRuntime, err := engine.getRuntime()
 				Expect(err).NotTo(HaveOccurred())
-				Expect(engine.syncRuntimeSpec(ctx, syncRuntime, runtimeClass)).To(Succeed())
+				Expect(engine.syncRuntimeSpec(ctx, syncRuntime, runtimeClass, nil)).To(Succeed())
 			}
 
 			It("should roll the worker back to the template image", func() {
@@ -1120,7 +1120,7 @@ var _ = Describe("CacheEngine Sync Tests", Label("pkg.ddc.cache.engine.sync_test
 
 				syncRuntime, err := engine.getRuntime()
 				Expect(err).NotTo(HaveOccurred())
-				Expect(engine.syncRuntimeSpec(ctx, syncRuntime, runtimeClass)).To(Succeed())
+				Expect(engine.syncRuntimeSpec(ctx, syncRuntime, runtimeClass, nil)).To(Succeed())
 
 				// Control: the master's workload picks the new image up.
 				Expect(imageOfSts(masterSts)).To(Equal("test-master:v2"))
@@ -1165,7 +1165,7 @@ var _ = Describe("CacheEngine Sync Tests", Label("pkg.ddc.cache.engine.sync_test
 				Expect(runtimeObj.Spec.Worker.Resources.Limits).To(BeNil())
 				Expect(runtimeObj.Spec.Worker.Resources.Requests).To(BeNil())
 
-				Expect(engine.syncRuntimeSpec(ctx, runtimeObj, runtimeClass)).To(Succeed())
+				Expect(engine.syncRuntimeSpec(ctx, runtimeObj, runtimeClass, nil)).To(Succeed())
 
 				Expect(memLimitOf(masterSts)).To(Equal("2Gi"))
 				Expect(memLimitOf(workerSts)).To(Equal("2Gi"))
@@ -1179,7 +1179,7 @@ var _ = Describe("CacheEngine Sync Tests", Label("pkg.ddc.cache.engine.sync_test
 				}
 				runtimeClass.Topology = nil
 
-				Expect(engine.syncRuntimeSpec(ctx, runtimeObj, runtimeClass)).To(Succeed())
+				Expect(engine.syncRuntimeSpec(ctx, runtimeObj, runtimeClass, nil)).To(Succeed())
 
 				Expect(memLimitOf(masterSts)).To(Equal("2Gi"))
 				Expect(memLimitOf(workerSts)).To(Equal("2Gi"))
@@ -1192,7 +1192,7 @@ var _ = Describe("CacheEngine Sync Tests", Label("pkg.ddc.cache.engine.sync_test
 					Limits: corev1.ResourceList{corev1.ResourceMemory: resource.MustParse("4Gi")},
 				}
 
-				Expect(engine.syncRuntimeSpec(ctx, runtimeObj, runtimeClass)).To(Succeed())
+				Expect(engine.syncRuntimeSpec(ctx, runtimeObj, runtimeClass, nil)).To(Succeed())
 
 				Expect(memLimitOf(masterSts)).To(Equal("4Gi"))
 				Expect(memLimitOf(workerSts)).To(Equal("2Gi"))
@@ -1203,7 +1203,7 @@ var _ = Describe("CacheEngine Sync Tests", Label("pkg.ddc.cache.engine.sync_test
 					Limits: corev1.ResourceList{corev1.ResourceMemory: resource.MustParse("4Gi")},
 				}
 
-				Expect(engine.syncRuntimeSpec(ctx, runtimeObj, runtimeClass)).To(Succeed())
+				Expect(engine.syncRuntimeSpec(ctx, runtimeObj, runtimeClass, nil)).To(Succeed())
 
 				Expect(memLimitOf(workerSts)).To(Equal("4Gi"))
 				Expect(memLimitOf(masterSts)).To(Equal("2Gi"))
@@ -1251,7 +1251,7 @@ var _ = Describe("CacheEngine Sync Tests", Label("pkg.ddc.cache.engine.sync_test
 				})
 
 				It("should move the key it names and keep the template's other requirements", func() {
-					Expect(engine.syncRuntimeSpec(ctx, runtimeObj, runtimeClass)).To(Succeed())
+					Expect(engine.syncRuntimeSpec(ctx, runtimeObj, runtimeClass, nil)).To(Succeed())
 
 					synced := workloadOf(workerSts).Spec.Template.Spec.Containers[0].Resources
 					Expect(synced.Limits.Memory().String()).To(Equal("8Gi"))
@@ -1276,7 +1276,7 @@ var _ = Describe("CacheEngine Sync Tests", Label("pkg.ddc.cache.engine.sync_test
 				})
 
 				It("should move the key it names and keep the template's other requirements", func() {
-					Expect(engine.syncRuntimeSpec(ctx, runtimeObj, runtimeClass)).To(Succeed())
+					Expect(engine.syncRuntimeSpec(ctx, runtimeObj, runtimeClass, nil)).To(Succeed())
 
 					synced := workloadOf(masterSts).Spec.Template.Spec.Containers[0].Resources
 					Expect(synced.Limits.Memory().String()).To(Equal("8Gi"))
@@ -1291,14 +1291,14 @@ var _ = Describe("CacheEngine Sync Tests", Label("pkg.ddc.cache.engine.sync_test
 				// no requests to carry over. The sync must leave them unset and converge:
 				// a second pass finds nothing to change and does not patch again.
 				It("should leave requests unset and stop patching once converged", func() {
-					Expect(engine.syncRuntimeSpec(ctx, runtimeObj, runtimeClass)).To(Succeed())
+					Expect(engine.syncRuntimeSpec(ctx, runtimeObj, runtimeClass, nil)).To(Succeed())
 
 					synced := workloadOf(workerSts).Spec.Template.Spec.Containers[0].Resources
 					Expect(synced.Limits.Memory().String()).To(Equal("8Gi"))
 					Expect(synced.Requests).To(BeNil())
 
 					converged := workloadOf(workerSts).ResourceVersion
-					Expect(engine.syncRuntimeSpec(ctx, runtimeObj, runtimeClass)).To(Succeed())
+					Expect(engine.syncRuntimeSpec(ctx, runtimeObj, runtimeClass, nil)).To(Succeed())
 					Expect(workloadOf(workerSts).ResourceVersion).To(Equal(converged))
 				})
 			})
@@ -1322,7 +1322,7 @@ var _ = Describe("CacheEngine Sync Tests", Label("pkg.ddc.cache.engine.sync_test
 				Expect(runtimeObj.Spec.Worker.Resources.Limits).To(BeNil())
 				Expect(runtimeObj.Spec.Worker.Resources.Requests).To(BeNil())
 
-				Expect(engine.syncRuntimeSpec(ctx, runtimeObj, runtimeClass)).To(Succeed())
+				Expect(engine.syncRuntimeSpec(ctx, runtimeObj, runtimeClass, nil)).To(Succeed())
 
 				Expect(memLimitOf(workerSts)).To(Equal("2Gi"))
 			})
@@ -1333,7 +1333,7 @@ var _ = Describe("CacheEngine Sync Tests", Label("pkg.ddc.cache.engine.sync_test
 					Limits: corev1.ResourceList{corev1.ResourceMemory: resource.MustParse("4Gi")},
 				}
 
-				Expect(engine.syncRuntimeSpec(ctx, runtimeObj, runtimeClass)).To(Succeed())
+				Expect(engine.syncRuntimeSpec(ctx, runtimeObj, runtimeClass, nil)).To(Succeed())
 
 				Expect(memLimitOf(workerSts)).To(Equal("4Gi"))
 			})
@@ -1351,7 +1351,7 @@ var _ = Describe("CacheEngine Sync Tests", Label("pkg.ddc.cache.engine.sync_test
 				}
 				Expect(fakeClient.Update(ctx.Context, sts)).To(Succeed())
 
-				Expect(engine.syncRuntimeSpec(ctx, runtimeObj, runtimeClass)).To(Succeed())
+				Expect(engine.syncRuntimeSpec(ctx, runtimeObj, runtimeClass, nil)).To(Succeed())
 
 				Expect(fakeClient.Get(ctx.Context, key, sts)).To(Succeed())
 				Expect(sts.Spec.Template.Spec.Containers[0].Resources.Limits).To(BeEmpty())
@@ -1376,7 +1376,7 @@ var _ = Describe("CacheEngine Sync Tests", Label("pkg.ddc.cache.engine.sync_test
 				Expect(fakeClient.Get(ctx.Context, key, sts)).To(Succeed())
 				before := sts.Spec.Template.Spec.Containers[0].Resources.DeepCopy()
 
-				Expect(engine.syncRuntimeSpec(ctx, runtimeObj, runtimeClass)).To(Succeed())
+				Expect(engine.syncRuntimeSpec(ctx, runtimeObj, runtimeClass, nil)).To(Succeed())
 
 				Expect(fakeClient.Get(ctx.Context, key, sts)).To(Succeed())
 				Expect(equality.Semantic.DeepEqual(sts.Spec.Template.Spec.Containers[0].Resources, *before)).To(BeTrue())
@@ -1405,7 +1405,7 @@ var _ = Describe("CacheEngine Sync Tests", Label("pkg.ddc.cache.engine.sync_test
 				Expect(fakeClient.Get(ctx.Context, key, sts)).To(Succeed())
 				before := sts.Spec.Template.Spec.Containers[0].Resources.DeepCopy()
 
-				Expect(engine.syncRuntimeSpec(ctx, runtimeObj, runtimeClass)).To(Succeed())
+				Expect(engine.syncRuntimeSpec(ctx, runtimeObj, runtimeClass, nil)).To(Succeed())
 
 				Expect(fakeClient.Get(ctx.Context, key, sts)).To(Succeed())
 				Expect(equality.Semantic.DeepEqual(sts.Spec.Template.Spec.Containers[0].Resources, *before)).To(BeTrue())
@@ -1431,7 +1431,7 @@ var _ = Describe("CacheEngine Sync Tests", Label("pkg.ddc.cache.engine.sync_test
 					Limits: corev1.ResourceList{corev1.ResourceMemory: resource.MustParse("4Gi")},
 				}
 
-				Expect(engine.syncRuntimeSpec(ctx, runtimeObj, runtimeClass)).To(Succeed())
+				Expect(engine.syncRuntimeSpec(ctx, runtimeObj, runtimeClass, nil)).To(Succeed())
 
 				sts := &workloadv1alpha1.AdvancedStatefulSet{}
 				key := types.NamespacedName{Name: workerSts, Namespace: "default"}
@@ -1454,7 +1454,7 @@ var _ = Describe("CacheEngine Sync Tests", Label("pkg.ddc.cache.engine.sync_test
 				sts.Spec.Template.Spec.ResourceClaims = []corev1.PodResourceClaim{{Name: "gpu"}}
 				Expect(fakeClient.Update(ctx.Context, sts)).To(Succeed())
 
-				Expect(engine.syncRuntimeSpec(ctx, runtimeObj, runtimeClass)).To(Succeed())
+				Expect(engine.syncRuntimeSpec(ctx, runtimeObj, runtimeClass, nil)).To(Succeed())
 
 				Expect(fakeClient.Get(ctx.Context, key, sts)).To(Succeed())
 				Expect(sts.Spec.Template.Spec.Containers[0].Resources.Claims).To(Equal([]corev1.ResourceClaim{{Name: "gpu"}}))
@@ -1474,7 +1474,7 @@ var _ = Describe("CacheEngine Sync Tests", Label("pkg.ddc.cache.engine.sync_test
 						Claims: []corev1.ResourceClaim{{Name: "unused"}},
 					})
 
-					Expect(engine.syncRuntimeSpec(ctx, runtimeObj, runtimeClass)).To(Succeed())
+					Expect(engine.syncRuntimeSpec(ctx, runtimeObj, runtimeClass, nil)).To(Succeed())
 
 					sts := &workloadv1alpha1.AdvancedStatefulSet{}
 					Expect(fakeClient.Get(ctx.Context, types.NamespacedName{Name: stsName, Namespace: "default"}, sts)).To(Succeed())
@@ -1533,7 +1533,7 @@ var _ = Describe("CacheEngine Sync Tests", Label("pkg.ddc.cache.engine.sync_test
 
 				syncRuntime, err := engine.getRuntime()
 				Expect(err).NotTo(HaveOccurred())
-				Expect(engine.syncRuntimeSpec(ctx, syncRuntime, runtimeClass)).To(Succeed())
+				Expect(engine.syncRuntimeSpec(ctx, syncRuntime, runtimeClass, nil)).To(Succeed())
 
 				// template 2Gi + quota 8Gi, not the bare template value.
 				Expect(memLimitOf(workerSts)).To(Equal("10Gi"))
@@ -1586,7 +1586,7 @@ var _ = Describe("CacheEngine Sync Tests", Label("pkg.ddc.cache.engine.sync_test
 				// so the sync can only rely on what is persisted in the spec.
 				syncRuntime, err := engine.getRuntime()
 				Expect(err).NotTo(HaveOccurred())
-				Expect(engine.syncRuntimeSpec(ctx, syncRuntime, runtimeClass)).To(Succeed())
+				Expect(engine.syncRuntimeSpec(ctx, syncRuntime, runtimeClass, nil)).To(Succeed())
 
 				Expect(memLimitOf(workerSts)).To(Equal(desired.String()))
 			})
@@ -1612,7 +1612,7 @@ var _ = Describe("CacheEngine Sync Tests", Label("pkg.ddc.cache.engine.sync_test
 			syncOnce := func() {
 				syncRuntime, err := engine.getRuntime()
 				Expect(err).NotTo(HaveOccurred())
-				Expect(engine.syncRuntimeSpec(ctx, syncRuntime, runtimeClass)).To(Succeed())
+				Expect(engine.syncRuntimeSpec(ctx, syncRuntime, runtimeClass, nil)).To(Succeed())
 			}
 
 			It("should not let an edited tiered store quota half-apply", func() {

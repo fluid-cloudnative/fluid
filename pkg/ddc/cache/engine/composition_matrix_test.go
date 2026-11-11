@@ -359,7 +359,7 @@ var updatePath = compositionPath{
 			Log:       ctrl.Log.WithName("composition-matrix"),
 		}
 
-		g.Expect(e.syncRuntimeSpec(cruntime.ReconcileRequestContext{}, runtimeObj, runtimeClass)).To(Succeed())
+		g.Expect(e.syncRuntimeSpec(cruntime.ReconcileRequestContext{}, runtimeObj, runtimeClass, nil)).To(Succeed())
 
 		got := &workloadv1alpha1.AdvancedStatefulSet{}
 		g.Expect(client.Get(context.TODO(), types.NamespacedName{Name: name, Namespace: "default"}, got)).To(Succeed())

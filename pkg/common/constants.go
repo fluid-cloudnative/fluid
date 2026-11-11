@@ -49,6 +49,12 @@ const (
 	RuntimeResourcesConflict = "RuntimeResourcesConflict"
 
 	RuntimeVersionIncomplete = "RuntimeVersionIncomplete"
+
+	RuntimeClassSnapshotInvalid = "RuntimeClassSnapshotInvalid"
+
+	RuntimeClassChanged = "RuntimeClassChanged"
+
+	RuntimeAdoptionPending = "RuntimeAdoptionPending"
 )
 
 // Events related to all type of Data Operations

@@ -48,18 +48,21 @@ func (e *CacheEngine) Sync(ctx cruntime.ReconcileRequestContext) (err error) {
 	if err != nil {
 		return err
 	}
-	runtimeClass, err := e.getRuntimeClass(runtime.Spec.RuntimeClassName)
+	// The runtime reads its class only through the snapshot it is bound to, and passes it down,
+	// so that every step of this sync sees the same class. A runtime set up before snapshots
+	// existed is bound here, adopting what its components run.
+	runtimeClass, adoptionPending, err := e.getBoundRuntimeClass(ctx, runtime)
 	if err != nil {
 		return err
 	}
 
-	err = e.syncRuntimeValueConfigMap(ctx, runtime)
+	err = e.syncRuntimeValueConfigMap(ctx, runtime, runtimeClass)
 	if err != nil {
 		return err
 	}
 
 	// handle ufs change - support dynamic mount updates
-	err = e.UpdateOnUFSChange(runtime)
+	err = e.UpdateOnUFSChange(runtime, runtimeClass)
 	if err != nil {
 		e.Log.Error(err, "Failed to update UFS")
 		return err
@@ -72,7 +75,7 @@ func (e *CacheEngine) Sync(ctx cruntime.ReconcileRequestContext) (err error) {
 	}
 
 	// sync runtime spec changes to Master/Worker components
-	err = e.syncRuntimeSpec(ctx, runtime, runtimeClass)
+	err = e.syncRuntimeSpec(ctx, runtime, runtimeClass, adoptionPending)
 	if err != nil {
 		return err
 	}
@@ -128,12 +131,13 @@ func (e *CacheEngine) Sync(ctx cruntime.ReconcileRequestContext) (err error) {
 	return nil
 }
 
-func (e *CacheEngine) syncRuntimeValueConfigMap(ctx cruntime.ReconcileRequestContext, runtime *datav1alpha1.CacheRuntime) error {
+func (e *CacheEngine) syncRuntimeValueConfigMap(ctx cruntime.ReconcileRequestContext, runtime *datav1alpha1.CacheRuntime,
+	runtimeClass *datav1alpha1.CacheRuntimeClass) error {
 	configMap, err := kubeclient.GetConfigmapByNameWithContext(ctx, e.Client, common.GetCacheRuntimeConfigConfigMapName(e.name), e.namespace)
 	if err != nil {
 		return err
 	}
-	data, err := e.generateRuntimeConfigData(ctx, runtime)
+	data, err := e.generateRuntimeConfigData(ctx, runtime, runtimeClass)
 	if err != nil {
 		return err
 	}
@@ -192,11 +196,14 @@ func (e *CacheEngine) permitSync() (permit bool) {
 	return
 }
 
-// syncRuntimeSpec synchronizes CacheRuntime spec changes to component workloads
-// This enables in-place updates for compatible fields without pod recreation
-// Note: Only Master and Worker components support in-place update (using AdvancedStatefulSet)
-// Client component uses DaemonSet and does NOT support in-place update
-func (e *CacheEngine) syncRuntimeSpec(ctx cruntime.ReconcileRequestContext, runtime *datav1alpha1.CacheRuntime, runtimeClass *datav1alpha1.CacheRuntimeClass) error {
+// syncRuntimeSpec synchronizes the replicas, image and resources the CacheRuntime declares to
+// the master and worker AdvancedStatefulSets, resolved against runtimeClass, the class the
+// runtime is bound to (see getBoundRuntimeClass). Only the replicas are synced to the
+// components in adoptionPending, see holdAdoptionPending. The AdvancedStatefulSet applies an
+// image change in place, restarting the container, and recreates the Pods for a resources
+// change. The client runs as a DaemonSet and is not synced after creation.
+func (e *CacheEngine) syncRuntimeSpec(ctx cruntime.ReconcileRequestContext, runtime *datav1alpha1.CacheRuntime,
+	runtimeClass *datav1alpha1.CacheRuntimeClass, adoptionPending map[common.ComponentType]bool) error {
 	e.Log.V(1).Info("start syncing runtime spec")
 	defer func() {
 		e.Log.V(1).Info("finished syncing runtime spec")
@@ -227,6 +234,9 @@ func (e *CacheEngine) syncRuntimeSpec(ctx cruntime.ReconcileRequestContext, runt
 			Resources: e.validDesiredResources(runtime, common.ComponentTypeMaster,
 				desiredComponentResources(runtime.Spec.Master.Resources, runtimeClass.Topology.Master), podSpec),
 			Replicas: &runtime.Spec.Master.Replicas,
+		}
+		if adoptionPending[common.ComponentTypeMaster] {
+			masterSpec = e.holdAdoptionPending(ctx.Context, runtime, common.ComponentTypeMaster, podSpec, masterSpec)
 		}
 		if err := manager.SyncComponentSpec(ctx.Context, masterIdentity, masterSpec); err != nil {
 			e.Log.Error(err, "failed to sync master component spec", "component", masterIdentity.Name)
@@ -268,6 +278,9 @@ func (e *CacheEngine) syncRuntimeSpec(ctx cruntime.ReconcileRequestContext, runt
 			Version:   desiredComponentVersion(runtime.Spec.Worker.RuntimeVersion, workerTemplateImage),
 			Resources: workerResources,
 			Replicas:  &runtime.Spec.Worker.Replicas,
+		}
+		if adoptionPending[common.ComponentTypeWorker] {
+			workerSpec = e.holdAdoptionPending(ctx.Context, runtime, common.ComponentTypeWorker, podSpec, workerSpec)
 		}
 		if err := manager.SyncComponentSpec(ctx.Context, workerIdentity, workerSpec); err != nil {
 			e.Log.Error(err, "failed to sync worker component spec", "component", workerIdentity.Name)

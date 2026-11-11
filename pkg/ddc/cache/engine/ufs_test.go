@@ -470,7 +470,7 @@ var _ = Describe("CacheEngine UpdateOnUFSChange Tests", Label("pkg.ddc.cache.eng
 
 		Context("when no update is needed", func() {
 			It("should return early when no UFS changes and no remount required", func() {
-				_, _, rt := setupUpdateOnUFSTest(nil)
+				rc, _, rt := setupUpdateOnUFSTest(nil)
 
 				// Remove the added mount to make spec match status (no changes)
 				dataset := &datav1alpha1.Dataset{}
@@ -486,7 +486,7 @@ var _ = Describe("CacheEngine UpdateOnUFSChange Tests", Label("pkg.ddc.cache.eng
 				// Set recent mount time (after pod start) to avoid remount
 				updateRuntimeMountTime(-10 * time.Minute)
 
-				err := engine.UpdateOnUFSChange(rt)
+				err := engine.UpdateOnUFSChange(rt, rc)
 				Expect(err).NotTo(HaveOccurred())
 
 				// Verify dataset status remains Bound (not changed to Updating)
@@ -564,18 +564,18 @@ var _ = Describe("CacheEngine UpdateOnUFSChange Tests", Label("pkg.ddc.cache.eng
 				engine.name = "test-runtime-no-mount"
 				defer func() { engine.name = originalName }()
 
-				err := engine.UpdateOnUFSChange(rt)
+				err := engine.UpdateOnUFSChange(rt, rc)
 				Expect(err).NotTo(HaveOccurred())
 			})
 		})
 
 		Context("when PrepareUFS returns invalid JSON", func() {
 			It("should return JSON parse error", func() {
-				_, _, rt := setupUpdateOnUFSTest(func(command []string, timeout time.Duration) (stdout string, err error) {
+				rc, _, rt := setupUpdateOnUFSTest(func(command []string, timeout time.Duration) (stdout string, err error) {
 					return "invalid json output", nil
 				})
 
-				err := engine.UpdateOnUFSChange(rt)
+				err := engine.UpdateOnUFSChange(rt, rc)
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("failed to parse mount ufs output"))
 
@@ -588,11 +588,11 @@ var _ = Describe("CacheEngine UpdateOnUFSChange Tests", Label("pkg.ddc.cache.eng
 
 		Context("when PrepareUFS returns empty output", func() {
 			It("should return empty output error", func() {
-				_, _, rt := setupUpdateOnUFSTest(func(command []string, timeout time.Duration) (stdout string, err error) {
+				rc, _, rt := setupUpdateOnUFSTest(func(command []string, timeout time.Duration) (stdout string, err error) {
 					return "   ", nil // Whitespace only
 				})
 
-				err := engine.UpdateOnUFSChange(rt)
+				err := engine.UpdateOnUFSChange(rt, rc)
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("empty output"))
 
@@ -605,11 +605,11 @@ var _ = Describe("CacheEngine UpdateOnUFSChange Tests", Label("pkg.ddc.cache.eng
 
 		Context("when syncDatasetMounts fails due to missing mount point", func() {
 			It("should return mount point not mounted error", func() {
-				_, _, rt := setupUpdateOnUFSTest(func(command []string, timeout time.Duration) (stdout string, err error) {
+				rc, _, rt := setupUpdateOnUFSTest(func(command []string, timeout time.Duration) (stdout string, err error) {
 					return `{"mounted": ["/mount1"]}`, nil
 				})
 
-				err := engine.UpdateOnUFSChange(rt)
+				err := engine.UpdateOnUFSChange(rt, rc)
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("is not yet mounted"))
 
@@ -622,11 +622,11 @@ var _ = Describe("CacheEngine UpdateOnUFSChange Tests", Label("pkg.ddc.cache.eng
 
 		Context("when syncDatasetMounts fails due to unexpected mounted paths", func() {
 			It("should return unexpected mounted paths error", func() {
-				_, _, rt := setupUpdateOnUFSTest(func(command []string, timeout time.Duration) (stdout string, err error) {
+				rc, _, rt := setupUpdateOnUFSTest(func(command []string, timeout time.Duration) (stdout string, err error) {
 					return `{"mounted": ["/mount1", "/mount2", "/extra-path"]}`, nil
 				})
 
-				err := engine.UpdateOnUFSChange(rt)
+				err := engine.UpdateOnUFSChange(rt, rc)
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("unexpected mounted paths remain"))
 
@@ -639,11 +639,11 @@ var _ = Describe("CacheEngine UpdateOnUFSChange Tests", Label("pkg.ddc.cache.eng
 
 		Context("when all mount points are correctly mounted", func() {
 			It("should successfully update mounts and set status to Bound", func() {
-				_, _, rt := setupUpdateOnUFSTest(func(command []string, timeout time.Duration) (stdout string, err error) {
+				rc, _, rt := setupUpdateOnUFSTest(func(command []string, timeout time.Duration) (stdout string, err error) {
 					return `{"mounted": ["/mount1", "/mount2"]}`, nil
 				})
 
-				err := engine.UpdateOnUFSChange(rt)
+				err := engine.UpdateOnUFSChange(rt, rc)
 				Expect(err).NotTo(HaveOccurred())
 
 				// Verify dataset status was updated to Bound
@@ -660,7 +660,7 @@ var _ = Describe("CacheEngine UpdateOnUFSChange Tests", Label("pkg.ddc.cache.eng
 
 		Context("when dataset has native scheme mounts", func() {
 			It("should skip native scheme mounts and succeed", func() {
-				_, dataset, rt := setupUpdateOnUFSTest(func(command []string, timeout time.Duration) (stdout string, err error) {
+				rc, dataset, rt := setupUpdateOnUFSTest(func(command []string, timeout time.Duration) (stdout string, err error) {
 					return `{"mounted": ["/mount1", "/mount2"]}`, nil
 				})
 
@@ -671,7 +671,7 @@ var _ = Describe("CacheEngine UpdateOnUFSChange Tests", Label("pkg.ddc.cache.eng
 				})
 				Expect(fakeClient.Update(context.Background(), dataset)).NotTo(HaveOccurred())
 
-				err := engine.UpdateOnUFSChange(rt)
+				err := engine.UpdateOnUFSChange(rt, rc)
 				Expect(err).NotTo(HaveOccurred())
 
 				// Verify dataset status was updated to Bound
@@ -683,7 +683,7 @@ var _ = Describe("CacheEngine UpdateOnUFSChange Tests", Label("pkg.ddc.cache.eng
 
 		Context("when triggered by master pod restart", func() {
 			It("should detect restart and perform remount", func() {
-				_, _, rt := setupUpdateOnUFSTest(func(command []string, timeout time.Duration) (stdout string, err error) {
+				rc, _, rt := setupUpdateOnUFSTest(func(command []string, timeout time.Duration) (stdout string, err error) {
 					return `{"mounted": ["/mount1", "/mount2"]}`, nil
 				})
 
@@ -701,7 +701,7 @@ var _ = Describe("CacheEngine UpdateOnUFSChange Tests", Label("pkg.ddc.cache.eng
 				// Set old mount time (before pod start) to trigger remount
 				updateRuntimeMountTime(-2 * time.Hour)
 
-				err := engine.UpdateOnUFSChange(rt)
+				err := engine.UpdateOnUFSChange(rt, rc)
 				Expect(err).NotTo(HaveOccurred())
 
 				// Verify dataset status was updated to Bound after remount

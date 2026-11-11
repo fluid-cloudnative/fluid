@@ -36,7 +36,10 @@ func (e *CacheEngine) Setup(ctx cruntime.ReconcileRequestContext) (ready bool, e
 
 	dataset := ctx.Dataset
 	runtime := ctx.Runtime.(*datav1alpha1.CacheRuntime)
-	runtimeClass, err := e.getRuntimeClass(runtime.Spec.RuntimeClassName)
+	// Bind the runtime to a snapshot of its CacheRuntimeClass before anything is created from
+	// it: the components and configmaps are rendered from the snapshot, and so is every later
+	// sync, so that editing the class does not reach this runtime.
+	runtimeClass, _, err := e.getBoundRuntimeClass(ctx, runtime)
 	if err != nil {
 		return false, errors.Wrapf(err, "failed to get CacheRuntimeClass %s", runtime.Spec.RuntimeClassName)
 	}

@@ -154,6 +154,16 @@ const (
 	LabelCacheRuntimeName = CacheRuntimeLabelAnnotationPrefix + "name"
 
 	LabelCacheRuntimeComponentName = CacheRuntimeLabelAnnotationPrefix + "component-name"
+
+	// AnnotationCacheRuntimeClassName records, on a CacheRuntime's class snapshot, the name of
+	// the CacheRuntimeClass the snapshot was taken from.
+	AnnotationCacheRuntimeClassName = CacheRuntimeLabelAnnotationPrefix + "runtime-class-name"
+
+	// AnnotationCacheRuntimeAdoptionPending lists, comma separated, the components of a
+	// CacheRuntime whose running resources or image differ from what the runtime declares
+	// when it is bound to a class snapshot after its components were created. Fluid leaves
+	// those components unchanged until the entry is removed.
+	AnnotationCacheRuntimeAdoptionPending = CacheRuntimeLabelAnnotationPrefix + "adoption-pending"
 )
 
 // LabelToModify modifies the labelKey in operationType.
