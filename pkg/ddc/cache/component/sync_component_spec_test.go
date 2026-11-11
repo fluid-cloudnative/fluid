@@ -560,5 +560,48 @@ var _ = Describe("AdvancedStatefulSetManager SyncComponentSpec", func() {
 			limit := asts.Spec.Template.Spec.Containers[0].Resources.Limits[corev1.ResourceMemory]
 			Expect(limit.String()).To(Equal("20Gi"))
 		})
+
+		It("should not report a change when only the order of the claims differs", func() {
+			asts := &workloadv1alpha1.AdvancedStatefulSet{
+				Spec: workloadv1alpha1.AdvancedStatefulSetSpec{
+					Template: corev1.PodTemplateSpec{
+						Spec: corev1.PodSpec{
+							Containers: []corev1.Container{{Name: "test", Resources: corev1.ResourceRequirements{
+								Claims: []corev1.ResourceClaim{{Name: "gpu"}, {Name: "rdma"}},
+							}}},
+						},
+					},
+				},
+			}
+
+			Expect(manager.updateResources(asts, corev1.ResourceRequirements{
+				Claims: []corev1.ResourceClaim{{Name: "rdma"}, {Name: "gpu"}},
+			}, GinkgoLogr)).To(BeFalse())
+			Expect(asts.Spec.Template.Spec.Containers[0].Resources.Claims).To(Equal(
+				[]corev1.ResourceClaim{{Name: "gpu"}, {Name: "rdma"}}))
+		})
+
+		It("should report a change when a claim is added, removed or replaced", func() {
+			current := corev1.ResourceRequirements{Claims: []corev1.ResourceClaim{{Name: "gpu"}}}
+			newAsts := func() *workloadv1alpha1.AdvancedStatefulSet {
+				return &workloadv1alpha1.AdvancedStatefulSet{
+					Spec: workloadv1alpha1.AdvancedStatefulSetSpec{
+						Template: corev1.PodTemplateSpec{
+							Spec: corev1.PodSpec{
+								Containers: []corev1.Container{{Name: "test", Resources: *current.DeepCopy()}},
+							},
+						},
+					},
+				}
+			}
+
+			Expect(manager.updateResources(newAsts(), corev1.ResourceRequirements{
+				Claims: []corev1.ResourceClaim{{Name: "gpu"}, {Name: "rdma"}},
+			}, GinkgoLogr)).To(BeTrue())
+			Expect(manager.updateResources(newAsts(), corev1.ResourceRequirements{}, GinkgoLogr)).To(BeTrue())
+			Expect(manager.updateResources(newAsts(), corev1.ResourceRequirements{
+				Claims: []corev1.ResourceClaim{{Name: "rdma"}},
+			}, GinkgoLogr)).To(BeTrue())
+		})
 	})
 })
