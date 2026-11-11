@@ -427,6 +427,57 @@ function update_worker_resources_and_verify() {
     syslog "Worker resources merged onto the template baseline and rolled out"
 }
 
+function verify_runtime_class_edit_not_propagated() {
+    local worker_component_name="${dataset_name}-worker"
+    local snapshot_name="fluid-runtime-class-snapshot-${dataset_name}"
+    local config_name="fluid-runtime-config-${dataset_name}"
+    local runtime_class_name=""
+    runtime_class_name=$(kubectl get cacheruntime "$dataset_name" -ojsonpath='{.spec.runtimeClassName}')
+
+    # The CacheRuntime was bound to a snapshot of its class when it was set up.
+    if ! kubectl get configmap "$snapshot_name" -n default >/dev/null 2>&1; then
+        panic "CacheRuntimeClass snapshot configmap $snapshot_name not found"
+    fi
+
+    local generation_before="" resources_before="" config_before=""
+    generation_before=$(kubectl get advancedstatefulset "$worker_component_name" -ojsonpath='{.metadata.generation}')
+    resources_before=$(kubectl get advancedstatefulset "$worker_component_name" -ojsonpath='{.spec.template.spec.containers[0].resources}')
+    config_before=$(kubectl get configmap "$config_name" -ojsonpath='{.data}')
+
+    # Edit what a class edit used to push to every CacheRuntime using the class: a template
+    # resource the CacheRuntime does not override, which recreates the worker Pods, and the
+    # worker options, which rewrite the runtime config.
+    syslog "Editing the worker template and options of CacheRuntimeClass $runtime_class_name"
+    kubectl patch cacheruntimeclass "$runtime_class_name" --type=json \
+        -p '[{"op":"replace","path":"/topology/worker/template/spec/containers/0/resources/limits/cpu","value":"2"}]'
+    kubectl patch cacheruntimeclass "$runtime_class_name" --type=merge \
+        -p '{"topology":{"worker":{"options":{"e2e-class-edit":"true"}}}}'
+
+    # Any update of the CacheRuntime triggers a reconcile, which syncs the runtime spec and the
+    # runtime config; give it time to run.
+    kubectl annotate cacheruntime "$dataset_name" e2e.fluid.io/touched-at="$(date +%s)" --overwrite
+    sleep 30
+
+    local generation_after="" resources_after="" config_after=""
+    generation_after=$(kubectl get advancedstatefulset "$worker_component_name" -ojsonpath='{.metadata.generation}')
+    resources_after=$(kubectl get advancedstatefulset "$worker_component_name" -ojsonpath='{.spec.template.spec.containers[0].resources}')
+    config_after=$(kubectl get configmap "$config_name" -ojsonpath='{.data}')
+
+    syslog "Restoring CacheRuntimeClass $runtime_class_name"
+    kubectl patch cacheruntimeclass "$runtime_class_name" --type=json \
+        -p '[{"op":"replace","path":"/topology/worker/template/spec/containers/0/resources/limits/cpu","value":"1"}]'
+    kubectl patch cacheruntimeclass "$runtime_class_name" --type=merge \
+        -p '{"topology":{"worker":{"options":{"e2e-class-edit":null}}}}'
+
+    if [[ "$generation_after" != "$generation_before" ]] || [[ "$resources_after" != "$resources_before" ]]; then
+        panic "CacheRuntimeClass edit reached the worker AdvancedStatefulSet: generation $generation_before -> $generation_after, resources $resources_before -> $resources_after"
+    fi
+    if [[ "$config_after" != "$config_before" ]]; then
+        panic "CacheRuntimeClass edit reached the runtime config configmap $config_name"
+    fi
+    syslog "CacheRuntimeClass edit left the existing CacheRuntime unchanged"
+}
+
 function delete_dataset_and_runtime() {
     kubectl delete --ignore-not-found -f test/gha-e2e/curvine/dataload.yaml
     kubectl delete --ignore-not-found -f test/gha-e2e/curvine/ref-dataset.yaml
@@ -569,6 +620,9 @@ function main() {
 
     # verify a partial resources update keeps the template's other requirements
     update_worker_resources_and_verify
+
+    # verify an edit of the CacheRuntimeClass does not reach the existing CacheRuntime
+    verify_runtime_class_edit_not_propagated
 
     # verify scale-up and scale-down: scale up writes through the scale subresource (the same
     # path an HPA takes), scale down writes spec directly via patch. The write assertions run
