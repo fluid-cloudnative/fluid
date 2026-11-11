@@ -92,14 +92,8 @@ spec:
 **限制**：
 - ⚠️ 不能超过节点可用资源
 - ⚠️ CacheRuntimeClass 模板中声明的 key **可以覆盖，但不能删除**：从 CacheRuntime 中省略某个 key 不会
-  让组件变为不受限，而是保留模板中的值。如需放宽限制，请显式设置目标值；如需彻底去掉某项资源要求，
-  请修改 CacheRuntimeClass 模板——运行时自身的资源要求本就描述在那里。
-- ⚠️ **CacheRuntimeClass 模板中 `resources` 的修改会同步到已有实例**：模板是每次 reconcile 的基线，
-  修改后，所有引用该 CacheRuntimeClass 的 CacheRuntime 中未被覆盖的 key 都会同步到 master 和 worker
-  的工作负载，无需重建 CacheRuntime；这些实例的 master 和 worker Pod 都会随之更新，集群不支持原地更新时，
-  Pod 会被重建。控制器不监听 CacheRuntimeClass，因此修改在各 CacheRuntime 的下一次
-  reconcile 时生效，而不是立即生效。client 不同步，模板中 `resources` 以外的字段也不同步。从模板中删除的 key，
-  会从未覆盖该 key 的工作负载上清除。
+  让组件变为不受限，而是保留模板中的值。如需调整资源要求，请在 CacheRuntime 中显式设置目标值。
+- ⚠️ CacheRuntimeClass 的修改如何影响已有 CacheRuntime，由 #6213 跟踪；请勿依赖这些修改会传递到已有实例。
 - ⚠️ **以 CacheRuntime 和模板为准**：直接修改 master 或 worker 的 AdvancedStatefulSet 上的 resources，
   会在下一次 reconcile 时被改回。
 - ⚠️ **合并后 request 不能超过 limit**：模板和 CacheRuntime 各自合法，合并后仍可能出现 request 大于 limit，

@@ -95,18 +95,8 @@ or is cleared from the workload when the template does not declare it. An empty 
 - ⚠️ Cannot exceed the node's available resources.
 - ⚠️ A key the CacheRuntimeClass template declares can be **overridden but not removed**: omitting it
   from the CacheRuntime leaves the template's value in place rather than leaving the component
-  unconstrained. To relax a limit, set the value you want explicitly; to drop a requirement
-  altogether, change the CacheRuntimeClass template, which is where the runtime's own requirements
-  are described.
-- ⚠️ **Edits to the template's `resources` reach existing instances**: the CacheRuntimeClass template
-  is the baseline on every reconcile, so after it changes, the keys a CacheRuntime does not override
-  are synced to the master and worker workloads of every CacheRuntime that uses that class, without
-  recreating the CacheRuntime. The master and worker Pods of those instances are updated
-  accordingly, and recreated where the cluster cannot resize them in place. The controller does not
-  watch CacheRuntimeClass, so the change lands
-  on each CacheRuntime's next reconcile rather than immediately. The client is not synced, and
-  template fields other than `resources` are not synced either. A key removed from the template is
-  cleared from the workloads that do not override it.
+  unconstrained. To adjust resource requirements, explicitly set the desired values in the CacheRuntime.
+- ⚠️ How CacheRuntimeClass edits affect existing CacheRuntimes is tracked in #6213; don't rely on them reaching existing instances.
 - ⚠️ **The CacheRuntime and its template are the source of truth**: resources edited directly on
   the master or worker AdvancedStatefulSet are reverted on the next reconcile.
 - ⚠️ **A request must not exceed its limit after the merge**: the template and the CacheRuntime
