@@ -47,6 +47,7 @@ const (
 	RuntimeMountUfsFailed = "RuntimeMountUfsFailed"
 
 	RuntimeResourcesConflict = "RuntimeResourcesConflict"
+	RuntimeVersionIncomplete = "RuntimeVersionIncomplete"
 )
 
 // Events related to all type of Data Operations

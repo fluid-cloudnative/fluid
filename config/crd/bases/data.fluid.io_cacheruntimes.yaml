@@ -1656,4 +1656,8 @@ spec:
     served: true
     storage: true
     subresources:
+      scale:
+        labelSelectorPath: .status.selector
+        specReplicasPath: .spec.worker.replicas
+        statusReplicasPath: .status.worker.currentReplicas
       status: {}

@@ -179,6 +179,7 @@ type CacheRuntimeSpec struct {
 
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
+// +kubebuilder:subresource:scale:specpath=.spec.worker.replicas,statuspath=.status.worker.currentReplicas,selectorpath=.status.selector
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp",priority=0
 // +kubebuilder:printcolumn:name="Status",type="string",JSONPath=".status.phase",priority=0
 // +kubebuilder:resource:scope=Namespaced

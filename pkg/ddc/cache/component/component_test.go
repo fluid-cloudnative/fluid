@@ -92,6 +92,18 @@ var _ = Describe("ComponentManager", func() {
 			Expect(labels[common.LabelCacheRuntimeComponentName]).To(Equal("test-runtime-master"))
 			Expect(len(labels)).To(Equal(2))
 		})
+
+		It("should stay in sync with GetComponentMatchLabels", func() {
+			component := &common.CacheRuntimeComponentValue{
+				Name: "test-runtime-worker",
+				Owner: &common.OwnerReference{
+					Name: "test-runtime",
+				},
+			}
+
+			labels := getCommonLabelsFromComponent(component)
+			Expect(labels).To(Equal(GetComponentMatchLabels("test-runtime", "test-runtime-worker")))
+		})
 	})
 })
 
@@ -208,6 +220,7 @@ var _ = Describe("AdvancedStatefulSetManager", func() {
 					Replicas: &replicas,
 				},
 				Status: workloadv1alpha1.AdvancedStatefulSetStatus{
+					Replicas:          3,
 					ReadyReplicas:     3,
 					CurrentReplicas:   3,
 					AvailableReplicas: 3,
@@ -239,6 +252,7 @@ var _ = Describe("AdvancedStatefulSetManager", func() {
 					Replicas: &replicas,
 				},
 				Status: workloadv1alpha1.AdvancedStatefulSetStatus{
+					Replicas:          3,
 					ReadyReplicas:     2,
 					CurrentReplicas:   3,
 					AvailableReplicas: 2,
@@ -255,6 +269,41 @@ var _ = Describe("AdvancedStatefulSetManager", func() {
 			Expect(status.ReadyReplicas).To(Equal(int32(2)))
 			Expect(status.UnavailableReplicas).To(Equal(int32(1)))
 			Expect(status.Phase).To(Equal(datav1alpha1.RuntimePhaseNotReady))
+		})
+
+		It("should count all observed pods when the statefulset has mixed revisions", func() {
+			replicas := int32(3)
+			asts := &workloadv1alpha1.AdvancedStatefulSet{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-runtime-master",
+					Namespace: "fluid",
+				},
+				Spec: workloadv1alpha1.AdvancedStatefulSetSpec{
+					Replicas: &replicas,
+				},
+				Status: workloadv1alpha1.AdvancedStatefulSetStatus{
+					Replicas:          3,
+					ReadyReplicas:     3,
+					CurrentReplicas:   2,
+					UpdatedReplicas:   1,
+					AvailableReplicas: 3,
+					CurrentRevision:   "rev-1",
+					UpdateRevision:    "rev-2",
+				},
+			}
+			Expect(manager.client.Create(ctx, asts)).To(Succeed())
+
+			status, err := manager.ConstructComponentStatus(ctx, &common.ComponentIdentity{
+				Name:      component.Name,
+				Namespace: component.Namespace,
+			})
+			Expect(err).NotTo(HaveOccurred())
+			// Status.CurrentReplicas is revision-scoped (2 here) and misses the pod
+			// on the update revision; the exposed count must be all observed pods
+			Expect(status.CurrentReplicas).To(Equal(int32(3)))
+			Expect(status.UnavailableReplicas).To(Equal(int32(0)))
+			Expect(status.ReadyReplicas).To(Equal(int32(3)))
+			Expect(status.Phase).To(Equal(datav1alpha1.RuntimePhaseReady))
 		})
 
 		It("should return NotReady phase when no replicas are ready", func() {
@@ -290,6 +339,126 @@ var _ = Describe("AdvancedStatefulSetManager", func() {
 				Namespace: component.Namespace,
 			})
 			Expect(err).To(HaveOccurred())
+		})
+
+		It("should return status and affinity when ConstructComponentStatusAndAffinity is called", func() {
+			replicas := int32(2)
+			asts := &workloadv1alpha1.AdvancedStatefulSet{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-runtime-master",
+					Namespace: "fluid",
+				},
+				Spec: workloadv1alpha1.AdvancedStatefulSetSpec{
+					Replicas: &replicas,
+					Template: corev1.PodTemplateSpec{
+						Spec: corev1.PodSpec{
+							NodeSelector: map[string]string{
+								"disktype": "ssd",
+							},
+						},
+					},
+				},
+				Status: workloadv1alpha1.AdvancedStatefulSetStatus{
+					ReadyReplicas:     2,
+					CurrentReplicas:   2,
+					AvailableReplicas: 2,
+				},
+			}
+			Expect(manager.client.Create(ctx, asts)).To(Succeed())
+
+			status, affinity, err := manager.ConstructComponentStatusAndAffinity(ctx, &common.ComponentIdentity{
+				Name:      component.Name,
+				Namespace: component.Namespace,
+			})
+			Expect(err).NotTo(HaveOccurred())
+			Expect(status.Phase).To(Equal(datav1alpha1.RuntimePhaseReady))
+			Expect(affinity).NotTo(BeNil())
+			terms := affinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms
+			Expect(terms).To(HaveLen(1))
+			Expect(terms[0].MatchExpressions).To(ContainElement(corev1.NodeSelectorRequirement{
+				Key:      "disktype",
+				Operator: corev1.NodeSelectorOpIn,
+				Values:   []string{"ssd"},
+			}))
+		})
+
+		It("should merge nodeSelector with existing nodeAffinity terms in ConstructComponentStatusAndAffinity", func() {
+			replicas := int32(1)
+			asts := &workloadv1alpha1.AdvancedStatefulSet{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-runtime-master-with-affinity",
+					Namespace: "fluid",
+				},
+				Spec: workloadv1alpha1.AdvancedStatefulSetSpec{
+					Replicas: &replicas,
+					Template: corev1.PodTemplateSpec{
+						Spec: corev1.PodSpec{
+							NodeSelector: map[string]string{
+								"disktype": "ssd",
+							},
+							Affinity: &corev1.Affinity{
+								NodeAffinity: &corev1.NodeAffinity{
+									RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
+										NodeSelectorTerms: []corev1.NodeSelectorTerm{
+											{
+												MatchExpressions: []corev1.NodeSelectorRequirement{
+													{
+														Key:      "zone",
+														Operator: corev1.NodeSelectorOpIn,
+														Values:   []string{"zone-a"},
+													},
+												},
+											},
+										},
+									},
+									PreferredDuringSchedulingIgnoredDuringExecution: []corev1.PreferredSchedulingTerm{
+										{
+											Weight: 10,
+											Preference: corev1.NodeSelectorTerm{
+												MatchExpressions: []corev1.NodeSelectorRequirement{
+													{
+														Key:      "rack",
+														Operator: corev1.NodeSelectorOpIn,
+														Values:   []string{"rack-1"},
+													},
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+				Status: workloadv1alpha1.AdvancedStatefulSetStatus{
+					ReadyReplicas:     1,
+					CurrentReplicas:   1,
+					AvailableReplicas: 1,
+				},
+			}
+			Expect(manager.client.Create(ctx, asts)).To(Succeed())
+
+			status, affinity, err := manager.ConstructComponentStatusAndAffinity(ctx, &common.ComponentIdentity{
+				Name:      "test-runtime-master-with-affinity",
+				Namespace: "fluid",
+			})
+			Expect(err).NotTo(HaveOccurred())
+			Expect(status.Phase).To(Equal(datav1alpha1.RuntimePhaseReady))
+			Expect(affinity).NotTo(BeNil())
+			Expect(affinity.PreferredDuringSchedulingIgnoredDuringExecution).To(HaveLen(1))
+			Expect(affinity.PreferredDuringSchedulingIgnoredDuringExecution[0].Weight).To(Equal(int32(10)))
+			terms := affinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms
+			Expect(terms).To(HaveLen(1))
+			Expect(terms[0].MatchExpressions).To(ContainElement(corev1.NodeSelectorRequirement{
+				Key:      "zone",
+				Operator: corev1.NodeSelectorOpIn,
+				Values:   []string{"zone-a"},
+			}))
+			Expect(terms[0].MatchExpressions).To(ContainElement(corev1.NodeSelectorRequirement{
+				Key:      "disktype",
+				Operator: corev1.NodeSelectorOpIn,
+				Values:   []string{"ssd"},
+			}))
 		})
 	})
 
@@ -502,6 +671,124 @@ var _ = Describe("DaemonSetManager", func() {
 				Namespace: component.Namespace,
 			})
 			Expect(err).To(HaveOccurred())
+		})
+
+		It("should return status and affinity when ConstructComponentStatusAndAffinity is called", func() {
+			ds := &appsv1.DaemonSet{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      component.Name,
+					Namespace: component.Namespace,
+				},
+				Spec: appsv1.DaemonSetSpec{
+					Template: corev1.PodTemplateSpec{
+						Spec: corev1.PodSpec{
+							NodeSelector: map[string]string{
+								"disktype": "ssd",
+							},
+						},
+					},
+				},
+				Status: appsv1.DaemonSetStatus{
+					NumberReady:            2,
+					CurrentNumberScheduled: 2,
+					NumberAvailable:        2,
+					DesiredNumberScheduled: 2,
+				},
+			}
+			Expect(manager.client.Create(ctx, ds)).To(Succeed())
+
+			status, affinity, err := manager.ConstructComponentStatusAndAffinity(ctx, &common.ComponentIdentity{
+				Name:      component.Name,
+				Namespace: component.Namespace,
+			})
+			Expect(err).NotTo(HaveOccurred())
+			Expect(status.Phase).To(Equal(datav1alpha1.RuntimePhaseReady))
+			Expect(affinity).NotTo(BeNil())
+			terms := affinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms
+			Expect(terms).To(HaveLen(1))
+			Expect(terms[0].MatchExpressions).To(ContainElement(corev1.NodeSelectorRequirement{
+				Key:      "disktype",
+				Operator: corev1.NodeSelectorOpIn,
+				Values:   []string{"ssd"},
+			}))
+		})
+
+		It("should merge nodeSelector with existing nodeAffinity terms in ConstructComponentStatusAndAffinity", func() {
+			ds := &appsv1.DaemonSet{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-ds-with-affinity",
+					Namespace: "fluid",
+				},
+				Spec: appsv1.DaemonSetSpec{
+					Template: corev1.PodTemplateSpec{
+						Spec: corev1.PodSpec{
+							NodeSelector: map[string]string{
+								"disktype": "ssd",
+							},
+							Affinity: &corev1.Affinity{
+								NodeAffinity: &corev1.NodeAffinity{
+									RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
+										NodeSelectorTerms: []corev1.NodeSelectorTerm{
+											{
+												MatchExpressions: []corev1.NodeSelectorRequirement{
+													{
+														Key:      "zone",
+														Operator: corev1.NodeSelectorOpIn,
+														Values:   []string{"zone-a"},
+													},
+												},
+											},
+										},
+									},
+									PreferredDuringSchedulingIgnoredDuringExecution: []corev1.PreferredSchedulingTerm{
+										{
+											Weight: 20,
+											Preference: corev1.NodeSelectorTerm{
+												MatchExpressions: []corev1.NodeSelectorRequirement{
+													{
+														Key:      "region",
+														Operator: corev1.NodeSelectorOpIn,
+														Values:   []string{"us-west"},
+													},
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+				Status: appsv1.DaemonSetStatus{
+					NumberReady:            1,
+					CurrentNumberScheduled: 1,
+					NumberAvailable:        1,
+					DesiredNumberScheduled: 1,
+				},
+			}
+			Expect(manager.client.Create(ctx, ds)).To(Succeed())
+
+			status, affinity, err := manager.ConstructComponentStatusAndAffinity(ctx, &common.ComponentIdentity{
+				Name:      "test-ds-with-affinity",
+				Namespace: "fluid",
+			})
+			Expect(err).NotTo(HaveOccurred())
+			Expect(status.Phase).To(Equal(datav1alpha1.RuntimePhaseReady))
+			Expect(affinity).NotTo(BeNil())
+			Expect(affinity.PreferredDuringSchedulingIgnoredDuringExecution).To(HaveLen(1))
+			Expect(affinity.PreferredDuringSchedulingIgnoredDuringExecution[0].Weight).To(Equal(int32(20)))
+			terms := affinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms
+			Expect(terms).To(HaveLen(1))
+			Expect(terms[0].MatchExpressions).To(ContainElement(corev1.NodeSelectorRequirement{
+				Key:      "zone",
+				Operator: corev1.NodeSelectorOpIn,
+				Values:   []string{"zone-a"},
+			}))
+			Expect(terms[0].MatchExpressions).To(ContainElement(corev1.NodeSelectorRequirement{
+				Key:      "disktype",
+				Operator: corev1.NodeSelectorOpIn,
+				Values:   []string{"ssd"},
+			}))
 		})
 	})
 
