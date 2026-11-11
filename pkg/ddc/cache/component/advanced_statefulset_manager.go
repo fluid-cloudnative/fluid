@@ -52,17 +52,6 @@ func (s *AdvancedStatefulSetManager) Reconciler(ctx context.Context, component *
 	return reconcileService(ctx, s.client, component)
 }
 
-func (s *AdvancedStatefulSetManager) GetNodeAffinity(identity *common.ComponentIdentity) (*corev1.NodeAffinity, error) {
-	asts := &workloadv1alpha1.AdvancedStatefulSet{}
-	err := s.client.Get(context.TODO(), types.NamespacedName{Name: identity.Name, Namespace: identity.Namespace}, asts)
-	if err != nil {
-		return nil, err
-	}
-
-	affinity := kubeclient.MergeNodeSelectorAndNodeAffinity(asts.Spec.Template.Spec.NodeSelector, asts.Spec.Template.Spec.Affinity)
-	return affinity, nil
-}
-
 func (s *AdvancedStatefulSetManager) GetPodSpec(ctx context.Context, identity *common.ComponentIdentity) (*corev1.PodSpec, error) {
 	asts := &workloadv1alpha1.AdvancedStatefulSet{}
 	err := s.client.Get(ctx, types.NamespacedName{Name: identity.Name, Namespace: identity.Namespace}, asts)
@@ -146,17 +135,7 @@ func (s *AdvancedStatefulSetManager) constructAdvancedStatefulSet(component *com
 	return asts
 }
 
-func (s *AdvancedStatefulSetManager) ConstructComponentStatus(ctx context.Context, identity *common.ComponentIdentity) (datav1alpha1.RuntimeComponentStatus, error) {
-	logger := log.FromContext(ctx)
-	logger.Info("start to ConstructComponentStatus")
-
-	asts := &workloadv1alpha1.AdvancedStatefulSet{}
-	err := s.client.Get(ctx, types.NamespacedName{Name: identity.Name, Namespace: identity.Namespace}, asts)
-	if err != nil {
-		logger.Error(err, fmt.Sprintf("failed to get component: %s/%s", identity.Namespace, identity.Name))
-		return datav1alpha1.RuntimeComponentStatus{}, err
-	}
-
+func (s *AdvancedStatefulSetManager) constructStatus(asts *workloadv1alpha1.AdvancedStatefulSet) datav1alpha1.RuntimeComponentStatus {
 	desiredReplicas := int32(0)
 	if asts.Spec.Replicas != nil {
 		desiredReplicas = *asts.Spec.Replicas
@@ -168,8 +147,14 @@ func (s *AdvancedStatefulSetManager) ConstructComponentStatus(ctx context.Contex
 		runtimePhase = datav1alpha1.RuntimePhaseReady
 	}
 
-	// AvailableReplicas can be greater than CurrentReplicas (Kubernetes API allows this)
-	unavailableReplicas := asts.Status.CurrentReplicas - asts.Status.AvailableReplicas
+	// asts.Status.CurrentReplicas counts only pods on the current revision, so during
+	// a rolling update it undercounts; expose Status.Replicas (all observed pods).
+	// This field feeds the scale subresource's statusReplicasPath, and the HPA
+	// expects observed instances - the same population as CurrentWorkerNumberScheduled
+	// for the existing runtimes (pkg/ctrl/worker.go).
+	observedReplicas := asts.Status.Replicas
+
+	unavailableReplicas := observedReplicas - asts.Status.AvailableReplicas
 	if unavailableReplicas < 0 {
 		unavailableReplicas = 0
 	}
@@ -177,11 +162,33 @@ func (s *AdvancedStatefulSetManager) ConstructComponentStatus(ctx context.Contex
 	return datav1alpha1.RuntimeComponentStatus{
 		Phase:               runtimePhase,
 		DesiredReplicas:     desiredReplicas,
-		CurrentReplicas:     asts.Status.CurrentReplicas,
+		CurrentReplicas:     observedReplicas,
 		AvailableReplicas:   asts.Status.AvailableReplicas,
 		UnavailableReplicas: unavailableReplicas,
 		ReadyReplicas:       readyReplicas,
-	}, nil
+	}
+}
+
+func (s *AdvancedStatefulSetManager) ConstructComponentStatusAndAffinity(ctx context.Context, identity *common.ComponentIdentity) (datav1alpha1.RuntimeComponentStatus, *corev1.NodeAffinity, error) {
+	logger := log.FromContext(ctx)
+	logger.Info("start to ConstructComponentStatusAndAffinity")
+
+	asts := &workloadv1alpha1.AdvancedStatefulSet{}
+	err := s.client.Get(ctx, types.NamespacedName{Name: identity.Name, Namespace: identity.Namespace}, asts)
+	if err != nil {
+		logger.Error(err, fmt.Sprintf("failed to get component: %s/%s", identity.Namespace, identity.Name))
+		return datav1alpha1.RuntimeComponentStatus{}, nil, err
+	}
+
+	status := s.constructStatus(asts)
+	affinity := kubeclient.MergeNodeSelectorAndNodeAffinity(asts.Spec.Template.Spec.NodeSelector, asts.Spec.Template.Spec.Affinity)
+
+	return status, affinity, nil
+}
+
+func (s *AdvancedStatefulSetManager) ConstructComponentStatus(ctx context.Context, identity *common.ComponentIdentity) (datav1alpha1.RuntimeComponentStatus, error) {
+	status, _, err := s.ConstructComponentStatusAndAffinity(ctx, identity)
+	return status, err
 }
 
 // SyncComponentSpec synchronizes component specification changes to the AdvancedStatefulSet

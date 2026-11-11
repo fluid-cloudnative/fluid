@@ -39,20 +39,27 @@ func init() {
 }
 
 func GenerateOwnerReferenceFromObject(obj client.Object) *common.OwnerReference {
-	// The kind and the apiVersion fall back on their own, because a partially populated TypeMeta produces a
-	// reference which is just as malformed as an entirely empty one.
+	// The kind, the version and the group fall back on their own, because a partially populated TypeMeta
+	// produces a reference which is just as malformed as an entirely empty one.
 	gvk := obj.GetObjectKind().GroupVersionKind()
-	if len(gvk.Kind) == 0 || len(gvk.Version) == 0 {
+	if len(gvk.Kind) == 0 || len(gvk.Version) == 0 || len(gvk.Group) == 0 {
 		resolved, err := apiutil.GVKForObject(obj, fluidScheme)
 		if err != nil {
-			log.Error(err, "failed to recover the GroupVersionKind of the owner from the scheme, the generated ownerReference stays incomplete",
-				"namespace", obj.GetNamespace(), "name", obj.GetName(), "groupVersionKind", gvk.String())
+			// A complete TypeMeta of a type outside the fluid scheme (an empty group is legitimate for core types)
+			// is emitted as-is, so only report when the reference is actually incomplete.
+			if len(gvk.Kind) == 0 || len(gvk.Version) == 0 {
+				log.Error(err, "failed to recover the GroupVersionKind of the owner from the scheme, the generated ownerReference stays incomplete",
+					"namespace", obj.GetNamespace(), "name", obj.GetName(), "groupVersionKind", gvk.String())
+			}
 		} else {
 			if len(gvk.Kind) == 0 {
 				gvk.Kind = resolved.Kind
 			}
 			if len(gvk.Version) == 0 {
 				gvk.Group, gvk.Version = resolved.Group, resolved.Version
+			} else if len(gvk.Group) == 0 {
+				// A group-less apiVersion such as "v1alpha1" parses with a non-empty version, so only the group is missing.
+				gvk.Group = resolved.Group
 			}
 		}
 	}
