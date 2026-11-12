@@ -18,11 +18,15 @@ package mutating
 
 import (
 	"context"
+	"encoding/json"
+	"net/http"
 	"os"
 
 	"github.com/agiledragon/gomonkey/v2"
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	"github.com/fluid-cloudnative/fluid/pkg/webhook/plugins"
 	. "github.com/onsi/ginkgo/v2"
@@ -1946,5 +1950,252 @@ var _ = Describe("MutatePod - PVC Collection Error", func() {
 
 		err := handler.MutatePod(pod, false)
 		Expect(err).To(HaveOccurred())
+	})
+})
+
+var _ = Describe("Handle - Clientless Runtime Config", func() {
+	const (
+		namespace         = "default"
+		datasetName       = "demo"
+		clientlessProfile = `
+plugins:
+  serverful:
+    withDataset: []
+    withoutDataset: []
+  serverless:
+    withDataset: []
+    withoutDataset: []
+  clientless:
+    withDataset:
+    - RuntimeConfigInjector
+    withoutDataset: []
+`
+	)
+
+	var (
+		decoder *admission.Decoder
+		s       *runtime.Scheme
+		patch   *gomonkey.Patches
+	)
+
+	// datasetObjects are what both the cached client and the API reader see: a bound
+	// dataset served by a cache runtime of the same name.
+	datasetObjects := func() []runtime.Object {
+		return []runtime.Object{
+			&datav1alpha1.Dataset{
+				ObjectMeta: metav1.ObjectMeta{Name: datasetName, Namespace: namespace},
+				Status: datav1alpha1.DatasetStatus{
+					Phase: datav1alpha1.BoundDatasetPhase,
+					Runtimes: []datav1alpha1.Runtime{
+						{Name: datasetName, Namespace: namespace, Type: common.CacheRuntime},
+					},
+				},
+			},
+			&datav1alpha1.CacheRuntime{
+				ObjectMeta: metav1.ObjectMeta{Name: datasetName, Namespace: namespace},
+			},
+		}
+	}
+
+	runtimeConfigMap := func(data map[string]string) *corev1.ConfigMap {
+		return &corev1.ConfigMap{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      common.GetCacheRuntimeConfigConfigMapName(datasetName),
+				Namespace: namespace,
+			},
+			Data: data,
+		}
+	}
+
+	// handleWithLabels admits an app pod carrying labels that declares the dataset in its
+	// annotation, with cachedObjs seen by the cached client and readerObjs by the API reader.
+	handleWithLabels := func(labels map[string]string, cachedObjs, readerObjs []runtime.Object) admission.Response {
+		pod := &corev1.Pod{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:        "app",
+				Namespace:   namespace,
+				Labels:      labels,
+				Annotations: map[string]string{common.LabelAnnotationDatasets: datasetName},
+			},
+			Spec: corev1.PodSpec{
+				Containers: []corev1.Container{{Name: "app", Image: "app"}},
+			},
+		}
+		raw, err := json.Marshal(pod)
+		Expect(err).NotTo(HaveOccurred())
+		req := admission.Request{
+			AdmissionRequest: admissionv1.AdmissionRequest{
+				Namespace: namespace,
+				Object:    runtime.RawExtension{Raw: raw},
+			},
+		}
+
+		cachedClient := fake.NewFakeClientWithScheme(s, cachedObjs...)
+		apiReader := fake.NewFakeClientWithScheme(s, readerObjs...)
+		Expect(plugins.RegisterMutatingHandlers(cachedClient)).To(Succeed())
+
+		handler := &FluidMutatingHandler{}
+		handler.Setup(cachedClient, apiReader, decoder)
+		return handler.Handle(context.TODO(), req)
+	}
+
+	// handle admits an app pod that opts in to injection for the dataset.
+	handle := func(cachedObjs, readerObjs []runtime.Object) admission.Response {
+		return handleWithLabels(map[string]string{common.LabelAnnotationInject: common.True}, cachedObjs, readerObjs)
+	}
+
+	BeforeEach(func() {
+		decoder = admission.NewDecoder(scheme.Scheme)
+		s = runtime.NewScheme()
+		Expect(corev1.AddToScheme(s)).To(Succeed())
+		Expect(datav1alpha1.AddToScheme(s)).To(Succeed())
+
+		patch = gomonkey.ApplyFunc(os.ReadFile, func(string) ([]byte, error) {
+			return []byte(clientlessProfile), nil
+		})
+	})
+
+	AfterEach(func() {
+		patch.Reset()
+	})
+
+	It("should inject the config map that only the API reader sees yet", func() {
+		// Right after the dataset is bound, the cached client may not have caught up.
+		configMap := runtimeConfigMap(map[string]string{common.RuntimeConfigShellFileName: "export MASTER_NAME='demo-master'\n"})
+
+		resp := handle(datasetObjects(), append(datasetObjects(), configMap))
+		Expect(resp.Allowed).To(BeTrue())
+		Expect(resp.Patches).To(ContainElement(HaveField("Path", "/spec/volumes")))
+	})
+
+	It("should reject the pod when the config map does not exist", func() {
+		resp := handle(datasetObjects(), datasetObjects())
+		Expect(resp.Allowed).To(BeFalse())
+		Expect(resp.Result.Message).To(ContainSubstring(common.GetCacheRuntimeConfigConfigMapName(datasetName)))
+		// A denial, not a webhook failure: the pod has to wait for its runtime config.
+		Expect(resp.Result.Code).To(Equal(int32(http.StatusForbidden)))
+	})
+
+	It("should reject the pod when the config map has no shell rendering", func() {
+		// e.g. a cacheruntime-controller that predates the shell rendering
+		configMap := runtimeConfigMap(map[string]string{"runtime.json": "{}"})
+
+		resp := handle(append(datasetObjects(), configMap), append(datasetObjects(), configMap))
+		Expect(resp.Allowed).To(BeFalse())
+		Expect(resp.Result.Message).To(ContainSubstring(common.RuntimeConfigShellFileName))
+		// A denial, not a webhook failure: the pod has to wait for its runtime config.
+		Expect(resp.Result.Code).To(Equal(int32(http.StatusForbidden)))
+	})
+
+	It("should reject a pod that also asks for fuse injection", func() {
+		configMap := runtimeConfigMap(map[string]string{common.RuntimeConfigShellFileName: "export MASTER_NAME='demo-master'\n"})
+		objs := append(datasetObjects(), configMap)
+
+		for _, fuseLabel := range []string{common.InjectServerless, common.InjectServerfulFuse, common.InjectFuseSidecar} {
+			resp := handleWithLabels(map[string]string{
+				common.LabelAnnotationInject: common.True,
+				fuseLabel:                    common.True,
+			}, objs, objs)
+			Expect(resp.Allowed).To(BeFalse(), fuseLabel)
+			Expect(resp.Result.Code).To(Equal(int32(http.StatusForbidden)), fuseLabel)
+			Expect(resp.Result.Message).To(ContainSubstring("cannot be combined with fuse injection labels"), fuseLabel)
+			Expect(resp.Result.Message).To(ContainSubstring(fuseLabel), fuseLabel)
+		}
+	})
+
+	It("should reject a pod that also carries the deprecated serverless platform label", func() {
+		configMap := runtimeConfigMap(map[string]string{common.RuntimeConfigShellFileName: "export MASTER_NAME='demo-master'\n"})
+		objs := append(datasetObjects(), configMap)
+
+		// The key comes from the deprecated KEY_SERVERLESS_PLATFORM env at start-up.
+		original := utils.DeprecatedServerlessPlatformKey
+		utils.DeprecatedServerlessPlatformKey = "serverless-platform"
+		defer func() { utils.DeprecatedServerlessPlatformKey = original }()
+
+		resp := handleWithLabels(map[string]string{
+			common.LabelAnnotationInject: common.True,
+			"serverless-platform":        "any",
+		}, objs, objs)
+		Expect(resp.Allowed).To(BeFalse())
+		Expect(resp.Result.Message).To(ContainSubstring("cannot be combined with fuse injection labels"))
+	})
+
+	It("should reject a pod whose own volume takes the config's volume name", func() {
+		configMap := runtimeConfigMap(map[string]string{common.RuntimeConfigShellFileName: "export MASTER_NAME='demo-master'\n"})
+		objs := append(datasetObjects(), configMap)
+		volumeName := common.GetCacheRuntimeConfigConfigMapName(datasetName)
+
+		pod := &corev1.Pod{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:        "app",
+				Namespace:   namespace,
+				Labels:      map[string]string{common.LabelAnnotationInject: common.True},
+				Annotations: map[string]string{common.LabelAnnotationDatasets: datasetName},
+			},
+			Spec: corev1.PodSpec{
+				Volumes: []corev1.Volume{{
+					Name:         volumeName,
+					VolumeSource: corev1.VolumeSource{EmptyDir: &corev1.EmptyDirVolumeSource{}},
+				}},
+				Containers: []corev1.Container{{
+					Name:         "app",
+					Image:        "app",
+					VolumeMounts: []corev1.VolumeMount{{Name: volumeName, MountPath: "/data"}},
+				}},
+			},
+		}
+		raw, err := json.Marshal(pod)
+		Expect(err).NotTo(HaveOccurred())
+		req := admission.Request{
+			AdmissionRequest: admissionv1.AdmissionRequest{
+				Namespace: namespace,
+				Object:    runtime.RawExtension{Raw: raw},
+			},
+		}
+		cachedClient := fake.NewFakeClientWithScheme(s, objs...)
+		Expect(plugins.RegisterMutatingHandlers(cachedClient)).To(Succeed())
+		handler := &FluidMutatingHandler{}
+		handler.Setup(cachedClient, fake.NewFakeClientWithScheme(s, objs...), decoder)
+
+		resp := handler.Handle(context.TODO(), req)
+		Expect(resp.Allowed).To(BeFalse())
+		Expect(resp.Result.Code).To(Equal(int32(http.StatusForbidden)))
+		Expect(resp.Result.Message).To(ContainSubstring(volumeName))
+	})
+})
+
+var _ = Describe("mergeClientlessRuntimeInfos", func() {
+	runtimeInfo := func(datasetName, runtimeType string) base.RuntimeInfoInterface {
+		info, err := base.BuildRuntimeInfo(datasetName, "default", runtimeType)
+		Expect(err).NotTo(HaveOccurred())
+		return info
+	}
+
+	It("should key the PVC ones by dataset name", func() {
+		// PVC "input" is managed by dataset "demo".
+		merged := mergeClientlessRuntimeInfos(
+			map[string]base.RuntimeInfoInterface{"input": runtimeInfo("demo", common.CacheRuntime)},
+			map[string]base.RuntimeInfoInterface{"other": runtimeInfo("other", common.CacheRuntime)})
+		Expect(merged).To(HaveLen(2))
+		Expect(merged).To(HaveKey("demo"))
+		Expect(merged).To(HaveKey("other"))
+		Expect(merged).NotTo(HaveKey("input"))
+	})
+
+	It("should leave out PVCs of runtimes other than cache runtimes", func() {
+		merged := mergeClientlessRuntimeInfos(
+			map[string]base.RuntimeInfoInterface{"alluxio-data": runtimeInfo("alluxio-data", common.AlluxioRuntime)},
+			map[string]base.RuntimeInfoInterface{"demo": runtimeInfo("demo", common.CacheRuntime)})
+		Expect(merged).To(HaveLen(1))
+		Expect(merged).To(HaveKey("demo"))
+	})
+
+	It("should let a dataset resolved from a PVC win over the annotation", func() {
+		fromPVC := runtimeInfo("demo", common.CacheRuntime)
+		merged := mergeClientlessRuntimeInfos(
+			map[string]base.RuntimeInfoInterface{"demo-pvc": fromPVC},
+			map[string]base.RuntimeInfoInterface{"demo": runtimeInfo("demo", common.CacheRuntime)})
+		Expect(merged).To(HaveLen(1))
+		Expect(merged["demo"]).To(BeIdenticalTo(fromPVC))
 	})
 })

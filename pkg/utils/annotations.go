@@ -132,6 +132,13 @@ func ServerlessEnabled(infos map[string]string) (match bool) {
 	return enabled(infos, common.InjectServerless) || serverlessPlatformMatched(infos) || enabled(infos, common.InjectFuseSidecar)
 }
 
+// InjectEnabled decides if the cache runtime config should be injected into the pod.
+// We don't have to know which cache system it is using here, as long as it provides no fuse client.
+// - fluid.io/inject=true implies injecting the runtime config of every dataset listed in the fluid.io/datasets annotation.
+func InjectEnabled(infos map[string]string) (match bool) {
+	return enabled(infos, common.LabelAnnotationInject)
+}
+
 // FuseSidecarPrivileged decides if the injected fuse sidecar should be privileged, only used when fuse sidecar should be injected
 // TODO: The func is used for Fluid App controller to determine if it's a pod should be watched. It could be better to use another way(e.g. a special label)to indicate this.
 func FuseSidecarPrivileged(metaObj metav1.ObjectMeta) (match bool) {
