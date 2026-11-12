@@ -22,8 +22,10 @@ env:
 
 jobs:
   kind-e2e-test:
-    # TODO(#6224): switch back to ubuntu-latest once JindoRuntime FUSE mounts work with the host AppArmor fusermount3 profile on ubuntu-26.04 runners.
-    runs-on: ubuntu-24.04
+    # ubuntu-latest resolves to ubuntu-26.04, whose host AppArmor fusermount3 profile
+    # denies the JindoRuntime FUSE mounts (#6224); the profile is unloaded from the
+    # ephemeral runner in a step below before the Kind cluster is created.
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
@@ -55,6 +57,29 @@ jobs:
         with:
           path: ${{ env.RUNNER_TOOL_CACHE }}/kind/v0.31.0
           key: ${{ runner.os }}-kind-v0.31.0-kubectl-${{ matrix.kubernetes-version }}
+
+      - name: Unload AppArmor fusermount3 profile from the host runner
+        # ubuntu-26.04 runners ship AppArmor 5.0 with an /etc/apparmor.d/fusermount3
+        # profile. It attaches by path to /usr/bin/fusermount3 even when the calling
+        # process (a privileged FUSE pod on the Kind node) is otherwise unconfined,
+        # and only allows FUSE mounts under /mnt, /tmp, $HOME and a few more
+        # directories - so the JindoRuntime FUSE mount fails with EACCES (#6224).
+        # The runner is ephemeral and single-tenant, so simply unload the profile
+        # before the Kind cluster is created. On ubuntu-24.04 and older images,
+        # which do not ship the profile, this is a no-op.
+        run: |
+          if [[ ! -f /etc/apparmor.d/fusermount3 ]]; then
+            echo ">>> no /etc/apparmor.d/fusermount3 on this runner image, nothing to do"
+            exit 0
+          fi
+          echo ">>> fusermount3 profile found, unloading it"
+          sudo grep -h "^fusermount3 " /sys/kernel/security/apparmor/profiles || true
+          parser="$(command -v apparmor_parser || echo /usr/sbin/apparmor_parser)"
+          if ! sudo "$parser" -R /etc/apparmor.d/fusermount3; then
+            echo ">>> failed to unload /etc/apparmor.d/fusermount3; without it the JindoRuntime FUSE e2e hangs until the step timeout (#6224)" >&2
+            exit 1
+          fi
+          echo ">>> fusermount3 profile unloaded"
 
       - name: Create k8s Kind Cluster
         uses: helm/kind-action@1544676c07bb3570fcb70166beaa07c4528fd4aa # v1.15.1
