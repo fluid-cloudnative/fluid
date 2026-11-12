@@ -18,6 +18,7 @@ package thin
 
 import (
 	"context"
+	"errors"
 	"reflect"
 	"testing"
 
@@ -510,6 +511,29 @@ func TestThinEngine_updateFuseConfigOnChange(t *testing.T) {
 			},
 		},
 	}
+	pendingPVC := corev1.PersistentVolumeClaim{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "pending-pvc",
+			Namespace: "default",
+		},
+		Status: corev1.PersistentVolumeClaimStatus{
+			Phase: corev1.ClaimPending,
+		},
+	}
+	pendingPVCDataset := datav1alpha1.Dataset{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test",
+			Namespace: "default",
+		},
+		Spec: datav1alpha1.DatasetSpec{
+			Mounts: []datav1alpha1.Mount{
+				{
+					MountPoint: "pvc://pending-pvc",
+					Name:       "pending-pvc",
+				},
+			},
+		},
+	}
 	thinruntime := datav1alpha1.ThinRuntime{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "test",
@@ -520,8 +544,10 @@ func TestThinEngine_updateFuseConfigOnChange(t *testing.T) {
 		name       string
 		dataset    *datav1alpha1.Dataset
 		cm         *corev1.ConfigMap
+		pvc        *corev1.PersistentVolumeClaim
 		wantUpdate bool
 		wantErr    bool
+		wantErrIs  error
 	}{
 		{
 			name:       "not update configmap",
@@ -551,6 +577,15 @@ func TestThinEngine_updateFuseConfigOnChange(t *testing.T) {
 			wantUpdate: false,
 			wantErr:    true,
 		},
+		{
+			name:       "transform fuse config failed due to pending pvc",
+			dataset:    &pendingPVCDataset,
+			cm:         &cm,
+			pvc:        &pendingPVC,
+			wantUpdate: false,
+			wantErr:    true,
+			wantErrIs:  ErrPVCNotBound,
+		},
 	}
 
 	scheme := runtime.NewScheme()
@@ -558,7 +593,11 @@ func TestThinEngine_updateFuseConfigOnChange(t *testing.T) {
 	_ = datav1alpha1.AddToScheme(scheme)
 
 	for _, tt := range testcase {
-		client := fake.NewFakeClientWithScheme(scheme, tt.dataset, tt.cm)
+		objs := []runtime.Object{tt.dataset, tt.cm}
+		if tt.pvc != nil {
+			objs = append(objs, tt.pvc)
+		}
+		client := fake.NewFakeClientWithScheme(scheme, objs...)
 		thinEngine := ThinEngine{
 			Client:    client,
 			name:      "test",
@@ -569,6 +608,9 @@ func TestThinEngine_updateFuseConfigOnChange(t *testing.T) {
 		update, err := thinEngine.updateFuseConfigOnChange(thinEngine.runtime, tt.dataset)
 		if (err != nil) != tt.wantErr {
 			t.Errorf("testcase %s failed due to error %v", tt.name, err)
+		}
+		if tt.wantErrIs != nil && !errors.Is(err, tt.wantErrIs) {
+			t.Errorf("testcase %s failed, want error Is %v, got %v", tt.name, tt.wantErrIs, err)
 		}
 		if update != tt.wantUpdate {
 			t.Errorf("testcase %s failed, want update %v, get update %v", tt.name, tt.wantUpdate, update)
