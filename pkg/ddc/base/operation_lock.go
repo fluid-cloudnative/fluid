@@ -38,18 +38,19 @@ func getDataOperationKey(object client.Object) string {
 	}
 	// Check for typed nil pointer
 	rObj := reflect.ValueOf(object)
-	if rObj.Kind() == reflect.Ptr && rObj.IsNil() {
+	if rObj.Kind() == reflect.Pointer && rObj.IsNil() {
 		return ""
 	}
 	return object.GetName()
 }
 
 // SetDataOperationInTargetDataset set status of target dataset to mark the data operation being performed.
-func SetDataOperationInTargetDataset(ctx cruntime.ReconcileRequestContext, operation dataoperation.OperationInterface, engine *TemplateEngine) error {
+func SetDataOperationInTargetDataset(ctx cruntime.ReconcileRequestContext, operation dataoperation.OperationInterface, engine OperationEngine) error {
 	targetDataset := ctx.Dataset
 	object := operation.GetOperationObject()
 
 	// check if the bounded runtime is ready
+	// TODO: can we remove this check? dataset binds runtime only when runtime is ready!
 	ready := engine.CheckRuntimeReady()
 	if !ready {
 		ctx.Log.V(1).Info("Bounded accelerate runtime not ready", "targetDataset", targetDataset)

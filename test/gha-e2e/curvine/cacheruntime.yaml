@@ -1,0 +1,44 @@
+apiVersion: data.fluid.io/v1alpha1
+kind: CacheRuntime
+metadata:
+  name: curvine-demo
+spec:
+  runtimeClassName: curvine-demo
+  volumes:
+    - name: curvine-logs
+      emptyDir: {}
+    - name: curvine-master-data
+      emptyDir: {}
+  master:
+    replicas: 1
+    options:
+      format_master: "true"
+      rpc_port: "8995"
+      journal_port: "8996"
+      web_port: "9000"
+      meta_dir: "/app/curvine/data/meta"
+      journal_dir: "/app/curvine/data/journal"
+    volumeMounts:
+      - name: curvine-logs
+        mountPath: /app/curvine/logs
+      - name: curvine-master-data
+        mountPath: /app/curvine/data
+  worker:
+    replicas: 1
+    options:
+      format_worker: "true"
+      rpc_port: "8997"
+      web_port: "9001"
+      dir_reserved: "0"
+    volumeMounts:
+      - name: curvine-logs
+        mountPath: /app/curvine/logs
+    tieredStore:
+      levels:
+        - low: "0.5"
+          high: "0.8"
+          emptyDir:
+            quota: 1Gi
+  client:
+    options:
+      debug: "false"

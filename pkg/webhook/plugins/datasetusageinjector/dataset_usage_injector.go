@@ -33,7 +33,6 @@ func NewPlugin(c client.Client, args string) (api.MutatingHandler, error) {
 	}, nil
 }
 
-// TODO: Support cases where fuse sidecars are injected in multi-round. Currently, only dataset names in the first round will be recorded.
 func (injector *DatasetUsageInjector) Mutate(pod *corev1.Pod, runtimeInfos map[string]base.RuntimeInfoInterface) (shouldStop bool, err error) {
 	if len(runtimeInfos) == 0 {
 		return false, nil
@@ -44,13 +43,33 @@ func (injector *DatasetUsageInjector) Mutate(pod *corev1.Pod, runtimeInfos map[s
 		podName = pod.GenerateName
 	}
 
-	datasetsInUse := make([]string, 0, len(runtimeInfos))
+	annotationKey := common.LabelAnnotationDatasetsInUse
+
+	datasetsInUseMap := make(map[string]struct{})
+
+	// 1. Read existing datasets from annotation
+	if existingVal, exists := pod.Annotations[annotationKey]; exists && len(existingVal) > 0 {
+		existingDatasets := strings.Split(existingVal, ",")
+		for _, ds := range existingDatasets {
+			trimmed := strings.TrimSpace(ds)
+			if trimmed != "" {
+				datasetsInUseMap[trimmed] = struct{}{}
+			}
+		}
+	}
+
+	// 2. Add new datasets from current round
 	for _, runtimeInfo := range runtimeInfos {
-		datasetsInUse = append(datasetsInUse, runtimeInfo.GetName())
+		datasetsInUseMap[runtimeInfo.GetName()] = struct{}{}
+	}
+
+	// 3. Convert map to sorted slice
+	datasetsInUse := make([]string, 0, len(datasetsInUseMap))
+	for ds := range datasetsInUseMap {
+		datasetsInUse = append(datasetsInUse, ds)
 	}
 	slices.Sort(datasetsInUse)
 
-	annotationKey := common.LabelAnnotationDatasetsInUse
 	annotationValue := strings.Join(datasetsInUse, ",")
 
 	log.Info("Injecting dataset usage annotation to pod",

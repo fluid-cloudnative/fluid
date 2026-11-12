@@ -32,7 +32,8 @@ const (
 
 	// The dataset annotation
 	// i.e. fluid.io/dataset
-	LabelAnnotationDataset = LabelAnnotationPrefix + "dataset"
+	LabelAnnotationDataset          = LabelAnnotationPrefix + "dataset"
+	LabelAnnotationDatasetPlacement = LabelAnnotationPrefix + "dataset-placement"
 
 	// LabelAnnotationDatasetId indicates the uuid of the dataset
 	// i.e. fluid.io/dataset-uuid
@@ -144,6 +145,15 @@ const (
 
 	// UpdateLabel means updating the label value of the specific node.
 	UpdateLabel OperationType = "UpdateValue"
+)
+
+// label and annotations for cacheRuntime
+const (
+	CacheRuntimeLabelAnnotationPrefix = "cacheruntime." + LabelAnnotationPrefix
+
+	LabelCacheRuntimeName = CacheRuntimeLabelAnnotationPrefix + "name"
+
+	LabelCacheRuntimeComponentName = CacheRuntimeLabelAnnotationPrefix + "component-name"
 )
 
 // LabelToModify modifies the labelKey in operationType.

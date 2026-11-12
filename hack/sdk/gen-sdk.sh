@@ -78,8 +78,3 @@ pushd . && \
 python3 ${POST_GEN_SDK_SCRIPT} --python-sdk-path=${PYTHON_SDK_OUTPUT_PATH}
 
 echo "Fluid Python SDK is generated successfully to folder ${PYTHON_SDK_OUTPUT_PATH}/."
-
-echo "Generating java SDK for Fluid ..."
-java -jar ${SWAGGER_CODEGEN_JAR} generate -i ${SWAGGER_CODEGEN_FILE} -g java -o ${JAVA_SDK_OUTPUT_PATH} -c ${SWAGGER_CODEGEN_CONF} --model-package models
-
-echo "Fluid Java SDK is generated successfully to folder ${JAVA_SDK_OUTPUT_PATH}/."

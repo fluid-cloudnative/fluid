@@ -59,7 +59,7 @@ func LoadCurrentFuseGenerationFromMeta(namespace, name, runtimeType string) (str
 	if err != nil {
 		return "", errors.Wrapf(err, "failed to open metadata file %s", filePath)
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
 		line := scanner.Text()

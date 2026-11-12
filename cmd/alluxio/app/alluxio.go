@@ -21,14 +21,6 @@ import (
 	"time"
 	// +kubebuilder:scaffold:imports
 
-	"github.com/fluid-cloudnative/fluid"
-	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
-	"github.com/fluid-cloudnative/fluid/pkg/controllers"
-	alluxioctl "github.com/fluid-cloudnative/fluid/pkg/controllers/v1alpha1/alluxio"
-	"github.com/fluid-cloudnative/fluid/pkg/ddc/alluxio"
-	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
-	"github.com/fluid-cloudnative/fluid/pkg/ddc/base/portallocator"
-	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/spf13/cobra"
 	zapOpt "go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -40,6 +32,17 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
+
+	"github.com/fluid-cloudnative/fluid"
+	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	_ "github.com/fluid-cloudnative/fluid/pkg/common/features"
+	"github.com/fluid-cloudnative/fluid/pkg/controllers"
+	alluxioctl "github.com/fluid-cloudnative/fluid/pkg/controllers/v1alpha1/alluxio"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/alluxio"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/base/portallocator"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	utilfeature "github.com/fluid-cloudnative/fluid/pkg/utils/feature"
 )
 
 var (
@@ -95,6 +98,7 @@ func init() {
 	alluxioCmd.Flags().StringVar(&controllerWorkqueueMaxSyncBackoffStr, "workqueue-max-sync-backoff", "1000s", "max backoff period for failed reconciliation in controller's workqueue")
 	alluxioCmd.Flags().IntVar(&controllerWorkqueueQPS, "workqueue-qps", 10, "qps limit value for controller's workqueue")
 	alluxioCmd.Flags().IntVar(&controllerWorkqueueBurst, "workqueue-burst", 100, "burst limit value for controller's workqueue")
+	utilfeature.DefaultMutableFeatureGate.AddFlag(alluxioCmd.Flags())
 }
 
 func handle() {

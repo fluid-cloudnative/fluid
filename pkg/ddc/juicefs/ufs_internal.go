@@ -21,14 +21,20 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/juicefs/operations"
 )
 
+var (
+	getJuiceFSMetricWorkerPods = (*JuiceFSEngine).GetRunningPodsOfStatefulSet
+	getJuiceFSUsedSpace        = operations.JuiceFileUtils.GetUsedSpace
+	getJuiceFSFileCount        = operations.JuiceFileUtils.GetFileCount
+)
+
 func (j *JuiceFSEngine) totalStorageBytesInternal() (total int64, err error) {
 	stsName := j.getWorkerName()
-	pods, err := j.GetRunningPodsOfStatefulSet(stsName, j.namespace)
+	pods, err := getJuiceFSMetricWorkerPods(j, stsName, j.namespace)
 	if err != nil || len(pods) == 0 {
 		return
 	}
 	fileUtils := operations.NewJuiceFileUtils(pods[0].Name, common.JuiceFSWorkerContainer, j.namespace, j.Log)
-	total, err = fileUtils.GetUsedSpace(j.getMountPoint())
+	total, err = getJuiceFSUsedSpace(fileUtils, j.getMountPoint())
 	if err != nil {
 		return
 	}
@@ -38,12 +44,12 @@ func (j *JuiceFSEngine) totalStorageBytesInternal() (total int64, err error) {
 
 func (j *JuiceFSEngine) totalFileNumsInternal() (fileCount int64, err error) {
 	stsName := j.getWorkerName()
-	pods, err := j.GetRunningPodsOfStatefulSet(stsName, j.namespace)
+	pods, err := getJuiceFSMetricWorkerPods(j, stsName, j.namespace)
 	if err != nil || len(pods) == 0 {
 		return
 	}
 	fileUtils := operations.NewJuiceFileUtils(pods[0].Name, common.JuiceFSWorkerContainer, j.namespace, j.Log)
-	fileCount, err = fileUtils.GetFileCount(j.getMountPoint())
+	fileCount, err = getJuiceFSFileCount(fileUtils, j.getMountPoint())
 	if err != nil {
 		return
 	}
@@ -53,12 +59,12 @@ func (j *JuiceFSEngine) totalFileNumsInternal() (fileCount int64, err error) {
 
 func (j *JuiceFSEngine) usedSpaceInternal() (usedSpace int64, err error) {
 	stsName := j.getWorkerName()
-	pods, err := j.GetRunningPodsOfStatefulSet(stsName, j.namespace)
+	pods, err := getJuiceFSMetricWorkerPods(j, stsName, j.namespace)
 	if err != nil || len(pods) == 0 {
 		return
 	}
 	fileUtils := operations.NewJuiceFileUtils(pods[0].Name, common.JuiceFSWorkerContainer, j.namespace, j.Log)
-	usedSpace, err = fileUtils.GetUsedSpace(j.getMountPoint())
+	usedSpace, err = getJuiceFSUsedSpace(fileUtils, j.getMountPoint())
 	if err != nil {
 		return
 	}

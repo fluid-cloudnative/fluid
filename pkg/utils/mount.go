@@ -21,12 +21,12 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 
 	"github.com/fluid-cloudnative/fluid/pkg/utils/cmdguard"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/validation"
 	"github.com/golang/glog"
-	corev1 "k8s.io/api/core/v1"
 	"k8s.io/utils/mount"
 )
 
@@ -40,6 +40,26 @@ func GetMountRoot() (string, error) {
 		return mountRoot, err
 	}
 	return mountRoot, nil
+}
+
+// NormalizeSubPath cleans a Fluid subPath and rejects one that escapes its mount root.
+//
+// Leading separators are stripped before validation: GetPhysicalDatasetSubPath derives the subPath
+// with strings.SplitAfterN, so a mount point written as "dataset://ns/ds//sub" yields "/sub". Such a
+// value used to mount fine because the extra separator collapsed on concatenation, meaning PVs
+// carrying it already exist and must keep working. Traversal that still escapes after cleaning is
+// returned as an error instead of being clamped, so the caller can surface it.
+func NormalizeSubPath(subPath string) (string, error) {
+	cleaned := filepath.Clean(strings.TrimLeft(subPath, "/"))
+	if cleaned == "." {
+		return "", nil
+	}
+
+	if !filepath.IsLocal(cleaned) {
+		return "", fmt.Errorf("subPath %q must be a relative path that does not escape the mount point", subPath)
+	}
+
+	return cleaned, nil
 }
 
 func CheckMountReadyAndSubPathExist(fluidPath string, mountType string, subPath string) (err error) {
@@ -113,27 +133,6 @@ func CheckMountPointBroken(mountPath string) (broken bool, err error) {
 		return false, fmt.Errorf("mountPath %s not exist", mountPath)
 	}
 	return false, nil
-}
-
-func GetRuntimeNameFromFusePod(pod corev1.Pod) (runtimeName string, err error) {
-	podName := pod.Name
-	strList := strings.Split(podName, "-fuse-")
-	if len(strList) != 2 {
-		err = fmt.Errorf("can't get runtime name from pod: %s, namespace: %s", pod.Name, pod.Namespace)
-		return
-	}
-	runtimeName = strList[0]
-	return
-}
-
-func IsFusePod(pod corev1.Pod) bool {
-	labels := pod.Labels
-	for k, v := range labels {
-		if k == "role" && strings.Contains(v, "-fuse") {
-			return true
-		}
-	}
-	return false
 }
 
 // PathExists returns true if the specified path exists. The code is replicated from "k8s.io/utils/mount.PathExists".

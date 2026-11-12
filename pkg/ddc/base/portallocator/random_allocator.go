@@ -34,10 +34,22 @@ type RandomAllocator struct {
 	log  logr.Logger
 }
 
+// needResetReservedPorts reports whether reserved ports should be restored into the allocator
+// during initialization. RandomAllocator does not track port usage, so no restoration is needed.
 func (r *RandomAllocator) needResetReservedPorts() bool {
 	return false
 }
 
+// newRandomAllocator creates and initializes a RandomAllocator with the given port range and logger.
+// It initializes a new random number generator using the current Unix timestamp as the seed.
+//
+// Parameters:
+// - pr (*net.PortRange): The port range used by the allocator.
+// - log (logr.Logger): The logger used to record allocator-related information.
+//
+// Returns:
+// - *RandomAllocator: A newly initialized random port allocator.
+// - error: Returns nil if the allocator is created successfully.
 func newRandomAllocator(pr *net.PortRange, log logr.Logger) (*RandomAllocator, error) {
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
 
@@ -48,17 +60,34 @@ func newRandomAllocator(pr *net.PortRange, log logr.Logger) (*RandomAllocator, e
 	}, nil
 }
 
+// Allocate is a no-op for RandomAllocator.
+// Individual port allocation checks are not currently required by this allocator.
 func (r *RandomAllocator) Allocate(port int) error {
 	// not judge whether port can be allocated or not
 	return nil
 
 }
 
+// Release releases the resource associated with the given index.
+// For the RandomAllocator, no actual resource is allocated per index,
+// so this method does nothing and always returns a nil error.
+//
+// Parameters:
+//   - i: the index of the resource to release (unused).
+//
+// Returns:
+//   - error: always nil, indicating success with no action.
 func (r *RandomAllocator) Release(i int) error {
 	// no need to release
 	return nil
 }
 
+// AllocateBatch attempts to allocate a batch of unique random ports from the allocator's port range.
+// The number of ports to allocate is specified by portNum.
+// It returns a slice of allocated port numbers and an error if allocation fails.
+// An error is returned when portNum exceeds the total size of the port range.
+// This method is concurrency-safe as it acquires a lock before modifying the port allocation state.
+// Note: The allocated ports are not persisted; they are only stored in the local map to avoid duplicates within the same batch.
 func (r *RandomAllocator) AllocateBatch(portNum int) (ports []int, err error) {
 	var availPort int
 	var allocatedPorts = map[int]bool{}

@@ -5,7 +5,7 @@ const (
 	RootDirPath        = "/"
 	UFSMountPathFormat = RootDirPath + "%s"
 
-	// same for Alluxio, GooseFS and JindoFS
+	// same for Alluxio and JindoFS
 	LocalStorageRootPath   = "/underFSStorage"
 	LocalStoragePathFormat = LocalStorageRootPath + "/%s"
 )

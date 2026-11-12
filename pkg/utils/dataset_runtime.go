@@ -18,10 +18,12 @@ package utils
 
 import (
 	"context"
+	"fmt"
 	"reflect"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/transformer"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -41,6 +43,32 @@ func GetRuntimeByCategory(runtimes []datav1alpha1.Runtime, category common.Categ
 	return -1, nil
 }
 
+// datasetControllerOwnerReference builds the controller ownerReference which points to the given dataset.
+// Kind and APIVersion are resolved via the shared transformer helper (backed by the scheme), falling back to the
+// well-known values of the Dataset CRD as a last resort if unavailable. The owner based watch of the dataset
+// controller resolves a dependent through those two fields, so they must be set.
+func datasetControllerOwnerReference(dataset *datav1alpha1.Dataset) metav1.OwnerReference {
+	ref := transformer.GenerateOwnerReferenceFromObject(dataset)
+	kind := ref.Kind
+	if len(kind) == 0 {
+		// unreachable by design: Dataset is statically registered in fluidScheme.
+		kind = datav1alpha1.Datasetkind
+	}
+	apiVersion := ref.APIVersion
+	if len(apiVersion) == 0 {
+		// unreachable by design: Dataset is statically registered in fluidScheme.
+		apiVersion = datav1alpha1.GroupVersion.String()
+	}
+
+	return metav1.OwnerReference{
+		Kind:       kind,
+		APIVersion: apiVersion,
+		Name:       dataset.GetName(),
+		UID:        dataset.GetUID(),
+		Controller: ptr.To(true),
+	}
+}
+
 // CreateRuntimeForReferenceDatasetIfNotExist creates runtime for ReferenceDataset
 func CreateRuntimeForReferenceDatasetIfNotExist(client client.Client, dataset *datav1alpha1.Dataset) (err error) {
 	err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
@@ -49,15 +77,17 @@ func CreateRuntimeForReferenceDatasetIfNotExist(client client.Client, dataset *d
 			dataset.GetNamespace())
 		// 1. if err is null, which indicates that the runtime exists, then return
 		if err == nil {
+			// 1.1 The runtime is being deleted, it can neither be adopted nor be re-created for now.
+			// Return an error (not a conflict error, so retry.RetryOnConflict won't swallow it) to
+			// let the caller requeue until the terminating runtime is really gone.
+			if HasDeletionTimestamp(runtime.ObjectMeta) {
+				return fmt.Errorf("the ThinRuntime %s/%s is terminating, wait for it to be deleted before creating a new one for the reference dataset",
+					runtime.GetNamespace(), runtime.GetName())
+			}
+
 			runtimeToUpdate := runtime.DeepCopy()
 			runtimeToUpdate.SetOwnerReferences([]metav1.OwnerReference{
-				{
-					Kind:       dataset.GetObjectKind().GroupVersionKind().Kind,
-					APIVersion: dataset.APIVersion,
-					Name:       dataset.GetName(),
-					UID:        dataset.GetUID(),
-					Controller: ptr.To(true),
-				}})
+				datasetControllerOwnerReference(dataset)})
 			if !reflect.DeepEqual(runtimeToUpdate, runtime) {
 				err = client.Update(context.TODO(), runtimeToUpdate)
 				return err
@@ -72,13 +102,7 @@ func CreateRuntimeForReferenceDatasetIfNotExist(client client.Client, dataset *d
 					Name:      dataset.Name,
 					Namespace: dataset.Namespace,
 					OwnerReferences: []metav1.OwnerReference{
-						{
-							Kind:       dataset.GetObjectKind().GroupVersionKind().Kind,
-							APIVersion: dataset.APIVersion,
-							Name:       dataset.GetName(),
-							UID:        dataset.GetUID(),
-							Controller: ptr.To(true),
-						},
+						datasetControllerOwnerReference(dataset),
 					},
 					Labels: map[string]string{
 						common.LabelAnnotationDatasetId: GetDatasetId(dataset.GetNamespace(), dataset.GetName(), string(dataset.GetUID())),

@@ -391,6 +391,534 @@
         }
       }
     },
+    ".CacheRuntime": {
+      "description": "CacheRuntime is the Schema for the CacheRuntimes API",
+      "type": "object",
+      "properties": {
+        "apiVersion": {
+          "description": "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
+          "type": "string"
+        },
+        "kind": {
+          "description": "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
+          "type": "string"
+        },
+        "metadata": {
+          "default": {},
+          "$ref": "#/definitions/v1.ObjectMeta"
+        },
+        "spec": {
+          "default": {},
+          "$ref": "#/definitions/.CacheRuntimeSpec"
+        },
+        "status": {
+          "default": {},
+          "$ref": "#/definitions/.CacheRuntimeStatus"
+        }
+      }
+    },
+    ".CacheRuntimeClass": {
+      "description": "CacheRuntimeClass is the Schema for the cacheruntimeclasses API. CacheRuntimeClass defines a class of cache runtime implementations with specific configurations.",
+      "type": "object",
+      "required": [
+        "fileSystemType"
+      ],
+      "properties": {
+        "apiVersion": {
+          "description": "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
+          "type": "string"
+        },
+        "dataOperationSpecs": {
+          "description": "DataOperationSpecs specifies the data operation spec",
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/.DataOperationSpec"
+          }
+        },
+        "extraResources": {
+          "description": "ExtraResources specifies additional resources (e.g., ConfigMaps) used by the CacheRuntime components",
+          "default": {},
+          "$ref": "#/definitions/.RuntimeExtraResources"
+        },
+        "fileSystemType": {
+          "description": "FileSystemType is the file system type of the cache runtime (e.g., \"alluxio\", \"juicefs\")",
+          "type": "string",
+          "default": ""
+        },
+        "kind": {
+          "description": "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
+          "type": "string"
+        },
+        "metadata": {
+          "default": {},
+          "$ref": "#/definitions/v1.ObjectMeta"
+        },
+        "topology": {
+          "description": "Topology describes the topology of the CacheRuntime components (master, worker, client)",
+          "$ref": "#/definitions/.RuntimeTopology"
+        }
+      }
+    },
+    ".CacheRuntimeClassList": {
+      "description": "CacheRuntimeClassList contains a list of CacheRuntimeClass",
+      "type": "object",
+      "required": [
+        "items"
+      ],
+      "properties": {
+        "apiVersion": {
+          "description": "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
+          "type": "string"
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/.CacheRuntimeClass"
+          }
+        },
+        "kind": {
+          "description": "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
+          "type": "string"
+        },
+        "metadata": {
+          "default": {},
+          "$ref": "#/definitions/v1.ListMeta"
+        }
+      }
+    },
+    ".CacheRuntimeClientSpec": {
+      "description": "CacheRuntimeClientSpec describes the desired state of CacheRuntime client component",
+      "type": "object",
+      "properties": {
+        "args": {
+          "description": "Args are arguments to the entrypoint. The container image's CMD is used if this is not provided.",
+          "type": "array",
+          "items": {
+            "type": "string",
+            "default": ""
+          },
+          "x-kubernetes-list-type": "atomic"
+        },
+        "cleanPolicy": {
+          "description": "CleanPolicy determines when to clean up the FUSE client pods. Currently supports two policies: - \"OnDemand\": Clean up the FUSE pod when it is no longer needed on a node - \"OnRuntimeDeleted\": Clean up the FUSE pod only when the CacheRuntime is deleted Defaults to \"OnRuntimeDeleted\".",
+          "type": "string"
+        },
+        "disabled": {
+          "description": "Disabled indicates whether the component should be disabled. If set to true, the component will not be created.",
+          "type": "boolean"
+        },
+        "env": {
+          "description": "Env is a list of environment variables to set in the container.",
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/v1.EnvVar"
+          },
+          "x-kubernetes-patch-merge-key": "name",
+          "x-kubernetes-patch-strategy": "merge"
+        },
+        "nodeSelector": {
+          "description": "NodeSelector is a selector which must be true for the pod to fit on a node. Selector which must match a node's labels for the pod to be scheduled on that node. More info: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string",
+            "default": ""
+          },
+          "x-kubernetes-map-type": "atomic"
+        },
+        "options": {
+          "description": "Options is a set of key-value pairs that provide additional configuration for the cache system.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string",
+            "default": ""
+          }
+        },
+        "podMetadata": {
+          "description": "PodMetadata contains labels and annotations that will be propagated to the component's pods.",
+          "default": {},
+          "$ref": "#/definitions/.PodMetadata"
+        },
+        "resources": {
+          "description": "Resources describes the compute resource requirements. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/",
+          "default": {},
+          "$ref": "#/definitions/v1.ResourceRequirements"
+        },
+        "runtimeVersion": {
+          "description": "RuntimeVersion is the version information that instructs Fluid to orchestrate a particular version of the runtime.",
+          "default": {},
+          "$ref": "#/definitions/.VersionSpec"
+        },
+        "tieredStore": {
+          "description": "TieredStore describes the tiered storage configuration used by the client component.",
+          "default": {},
+          "$ref": "#/definitions/.RuntimeTieredStore"
+        },
+        "tolerations": {
+          "description": "Tolerations are the pod's tolerations. If specified, the pod's tolerations. More info: https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/",
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/v1.Toleration"
+          }
+        },
+        "volumeMounts": {
+          "description": "VolumeMounts are the volumes to mount into the container's filesystem. Cannot be updated.",
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/v1.VolumeMount"
+          },
+          "x-kubernetes-patch-merge-key": "mountPath",
+          "x-kubernetes-patch-strategy": "merge"
+        }
+      }
+    },
+    ".CacheRuntimeList": {
+      "description": "CacheRuntimeList contains a list of CacheRuntime",
+      "type": "object",
+      "required": [
+        "items"
+      ],
+      "properties": {
+        "apiVersion": {
+          "description": "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
+          "type": "string"
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/.CacheRuntime"
+          }
+        },
+        "kind": {
+          "description": "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
+          "type": "string"
+        },
+        "metadata": {
+          "default": {},
+          "$ref": "#/definitions/v1.ListMeta"
+        }
+      }
+    },
+    ".CacheRuntimeMasterSpec": {
+      "description": "CacheRuntimeMasterSpec describes the desired state of CacheRuntime master component",
+      "type": "object",
+      "properties": {
+        "args": {
+          "description": "Args are arguments to the entrypoint. The container image's CMD is used if this is not provided.",
+          "type": "array",
+          "items": {
+            "type": "string",
+            "default": ""
+          },
+          "x-kubernetes-list-type": "atomic"
+        },
+        "disabled": {
+          "description": "Disabled indicates whether the component should be disabled. If set to true, the component will not be created.",
+          "type": "boolean"
+        },
+        "env": {
+          "description": "Env is a list of environment variables to set in the container.",
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/v1.EnvVar"
+          },
+          "x-kubernetes-patch-merge-key": "name",
+          "x-kubernetes-patch-strategy": "merge"
+        },
+        "nodeSelector": {
+          "description": "NodeSelector is a selector which must be true for the pod to fit on a node. Selector which must match a node's labels for the pod to be scheduled on that node. More info: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string",
+            "default": ""
+          },
+          "x-kubernetes-map-type": "atomic"
+        },
+        "options": {
+          "description": "Options is a set of key-value pairs that provide additional configuration for the cache system.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string",
+            "default": ""
+          }
+        },
+        "podMetadata": {
+          "description": "PodMetadata contains labels and annotations that will be propagated to the component's pods.",
+          "default": {},
+          "$ref": "#/definitions/.PodMetadata"
+        },
+        "replicas": {
+          "description": "Replicas is the desired number of replicas of the master component. If unspecified, defaults to 1.",
+          "type": "integer",
+          "format": "int32"
+        },
+        "resources": {
+          "description": "Resources describes the compute resource requirements. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/",
+          "default": {},
+          "$ref": "#/definitions/v1.ResourceRequirements"
+        },
+        "runtimeVersion": {
+          "description": "RuntimeVersion is the version information that instructs Fluid to orchestrate a particular version of the runtime.",
+          "default": {},
+          "$ref": "#/definitions/.VersionSpec"
+        },
+        "tolerations": {
+          "description": "Tolerations are the pod's tolerations. If specified, the pod's tolerations. More info: https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/",
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/v1.Toleration"
+          }
+        },
+        "volumeMounts": {
+          "description": "VolumeMounts are the volumes to mount into the container's filesystem. Cannot be updated.",
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/v1.VolumeMount"
+          },
+          "x-kubernetes-patch-merge-key": "mountPath",
+          "x-kubernetes-patch-strategy": "merge"
+        }
+      }
+    },
+    ".CacheRuntimeMountUfsOutput": {
+      "type": "object",
+      "properties": {
+        "mounted": {
+          "description": "Mounted are the ufs paths that have been mounted.",
+          "type": "array",
+          "items": {
+            "type": "string",
+            "default": ""
+          }
+        }
+      }
+    },
+    ".CacheRuntimeSpec": {
+      "description": "CacheRuntimeSpec describes the desired state of CacheRuntime",
+      "type": "object",
+      "required": [
+        "runtimeClassName"
+      ],
+      "properties": {
+        "client": {
+          "description": "Client is the desired state of the client component.",
+          "default": {},
+          "$ref": "#/definitions/.CacheRuntimeClientSpec"
+        },
+        "imagePullSecrets": {
+          "description": "ImagePullSecrets is an optional list of references to secrets in the same namespace to use for pulling any of the images used by this PodSpec. More info: https://kubernetes.io/docs/concepts/containers/images#specifying-imagepullsecrets-on-a-pod",
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/v1.LocalObjectReference"
+          },
+          "x-kubernetes-patch-merge-key": "name",
+          "x-kubernetes-patch-strategy": "merge"
+        },
+        "master": {
+          "description": "Master is the desired state of the master component.",
+          "default": {},
+          "$ref": "#/definitions/.CacheRuntimeMasterSpec"
+        },
+        "options": {
+          "description": "Options is a set of key-value pairs that provide additional configuration for the cache system. These options will be propagated to all components.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string",
+            "default": ""
+          }
+        },
+        "podMetadata": {
+          "description": "PodMetadata contains labels and annotations that will be propagated to all component pods.",
+          "default": {},
+          "$ref": "#/definitions/.PodMetadata"
+        },
+        "runtimeClassName": {
+          "description": "RuntimeClassName is the name of the CacheRuntimeClass to use for this runtime. The CacheRuntimeClass defines the implementation details of the cache runtime.",
+          "type": "string",
+          "default": ""
+        },
+        "volumes": {
+          "description": "Volumes is the list of volumes that can be mounted by containers belonging to the cache runtime components. More info: https://kubernetes.io/docs/concepts/storage/volumes",
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/v1.Volume"
+          },
+          "x-kubernetes-patch-merge-key": "name",
+          "x-kubernetes-patch-strategy": "merge,retainKeys"
+        },
+        "worker": {
+          "description": "Worker is the desired state of the worker component.",
+          "default": {},
+          "$ref": "#/definitions/.CacheRuntimeWorkerSpec"
+        }
+      }
+    },
+    ".CacheRuntimeStatus": {
+      "description": "CacheRuntimeStatus describes the observed state of a CacheRuntime",
+      "type": "object",
+      "properties": {
+        "cacheAffinity": {
+          "description": "CacheAffinity describes the node affinity for cache worker pods. This includes node selector terms that specify which nodes are suitable for cache placement.",
+          "$ref": "#/definitions/v1.NodeAffinity"
+        },
+        "client": {
+          "description": "Client is the observed state of the client (FUSE) component.",
+          "default": {},
+          "$ref": "#/definitions/.RuntimeComponentStatus"
+        },
+        "conditions": {
+          "description": "Conditions represent the latest available observations of the runtime's state. Known condition types include \"Ready\", \"Available\", etc.",
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/.RuntimeCondition"
+          },
+          "x-kubernetes-list-map-keys": [
+            "type"
+          ],
+          "x-kubernetes-list-type": "map",
+          "x-kubernetes-patch-merge-key": "type",
+          "x-kubernetes-patch-strategy": "merge"
+        },
+        "configFile": {
+          "description": "ConfigFile is the path to the engine-specific configuration file. This file contains the cache engine's native configuration format.",
+          "type": "string"
+        },
+        "master": {
+          "description": "Master is the observed state of the master component.",
+          "default": {},
+          "$ref": "#/definitions/.RuntimeComponentStatus"
+        },
+        "mountTime": {
+          "description": "MountTime is the timestamp of the last successful mount operation. If MountTime is earlier than the master component's start time, a remount will be required.",
+          "$ref": "#/definitions/v1.Time"
+        },
+        "mounts": {
+          "description": "Mounts contains the mount point configurations from the bound dataset. Currently not used, may be used when integrating thin runtime.",
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/.Mount"
+          }
+        },
+        "selector": {
+          "description": "Selector is the label selector in string form, used for service discovery and auto-scaling. This is the serialized form of a label selector that can be used to find runtime pods.",
+          "type": "string"
+        },
+        "setupDuration": {
+          "description": "SetupDuration is the duration spent setting up the runtime, in human-readable format (e.g., \"2m30s\"). This helps users understand the setup time for the runtime.",
+          "type": "string"
+        },
+        "valueFile": {
+          "description": "ValueFile is the path to the generated values file used for runtime configuration. This file is generated during the setup phase and contains the resolved configuration.",
+          "type": "string"
+        },
+        "worker": {
+          "description": "Worker is the observed state of the worker component.",
+          "default": {},
+          "$ref": "#/definitions/.RuntimeComponentStatus"
+        }
+      }
+    },
+    ".CacheRuntimeWorkerSpec": {
+      "description": "CacheRuntimeWorkerSpec describes the desired state of CacheRuntime worker component",
+      "type": "object",
+      "properties": {
+        "args": {
+          "description": "Args are arguments to the entrypoint. The container image's CMD is used if this is not provided.",
+          "type": "array",
+          "items": {
+            "type": "string",
+            "default": ""
+          },
+          "x-kubernetes-list-type": "atomic"
+        },
+        "disabled": {
+          "description": "Disabled indicates whether the component should be disabled. If set to true, the component will not be created.",
+          "type": "boolean"
+        },
+        "env": {
+          "description": "Env is a list of environment variables to set in the container.",
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/v1.EnvVar"
+          },
+          "x-kubernetes-patch-merge-key": "name",
+          "x-kubernetes-patch-strategy": "merge"
+        },
+        "nodeSelector": {
+          "description": "NodeSelector is a selector which must be true for the pod to fit on a node. Selector which must match a node's labels for the pod to be scheduled on that node. More info: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string",
+            "default": ""
+          },
+          "x-kubernetes-map-type": "atomic"
+        },
+        "options": {
+          "description": "Options is a set of key-value pairs that provide additional configuration for the cache system.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string",
+            "default": ""
+          }
+        },
+        "podMetadata": {
+          "description": "PodMetadata contains labels and annotations that will be propagated to the component's pods.",
+          "default": {},
+          "$ref": "#/definitions/.PodMetadata"
+        },
+        "replicas": {
+          "description": "Replicas is the desired number of replicas of the worker component. If unspecified, defaults to 1.",
+          "type": "integer",
+          "format": "int32"
+        },
+        "resources": {
+          "description": "Resources describes the compute resource requirements. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/",
+          "default": {},
+          "$ref": "#/definitions/v1.ResourceRequirements"
+        },
+        "runtimeVersion": {
+          "description": "RuntimeVersion is the version information that instructs Fluid to orchestrate a particular version of the runtime.",
+          "default": {},
+          "$ref": "#/definitions/.VersionSpec"
+        },
+        "tieredStore": {
+          "description": "TieredStore describes the tiered storage configuration used by the worker component.",
+          "default": {},
+          "$ref": "#/definitions/.RuntimeTieredStore"
+        },
+        "tolerations": {
+          "description": "Tolerations are the pod's tolerations. If specified, the pod's tolerations. More info: https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/",
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/v1.Toleration"
+          }
+        },
+        "volumeMounts": {
+          "description": "VolumeMounts are the volumes to mount into the container's filesystem. Cannot be updated.",
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/v1.VolumeMount"
+          },
+          "x-kubernetes-patch-merge-key": "mountPath",
+          "x-kubernetes-patch-strategy": "merge"
+        }
+      }
+    },
     ".CacheableNodeAffinity": {
       "description": "CacheableNodeAffinity defines constraints that limit what nodes this dataset can be cached to.",
       "type": "object",
@@ -430,6 +958,16 @@
         }
       }
     },
+    ".ComponentServiceConfig": {
+      "description": "ComponentServiceConfig defines the service configuration for runtime components. Currently only headless service is supported, but this can be extended in the future to support other service types such as ClusterIP, NodePort, LoadBalancer, etc.",
+      "type": "object",
+      "properties": {
+        "headless": {
+          "description": "Headless enables a headless service for the component. A headless service does not allocate a cluster IP and allows direct pod-to-pod communication.",
+          "$ref": "#/definitions/.HeadlessRuntimeComponentService"
+        }
+      }
+    },
     ".Condition": {
       "description": "Condition explains the transitions on phase",
       "type": "object",
@@ -463,6 +1001,38 @@
           "description": "Type of condition, either `Complete` or `Failed`",
           "type": "string",
           "default": ""
+        }
+      }
+    },
+    ".ConfigMapDependencyConfig": {
+      "description": "ConfigMapDependencyConfig defines the ConfigMap mount configuration",
+      "type": "object",
+      "properties": {
+        "mountPath": {
+          "description": "MountPath is the path within the container at which the ConfigMap should be mounted. Must not contain ':'.",
+          "type": "string"
+        },
+        "name": {
+          "description": "Name is the ConfigMap template name defined in extraResources.configMaps",
+          "type": "string"
+        }
+      }
+    },
+    ".ConfigMapRuntimeExtraResource": {
+      "description": "ConfigMapRuntimeExtraResource defines a ConfigMap template for CacheRuntime extra resources",
+      "type": "object",
+      "properties": {
+        "data": {
+          "description": "Data contains the configuration data. Each key must consist of alphanumeric characters, '-', '_' or '.'. Values with non-UTF-8 byte sequences must use the BinaryData field. The keys stored in Data must not overlap with the keys in the BinaryData field, this is enforced during validation process.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string",
+            "default": ""
+          }
+        },
+        "name": {
+          "description": "Name is the name of the ConfigMap. This will be used as the actual ConfigMap name when created in the runtime's namespace.",
+          "type": "string"
         }
       }
     },
@@ -863,6 +1433,39 @@
           "description": "TTLSecondsAfterFinished is the time second to clean up data operations after finished or failed",
           "type": "integer",
           "format": "int32"
+        }
+      }
+    },
+    ".DataOperationSpec": {
+      "type": "object",
+      "required": [
+        "name"
+      ],
+      "properties": {
+        "args": {
+          "description": "Args for data operation Pod container",
+          "type": "array",
+          "items": {
+            "type": "string",
+            "default": ""
+          }
+        },
+        "command": {
+          "description": "Command for data operation Pod container",
+          "type": "array",
+          "items": {
+            "type": "string",
+            "default": ""
+          }
+        },
+        "image": {
+          "description": "Image the image for data operation, if not existed, use the runtime/runtimeclass defined worker image.",
+          "type": "string"
+        },
+        "name": {
+          "description": "Name is the data operation name like DataLoad, DataBackup, DataMigrate etc.",
+          "type": "string",
+          "default": ""
         }
       }
     },
@@ -1477,6 +2080,39 @@
         }
       }
     },
+    ".ExecutionCommonEntry": {
+      "type": "object",
+      "required": [
+        "command"
+      ],
+      "properties": {
+        "command": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "default": ""
+          }
+        },
+        "timeout": {
+          "description": "TimeoutSeconds is the timeout(seconds) for the execution entry, at least(default) 20 seconds.",
+          "type": "integer",
+          "format": "int32"
+        }
+      }
+    },
+    ".ExecutionEntries": {
+      "type": "object",
+      "properties": {
+        "mountUFS": {
+          "description": "MountUFS defines the operations for mounting UFS. The command's stdout must be JSON matching CacheRuntimeMountUfsOutput.",
+          "$ref": "#/definitions/.ExecutionCommonEntry"
+        },
+        "reportSummary": {
+          "description": "ReportSummary it defines the operation how to get cache status like capacity, hit ratio etc.",
+          "$ref": "#/definitions/.ExecutionCommonEntry"
+        }
+      }
+    },
     ".ExternalEndpointSpec": {
       "description": "ExternalEndpointSpec defines the configurations for external etcd cluster",
       "type": "object",
@@ -1525,295 +2161,17 @@
         }
       }
     },
-    ".GooseFSCompTemplateSpec": {
-      "description": "GooseFSCompTemplateSpec is a description of the GooseFS commponents",
+    ".ExtraResourcesComponentDependency": {
+      "description": "ExtraResourcesComponentDependency defines the extra resources configuration for component dependencies",
       "type": "object",
       "properties": {
-        "annotations": {
-          "description": "Annotations is an unstructured key value map stored with a resource that may be set by external tools to store and retrieve arbitrary metadata. They are not queryable and should be preserved when modifying objects. More info: http://kubernetes.io/docs/user-guide/annotations",
-          "type": "object",
-          "additionalProperties": {
-            "type": "string",
-            "default": ""
-          }
-        },
-        "enabled": {
-          "description": "Enabled or Disabled for the components. For now, only  API Gateway is enabled or disabled.",
-          "type": "boolean"
-        },
-        "env": {
-          "description": "Environment variables that will be used by GooseFS component. \u003cbr\u003e",
-          "type": "object",
-          "additionalProperties": {
-            "type": "string",
-            "default": ""
-          }
-        },
-        "jvmOptions": {
-          "description": "Options for JVM",
-          "type": "array",
-          "items": {
-            "type": "string",
-            "default": ""
-          }
-        },
-        "nodeSelector": {
-          "description": "NodeSelector is a selector which must be true for the master to fit on a node",
-          "type": "object",
-          "additionalProperties": {
-            "type": "string",
-            "default": ""
-          }
-        },
-        "ports": {
-          "description": "Ports used by GooseFS(e.g. rpc: 19998 for master)",
-          "type": "object",
-          "additionalProperties": {
-            "type": "integer",
-            "format": "int32",
-            "default": 0
-          }
-        },
-        "properties": {
-          "description": "Configurable properties for the GOOSEFS component. \u003cbr\u003e Refer to \u003ca href=\"https://cloud.tencent.com/document/product/436/56415\"\u003eGOOSEFS Configuration Properties\u003c/a\u003e for more info",
-          "type": "object",
-          "additionalProperties": {
-            "type": "string",
-            "default": ""
-          }
-        },
-        "replicas": {
-          "description": "Replicas is the desired number of replicas of the given template. If unspecified, defaults to 1. replicas is the min replicas of dataset in the cluster",
-          "type": "integer",
-          "format": "int32"
-        },
-        "resources": {
-          "description": "Resources that will be requested by the GooseFS component. \u003cbr\u003e \u003cbr\u003e Resources are not allowed for ephemeral containers. Ephemeral containers use spare resources already allocated to the pod.",
-          "default": {},
-          "$ref": "#/definitions/v1.ResourceRequirements"
-        }
-      }
-    },
-    ".GooseFSFuseSpec": {
-      "description": "GooseFSFuseSpec is a description of the GooseFS Fuse",
-      "type": "object",
-      "properties": {
-        "annotations": {
-          "description": "Annotations is an unstructured key value map stored with a resource that may be set by external tools to store and retrieve arbitrary metadata. They are not queryable and should be preserved when modifying objects. More info: http://kubernetes.io/docs/user-guide/annotations",
-          "type": "object",
-          "additionalProperties": {
-            "type": "string",
-            "default": ""
-          }
-        },
-        "args": {
-          "description": "Arguments that will be passed to GooseFS Fuse",
-          "type": "array",
-          "items": {
-            "type": "string",
-            "default": ""
-          }
-        },
-        "cleanPolicy": {
-          "description": "CleanPolicy decides when to clean GooseFS Fuse pods. Currently Fluid supports two policies: OnDemand and OnRuntimeDeleted OnDemand cleans fuse pod once th fuse pod on some node is not needed OnRuntimeDeleted cleans fuse pod only when the cache runtime is deleted Defaults to OnRuntimeDeleted",
-          "type": "string"
-        },
-        "env": {
-          "description": "Environment variables that will be used by GooseFS Fuse",
-          "type": "object",
-          "additionalProperties": {
-            "type": "string",
-            "default": ""
-          }
-        },
-        "image": {
-          "description": "Image for GooseFS Fuse(e.g. goosefs/goosefs-fuse)",
-          "type": "string"
-        },
-        "imagePullPolicy": {
-          "description": "One of the three policies: `Always`, `IfNotPresent`, `Never`",
-          "type": "string"
-        },
-        "imageTag": {
-          "description": "Image Tag for GooseFS Fuse(e.g. v1.0.1)",
-          "type": "string"
-        },
-        "jvmOptions": {
-          "description": "Options for JVM",
-          "type": "array",
-          "items": {
-            "type": "string",
-            "default": ""
-          }
-        },
-        "nodeSelector": {
-          "description": "NodeSelector is a selector which must be true for the fuse client to fit on a node, this option only effect when global is enabled",
-          "type": "object",
-          "additionalProperties": {
-            "type": "string",
-            "default": ""
-          }
-        },
-        "properties": {
-          "description": "Configurable properties for the GOOSEFS component. \u003cbr\u003e Refer to \u003ca href=\"https://cloud.tencent.com/document/product/436/56415\"\u003eGOOSEFS Configuration Properties\u003c/a\u003e for more info",
-          "type": "object",
-          "additionalProperties": {
-            "type": "string",
-            "default": ""
-          }
-        },
-        "resources": {
-          "description": "Resources that will be requested by GooseFS Fuse. \u003cbr\u003e \u003cbr\u003e Resources are not allowed for ephemeral containers. Ephemeral containers use spare resources already allocated to the pod.",
-          "default": {},
-          "$ref": "#/definitions/v1.ResourceRequirements"
-        }
-      }
-    },
-    ".GooseFSRuntime": {
-      "description": "GooseFSRuntime is the Schema for the goosefsruntimes API",
-      "type": "object",
-      "properties": {
-        "apiVersion": {
-          "description": "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
-          "type": "string"
-        },
-        "kind": {
-          "description": "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
-          "type": "string"
-        },
-        "metadata": {
-          "default": {},
-          "$ref": "#/definitions/v1.ObjectMeta"
-        },
-        "spec": {
-          "default": {},
-          "$ref": "#/definitions/.GooseFSRuntimeSpec"
-        },
-        "status": {
-          "default": {},
-          "$ref": "#/definitions/.RuntimeStatus"
-        }
-      }
-    },
-    ".GooseFSRuntimeList": {
-      "description": "GooseFSRuntimeList contains a list of GooseFSRuntime",
-      "type": "object",
-      "required": [
-        "items"
-      ],
-      "properties": {
-        "apiVersion": {
-          "description": "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources",
-          "type": "string"
-        },
-        "items": {
+        "configMaps": {
+          "description": "ConfigMaps is a list of ConfigMaps in the same namespace to mount into the component",
           "type": "array",
           "items": {
             "default": {},
-            "$ref": "#/definitions/.GooseFSRuntime"
+            "$ref": "#/definitions/.ConfigMapDependencyConfig"
           }
-        },
-        "kind": {
-          "description": "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
-          "type": "string"
-        },
-        "metadata": {
-          "default": {},
-          "$ref": "#/definitions/v1.ListMeta"
-        }
-      }
-    },
-    ".GooseFSRuntimeSpec": {
-      "description": "GooseFSRuntimeSpec defines the desired state of GooseFSRuntime",
-      "type": "object",
-      "properties": {
-        "apiGateway": {
-          "description": "The component spec of GooseFS API Gateway",
-          "default": {},
-          "$ref": "#/definitions/.GooseFSCompTemplateSpec"
-        },
-        "cleanCachePolicy": {
-          "description": "CleanCachePolicy defines cleanCache Policy",
-          "default": {},
-          "$ref": "#/definitions/.CleanCachePolicy"
-        },
-        "data": {
-          "description": "Management strategies for the dataset to which the runtime is bound",
-          "default": {},
-          "$ref": "#/definitions/.Data"
-        },
-        "disablePrometheus": {
-          "description": "Disable monitoring for GooseFS Runtime Prometheus is enabled by default",
-          "type": "boolean"
-        },
-        "fuse": {
-          "description": "The component spec of GooseFS Fuse",
-          "default": {},
-          "$ref": "#/definitions/.GooseFSFuseSpec"
-        },
-        "goosefsVersion": {
-          "description": "The version information that instructs fluid to orchestrate a particular version of GooseFS.",
-          "default": {},
-          "$ref": "#/definitions/.VersionSpec"
-        },
-        "hadoopConfig": {
-          "description": "Name of the configMap used to support HDFS configurations when using HDFS as GooseFS's UFS. The configMap must be in the same namespace with the GooseFSRuntime. The configMap should contain user-specific HDFS conf files in it. For now, only \"hdfs-site.xml\" and \"core-site.xml\" are supported. It must take the filename of the conf file as the key and content of the file as the value.",
-          "type": "string"
-        },
-        "initUsers": {
-          "description": "The spec of init users",
-          "default": {},
-          "$ref": "#/definitions/.InitUsersSpec"
-        },
-        "jobMaster": {
-          "description": "The component spec of GooseFS job master",
-          "default": {},
-          "$ref": "#/definitions/.GooseFSCompTemplateSpec"
-        },
-        "jobWorker": {
-          "description": "The component spec of GooseFS job Worker",
-          "default": {},
-          "$ref": "#/definitions/.GooseFSCompTemplateSpec"
-        },
-        "jvmOptions": {
-          "description": "Options for JVM",
-          "type": "array",
-          "items": {
-            "type": "string",
-            "default": ""
-          }
-        },
-        "master": {
-          "description": "The component spec of GooseFS master",
-          "default": {},
-          "$ref": "#/definitions/.GooseFSCompTemplateSpec"
-        },
-        "properties": {
-          "description": "Configurable properties for the GOOSEFS component. \u003cbr\u003e Refer to \u003ca href=\"https://cloud.tencent.com/document/product/436/56415\"\u003eGOOSEFS Configuration Properties\u003c/a\u003e for more info",
-          "type": "object",
-          "additionalProperties": {
-            "type": "string",
-            "default": ""
-          }
-        },
-        "replicas": {
-          "description": "The replicas of the worker, need to be specified",
-          "type": "integer",
-          "format": "int32"
-        },
-        "runAs": {
-          "description": "Manage the user to run GooseFS Runtime GooseFS support POSIX-ACL and Apache Ranger to manager authorization",
-          "$ref": "#/definitions/.User"
-        },
-        "tieredstore": {
-          "description": "Tiered storage used by GooseFS",
-          "default": {},
-          "$ref": "#/definitions/.TieredStore"
-        },
-        "worker": {
-          "description": "The component spec of GooseFS worker",
-          "default": {},
-          "$ref": "#/definitions/.GooseFSCompTemplateSpec"
         }
       }
     },
@@ -1830,6 +2188,10 @@
           "type": "string"
         }
       }
+    },
+    ".HeadlessRuntimeComponentService": {
+      "description": "HeadlessRuntimeComponentService defines the configuration for headless service",
+      "type": "object"
     },
     ".InitFuseSpec": {
       "description": "InitFuseSpec is a description of initialize the fuse kernel module for runtime",
@@ -2305,7 +2667,7 @@
       "type": "object",
       "properties": {
         "cleanPolicy": {
-          "description": "CleanPolicy decides when to clean Juicefs Fuse pods. Currently Fluid supports two policies: OnDemand and OnRuntimeDeleted OnDemand cleans fuse pod once th fuse pod on some node is not needed OnRuntimeDeleted cleans fuse pod only when the cache runtime is deleted Defaults to OnDemand",
+          "description": "CleanPolicy decides when to clean Juicefs Fuse pods. Currently Fluid supports three policies: OnDemand, OnRuntimeDeleted and OnFuseChangedCleanPolicy OnDemand cleans fuse pod once the fuse pod on some node is not needed OnRuntimeDeleted cleans fuse pod only when the cache runtime is deleted OnFuseChangedCleanPolicy cleans fuse pod once the fuse pod on some node is not needed and the fuse in runtime is updated Defaults to OnRuntimeDeleted",
           "type": "string"
         },
         "env": {
@@ -2426,11 +2788,6 @@
       "description": "JuiceFSRuntimeSpec defines the desired state of JuiceFSRuntime",
       "type": "object",
       "properties": {
-        "cleanCachePolicy": {
-          "description": "CleanCachePolicy defines cleanCache Policy",
-          "default": {},
-          "$ref": "#/definitions/.CleanCachePolicy"
-        },
         "configs": {
           "description": "Configs of JuiceFS",
           "type": "array",
@@ -2463,6 +2820,11 @@
           "default": {},
           "$ref": "#/definitions/.VersionSpec"
         },
+        "management": {
+          "description": "RuntimeManagement defines policies when managing the runtime",
+          "default": {},
+          "$ref": "#/definitions/.RuntimeManagement"
+        },
         "master": {
           "description": "The component spec of JuiceFS master",
           "default": {},
@@ -2487,8 +2849,17 @@
           "default": {},
           "$ref": "#/definitions/.TieredStore"
         },
+        "volumeClaimTemplates": {
+          "description": "VolumeClaimTemplates is the list of Kubernetes persistent volume claim templates used by the JuiceFS worker StatefulSet.",
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/v1.PersistentVolumeClaim"
+          },
+          "x-kubernetes-list-type": "atomic"
+        },
         "volumes": {
-          "description": "Volumes is the list of Kubernetes volumes that can be mounted by the alluxio runtime components and/or fuses.",
+          "description": "Volumes is the list of Kubernetes volumes that can be mounted by the JuiceFS runtime components and/or fuses.",
           "type": "array",
           "items": {
             "default": {},
@@ -2626,6 +2997,20 @@
             "default": {},
             "$ref": "#/definitions/v1.VolumeMount"
           }
+        }
+      }
+    },
+    ".MediumSource": {
+      "description": "MediumSource describes the storage medium type for tiered store. Only one of its members may be specified.",
+      "type": "object",
+      "properties": {
+        "processMemory": {
+          "description": "ProcessMemory indicates that process memory should be used as the storage medium. The cache will be stored in the process's memory space.",
+          "$ref": "#/definitions/.ProcessMemoryMediumSource"
+        },
+        "volume": {
+          "description": "Volume indicates that a Kubernetes volume should be used as the storage medium. Supported volume types include hostPath, emptyDir, and ephemeral volumes.",
+          "$ref": "#/definitions/.VolumeMediumSource"
         }
       }
     },
@@ -2879,6 +3264,10 @@
         }
       }
     },
+    ".ProcessMemoryMediumSource": {
+      "description": "ProcessMemoryMediumSource describes process memory as a storage medium. When specified, cache data will be stored in the process's memory space, and the quota will be added to the container's resource requests and limits.",
+      "type": "object"
+    },
     ".Processor": {
       "description": "Processor defines the actual processor for DataProcess. Processor can be either of a Job or a Shell script.",
       "type": "object",
@@ -2942,6 +3331,210 @@
         }
       }
     },
+    ".RuntimeComponentCommonSpec": {
+      "description": "RuntimeComponentCommonSpec describes the common configuration for CacheRuntime components",
+      "type": "object",
+      "properties": {
+        "args": {
+          "description": "Args are arguments to the entrypoint. The container image's CMD is used if this is not provided.",
+          "type": "array",
+          "items": {
+            "type": "string",
+            "default": ""
+          },
+          "x-kubernetes-list-type": "atomic"
+        },
+        "disabled": {
+          "description": "Disabled indicates whether the component should be disabled. If set to true, the component will not be created.",
+          "type": "boolean"
+        },
+        "env": {
+          "description": "Env is a list of environment variables to set in the container.",
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/v1.EnvVar"
+          },
+          "x-kubernetes-patch-merge-key": "name",
+          "x-kubernetes-patch-strategy": "merge"
+        },
+        "nodeSelector": {
+          "description": "NodeSelector is a selector which must be true for the pod to fit on a node. Selector which must match a node's labels for the pod to be scheduled on that node. More info: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string",
+            "default": ""
+          },
+          "x-kubernetes-map-type": "atomic"
+        },
+        "options": {
+          "description": "Options is a set of key-value pairs that provide additional configuration for the cache system.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string",
+            "default": ""
+          }
+        },
+        "podMetadata": {
+          "description": "PodMetadata contains labels and annotations that will be propagated to the component's pods.",
+          "default": {},
+          "$ref": "#/definitions/.PodMetadata"
+        },
+        "resources": {
+          "description": "Resources describes the compute resource requirements. More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/",
+          "default": {},
+          "$ref": "#/definitions/v1.ResourceRequirements"
+        },
+        "runtimeVersion": {
+          "description": "RuntimeVersion is the version information that instructs Fluid to orchestrate a particular version of the runtime.",
+          "default": {},
+          "$ref": "#/definitions/.VersionSpec"
+        },
+        "tolerations": {
+          "description": "Tolerations are the pod's tolerations. If specified, the pod's tolerations. More info: https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/",
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/v1.Toleration"
+          }
+        },
+        "volumeMounts": {
+          "description": "VolumeMounts are the volumes to mount into the container's filesystem. Cannot be updated.",
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/v1.VolumeMount"
+          },
+          "x-kubernetes-patch-merge-key": "mountPath",
+          "x-kubernetes-patch-strategy": "merge"
+        }
+      }
+    },
+    ".RuntimeComponentDefinition": {
+      "description": "RuntimeComponentDefinition defines the configuration for a CacheRuntime component",
+      "type": "object",
+      "properties": {
+        "dependencies": {
+          "description": "Dependencies specifies the dependencies required by the component",
+          "default": {},
+          "$ref": "#/definitions/.RuntimeComponentDependencies"
+        },
+        "executionEntries": {
+          "description": "ExecutionEntries entries to support out-of-tree integration.",
+          "$ref": "#/definitions/.ExecutionEntries"
+        },
+        "options": {
+          "description": "Options is a set of key-value pairs that provide additional configuration for the component",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string",
+            "default": ""
+          }
+        },
+        "service": {
+          "description": "Service is the service configuration for the component",
+          "default": {},
+          "$ref": "#/definitions/.RuntimeComponentService"
+        },
+        "template": {
+          "description": "Template describes the pods that will be created. The template follows the standard PodTemplateSpec from Kubernetes core.",
+          "default": {},
+          "$ref": "#/definitions/v1.PodTemplateSpec"
+        }
+      }
+    },
+    ".RuntimeComponentDependencies": {
+      "description": "RuntimeComponentDependencies defines the dependencies required by a CacheRuntime component",
+      "type": "object",
+      "properties": {
+        "extraResources": {
+          "description": "ExtraResources specifies the usage of extra resources such as ConfigMaps",
+          "$ref": "#/definitions/.ExtraResourcesComponentDependency"
+        },
+        "secretMount": {
+          "description": "SecretMount controls whether dataset encrypt-option secrets are mounted into this component pod. Defaults to true for Master/Worker, false for Client unless explicitly enabled.",
+          "$ref": "#/definitions/.SecretMountComponentDependency"
+        }
+      }
+    },
+    ".RuntimeComponentService": {
+      "description": "RuntimeComponentService describes the service configuration for a CacheRuntime component",
+      "type": "object",
+      "properties": {
+        "headless": {
+          "description": "Headless enables a headless service for the component. A headless service does not allocate a cluster IP and allows direct pod-to-pod communication.",
+          "$ref": "#/definitions/.HeadlessRuntimeComponentService"
+        }
+      }
+    },
+    ".RuntimeComponentStatus": {
+      "description": "RuntimeComponentStatus describes the observed state of a runtime component. It follows the standard Kubernetes pattern for tracking workload status.",
+      "type": "object",
+      "required": [
+        "phase"
+      ],
+      "properties": {
+        "availableReplicas": {
+          "description": "AvailableReplicas is the number of pods that are available and ready to serve requests. This count includes only pods that have passed readiness checks.",
+          "type": "integer",
+          "format": "int32"
+        },
+        "currentReplicas": {
+          "description": "CurrentReplicas is the current number of replicas running for the component",
+          "type": "integer",
+          "format": "int32"
+        },
+        "desiredReplicas": {
+          "description": "DesiredReplicas is the desired number of replicas as specified in the spec.",
+          "type": "integer",
+          "format": "int32"
+        },
+        "message": {
+          "description": "Message is a human-readable message indicating details about the component's status.",
+          "type": "string"
+        },
+        "phase": {
+          "description": "Phase is the current lifecycle phase of the component. Known phases include: \"Pending\", \"Running\", \"Failed\", etc.",
+          "type": "string",
+          "default": ""
+        },
+        "readyReplicas": {
+          "description": "ReadyReplicas is the number of pods with a Ready condition.",
+          "type": "integer",
+          "format": "int32"
+        },
+        "reason": {
+          "description": "Reason is a brief, machine-readable string that gives the reason for the current phase. This is useful for understanding why a component is in a particular state.",
+          "type": "string"
+        },
+        "unavailableReplicas": {
+          "description": "UnavailableReplicas is the number of pods that are not available. A pod is considered unavailable if it is not ready or has been terminated.",
+          "type": "integer",
+          "format": "int32"
+        }
+      }
+    },
+    ".RuntimeComponentStatusCollection": {
+      "description": "RuntimeComponentStatusCollection describes the status of all runtime components. It provides a unified view of master, worker, and client component states.",
+      "type": "object",
+      "properties": {
+        "client": {
+          "description": "Client is the observed state of the client (FUSE) component.",
+          "default": {},
+          "$ref": "#/definitions/.RuntimeComponentStatus"
+        },
+        "master": {
+          "description": "Master is the observed state of the master component.",
+          "default": {},
+          "$ref": "#/definitions/.RuntimeComponentStatus"
+        },
+        "worker": {
+          "description": "Worker is the observed state of the worker component.",
+          "default": {},
+          "$ref": "#/definitions/.RuntimeComponentStatus"
+        }
+      }
+    },
     ".RuntimeCondition": {
       "description": "Condition describes the state of the cache at a certain point.",
       "type": "object",
@@ -2975,6 +3568,20 @@
           "description": "Type of cache condition.",
           "type": "string",
           "default": ""
+        }
+      }
+    },
+    ".RuntimeExtraResources": {
+      "description": "RuntimeExtraResources defines the extra resources for CacheRuntime",
+      "type": "object",
+      "properties": {
+        "configMaps": {
+          "description": "ConfigMaps is a list of ConfigMaps that will be created in the runtime's namespace. These ConfigMaps can be referenced and mounted by runtime components.",
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/.ConfigMapRuntimeExtraResource"
+          }
         }
       }
     },
@@ -3120,7 +3727,7 @@
           "$ref": "#/definitions/v1.Time"
         },
         "mounts": {
-          "description": "MountPoints represents the mount points specified in the bounded dataset",
+          "description": "Mounts represents the mount points specified in the bounded dataset. Currently only set and used in thin runtime, see pr #2257.",
           "type": "array",
           "items": {
             "default": {},
@@ -3164,6 +3771,72 @@
         "workerReason": {
           "description": "Reason for Worker's condition transition",
           "type": "string"
+        }
+      }
+    },
+    ".RuntimeTieredStore": {
+      "description": "RuntimeTieredStore describes the tiered storage configuration for cache runtime",
+      "type": "object",
+      "properties": {
+        "levels": {
+          "description": "Levels is the list of cache storage tiers from highest priority to lowest. Each tier can use different storage media (e.g., memory, SSD, HDD).",
+          "type": "array",
+          "items": {
+            "default": {},
+            "$ref": "#/definitions/.RuntimeTieredStoreLevel"
+          }
+        }
+      }
+    },
+    ".RuntimeTieredStoreLevel": {
+      "description": "RuntimeTieredStoreLevel describes the configuration for a single tier in the tiered storage",
+      "type": "object",
+      "properties": {
+        "high": {
+          "description": "High is the ratio of high watermark of the tier (e.g., \"0.9\"). When cache usage exceeds this ratio, eviction will be triggered.",
+          "type": "string"
+        },
+        "low": {
+          "description": "Low is the ratio of low watermark of the tier (e.g., \"0.7\"). Eviction will continue until cache usage falls below this ratio.",
+          "type": "string"
+        },
+        "medium": {
+          "description": "Medium describes the storage medium type for this tier. Supported types include process memory and various volume types.",
+          "default": {},
+          "$ref": "#/definitions/.MediumSource"
+        },
+        "path": {
+          "description": "Path is a list of file paths to be used for the cache tier. Multiple paths can be specified to distribute cache across different mount points. For example: [\"/mnt/cache1\", \"/mnt/cache2\"].",
+          "type": "array",
+          "items": {
+            "type": "string",
+            "default": ""
+          }
+        },
+        "quota": {
+          "description": "Quota is a list of storage quotas for each path in the tier. The length of Quota should match the length of Path. Each quota corresponds to the path at the same index. For example: [\"100Gi\", \"50Gi\"] allocates 100GiB to the first path and 50GiB to the second path.",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/.Quantity"
+          }
+        }
+      }
+    },
+    ".RuntimeTopology": {
+      "description": "RuntimeTopology defines the topology structure of CacheRuntime components",
+      "type": "object",
+      "properties": {
+        "client": {
+          "description": "Client is the configuration for client component",
+          "$ref": "#/definitions/.RuntimeComponentDefinition"
+        },
+        "master": {
+          "description": "Master is the configuration for master component",
+          "$ref": "#/definitions/.RuntimeComponentDefinition"
+        },
+        "worker": {
+          "description": "Worker is the configuration for worker component",
+          "$ref": "#/definitions/.RuntimeComponentDefinition"
         }
       }
     },
@@ -3247,6 +3920,16 @@
           "description": "The name of required secret",
           "type": "string",
           "default": ""
+        }
+      }
+    },
+    ".SecretMountComponentDependency": {
+      "description": "SecretMountComponentDependency defines the secret mount configuration for component dependencies",
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "description": "Enabled indicates whether dataset encrypt-option secrets should be mounted into this component pod.",
+          "type": "boolean"
         }
       }
     },
@@ -3450,6 +4133,10 @@
           "description": "Image for thinRuntime fuse",
           "type": "string"
         },
+        "lifecycle": {
+          "description": "Lifecycle describes actions that the management system should take in response to container lifecycle events.",
+          "$ref": "#/definitions/v1.Lifecycle"
+        },
         "livenessProbe": {
           "description": "livenessProbe of thin fuse pod",
           "$ref": "#/definitions/v1.Probe"
@@ -3473,6 +4160,11 @@
             "type": "string",
             "default": ""
           }
+        },
+        "podMetadata": {
+          "description": "PodMetadata defines labels and annotations that will be propagated to ThinRuntime's FUSE pods.",
+          "default": {},
+          "$ref": "#/definitions/.PodMetadata"
         },
         "ports": {
           "description": "Ports used thinRuntime",
@@ -4009,6 +4701,24 @@
           "description": "Worker holds the configurations for Vineyard Worker component Represents the Vineyardd component in Vineyard",
           "default": {},
           "$ref": "#/definitions/.VineyardCompTemplateSpec"
+        }
+      }
+    },
+    ".VolumeMediumSource": {
+      "description": "VolumeMediumSource describes a Kubernetes volume as a storage medium. Only one of its members may be specified.",
+      "type": "object",
+      "properties": {
+        "emptyDir": {
+          "description": "EmptyDir represents a temporary directory that shares a pod's lifetime. More info: https://kubernetes.io/docs/concepts/storage/volumes#emptydir",
+          "$ref": "#/definitions/v1.EmptyDirVolumeSource"
+        },
+        "ephemeral": {
+          "description": "Ephemeral represents a volume that is handled by a cluster storage driver. The volume's lifecycle is tied to the pod that defines it. More info: https://kubernetes.io/docs/concepts/storage/ephemeral-volumes/",
+          "$ref": "#/definitions/v1.EphemeralVolumeSource"
+        },
+        "hostPath": {
+          "description": "HostPath represents a pre-existing file or directory on the host machine that is directly exposed to the container. More info: https://kubernetes.io/docs/concepts/storage/volumes#hostpath",
+          "$ref": "#/definitions/v1.HostPathVolumeSource"
         }
       }
     },

@@ -36,7 +36,11 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
+// TestGenerateDataLoadValueFile verifies that generateDataLoadValueFile creates
+// a temporary values file for a DataLoad and returns the generated file path
+// for both empty-target and explicit-target configurations.
 func TestGenerateDataLoadValueFile(t *testing.T) {
+	// Prepare a dataset in the fake client so the dataload can resolve its target dataset.
 	datasetInputs := []datav1alpha1.Dataset{
 		{
 			ObjectMeta: metav1.ObjectMeta{
@@ -54,6 +58,8 @@ func TestGenerateDataLoadValueFile(t *testing.T) {
 	context := cruntime.ReconcileRequestContext{
 		Client: client,
 	}
+
+	// Cover both branches where the dataload has no explicit targets and where it does.
 	dataLoadNoTarget := datav1alpha1.DataLoad{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "test-dataload",
@@ -98,6 +104,8 @@ func TestGenerateDataLoadValueFile(t *testing.T) {
 			expectFileName: filepath.Join(os.TempDir(), "fluid-test-dataload-loader-values.yaml"),
 		},
 	}
+
+	// Generate the values file and assert that the returned temp file path matches the expected pattern.
 	for _, test := range testCases {
 		engine := AlluxioEngine{}
 		if fileName, err := engine.generateDataLoadValueFile(context, &test.dataLoad); !strings.Contains(fileName, test.expectFileName) {
@@ -165,7 +173,8 @@ func Test_genDataLoadValue(t *testing.T) {
 				Name:           "test-dataload",
 				OwnerDatasetId: "fluid-test-dataset",
 				Owner: &common.OwnerReference{
-					APIVersion:         "/",
+					Kind:               "DataLoad",
+					APIVersion:         "data.fluid.io/v1alpha1",
 					Enabled:            true,
 					Name:               "test-dataload",
 					BlockOwnerDeletion: false,
@@ -262,7 +271,8 @@ func Test_genDataLoadValue(t *testing.T) {
 				Name:           "test-dataload",
 				OwnerDatasetId: "fluid-test-dataset",
 				Owner: &common.OwnerReference{
-					APIVersion:         "/",
+					Kind:               "DataLoad",
+					APIVersion:         "data.fluid.io/v1alpha1",
 					Enabled:            true,
 					Name:               "test-dataload",
 					BlockOwnerDeletion: false,
@@ -362,7 +372,8 @@ func Test_genDataLoadValue(t *testing.T) {
 				Name:           "test-dataload",
 				OwnerDatasetId: "fluid-test-dataset",
 				Owner: &common.OwnerReference{
-					APIVersion:         "/",
+					Kind:               "DataLoad",
+					APIVersion:         "data.fluid.io/v1alpha1",
 					Enabled:            true,
 					Name:               "test-dataload",
 					BlockOwnerDeletion: false,
@@ -433,7 +444,8 @@ func Test_genDataLoadValue(t *testing.T) {
 				Name:           "test-dataload",
 				OwnerDatasetId: "fluid-test-dataset",
 				Owner: &common.OwnerReference{
-					APIVersion:         "/",
+					Kind:               "DataLoad",
+					APIVersion:         "data.fluid.io/v1alpha1",
 					Enabled:            true,
 					Name:               "test-dataload",
 					BlockOwnerDeletion: false,

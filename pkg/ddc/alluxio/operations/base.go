@@ -17,6 +17,7 @@ limitations under the License.
 package operations
 
 import (
+	"context"
 	"fmt"
 	"regexp"
 	"strconv"
@@ -55,7 +56,7 @@ func (a AlluxioFileUtils) exec(command []string, verbose bool) (stdout string, s
 	redactedCommand := securityutils.FilterCommand(command)
 
 	a.log.V(1).Info("Exec command start", "command", redactedCommand)
-	stdout, stderr, err = kubeclient.ExecCommandInContainerWithTimeout(a.podName, a.container, a.namespace, command, common.FileUtilsExecTimeout)
+	stdout, stderr, err = kubeclient.ExecCommandInContainerWithTimeoutContext(context.TODO(), a.podName, a.container, a.namespace, command, common.FileUtilsExecTimeout)
 	if err != nil {
 		err = errors.Wrapf(err, "error when executing command %v", redactedCommand)
 		return
@@ -172,9 +173,15 @@ var (
 	FileNum     KeyOfMetaDataFile = "filenum"
 )
 
-// QueryMetaDataInfoIntoFile queries the metadata info file.
-func (a AlluxioFileUtils) QueryMetaDataInfoIntoFile(key KeyOfMetaDataFile, filename string) (value string, err error) {
-	line := ""
+// metaDataQueryCommand builds the argv used to read a single line out of the metadata info file.
+//
+// sed's script and the filename are kept as separate argv elements and are never joined into a
+// `bash -c` string. Quoting them into a shell script subjects the command to cmdguard's
+// shell-script validation, which rejects the single quotes a `sed -n '<line>' <file>` script
+// needs. A plain argv keeps the file name in its own element, so it reaches sed verbatim
+// without being reinterpreted.
+func metaDataQueryCommand(key KeyOfMetaDataFile, filename string) (command []string, err error) {
+	var line string
 	switch key {
 	case DatasetName:
 		line = "1p"
@@ -185,13 +192,21 @@ func (a AlluxioFileUtils) QueryMetaDataInfoIntoFile(key KeyOfMetaDataFile, filen
 	case FileNum:
 		line = "4p"
 	default:
-		a.log.Error(errors.New("the key not in  metadatafile"), "key", key)
+		return nil, errors.Errorf("the key %s is not in the metadatafile", key)
+	}
+	return []string{"sed", "-n", line, filename}, nil
+}
+
+// QueryMetaDataInfoIntoFile queries the metadata info file.
+func (a AlluxioFileUtils) QueryMetaDataInfoIntoFile(key KeyOfMetaDataFile, filename string) (value string, err error) {
+	command, err := metaDataQueryCommand(key, filename)
+	if err != nil {
+		a.log.Error(err, "unsupported metadata key", "key", key)
+		return
 	}
 	var (
-		str     = "sed -n '" + line + "' " + filename
-		command = []string{"bash", "-c", str}
-		stdout  string
-		stderr  string
+		stdout string
+		stderr string
 	)
 	stdout, stderr, err = a.exec(command, false)
 	if err != nil {
@@ -203,6 +218,10 @@ func (a AlluxioFileUtils) QueryMetaDataInfoIntoFile(key KeyOfMetaDataFile, filen
 	return
 }
 
+// ExecMountScripts executes the mount script located at /etc/fluid/scripts/mount.sh in the Alluxio master pod.
+// The script is mounted by the master statefulset and handles the mounting of storage backends to Alluxio.
+// It runs the script with verbose logging enabled to capture detailed execution output.
+// Returns an error if the script execution fails, otherwise returns nil indicating successful mount operation.
 func (a AlluxioFileUtils) ExecMountScripts() error {
 	var (
 		// Note: this script is mounted in master/statefulset.yaml
@@ -218,6 +237,18 @@ func (a AlluxioFileUtils) ExecMountScripts() error {
 	return nil
 }
 
+// Mount mounts a UFS path to an Alluxio path in the Alluxio filesystem by executing
+// the alluxio fs mount <alluxioPath> <ufsPath> command in the master pod container.
+//
+// Parameters:
+// - alluxioPath (string): The destination path in Alluxio namespace.
+// - ufsPath (string): The source UFS path to mount.
+// - options (map[string]string): Optional mount properties passed as --option key=value pairs.
+// - readOnly (bool): Forces the mount to be read-only when true.
+// - shared (bool): Enables cross-user sharing of the mount when true.
+//
+// Returns:
+// - err (error): Non-nil if the mount command fails or if executing the command returns an error.
 func (a AlluxioFileUtils) Mount(alluxioPath string,
 	ufsPath string,
 	options map[string]string,
@@ -298,6 +329,13 @@ func (a AlluxioFileUtils) IsMounted(alluxioPath string) (mounted bool, err error
 	return mounted, err
 }
 
+// GetMountedAlluxioPaths returns all Alluxio paths that are currently mounted.
+// It executes the `alluxio fs mount` command in the Alluxio container, parses
+// the command output, and collects the Alluxio path field from each mount entry.
+//
+// Returns:
+// - []string: A list of mounted Alluxio paths.
+// - error: Non-nil if the mount command fails.
 func (a AlluxioFileUtils) GetMountedAlluxioPaths() ([]string, error) {
 	var (
 		command = []string{"alluxio", "fs", "mount"}
@@ -321,6 +359,17 @@ func (a AlluxioFileUtils) GetMountedAlluxioPaths() ([]string, error) {
 	return mountedPaths, err
 }
 
+// FindUnmountedAlluxioPaths returns the subset of the provided `alluxioPaths`
+// that are not currently mounted in the Alluxio filesystem. It retrieves the
+// current mounted paths via `GetMountedAlluxioPaths()` and computes the
+// difference using `utils.SubtractString`.
+//
+// Parameters:
+// - alluxioPaths: slice of Alluxio paths to check.
+//
+// Returns:
+// - []string: paths from `alluxioPaths` that are not mounted.
+// - error: non-nil if retrieving the list of mounted paths failed.
 func (a *AlluxioFileUtils) FindUnmountedAlluxioPaths(alluxioPaths []string) ([]string, error) {
 	mountedPaths, err := a.GetMountedAlluxioPaths()
 	if err != nil {
@@ -409,6 +458,13 @@ func (a AlluxioFileUtils) GetFileCount() (fileCount int64, err error) {
 	return fileCount, nil
 }
 
+// MasterPodName gets the master pod name of the Alluxio cluster by parsing the output of `alluxio fsadmin report`.
+// This function is primarily responsible for executing the report command in the Alluxio container
+// and extracting the master address from the parsed output results.
+//
+// Returns:
+//   - masterPodName (string): The extracted master pod name or address. Returns the current pod name on failure.
+//   - err (error): Returns an error if the command execution fails or the output format is invalid.
 func (a AlluxioFileUtils) MasterPodName() (masterPodName string, err error) {
 	var (
 		command = []string{"alluxio", "fsadmin", "report"}
@@ -467,6 +523,14 @@ func (a AlluxioFileUtils) LoadMetaData(alluxioPath string, sync bool) (err error
 	return
 }
 
+// Mkdir creates a directory in Alluxio at the specified path.
+// It executes the `alluxio fs mkdir <alluxioPath>` command inside the Alluxio pod's container.
+//
+// Parameters:
+// - alluxioPath (string): The Alluxio path to create.
+//
+// Returns:
+// - err (error): Non-nil if the mkdir command fails or if executing the command returns an error.
 func (a AlluxioFileUtils) Mkdir(alluxioPath string) (err error) {
 	var (
 		command = []string{"alluxio", "fs", "mkdir", alluxioPath}
@@ -483,6 +547,7 @@ func (a AlluxioFileUtils) Mkdir(alluxioPath string) (err error) {
 	return
 }
 
+// Du returns UFS size, cached size, and cache percentage for a path by running `alluxio fs du -s`.
 func (a AlluxioFileUtils) Du(alluxioPath string) (ufs int64, cached int64, cachedPercentage string, err error) {
 	var (
 		command = []string{"alluxio", "fs", "du", "-s", alluxioPath}

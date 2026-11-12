@@ -76,7 +76,7 @@ var _ = Describe("AlluxioEngine Volume Creation Tests", Label("pkg.ddc.alluxio.c
 		When("given AlluxioEngine works as expected", func() {
 
 			It("should create volumes successfully", func() {
-				err := engine.CreateVolume()
+				err := engine.CreateVolume(context.Background())
 				Expect(err).To(BeNil())
 
 				gotPVC := &corev1.PersistentVolumeClaim{}
@@ -106,7 +106,7 @@ var _ = Describe("AlluxioEngine Volume Creation Tests", Label("pkg.ddc.alluxio.c
 	Describe("Test AlluxioEngine.CreateFusePersistentVolume", func() {
 		When("given AlluxioEngine works as expected", func() {
 			It("should create fuse PV successfully", func() {
-				err := engine.createFusePersistentVolume()
+				err := engine.createFusePersistentVolume(context.Background())
 				Expect(err).To(BeNil())
 
 				gotPv := &corev1.PersistentVolume{}
@@ -132,7 +132,7 @@ var _ = Describe("AlluxioEngine Volume Creation Tests", Label("pkg.ddc.alluxio.c
 				resources = append(resources, mockedObjects.PersistentVolume)
 			})
 			It("should not create PersistentVolumle and no error should return", func() {
-				err := engine.createFusePersistentVolume()
+				err := engine.createFusePersistentVolume(context.Background())
 				Expect(err).To(BeNil())
 			})
 		})
@@ -142,7 +142,7 @@ var _ = Describe("AlluxioEngine Volume Creation Tests", Label("pkg.ddc.alluxio.c
 				dataset.Spec.AccessModes = []corev1.PersistentVolumeAccessMode{corev1.ReadWriteMany}
 			})
 			It("should create PersistentVolumle with ReadWriteMany access mode", func() {
-				err := engine.createFusePersistentVolume()
+				err := engine.createFusePersistentVolume(context.Background())
 				Expect(err).To(BeNil())
 
 				gotPv := &corev1.PersistentVolume{}
@@ -158,7 +158,7 @@ var _ = Describe("AlluxioEngine Volume Creation Tests", Label("pkg.ddc.alluxio.c
 				dataset.Annotations[utils.PVCStorageAnnotation] = "30Gi"
 			})
 			It("should create PV with the storage capacity specified in Dataset", func() {
-				err := engine.createFusePersistentVolume()
+				err := engine.createFusePersistentVolume(context.Background())
 				Expect(err).To(BeNil())
 
 				gotPv := &corev1.PersistentVolume{}
@@ -189,7 +189,7 @@ var _ = Describe("AlluxioEngine Volume Creation Tests", Label("pkg.ddc.alluxio.c
 				Expect(err).To(BeNil())
 			})
 			It("should create PV with extra labels and annotations", func() {
-				err := engine.createFusePersistentVolume()
+				err := engine.createFusePersistentVolume(context.Background())
 				Expect(err).To(BeNil())
 
 				gotPv := &corev1.PersistentVolume{}
@@ -218,7 +218,7 @@ var _ = Describe("AlluxioEngine Volume Creation Tests", Label("pkg.ddc.alluxio.c
 				Expect(err).To(BeNil())
 			})
 			It("should create fuse pv with specific node publish method", func() {
-				err := engine.createFusePersistentVolume()
+				err := engine.createFusePersistentVolume(context.Background())
 				Expect(err).To(BeNil())
 
 				gotPv := &corev1.PersistentVolume{}
@@ -237,7 +237,7 @@ var _ = Describe("AlluxioEngine Volume Creation Tests", Label("pkg.ddc.alluxio.c
 	Describe("Test AlluxioEngine.CreatePersistentVolumeClaim()", func() {
 		When("given AlluxioEngine works as expected", func() {
 			It("should create fuse PVC successfully", func() {
-				err := engine.createFusePersistentVolumeClaim()
+				err := engine.createFusePersistentVolumeClaim(context.Background())
 				Expect(err).To(BeNil())
 
 				gotPvc := &corev1.PersistentVolumeClaim{}
@@ -259,7 +259,7 @@ var _ = Describe("AlluxioEngine Volume Creation Tests", Label("pkg.ddc.alluxio.c
 			})
 
 			It("should not create PVC", func() {
-				err := engine.createFusePersistentVolumeClaim()
+				err := engine.createFusePersistentVolumeClaim(context.Background())
 				Expect(err).To(BeNil())
 			})
 		})
@@ -286,7 +286,7 @@ var _ = Describe("AlluxioEngine Volume Creation Tests", Label("pkg.ddc.alluxio.c
 			})
 
 			It("should create PVC with extra labels and annotations", func() {
-				err := engine.createFusePersistentVolumeClaim()
+				err := engine.createFusePersistentVolumeClaim(context.Background())
 				Expect(err).To(BeNil())
 
 				gotPvc := &corev1.PersistentVolumeClaim{}

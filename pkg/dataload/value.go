@@ -78,6 +78,24 @@ type DataLoadInfo struct {
 
 	// Resources that will be requested by DataLoad job.
 	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
+
+	// Envs for DataLoad job, for cache engine.
+	Envs []Env `json:"envs,omitempty"`
+
+	// Command for DataLoad job container, for cache engine.
+	Command []string `json:"command,omitempty"`
+
+	// Args DataLoad job container, for cache engine.
+	Args []string `json:"args,omitempty"`
+
+	VolumeMounts []corev1.VolumeMount `json:"volumeMounts,omitempty"`
+
+	Volumes []corev1.Volume `json:"volumes,omitempty"`
+}
+
+type Env struct {
+	Name  string `json:"name"`
+	Value string `json:"value"`
 }
 
 type TargetPath struct {

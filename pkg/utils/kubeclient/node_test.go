@@ -17,6 +17,8 @@ limitations under the License.
 package kubeclient
 
 import (
+	"context"
+
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -67,6 +69,18 @@ var _ = Describe("GetNode", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(result).NotTo(BeNil())
 			Expect(result.Name).To(Equal("test1"))
+		})
+	})
+
+	Context("when caller context is canceled", func() {
+		It("should return the context error", func() {
+			ctx, cancel := context.WithCancel(context.Background())
+			cancel()
+
+			result, err := GetNodeWithContext(ctx, contextAwareClient{Client: mockClient}, "test1")
+
+			Expect(err).To(MatchError(context.Canceled))
+			Expect(result).To(BeNil())
 		})
 	})
 })

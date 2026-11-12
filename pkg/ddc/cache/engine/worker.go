@@ -17,9 +17,32 @@
 package engine
 
 import (
+	"context"
+	"reflect"
+
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/cache/component"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/util/retry"
 )
+
+// getWorkerSelectors returns the label selector in string form for discovering the worker
+// pods, e.g. for auto-scaling. It is derived from the same labels as the worker workload's
+// spec.selector built by component.GetComponentMatchLabels, so no API read is needed.
+func (e *CacheEngine) getWorkerSelectors() (string, error) {
+	labelSelector := &metav1.LabelSelector{
+		MatchLabels: component.GetComponentMatchLabels(e.name, common.GetCacheComponentName(e.name, common.ComponentTypeWorker)),
+	}
+	selector, err := metav1.LabelSelectorAsSelector(labelSelector)
+	if err != nil {
+		return "", err
+	}
+
+	return selector.String(), nil
+}
 
 func (e *CacheEngine) SetupWorkerComponent(workerValue *common.CacheRuntimeComponentValue) (bool, error) {
 	shouldSetupWorker, err := e.ShouldSetupWorker()
@@ -49,5 +72,52 @@ func (e *CacheEngine) ShouldSetupWorker() (bool, error) {
 }
 
 func (e *CacheEngine) SetupWorkerInternal(workerValue *common.CacheRuntimeComponentValue) error {
-	return newNotImplementError("SetupWorkerInternal")
+	manager := component.NewComponentHelper(workerValue.ComponentType, e.Client)
+	err := manager.Reconciler(context.TODO(), workerValue)
+	if err != nil {
+		return err
+	}
+
+	// update status of worker
+	err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+		runtime, err := e.getRuntime()
+		if err != nil {
+			return err
+		}
+
+		identity := &common.ComponentIdentity{
+			Name:      workerValue.Name,
+			Namespace: workerValue.Namespace,
+		}
+		workerStatus, err := manager.ConstructComponentStatus(context.TODO(), identity)
+		if err != nil {
+			return err
+		}
+		// from RuntimePhaseNone to RuntimePhaseNotReady, not reconcile the worker component the next time.
+		workerStatus.Phase = datav1alpha1.RuntimePhaseNotReady
+
+		runtimeToUpdate := runtime.DeepCopy()
+		runtimeToUpdate.Status.Worker = workerStatus
+
+		if runtime.Status.Worker.Phase == datav1alpha1.RuntimePhaseNone {
+			if len(runtimeToUpdate.Status.Conditions) == 0 {
+				runtimeToUpdate.Status.Conditions = []datav1alpha1.RuntimeCondition{}
+			}
+			cond := utils.NewRuntimeCondition(datav1alpha1.RuntimeWorkersReady, datav1alpha1.RuntimeWorkersInitializedReason,
+				"The worker is initialized.", corev1.ConditionTrue)
+			runtimeToUpdate.Status.Conditions = utils.UpdateRuntimeCondition(runtimeToUpdate.Status.Conditions, cond)
+
+		}
+		if !reflect.DeepEqual(runtime.Status, runtimeToUpdate.Status) {
+			return e.Client.Status().Update(context.TODO(), runtimeToUpdate)
+		}
+
+		return nil
+	})
+	if err != nil {
+		e.Log.Error(err, "failed to update runtime status")
+		return err
+	}
+
+	return nil
 }

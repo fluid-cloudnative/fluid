@@ -72,15 +72,16 @@ type EncryptEnvOption struct {
 
 // Worker struct describes the configuration of JuiceFS worker node, including image, resources, environmental variables, volume mounts, etc.
 type Worker struct {
-	Privileged      bool                 `json:"privileged"`
-	NodeSelector    map[string]string    `json:"nodeSelector,omitempty"`
-	ImagePullPolicy string               `json:"imagePullPolicy,omitempty"`
-	Resources       common.Resources     `json:"resources,omitempty"`
-	Envs            []corev1.EnvVar      `json:"envs,omitempty"`
-	VolumeMounts    []corev1.VolumeMount `json:"volumeMounts,omitempty"`
-	Volumes         []corev1.Volume      `json:"volumes,omitempty"`
-	HostNetwork     bool                 `json:"hostNetwork,omitempty"`
-	MetricsPort     *int                 `json:"metricsPort,omitempty"`
+	Privileged           bool                           `json:"privileged"`
+	NodeSelector         map[string]string              `json:"nodeSelector,omitempty"`
+	ImagePullPolicy      string                         `json:"imagePullPolicy,omitempty"`
+	Resources            common.Resources               `json:"resources,omitempty"`
+	Envs                 []corev1.EnvVar                `json:"envs,omitempty"`
+	VolumeMounts         []corev1.VolumeMount           `json:"volumeMounts,omitempty"`
+	Volumes              []corev1.Volume                `json:"volumes,omitempty"`
+	VolumeClaimTemplates []corev1.PersistentVolumeClaim `json:"volumeClaimTemplates,omitempty"`
+	HostNetwork          bool                           `json:"hostNetwork,omitempty"`
+	MetricsPort          *int                           `json:"metricsPort,omitempty"`
 
 	MountPath   string            `json:"mountPath,omitempty"`
 	StatCmd     string            `json:"statCmd,omitempty"`

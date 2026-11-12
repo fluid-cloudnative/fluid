@@ -162,7 +162,7 @@ spec:
               subPath: hdfs-site.xml
           {{- end }}
           {{- end }}
-          {{- if .Values.secret }}
+          {{- if or .Values.secret .Values.secretProjections }}
             {{ include "jindofs.cred.secret.volumeMounts" . | nindent 12 }}
           {{- end }}
           {{- if .Values.ufsVolumes }}
@@ -200,7 +200,7 @@ spec:
           hostPath:
             path: /dev/fuse
             type: CharDevice
-        {{- if .Values.secret }}
+        {{- if or .Values.secret .Values.secretProjections }}
         {{ include "jindofs.cred.secret.volumes" . | nindent 8 }}
         {{- end }}
         {{- if .Values.ufsVolumes }}

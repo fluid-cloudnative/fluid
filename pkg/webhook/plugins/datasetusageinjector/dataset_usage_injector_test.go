@@ -169,7 +169,7 @@ var _ = Describe("DatasetUsageInjector", func() {
 		})
 
 		Context("when pod has different annotation value", func() {
-			It("should update the annotation", func() {
+			It("should merge the existing annotation with the new one", func() {
 				pod := &corev1.Pod{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test-update",
@@ -188,7 +188,32 @@ var _ = Describe("DatasetUsageInjector", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(shouldStop).To(BeFalse())
 
-				Expect(pod.Annotations[common.LabelAnnotationDatasetsInUse]).To(Equal("demo-dataset-1"))
+				Expect(pod.Annotations[common.LabelAnnotationDatasetsInUse]).To(Equal("demo-dataset-1,old-dataset"))
+			})
+		})
+
+		Context("when pod has partially overlapping annotations", func() {
+			It("should deduplicate and merge the existing annotation with the new one", func() {
+				pod := &corev1.Pod{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "test-partial-overlap",
+						Namespace: "fluid-test",
+						Annotations: map[string]string{
+							common.LabelAnnotationDatasetsInUse: "demo-dataset-2,demo-dataset-3",
+						},
+					},
+				}
+
+				runtimeInfos := map[string]base.RuntimeInfoInterface{
+					"demo-dataset-1": runtimeInfo1,
+					"demo-dataset-2": runtimeInfo2,
+				}
+
+				shouldStop, err := injector.Mutate(pod, runtimeInfos)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(shouldStop).To(BeFalse())
+
+				Expect(pod.Annotations[common.LabelAnnotationDatasetsInUse]).To(Equal("demo-dataset-1,demo-dataset-2,demo-dataset-3"))
 			})
 		})
 	})

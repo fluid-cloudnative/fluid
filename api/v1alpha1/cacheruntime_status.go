@@ -28,11 +28,6 @@ type CacheRuntimeStatus struct {
 	// +optional
 	ValueFile string `json:"valueFile,omitempty"`
 
-	// ConfigFile is the path to the engine-specific configuration file.
-	// This file contains the cache engine's native configuration format.
-	// +optional
-	ConfigFile string `json:"configFile,omitempty"`
-
 	// SetupDuration is the duration spent setting up the runtime, in human-readable format (e.g., "2m30s").
 	// This helps users understand the setup time for the runtime.
 	// +optional
@@ -60,21 +55,8 @@ type CacheRuntimeStatus struct {
 	// RuntimeComponentStatusCollection contains the status of runtime components (master, worker, client).
 	RuntimeComponentStatusCollection `json:",inline"`
 
-	// MountPoints represents the status of mount points specified in the bound dataset.
-	// Each entry tracks the mount configuration and the time of the last successful mount.
-	// +optional
-	MountPoints []MountPointStatus `json:"mountPoints,omitempty"`
-}
-
-// MountPointStatus describes the status of a single mount point in the dataset
-type MountPointStatus struct {
-	// Mount contains the mount point configuration from the bound dataset.
-	// This includes the remote path, mount options, and other mount-specific settings.
-	Mount `json:"mount,omitempty"`
-
 	// MountTime is the timestamp of the last successful mount operation.
 	// If MountTime is earlier than the master component's start time, a remount will be required.
-	// +optional
 	MountTime *metav1.Time `json:"mountTime,omitempty"`
 }
 

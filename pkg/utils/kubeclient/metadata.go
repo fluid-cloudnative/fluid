@@ -22,7 +22,6 @@ import (
 
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -32,7 +31,7 @@ import (
 func compareOwnerRefMatcheWithExpected(c client.Client,
 	controllerRef *metav1.OwnerReference,
 	namespace string,
-	target runtime.Object) (matched bool, err error) {
+	target client.Object) (matched bool, err error) {
 
 	kind := target.GetObjectKind()
 	controllerObject, err := resolveControllerRef(c, controllerRef, namespace, kind, target.DeepCopyObject().(client.Object))

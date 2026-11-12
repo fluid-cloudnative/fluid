@@ -93,8 +93,6 @@ rules:
       - alluxioruntimes/status
       - jindoruntimes
       - jindoruntimes/status
-      - goosefsruntimes
-      - goosefsruntimes/status
       - juicefsruntimes
       - juicefsruntimes/status
       - thinruntimes
@@ -105,6 +103,7 @@ rules:
       - vineyardruntimes/status
       - cacheruntimes
       - cacheruntimes/status
+      - cacheruntimeclasses
     verbs:
       - get
       - list

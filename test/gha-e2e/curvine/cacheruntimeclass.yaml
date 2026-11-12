@@ -1,0 +1,132 @@
+apiVersion: data.fluid.io/v1alpha1
+kind: CacheRuntimeClass
+metadata:
+  name: curvine-demo
+fileSystemType: curvinefs
+dataOperationSpecs:
+  - name: DataLoad
+    command:
+      - "/bin/bash"
+      - "-c"
+    args:
+      - |
+        CURVINE_HOME="/app/curvine"
+        CURVINE_CONF_DIR="${CURVINE_HOME}/conf"
+        CURVINE_DATA_DIR="${CURVINE_HOME}/data"
+        CURVINE_LOG_DIR="${CURVINE_HOME}/logs"
+        
+        mkdir -p "$CURVINE_CONF_DIR"
+        mkdir -p "$CURVINE_DATA_DIR"
+        mkdir -p "$CURVINE_LOG_DIR"
+        
+        python3 "$CURVINE_HOME/generate_config.py" || {
+          echo "Error: generate_config.py failed."
+          exit 1
+        }
+        
+        export CURVINE_CONF_FILE="${CURVINE_CONF_DIR}/curvine-cluster.toml"
+        
+        IFS=: read -ra paths <<< "$FLUID_DATALOAD_DATA_PATH"
+        for p in "${paths[@]}"; do
+          "$CURVINE_HOME/bin/cv" load "$p" --watch --conf "$CURVINE_CONF_FILE" || {
+            echo "Error: load $p failed."
+            exit 1
+          }
+        done
+topology:
+  master:
+    service:
+      headless: {}
+    executionEntries:
+      mountUFS:
+        command:
+          - bash
+          - -c
+          - /app/curvine/mountUfs.sh
+        timeout: 120
+      reportSummary:
+        command:
+          - bash
+          - -c
+          - /app/curvine/reportSummary.sh
+        timeout: 30
+    template:
+      spec:
+        restartPolicy: Always
+        containers:
+          - name: master
+            image: curvine/curvine:v0.3.6-alpha
+            command:
+              - /entrypoint.sh
+            args:
+              - master
+              - start
+            imagePullPolicy: IfNotPresent
+            readinessProbe:
+              tcpSocket:
+                port: 8995
+              initialDelaySeconds: 35
+              periodSeconds: 5
+              failureThreshold: 12
+            env:
+              - name: POD_NAME
+                valueFrom:
+                  fieldRef:
+                    fieldPath: metadata.name
+  worker:
+    service:
+      headless: {}
+    template:
+      spec:
+        restartPolicy: Always
+        containers:
+          - name: worker
+            image: curvine/curvine:v0.3.6-alpha
+            command:
+              - /entrypoint.sh
+            args:
+              - worker
+              - start
+            imagePullPolicy: IfNotPresent
+            readinessProbe:
+              tcpSocket:
+                port: 8997
+              initialDelaySeconds: 5
+              periodSeconds: 5
+              failureThreshold: 12
+            env:
+              - name: POD_NAME
+                valueFrom:
+                  fieldRef:
+                    fieldPath: metadata.name
+  client:
+    template:
+      spec:
+        restartPolicy: Always
+        containers:
+          - name: client
+            image: curvine/curvine:v0.3.6-alpha
+            command:
+              - /entrypoint.sh
+            args:
+              - client
+              - start
+            imagePullPolicy: IfNotPresent
+            securityContext:
+              privileged: true
+              runAsUser: 0
+            lifecycle:
+              preStop:
+                exec:
+                  command:
+                    - /bin/sh
+                    - -c
+                    - |
+                      echo "PreStop: Cleaning up FUSE mount..."
+                      target_path="${CURVINE_TARGET_PATH:-${FLUID_RUNTIME_MOUNT_PATH:-}}"
+                      if [ -n "$target_path" ] && mountpoint -q "$target_path" 2>/dev/null; then
+                        fusermount -u "$target_path" 2>/dev/null || umount -f "$target_path" 2>/dev/null || true
+                      else
+                        echo "Mount point $target_path is not mounted, skipping"
+                      fi
+                      echo "PreStop: Cleanup completed"

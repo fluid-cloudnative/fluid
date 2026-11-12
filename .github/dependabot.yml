@@ -9,6 +9,14 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    groups:
+      # Bump every github/codeql-action/* step (init, analyze, autobuild,
+      # upload-sarif) together. They must run on the same version, otherwise
+      # analysis fails with "Loaded a configuration file for version X, but
+      # running version Y".
+      codeql-action:
+        patterns:
+          - "github/codeql-action*"
   - package-ecosystem: gomod
     directory: /
     schedule:

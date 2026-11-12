@@ -85,17 +85,7 @@ func SyncScheduleInfoToCacheNodes(runtimeInfo base.RuntimeInfoInterface, client 
 
 // getDesiredNodesWithScheduleInfo retrieves the desired cache nodes with schedule info
 func getDesiredNodesWithScheduleInfo(runtimeInfo base.RuntimeInfoInterface, client client.Client) ([]string, error) {
-	workers, err := kubeclient.GetStatefulSet(client, runtimeInfo.GetWorkerStatefulsetName(), runtimeInfo.GetNamespace())
-	if err != nil {
-		return nil, err
-	}
-
-	workerSelector, err := metav1.LabelSelectorAsSelector(workers.Spec.Selector)
-	if err != nil {
-		return nil, err
-	}
-
-	workerPods, err := kubeclient.GetPodsForStatefulSet(client, workers, workerSelector)
+	workerPods, err := runtimeInfo.GetWorkerPods(client)
 	if err != nil {
 		return nil, err
 	}

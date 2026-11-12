@@ -88,7 +88,22 @@ function wait_job_completed() {
 }
 
 function dump_env_and_clean_up() {
-    bash tools/diagnose-fluid-juicefs.sh collect --name $dataset_name --namespace default --collect-path ./e2e-tmp/testcase-juicefs.tgz
+    local exit_code=$?
+    if [[ $exit_code -ne 0 ]]; then
+        bash tools/diagnose-fluid-juicefs.sh collect --name $dataset_name --namespace default --collect-path ./e2e-tmp/testcase-juicefs.tgz
+        syslog "=== Diagnostic logs for failed test ==="
+        syslog "--- juicefsruntime-controller logs (last 100 lines) ---"
+        kubectl logs -n fluid-system -l control-plane=juicefsruntime-controller -c manager --tail=100 2>&1 || true
+        syslog "--- JuiceFSRuntime describe ---"
+        kubectl describe juicefsruntime $dataset_name 2>&1 || true
+        syslog "--- Dataset describe ---"
+        kubectl describe dataset $dataset_name 2>&1 || true
+        syslog "--- Pods in default namespace ---"
+        kubectl get pods -n default -owide 2>&1 || true
+        syslog "--- Events in default namespace ---"
+        kubectl get events -n default --sort-by='.lastTimestamp' 2>&1 || true
+        syslog "=== End of diagnostic logs ==="
+    fi
     syslog "Cleaning up resources for testcase $testname"
     kubectl delete -f test/gha-e2e/juicefs/read_job.yaml
     kubectl delete -f test/gha-e2e/juicefs/write_job.yaml 

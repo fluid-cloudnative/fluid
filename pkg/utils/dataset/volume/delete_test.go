@@ -70,7 +70,7 @@ var _ = Describe("Delete Volume Tests", Label("pkg.utils.dataset.volume.delete_t
 				Expect(err).To(BeNil())
 			})
 			It("should delete the PV successfully", func() {
-				Expect(DeleteFusePersistentVolume(clientObj, runtimeInfo, log)).To(Succeed())
+				Expect(DeleteFusePersistentVolume(context.Background(), clientObj, runtimeInfo, log)).To(Succeed())
 				gotPV, err := kubeclient.GetPersistentVolume(clientObj, "fluid-hadoop")
 				Expect(err).NotTo(BeNil())
 				Expect(apierrs.IsNotFound(err)).To(BeTrue())
@@ -90,7 +90,7 @@ var _ = Describe("Delete Volume Tests", Label("pkg.utils.dataset.volume.delete_t
 				Expect(err).To(BeNil())
 			})
 			It("should no-op and return success", func() {
-				Expect(DeleteFusePersistentVolume(clientObj, runtimeInfo, log)).To(Succeed())
+				Expect(DeleteFusePersistentVolume(context.Background(), clientObj, runtimeInfo, log)).To(Succeed())
 				// The PV should still exist
 				gotPV, err := kubeclient.GetPersistentVolume(clientObj, "fluid-no-anno")
 				Expect(err).To(BeNil())
@@ -105,7 +105,30 @@ var _ = Describe("Delete Volume Tests", Label("pkg.utils.dataset.volume.delete_t
 				Expect(err).To(BeNil())
 			})
 			It("should no-op and return success", func() {
-				Expect(DeleteFusePersistentVolume(clientObj, runtimeInfo, log)).To(Succeed())
+				Expect(DeleteFusePersistentVolume(context.Background(), clientObj, runtimeInfo, log)).To(Succeed())
+			})
+		})
+
+		When("caller context is canceled", func() {
+			BeforeEach(func() {
+				resources = append(resources, &v1.PersistentVolume{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:        "fluid-canceled",
+						Annotations: common.GetExpectedFluidAnnotations(),
+					},
+				})
+				var err error
+				runtimeInfo, err = base.BuildRuntimeInfo("canceled", "fluid", "alluxio")
+				Expect(err).To(BeNil())
+			})
+
+			It("should return the context error before deleting", func() {
+				ctx, cancel := context.WithCancel(context.Background())
+				cancel()
+
+				err := DeleteFusePersistentVolume(ctx, contextAwareClient{Client: clientObj}, runtimeInfo, log)
+				Expect(err).To(HaveOccurred())
+				Expect(err).To(MatchError(context.Canceled))
 			})
 		})
 
@@ -149,7 +172,7 @@ var _ = Describe("Delete Volume Tests", Label("pkg.utils.dataset.volume.delete_t
 				Expect(err).To(BeNil())
 			})
 			It("should delete the PVC successfully", func() {
-				Expect(DeleteFusePersistentVolumeClaim(clientObj, runtimeInfo, log)).To(Succeed())
+				Expect(DeleteFusePersistentVolumeClaim(context.Background(), clientObj, runtimeInfo, log)).To(Succeed())
 				pvc := &v1.PersistentVolumeClaim{}
 				err := clientObj.Get(context.TODO(), types.NamespacedName{Name: "hadoop", Namespace: "fluid"}, pvc)
 				Expect(err).NotTo(BeNil())
@@ -171,7 +194,7 @@ var _ = Describe("Delete Volume Tests", Label("pkg.utils.dataset.volume.delete_t
 				Expect(err).To(BeNil())
 			})
 			It("should no-op and return success", func() {
-				Expect(DeleteFusePersistentVolumeClaim(clientObj, runtimeInfo, log)).To(Succeed())
+				Expect(DeleteFusePersistentVolumeClaim(context.Background(), clientObj, runtimeInfo, log)).To(Succeed())
 				// The PVC should still exist
 				key := types.NamespacedName{Name: "no-anno", Namespace: "fluid"}
 				pvc := &v1.PersistentVolumeClaim{}
@@ -188,7 +211,32 @@ var _ = Describe("Delete Volume Tests", Label("pkg.utils.dataset.volume.delete_t
 				Expect(err).To(BeNil())
 			})
 			It("should no-op and return success", func() {
-				Expect(DeleteFusePersistentVolumeClaim(clientObj, runtimeInfo, log)).To(Succeed())
+				Expect(DeleteFusePersistentVolumeClaim(context.Background(), clientObj, runtimeInfo, log)).To(Succeed())
+			})
+		})
+
+		When("caller context is canceled", func() {
+			BeforeEach(func() {
+				pvc := &v1.PersistentVolumeClaim{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:        "ctx-canceled",
+						Namespace:   "fluid",
+						Annotations: common.GetExpectedFluidAnnotations(),
+					},
+				}
+				resources = append(resources, pvc)
+				var err error
+				runtimeInfo, err = base.BuildRuntimeInfo("ctx-canceled", "fluid", "alluxio")
+				Expect(err).To(BeNil())
+			})
+
+			It("should return the context error before deleting", func() {
+				ctx, cancel := context.WithCancel(context.Background())
+				cancel()
+
+				err := DeleteFusePersistentVolumeClaim(ctx, contextAwareClient{Client: clientObj}, runtimeInfo, log)
+				Expect(err).To(HaveOccurred())
+				Expect(err).To(MatchError(context.Canceled))
 			})
 		})
 
@@ -209,7 +257,7 @@ var _ = Describe("Delete Volume Tests", Label("pkg.utils.dataset.volume.delete_t
 				Expect(err).To(BeNil())
 			})
 			It("should remove finalizer if needed and succeed", func() {
-				Expect(DeleteFusePersistentVolumeClaim(clientObj, runtimeInfo, log)).To(Succeed())
+				Expect(DeleteFusePersistentVolumeClaim(context.Background(), clientObj, runtimeInfo, log)).To(Succeed())
 				pvc := &v1.PersistentVolumeClaim{}
 				err := clientObj.Get(context.TODO(), types.NamespacedName{Name: "force-delete", Namespace: "fluid"}, pvc)
 				Expect(err).NotTo(BeNil())
@@ -236,10 +284,13 @@ var _ = Describe("Delete Volume Tests", Label("pkg.utils.dataset.volume.delete_t
 			It("should wait and eventually timeout or succeed", func() {
 				// This PVC has a recent deletion timestamp (within grace period)
 				// The function should wait but may timeout after 10 retries
-				err := DeleteFusePersistentVolumeClaim(clientObj, runtimeInfo, log)
+				err := DeleteFusePersistentVolumeClaim(context.Background(), clientObj, runtimeInfo, log)
 				// Either succeeds or times out - both are valid for this test
 				if err != nil {
-					Expect(err.Error()).To(ContainSubstring("not cleaned up after 10-second retry"))
+					Expect(err.Error()).To(SatisfyAny(
+						ContainSubstring("not cleaned up after 10-second retry"),
+						ContainSubstring("context deadline exceeded"),
+					))
 				}
 			})
 		})
@@ -259,7 +310,7 @@ var _ = Describe("Delete Volume Tests", Label("pkg.utils.dataset.volume.delete_t
 				Expect(err).To(BeNil())
 			})
 			It("should retry and eventually succeed", func() {
-				Expect(DeleteFusePersistentVolumeClaim(clientObj, runtimeInfo, log)).To(Succeed())
+				Expect(DeleteFusePersistentVolumeClaim(context.Background(), clientObj, runtimeInfo, log)).To(Succeed())
 				pvc := &v1.PersistentVolumeClaim{}
 				err := clientObj.Get(context.TODO(), types.NamespacedName{Name: "eventual-success", Namespace: "fluid"}, pvc)
 				Expect(err).NotTo(BeNil())
@@ -291,7 +342,7 @@ var _ = Describe("Delete Volume Tests", Label("pkg.utils.dataset.volume.delete_t
 				})
 			})
 			It("should delete PV and verify deletion", func() {
-				err := deleteFusePersistentVolumeIfExists(clientObj, "test-pv", log)
+				err := deleteFusePersistentVolumeIfExists(context.Background(), clientObj, "test-pv", log)
 				Expect(err).To(BeNil())
 				gotPV, err := kubeclient.GetPersistentVolume(clientObj, "test-pv")
 				Expect(err).NotTo(BeNil())
@@ -302,7 +353,7 @@ var _ = Describe("Delete Volume Tests", Label("pkg.utils.dataset.volume.delete_t
 
 		When("PV does not exist", func() {
 			It("should return success without error", func() {
-				err := deleteFusePersistentVolumeIfExists(clientObj, "non-existent-pv", log)
+				err := deleteFusePersistentVolumeIfExists(context.Background(), clientObj, "non-existent-pv", log)
 				Expect(err).To(BeNil())
 			})
 		})
@@ -316,7 +367,7 @@ var _ = Describe("Delete Volume Tests", Label("pkg.utils.dataset.volume.delete_t
 				})
 			})
 			It("should not delete PV and return success", func() {
-				err := deleteFusePersistentVolumeIfExists(clientObj, "no-annotation-pv", log)
+				err := deleteFusePersistentVolumeIfExists(context.Background(), clientObj, "no-annotation-pv", log)
 				Expect(err).To(BeNil())
 				gotPV, err := kubeclient.GetPersistentVolume(clientObj, "no-annotation-pv")
 				Expect(err).To(BeNil())
@@ -348,7 +399,7 @@ var _ = Describe("Delete Volume Tests", Label("pkg.utils.dataset.volume.delete_t
 				Expect(err).To(BeNil())
 			})
 			It("should only delete PVC in the correct namespace", func() {
-				Expect(DeleteFusePersistentVolumeClaim(clientObj, runtimeInfo, log)).To(Succeed())
+				Expect(DeleteFusePersistentVolumeClaim(context.Background(), clientObj, runtimeInfo, log)).To(Succeed())
 
 				// PVC in 'fluid' namespace should be deleted
 				pvc := &v1.PersistentVolumeClaim{}
@@ -381,11 +432,14 @@ var _ = Describe("Delete Volume Tests", Label("pkg.utils.dataset.volume.delete_t
 				Expect(err).To(BeNil())
 			})
 			It("should handle removal of pvc-protection finalizer", func() {
-				err := DeleteFusePersistentVolumeClaim(clientObj, runtimeInfo, log)
+				err := DeleteFusePersistentVolumeClaim(context.Background(), clientObj, runtimeInfo, log)
 				// The function should attempt to remove the finalizer
 				// Depending on fake client behavior, this may succeed or timeout
 				if err != nil {
-					Expect(err.Error()).To(ContainSubstring("not cleaned up after 10-second retry"))
+					Expect(err.Error()).To(SatisfyAny(
+						ContainSubstring("not cleaned up after 10-second retry"),
+						ContainSubstring("context deadline exceeded"),
+					))
 				}
 			})
 		})
@@ -406,7 +460,7 @@ var _ = Describe("Delete Volume Tests", Label("pkg.utils.dataset.volume.delete_t
 				Expect(err).To(BeNil())
 			})
 			It("should delete PVC without finalizer issues", func() {
-				Expect(DeleteFusePersistentVolumeClaim(clientObj, runtimeInfo, log)).To(Succeed())
+				Expect(DeleteFusePersistentVolumeClaim(context.Background(), clientObj, runtimeInfo, log)).To(Succeed())
 				pvc := &v1.PersistentVolumeClaim{}
 				err := clientObj.Get(context.TODO(), types.NamespacedName{Name: "no-finalizers", Namespace: "fluid"}, pvc)
 				Expect(err).NotTo(BeNil())

@@ -69,6 +69,13 @@ var _ = Describe("Test Daemonset", func() {
 			Expect(err).To(HaveOccurred())
 			Expect(apierrs.IsNotFound(err)).To(BeTrue())
 		})
+
+		It("Should fail to get the daemonset when namespace does not match", func() {
+			fakeClient := fake.NewFakeClientWithScheme(testScheme, objs...)
+			_, err := GetDaemonset(fakeClient, name, "another-namespace")
+			Expect(err).To(HaveOccurred())
+			Expect(apierrs.IsNotFound(err)).To(BeTrue())
+		})
 	})
 
 	Context("Test UpdateDaemonSetUpdateStrategy", func() {

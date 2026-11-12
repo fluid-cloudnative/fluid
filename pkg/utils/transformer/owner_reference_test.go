@@ -25,9 +25,11 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 var _ = Describe("GenerateOwnerReferenceFromObject", func() {
@@ -189,6 +191,123 @@ var _ = Describe("GenerateOwnerReferenceFromObject", func() {
 			},
 		),
 	)
+
+	// A typed client is allowed to hand back objects whose TypeMeta is not fully populated, so the kind and
+	// the apiVersion have to be recovered from the scheme. Otherwise the ownerReference is rejected by the
+	// API server and cannot be resolved back to its owner by an owner-based watch.
+	DescribeTable("when the TypeMeta of the object is incomplete",
+		func(obj client.Object, expectedKind string) {
+			result := GenerateOwnerReferenceFromObject(obj)
+
+			Expect(result.Kind).To(Equal(expectedKind))
+			Expect(result.APIVersion).To(Equal(datav1alpha1.GroupVersion.String()))
+		},
+
+		Entry("should recover the kind of a dataset",
+			&datav1alpha1.Dataset{
+				ObjectMeta: metav1.ObjectMeta{Name: "no-typemeta-dataset", Namespace: "default", UID: "uid-1"},
+			},
+			"Dataset",
+		),
+
+		Entry("should recover the kind of an alluxio runtime",
+			&datav1alpha1.AlluxioRuntime{
+				ObjectMeta: metav1.ObjectMeta{Name: "no-typemeta-runtime", Namespace: "default", UID: "uid-2"},
+			},
+			"AlluxioRuntime",
+		),
+
+		Entry("should recover the kind of a data load",
+			&datav1alpha1.DataLoad{
+				ObjectMeta: metav1.ObjectMeta{Name: "no-typemeta-dataload", Namespace: "default", UID: "uid-3"},
+			},
+			"DataLoad",
+		),
+
+		Entry("should recover the apiVersion when only the kind is set",
+			&datav1alpha1.DataLoad{
+				TypeMeta:   metav1.TypeMeta{Kind: "DataLoad"},
+				ObjectMeta: metav1.ObjectMeta{Name: "kind-only-dataload", Namespace: "default", UID: "uid-4"},
+			},
+			"DataLoad",
+		),
+
+		Entry("should recover the kind when only the apiVersion is set",
+			&datav1alpha1.DataLoad{
+				TypeMeta:   metav1.TypeMeta{APIVersion: datav1alpha1.GroupVersion.String()},
+				ObjectMeta: metav1.ObjectMeta{Name: "version-only-dataload", Namespace: "default", UID: "uid-5"},
+			},
+			"DataLoad",
+		),
+
+		Entry("should recover the apiVersion of a dataload when malformed with group only",
+			&datav1alpha1.DataLoad{
+				TypeMeta:   metav1.TypeMeta{Kind: "DataLoad", APIVersion: "data.fluid.io/"},
+				ObjectMeta: metav1.ObjectMeta{Name: "group-only-dataload", Namespace: "default", UID: "uid-group-only"},
+			},
+			"DataLoad",
+		),
+
+		Entry("should recover the group of a dataset when the apiVersion has no group",
+			&datav1alpha1.Dataset{
+				TypeMeta:   metav1.TypeMeta{Kind: "Dataset", APIVersion: "v1alpha1"},
+				ObjectMeta: metav1.ObjectMeta{Name: "groupless-dataset", Namespace: "default", UID: "uid-groupless"},
+			},
+			"Dataset",
+		),
+
+		Entry("should recover the kind and the group of a dataset when the apiVersion has no group and the kind is missing",
+			&datav1alpha1.Dataset{
+				TypeMeta:   metav1.TypeMeta{APIVersion: "v1alpha1"},
+				ObjectMeta: metav1.ObjectMeta{Name: "groupless-nokind-dataset", Namespace: "default", UID: "uid-groupless-nokind"},
+			},
+			"Dataset",
+		),
+
+		Entry("should recover the apiVersion of a dataset when only the kind is set",
+			&datav1alpha1.Dataset{
+				TypeMeta:   metav1.TypeMeta{Kind: "Dataset"},
+				ObjectMeta: metav1.ObjectMeta{Name: "kind-only-dataset", Namespace: "default", UID: "uid-6"},
+			},
+			"Dataset",
+		),
+
+		Entry("should recover the kind of a dataset when only the apiVersion is set",
+			&datav1alpha1.Dataset{
+				TypeMeta:   metav1.TypeMeta{APIVersion: datav1alpha1.GroupVersion.String()},
+				ObjectMeta: metav1.ObjectMeta{Name: "version-only-dataset", Namespace: "default", UID: "uid-7"},
+			},
+			"Dataset",
+		),
+
+		Entry("should recover the apiVersion of an alluxio runtime when only the kind is set",
+			&datav1alpha1.AlluxioRuntime{
+				TypeMeta:   metav1.TypeMeta{Kind: "AlluxioRuntime"},
+				ObjectMeta: metav1.ObjectMeta{Name: "kind-only-runtime", Namespace: "default", UID: "uid-8"},
+			},
+			"AlluxioRuntime",
+		),
+
+		Entry("should recover the kind of an alluxio runtime when only the apiVersion is set",
+			&datav1alpha1.AlluxioRuntime{
+				TypeMeta:   metav1.TypeMeta{APIVersion: datav1alpha1.GroupVersion.String()},
+				ObjectMeta: metav1.ObjectMeta{Name: "version-only-runtime", Namespace: "default", UID: "uid-9"},
+			},
+			"AlluxioRuntime",
+		),
+	)
+
+	It("should leave the reference incomplete for a type the fluid scheme does not know", func() {
+		// The helper has no error return, so a type missing from the scheme can only be reported through the
+		// log. Callers all pass registered fluid types today, this only guards against a future one that does
+		// not.
+		result := GenerateOwnerReferenceFromObject(&corev1.ConfigMap{
+			ObjectMeta: metav1.ObjectMeta{Name: "unregistered", Namespace: "default", UID: "uid-10"},
+		})
+
+		Expect(result.Kind).To(BeEmpty())
+		Expect(result.Name).To(Equal("unregistered"))
+	})
 })
 
 var _ = Describe("FilterOwnerByKind", func() {

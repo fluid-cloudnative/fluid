@@ -62,7 +62,9 @@ TEST SUITE: None
 
 1. 创建基于arm64的Kubernetes集群
 
-2. 根据[文档](juicefs_setup.md)准备JuiceFS 社区版
+2. 根据[文档](juicefs/juicefs_setup.md)准备JuiceFS 社区版
+
+   注意：该文档中使用的 MinIO 镜像仅支持 amd64。在 ARM64 平台上，请改用提供 arm64 镜像的 S3 兼容对象存储服务。
 
 在使用 JuiceFS 之前，您需要提供元数据服务（如 Redis）及对象存储服务（如 MinIO）的参数，并创建对应的 secret:
 

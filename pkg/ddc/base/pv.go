@@ -18,6 +18,9 @@ package base
 
 import "fmt"
 
+// GetPersistentVolumeName returns the name of the PersistentVolume (PV) associated with the
+// runtime info. The PV name is formatted as "<namespace>-<name>", which is constructed from
+// the namespace and name of the current RuntimeInfo.
 func (info *RuntimeInfo) GetPersistentVolumeName() string {
 	pvName := fmt.Sprintf("%s-%s", info.GetNamespace(), info.GetName())
 

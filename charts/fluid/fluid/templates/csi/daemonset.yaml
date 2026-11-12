@@ -94,8 +94,8 @@ spec:
             value: {{ .Values.runtime.mountRoot | quote }}
           {{- end }}
           {{- if .Values.csi.recoverWarningThreshold }}
-          - name: REVOCER_WARNING_THRESHOLD
-            value: {{ .Values.csi.recoverWarningThreshold | quote}}
+          - name: RECOVER_WARNING_THRESHOLD
+            value: {{ .Values.csi.recoverWarningThreshold | quote }}
           {{- end }}
           - name: ALLOW_PATCH_STALE_NODE
             value: "true"
@@ -105,7 +105,6 @@ spec:
             value: unix://{{ .Values.csi.kubelet.rootDir }}/csi-plugins/fuse.csi.fluid.io/csi.sock
           - name: NODEPUBLISH_METHOD
             value: {{ .Values.csi.nodePublishMethod }}
-        imagePullPolicy: "IfNotPresent"
         volumeMounts:
           - name: plugin-dir
             mountPath: /plugin

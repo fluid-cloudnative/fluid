@@ -230,12 +230,11 @@ PRUNEPATHS = "/tmp"`
 
 		Context("with multiple fuse filesystems", func() {
 			It("should handle multiple fuse types", func() {
-				content := `PRUNEFS = "9p afs fuse.alluxio fuse.jindofs fuse.juicefs fuse.goosefs"`
+				content := `PRUNEFS = "9p afs fuse.alluxio fuse.jindofs fuse.juicefs`
 
 				Expect(content).To(ContainSubstring("fuse.alluxio"))
 				Expect(content).To(ContainSubstring("fuse.jindofs"))
 				Expect(content).To(ContainSubstring("fuse.juicefs"))
-				Expect(content).To(ContainSubstring("fuse.goosefs"))
 			})
 		})
 

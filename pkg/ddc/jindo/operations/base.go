@@ -72,7 +72,7 @@ func (a JindoFileUtils) execWithoutTimeout(command []string, verbose bool) (stdo
 		return
 	}
 
-	stdout, stderr, err = kubeclient.ExecCommandInContainer(a.podName, a.container, a.namespace, command)
+	stdout, stderr, err = kubeclient.ExecCommandInContainerWithContext(context.TODO(), a.podName, a.container, a.namespace, command)
 	if err != nil {
 		a.log.Info("Stdout", "Command", command, "Stdout", stdout)
 		a.log.Error(err, "Failed", "Command", command, "FailedReason", stderr)

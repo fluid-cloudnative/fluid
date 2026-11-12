@@ -22,6 +22,7 @@ import (
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	transformerutils "github.com/fluid-cloudnative/fluid/pkg/utils/transformer"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -50,18 +51,33 @@ func GetPhysicalDatasetFromMounts(mounts []datav1alpha1.Mount) []types.Namespace
 	return physicalNamespacedName
 }
 
-func GetPhysicalDatasetSubPath(virtualDataset *datav1alpha1.Dataset) []string {
-	var paths []string
-	for _, mount := range virtualDataset.Spec.Mounts {
-		if common.IsFluidRefSchema(mount.MountPoint) {
-			datasetPath := strings.TrimPrefix(mount.MountPoint, string(common.RefSchema))
-			splitsStrings := strings.SplitAfterN(datasetPath, "/", 3)
-			if len(splitsStrings) == 3 {
-				paths = append(paths, splitsStrings[2])
-			}
-		}
+func GetPhysicalDatasetSubPath(virtualDataset *datav1alpha1.Dataset) (string, error) {
+	if len(virtualDataset.Spec.Mounts) != 1 {
+		return "", fmt.Errorf("the dataset \"%s/%s\" should only have one mount", virtualDataset.Namespace, virtualDataset.Name)
 	}
-	return paths
+
+	mount := virtualDataset.Spec.Mounts[0]
+	if !common.IsFluidRefSchema(mount.MountPoint) {
+		return "", fmt.Errorf("the dataset \"%s/%s\" mountpoint should follow the schema \"%s\"", virtualDataset.Namespace, virtualDataset.Name, common.RefSchema)
+	}
+
+	datasetPath := strings.TrimPrefix(mount.MountPoint, string(common.RefSchema))
+	splitsStrings := strings.SplitAfterN(datasetPath, "/", 3)
+	if len(splitsStrings) != 3 {
+		return "", nil
+	}
+
+	subPath := splitsStrings[2]
+	if subPath == "" {
+		return "", nil
+	}
+
+	normalized, err := utils.NormalizeSubPath(subPath)
+	if err != nil {
+		return "", fmt.Errorf("the dataset \"%s/%s\" has an invalid subPath: %w", virtualDataset.Namespace, virtualDataset.Name, err)
+	}
+
+	return normalized, nil
 }
 
 func CheckReferenceDataset(dataset *datav1alpha1.Dataset) (check bool, err error) {

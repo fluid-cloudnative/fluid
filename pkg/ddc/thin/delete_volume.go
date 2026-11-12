@@ -17,11 +17,12 @@
 package thin
 
 import (
+	"context"
 	volumehelper "github.com/fluid-cloudnative/fluid/pkg/utils/dataset/volume"
 	"github.com/pkg/errors"
 )
 
-func (t ThinEngine) DeleteVolume() (err error) {
+func (t ThinEngine) DeleteVolume(ctx context.Context) (err error) {
 	if t.runtime == nil {
 		t.runtime, err = t.getRuntime()
 		if err != nil {
@@ -29,12 +30,12 @@ func (t ThinEngine) DeleteVolume() (err error) {
 		}
 	}
 
-	err = t.deleteFusePersistentVolumeClaim()
+	err = t.deleteFusePersistentVolumeClaim(ctx)
 	if err != nil {
 		return
 	}
 
-	err = t.deleteFusePersistentVolume()
+	err = t.deleteFusePersistentVolume(ctx)
 	if err != nil {
 		return
 	}
@@ -43,17 +44,17 @@ func (t ThinEngine) DeleteVolume() (err error) {
 }
 
 // deleteFusePersistentVolume
-func (t *ThinEngine) deleteFusePersistentVolume() (err error) {
+func (t *ThinEngine) deleteFusePersistentVolume(ctx context.Context) (err error) {
 	runtimeInfo, err := t.getRuntimeInfo()
 	if err != nil {
 		return err
 	}
 
-	return volumehelper.DeleteFusePersistentVolume(t.Client, runtimeInfo, t.Log)
+	return volumehelper.DeleteFusePersistentVolume(ctx, t.Client, runtimeInfo, t.Log)
 }
 
 // deleteFusePersistentVolume
-func (t *ThinEngine) deleteFusePersistentVolumeClaim() (err error) {
+func (t *ThinEngine) deleteFusePersistentVolumeClaim(ctx context.Context) (err error) {
 	runtimeInfo, err := t.getRuntimeInfo()
 	if err != nil {
 		return err
@@ -64,5 +65,5 @@ func (t *ThinEngine) deleteFusePersistentVolumeClaim() (err error) {
 		return errors.Wrapf(err, "failed to unwrap pvcs for runtime %s", t.name)
 	}
 
-	return volumehelper.DeleteFusePersistentVolumeClaim(t.Client, runtimeInfo, t.Log)
+	return volumehelper.DeleteFusePersistentVolumeClaim(ctx, t.Client, runtimeInfo, t.Log)
 }

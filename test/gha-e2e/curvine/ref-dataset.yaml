@@ -1,0 +1,8 @@
+apiVersion: data.fluid.io/v1alpha1
+kind: Dataset
+metadata:
+  name: curvine-demo-ref
+spec:
+  mounts:
+    - mountPoint: dataset://default/curvine-demo
+      name: curvine-cache

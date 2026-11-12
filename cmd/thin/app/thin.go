@@ -20,10 +20,6 @@ import (
 	"os"
 	"time"
 
-	"github.com/fluid-cloudnative/fluid/pkg/controllers"
-	"github.com/fluid-cloudnative/fluid/pkg/ddc/thin"
-
-	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/spf13/cobra"
 	zapOpt "go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -36,8 +32,13 @@ import (
 
 	"github.com/fluid-cloudnative/fluid"
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	_ "github.com/fluid-cloudnative/fluid/pkg/common/features"
+	"github.com/fluid-cloudnative/fluid/pkg/controllers"
 	thinctl "github.com/fluid-cloudnative/fluid/pkg/controllers/v1alpha1/thinruntime"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/thin"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	utilfeature "github.com/fluid-cloudnative/fluid/pkg/utils/feature"
 )
 
 var (
@@ -91,6 +92,7 @@ func init() {
 	startCmd.Flags().StringVar(&controllerWorkqueueMaxSyncBackoffStr, "workqueue-max-sync-backoff", "1000s", "max backoff period for failed reconciliation in controller's workqueue")
 	startCmd.Flags().IntVar(&controllerWorkqueueQPS, "workqueue-qps", 10, "qps limit value for controller's workqueue")
 	startCmd.Flags().IntVar(&controllerWorkqueueBurst, "workqueue-burst", 100, "burst limit value for controller's workqueue")
+	utilfeature.DefaultMutableFeatureGate.AddFlag(startCmd.Flags())
 }
 
 // handle initializes and starts the thinruntime controller.

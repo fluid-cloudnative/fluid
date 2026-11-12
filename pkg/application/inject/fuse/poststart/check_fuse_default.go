@@ -17,7 +17,6 @@ limitations under the License.
 package poststart
 
 import (
-	"fmt"
 	"strings"
 
 	corev1 "k8s.io/api/core/v1"
@@ -73,7 +72,7 @@ fi
 
 count=1
 limit=30
-while ! cat /proc/self/mountinfo | grep $ConditionPathIsMountPoint | grep $MountType
+while ! cat /proc/self/mountinfo | grep -F "$ConditionPathIsMountPoint" | grep -F "$MountType"
 do
     sleep 1
     count=¬expr $count + 1¬
@@ -87,7 +86,7 @@ done
 # different with csi, as here the mount point is the parent dir of the fuse mount point, 
 subpath_check_count=1
 subpath_check_limit=30
-while [ ! -e  $ConditionPathIsMountPoint/*/$SubPath ]
+while ! ls -d "$ConditionPathIsMountPoint"/*/"$SubPath" >/dev/null 2>&1
 do
     sleep 1
     subpath_check_count=¬expr $subpath_check_count + 1¬
@@ -129,7 +128,9 @@ func NewDefaultPostStartScriptGenerator() *defaultPostStartScriptGenerator {
 
 func (g *defaultPostStartScriptGenerator) GetPostStartCommand(mountPath, mountType, subPath string) (handler *corev1.LifecycleHandler) {
 	// https://github.com/kubernetes/kubernetes/issues/25766
-	cmd := []string{"bash", "-c", fmt.Sprintf("time %s %s %s %s", g.scriptMountPath, mountPath, mountType, subPath)}
+	// Arguments are passed as positional parameters so that user-controlled values (e.g. subPath)
+	// are never re-parsed by the shell.
+	cmd := []string{"bash", "-c", `time "$0" "$@"`, g.scriptMountPath, mountPath, mountType, subPath}
 
 	return &corev1.LifecycleHandler{
 		Exec: &corev1.ExecAction{Command: cmd},

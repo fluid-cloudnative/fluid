@@ -25,6 +25,7 @@ import (
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"k8s.io/apimachinery/pkg/types"
@@ -89,12 +90,54 @@ func (e *ReferenceDatasetEngine) Sync(ctx cruntime.ReconcileRequestContext) (err
 	if err != nil {
 		return err
 	}
-	runtimeToUpdate := runtime.DeepCopy()
 
-	physicalRuntimeStatus, err := e.getPhysicalDatasetRuntimeStatus()
+	return e.updateRuntimeStatus(virtualDatasetToUpdate, runtime, physicalRuntimeInfo)
+}
+
+func (e *ReferenceDatasetEngine) updateRuntimeStatus(virtualDatasetToUpdate *datav1alpha1.Dataset, runtime *datav1alpha1.ThinRuntime,
+	physicalRuntimeInfo base.RuntimeInfoInterface) (err error) {
+	if physicalRuntimeInfo.GetRuntimeType() == common.CacheRuntime {
+		return e.updateCacheRuntimeStatus(virtualDatasetToUpdate, runtime, physicalRuntimeInfo)
+	}
+
+	return e.updateDDCRuntimeStatus(virtualDatasetToUpdate, runtime, physicalRuntimeInfo)
+}
+
+func (e *ReferenceDatasetEngine) updateCacheRuntimeStatus(virtualDatasetToUpdate *datav1alpha1.Dataset, runtime *datav1alpha1.ThinRuntime,
+	physicalRuntimeInfo base.RuntimeInfoInterface) error {
+	cacheRuntime, err := utils.GetCacheRuntime(e.Client, physicalRuntimeInfo.GetName(), physicalRuntimeInfo.GetNamespace())
 	if err != nil {
 		return err
 	}
+	physicalRuntimeStatus := &cacheRuntime.Status
+
+	runtimeToUpdate := runtime.DeepCopy()
+
+	// Convert CacheRuntimeStatus to RuntimeStatus
+	runtimeToUpdate.Status = convertCacheRuntimeStatusToRuntimeStatus(physicalRuntimeStatus)
+
+	// update status.mounts to dataset mounts
+	runtimeToUpdate.Status.Mounts = virtualDatasetToUpdate.Spec.Mounts
+
+	if !reflect.DeepEqual(runtime.Status, runtimeToUpdate.Status) {
+		err = e.Client.Status().Update(context.TODO(), runtimeToUpdate)
+	} else {
+		e.Log.Info("Do nothing because the runtime status is not changed.")
+	}
+
+	return err
+}
+
+func (e *ReferenceDatasetEngine) updateDDCRuntimeStatus(virtualDatasetToUpdate *datav1alpha1.Dataset, runtime *datav1alpha1.ThinRuntime,
+	physicalRuntimeInfo base.RuntimeInfoInterface) error {
+
+	physicalRuntimeStatus, err := base.GetDDCRuntimeStatus(e.Client, physicalRuntimeInfo.GetRuntimeType(),
+		physicalRuntimeInfo.GetName(), physicalRuntimeInfo.GetNamespace())
+	if err != nil {
+		return err
+	}
+
+	runtimeToUpdate := runtime.DeepCopy()
 	if physicalRuntimeStatus != nil {
 		// status copy, include cacheStates, conditions, selector, valueFile, current*, desired*, fuse*, master*, worker* ...
 		// TODO: Are there some fields should not copy?
@@ -109,7 +152,7 @@ func (e *ReferenceDatasetEngine) Sync(ctx cruntime.ReconcileRequestContext) (err
 		e.Log.Info("Do nothing because the runtime status is not changed.")
 	}
 
-	return
+	return err
 }
 
 func getSyncRetryDuration() (d *time.Duration, err error) {
@@ -145,4 +188,54 @@ func (e *ReferenceDatasetEngine) permitSync(key types.NamespacedName) (permit bo
 func (e *ReferenceDatasetEngine) setTimeOfLastSync() {
 	e.timeOfLastSync = time.Now()
 	e.Log.V(1).Info("Set timeOfLastSync", "timeOfLastSync", e.timeOfLastSync)
+}
+
+// convertCacheRuntimeStatusToRuntimeStatus converts CacheRuntimeStatus to RuntimeStatus
+func convertCacheRuntimeStatusToRuntimeStatus(cacheStatus *datav1alpha1.CacheRuntimeStatus) datav1alpha1.RuntimeStatus {
+	if cacheStatus == nil {
+		return datav1alpha1.RuntimeStatus{}
+	}
+
+	status := datav1alpha1.RuntimeStatus{
+		// Map ValueFile to ValueFileConfigmap
+		ValueFileConfigmap: cacheStatus.ValueFile,
+
+		// Map component phases from RuntimeComponentStatusCollection
+		MasterPhase:  cacheStatus.Master.Phase,
+		MasterReason: cacheStatus.Master.Reason,
+
+		WorkerPhase:  cacheStatus.Worker.Phase,
+		WorkerReason: cacheStatus.Worker.Reason,
+
+		// Map worker replica counts
+		DesiredWorkerNumberScheduled: cacheStatus.Worker.DesiredReplicas,
+		CurrentWorkerNumberScheduled: cacheStatus.Worker.CurrentReplicas,
+		WorkerNumberReady:            cacheStatus.Worker.ReadyReplicas,
+		WorkerNumberAvailable:        cacheStatus.Worker.AvailableReplicas,
+		WorkerNumberUnavailable:      cacheStatus.Worker.UnavailableReplicas,
+
+		// Map master replica counts
+		DesiredMasterNumberScheduled: cacheStatus.Master.DesiredReplicas,
+		CurrentMasterNumberScheduled: cacheStatus.Master.CurrentReplicas,
+		MasterNumberReady:            cacheStatus.Master.ReadyReplicas,
+
+		// Map client (fuse) phase and replica counts
+		FusePhase:                  cacheStatus.Client.Phase,
+		FuseReason:                 cacheStatus.Client.Reason,
+		CurrentFuseNumberScheduled: cacheStatus.Client.CurrentReplicas,
+		DesiredFuseNumberScheduled: cacheStatus.Client.DesiredReplicas,
+		FuseNumberReady:            cacheStatus.Client.ReadyReplicas,
+		FuseNumberAvailable:        cacheStatus.Client.AvailableReplicas,
+		FuseNumberUnavailable:      cacheStatus.Client.UnavailableReplicas,
+
+		// Map common fields
+		SetupDuration: cacheStatus.SetupDuration,
+		Conditions:    cacheStatus.Conditions,
+		Selector:      cacheStatus.Selector,
+		CacheAffinity: cacheStatus.CacheAffinity,
+		// directly use dataset mounts
+		MountTime: cacheStatus.MountTime,
+	}
+
+	return status
 }

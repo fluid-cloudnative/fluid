@@ -69,9 +69,14 @@ type JuiceFSRuntimeSpec struct {
 	// +optional
 	DisablePrometheus bool `json:"disablePrometheus,omitempty"`
 
-	// Volumes is the list of Kubernetes volumes that can be mounted by the alluxio runtime components and/or fuses.
+	// Volumes is the list of Kubernetes volumes that can be mounted by the JuiceFS runtime components and/or fuses.
 	// +optional
 	Volumes []corev1.Volume `json:"volumes,omitempty"`
+
+	// VolumeClaimTemplates is the list of Kubernetes persistent volume claim templates used by the JuiceFS worker StatefulSet.
+	// +optional
+	// +listType=atomic
+	VolumeClaimTemplates []corev1.PersistentVolumeClaim `json:"volumeClaimTemplates,omitempty"`
 
 	// PodMetadata defines labels and annotations that will be propagated to JuiceFs's pods.
 	// +optional

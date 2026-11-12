@@ -38,6 +38,7 @@ func newEFCEngineRT(client client.Client, name string, namespace string, withRun
 		runtime:     nil,
 		name:        name,
 		namespace:   namespace,
+		runtimeType: common.EFCRuntime,
 		Client:      client,
 		runtimeInfo: nil,
 		UnitTest:    unittest,

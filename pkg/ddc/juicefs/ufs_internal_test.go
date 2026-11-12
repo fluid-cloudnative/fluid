@@ -18,9 +18,7 @@ package juicefs
 
 import (
 	"errors"
-	"reflect"
 
-	"github.com/agiledragon/gomonkey/v2"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/juicefs/operations"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	. "github.com/onsi/ginkgo/v2"
@@ -43,10 +41,18 @@ const (
 	testWorkerPod                  = "test-worker-0"
 )
 
+func mockJuiceFSMetricWorkerPods(_ *JuiceFSEngine, _ string, _ string) ([]corev1.Pod, error) {
+	return []corev1.Pod{{
+		ObjectMeta: metav1.ObjectMeta{Name: testWorkerPod},
+	}}, nil
+}
+
 var _ = Describe("UfsInternal", func() {
 	var (
-		engine  *JuiceFSEngine
-		patches *gomonkey.Patches
+		engine                             *JuiceFSEngine
+		originalGetJuiceFSMetricWorkerPods func(*JuiceFSEngine, string, string) ([]corev1.Pod, error)
+		originalGetJuiceFSUsedSpace        func(operations.JuiceFileUtils, string) (int64, error)
+		originalGetJuiceFSFileCount        func(operations.JuiceFileUtils, string) (int64, error)
 	)
 
 	BeforeEach(func() {
@@ -55,21 +61,23 @@ var _ = Describe("UfsInternal", func() {
 			namespace: "fluid",
 			Log:       fake.NullLogger(),
 		}
+		originalGetJuiceFSMetricWorkerPods = getJuiceFSMetricWorkerPods
+		originalGetJuiceFSUsedSpace = getJuiceFSUsedSpace
+		originalGetJuiceFSFileCount = getJuiceFSFileCount
 	})
 
 	AfterEach(func() {
-		if patches != nil {
-			patches.Reset()
-		}
+		getJuiceFSMetricWorkerPods = originalGetJuiceFSMetricWorkerPods
+		getJuiceFSUsedSpace = originalGetJuiceFSUsedSpace
+		getJuiceFSFileCount = originalGetJuiceFSFileCount
 	})
 
 	Describe("totalStorageBytesInternal", func() {
 		Context(errGetPodsContext, func() {
 			BeforeEach(func() {
-				patches = gomonkey.ApplyMethod(reflect.TypeOf(engine), "GetRunningPodsOfStatefulSet",
-					func(_ *JuiceFSEngine, stsName string, namespace string) ([]corev1.Pod, error) {
-						return nil, errors.New(errFailedToGetPods)
-					})
+				getJuiceFSMetricWorkerPods = func(_ *JuiceFSEngine, _ string, _ string) ([]corev1.Pod, error) {
+					return nil, errors.New(errFailedToGetPods)
+				}
 			})
 
 			It(errReturnErrorAndZeroBytes, func() {
@@ -81,10 +89,9 @@ var _ = Describe("UfsInternal", func() {
 
 		Context(errGetPodsEmptyContext, func() {
 			BeforeEach(func() {
-				patches = gomonkey.ApplyMethod(reflect.TypeOf(engine), "GetRunningPodsOfStatefulSet",
-					func(_ *JuiceFSEngine, stsName string, namespace string) ([]corev1.Pod, error) {
-						return []corev1.Pod{}, nil
-					})
+				getJuiceFSMetricWorkerPods = func(_ *JuiceFSEngine, _ string, _ string) ([]corev1.Pod, error) {
+					return []corev1.Pod{}, nil
+				}
 			})
 
 			It("should return zero bytes without error", func() {
@@ -96,19 +103,11 @@ var _ = Describe("UfsInternal", func() {
 
 		Context(errGetUsedSpaceContext, func() {
 			BeforeEach(func() {
-				patches = gomonkey.NewPatches()
-				patches.ApplyMethod(reflect.TypeOf(engine), "GetRunningPodsOfStatefulSet",
-					func(_ *JuiceFSEngine, stsName string, namespace string) ([]corev1.Pod, error) {
-						return []corev1.Pod{{
-							ObjectMeta: metav1.ObjectMeta{Name: testWorkerPod},
-						}}, nil
-					})
+				getJuiceFSMetricWorkerPods = mockJuiceFSMetricWorkerPods
 
-				var fileUtils operations.JuiceFileUtils
-				patches.ApplyMethod(reflect.TypeOf(fileUtils), "GetUsedSpace",
-					func(_ operations.JuiceFileUtils, path string) (int64, error) {
-						return 0, errors.New(errFailedToGetUsedSpace)
-					})
+				getJuiceFSUsedSpace = func(_ operations.JuiceFileUtils, path string) (int64, error) {
+					return 0, errors.New(errFailedToGetUsedSpace)
+				}
 			})
 
 			It(errReturnErrorAndZeroBytes, func() {
@@ -120,19 +119,11 @@ var _ = Describe("UfsInternal", func() {
 
 		Context(successGetUsedSpaceContext, func() {
 			BeforeEach(func() {
-				patches = gomonkey.NewPatches()
-				patches.ApplyMethod(reflect.TypeOf(engine), "GetRunningPodsOfStatefulSet",
-					func(_ *JuiceFSEngine, stsName string, namespace string) ([]corev1.Pod, error) {
-						return []corev1.Pod{{
-							ObjectMeta: metav1.ObjectMeta{Name: testWorkerPod},
-						}}, nil
-					})
+				getJuiceFSMetricWorkerPods = mockJuiceFSMetricWorkerPods
 
-				var fileUtils operations.JuiceFileUtils
-				patches.ApplyMethod(reflect.TypeOf(fileUtils), "GetUsedSpace",
-					func(_ operations.JuiceFileUtils, path string) (int64, error) {
-						return 1024, nil
-					})
+				getJuiceFSUsedSpace = func(_ operations.JuiceFileUtils, path string) (int64, error) {
+					return 1024, nil
+				}
 			})
 
 			It("should return correct total bytes", func() {
@@ -146,10 +137,9 @@ var _ = Describe("UfsInternal", func() {
 	Describe("totalFileNumsInternal", func() {
 		Context(errGetPodsContext, func() {
 			BeforeEach(func() {
-				patches = gomonkey.ApplyMethod(reflect.TypeOf(engine), "GetRunningPodsOfStatefulSet",
-					func(_ *JuiceFSEngine, stsName string, namespace string) ([]corev1.Pod, error) {
-						return nil, errors.New(errFailedToGetPods)
-					})
+				getJuiceFSMetricWorkerPods = func(_ *JuiceFSEngine, _ string, _ string) ([]corev1.Pod, error) {
+					return nil, errors.New(errFailedToGetPods)
+				}
 			})
 
 			It(errReturnErrorAndZeroFileCount, func() {
@@ -161,10 +151,9 @@ var _ = Describe("UfsInternal", func() {
 
 		Context(errGetPodsEmptyContext, func() {
 			BeforeEach(func() {
-				patches = gomonkey.ApplyMethod(reflect.TypeOf(engine), "GetRunningPodsOfStatefulSet",
-					func(_ *JuiceFSEngine, stsName string, namespace string) ([]corev1.Pod, error) {
-						return []corev1.Pod{}, nil
-					})
+				getJuiceFSMetricWorkerPods = func(_ *JuiceFSEngine, _ string, _ string) ([]corev1.Pod, error) {
+					return []corev1.Pod{}, nil
+				}
 			})
 
 			It("should return zero file count without error", func() {
@@ -176,19 +165,11 @@ var _ = Describe("UfsInternal", func() {
 
 		Context("when GetFileCount returns error", func() {
 			BeforeEach(func() {
-				patches = gomonkey.NewPatches()
-				patches.ApplyMethod(reflect.TypeOf(engine), "GetRunningPodsOfStatefulSet",
-					func(_ *JuiceFSEngine, stsName string, namespace string) ([]corev1.Pod, error) {
-						return []corev1.Pod{{
-							ObjectMeta: metav1.ObjectMeta{Name: testWorkerPod},
-						}}, nil
-					})
+				getJuiceFSMetricWorkerPods = mockJuiceFSMetricWorkerPods
 
-				var fileUtils operations.JuiceFileUtils
-				patches.ApplyMethod(reflect.TypeOf(fileUtils), "GetFileCount",
-					func(_ operations.JuiceFileUtils, path string) (int64, error) {
-						return 0, errors.New(errFailedToGetFileCount)
-					})
+				getJuiceFSFileCount = func(_ operations.JuiceFileUtils, path string) (int64, error) {
+					return 0, errors.New(errFailedToGetFileCount)
+				}
 			})
 
 			It(errReturnErrorAndZeroFileCount, func() {
@@ -200,19 +181,11 @@ var _ = Describe("UfsInternal", func() {
 
 		Context("when GetFileCount succeeds", func() {
 			BeforeEach(func() {
-				patches = gomonkey.NewPatches()
-				patches.ApplyMethod(reflect.TypeOf(engine), "GetRunningPodsOfStatefulSet",
-					func(_ *JuiceFSEngine, stsName string, namespace string) ([]corev1.Pod, error) {
-						return []corev1.Pod{{
-							ObjectMeta: metav1.ObjectMeta{Name: testWorkerPod},
-						}}, nil
-					})
+				getJuiceFSMetricWorkerPods = mockJuiceFSMetricWorkerPods
 
-				var fileUtils operations.JuiceFileUtils
-				patches.ApplyMethod(reflect.TypeOf(fileUtils), "GetFileCount",
-					func(_ operations.JuiceFileUtils, path string) (int64, error) {
-						return 100, nil
-					})
+				getJuiceFSFileCount = func(_ operations.JuiceFileUtils, path string) (int64, error) {
+					return 100, nil
+				}
 			})
 
 			It("should return correct file count", func() {
@@ -226,10 +199,9 @@ var _ = Describe("UfsInternal", func() {
 	Describe("usedSpaceInternal", func() {
 		Context(errGetPodsContext, func() {
 			BeforeEach(func() {
-				patches = gomonkey.ApplyMethod(reflect.TypeOf(engine), "GetRunningPodsOfStatefulSet",
-					func(_ *JuiceFSEngine, stsName string, namespace string) ([]corev1.Pod, error) {
-						return nil, errors.New(errFailedToGetPods)
-					})
+				getJuiceFSMetricWorkerPods = func(_ *JuiceFSEngine, _ string, _ string) ([]corev1.Pod, error) {
+					return nil, errors.New(errFailedToGetPods)
+				}
 			})
 
 			It(errReturnErrorAndZeroUsedSpace, func() {
@@ -241,10 +213,9 @@ var _ = Describe("UfsInternal", func() {
 
 		Context(errGetPodsEmptyContext, func() {
 			BeforeEach(func() {
-				patches = gomonkey.ApplyMethod(reflect.TypeOf(engine), "GetRunningPodsOfStatefulSet",
-					func(_ *JuiceFSEngine, stsName string, namespace string) ([]corev1.Pod, error) {
-						return []corev1.Pod{}, nil
-					})
+				getJuiceFSMetricWorkerPods = func(_ *JuiceFSEngine, _ string, _ string) ([]corev1.Pod, error) {
+					return []corev1.Pod{}, nil
+				}
 			})
 
 			It("should return zero used space without error", func() {
@@ -256,19 +227,11 @@ var _ = Describe("UfsInternal", func() {
 
 		Context(errGetUsedSpaceContext, func() {
 			BeforeEach(func() {
-				patches = gomonkey.NewPatches()
-				patches.ApplyMethod(reflect.TypeOf(engine), "GetRunningPodsOfStatefulSet",
-					func(_ *JuiceFSEngine, stsName string, namespace string) ([]corev1.Pod, error) {
-						return []corev1.Pod{{
-							ObjectMeta: metav1.ObjectMeta{Name: testWorkerPod},
-						}}, nil
-					})
+				getJuiceFSMetricWorkerPods = mockJuiceFSMetricWorkerPods
 
-				var fileUtils operations.JuiceFileUtils
-				patches.ApplyMethod(reflect.TypeOf(fileUtils), "GetUsedSpace",
-					func(_ operations.JuiceFileUtils, path string) (int64, error) {
-						return 0, errors.New(errFailedToGetUsedSpace)
-					})
+				getJuiceFSUsedSpace = func(_ operations.JuiceFileUtils, path string) (int64, error) {
+					return 0, errors.New(errFailedToGetUsedSpace)
+				}
 			})
 
 			It(errReturnErrorAndZeroUsedSpace, func() {
@@ -280,19 +243,11 @@ var _ = Describe("UfsInternal", func() {
 
 		Context(successGetUsedSpaceContext, func() {
 			BeforeEach(func() {
-				patches = gomonkey.NewPatches()
-				patches.ApplyMethod(reflect.TypeOf(engine), "GetRunningPodsOfStatefulSet",
-					func(_ *JuiceFSEngine, stsName string, namespace string) ([]corev1.Pod, error) {
-						return []corev1.Pod{{
-							ObjectMeta: metav1.ObjectMeta{Name: testWorkerPod},
-						}}, nil
-					})
+				getJuiceFSMetricWorkerPods = mockJuiceFSMetricWorkerPods
 
-				var fileUtils operations.JuiceFileUtils
-				patches.ApplyMethod(reflect.TypeOf(fileUtils), "GetUsedSpace",
-					func(_ operations.JuiceFileUtils, path string) (int64, error) {
-						return 2048, nil
-					})
+				getJuiceFSUsedSpace = func(_ operations.JuiceFileUtils, path string) (int64, error) {
+					return 2048, nil
+				}
 			})
 
 			It("should return correct used space", func() {

@@ -1,3 +1,4 @@
+{{- if or (eq (lower .Values.dataProcess.policy) "") (eq (lower .Values.dataProcess.policy) "once") }}
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -82,3 +83,4 @@ spec:
         {{- toYaml .Values.dataProcess.scriptProcessor.volumes | nindent 8 }}
       {{- end }}
     {{- end }}
+{{- end }}

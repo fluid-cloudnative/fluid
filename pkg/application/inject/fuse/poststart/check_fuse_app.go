@@ -17,8 +17,6 @@ limitations under the License.
 package poststart
 
 import (
-	"fmt"
-
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
@@ -145,7 +143,8 @@ func (a *ScriptGeneratorForApp) getConfigmapName() string {
 func (a *ScriptGeneratorForApp) GetPostStartCommand(mountPaths string, mountTypes string) (handler *corev1.LifecycleHandler) {
 	// Return non-null post start command only when PostStartInjeciton is enabled
 	// https://github.com/kubernetes/kubernetes/issues/25766
-	cmd := []string{"bash", "-c", fmt.Sprintf("time %s %s %s", appScriptPath, mountPaths, mountTypes)}
+	// Arguments are passed as positional parameters so that they are never re-parsed by the shell.
+	cmd := []string{"bash", "-c", `time "$0" "$@"`, appScriptPath, mountPaths, mountTypes}
 	handler = &corev1.LifecycleHandler{
 		Exec: &corev1.ExecAction{Command: cmd},
 	}

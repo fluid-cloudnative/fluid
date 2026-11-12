@@ -17,9 +17,20 @@
 package engine
 
 import (
+	"fmt"
+
+	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/runtime"
 )
 
 func (e *CacheEngine) Validate(runtime.ReconcileRequestContext) (err error) {
+	return nil
+}
+
+func validateRuntimeClassTopology(runtimeClass *datav1alpha1.CacheRuntimeClass) error {
+	if runtimeClass.Topology == nil ||
+		(runtimeClass.Topology.Master == nil && runtimeClass.Topology.Worker == nil && runtimeClass.Topology.Client == nil) {
+		return fmt.Errorf("at least one component should be defined in runtimeClass %s", runtimeClass.Name)
+	}
 	return nil
 }

@@ -82,20 +82,6 @@ func GetJindoRuntime(client client.Reader, name, namespace string) (*datav1alpha
 	return &runtime, nil
 }
 
-// GetGooseFSRuntime gets GooseFS Runtime object with the given name and namespace
-func GetGooseFSRuntime(client client.Reader, name, namespace string) (*datav1alpha1.GooseFSRuntime, error) {
-
-	key := types.NamespacedName{
-		Namespace: namespace,
-		Name:      name,
-	}
-	var runtime datav1alpha1.GooseFSRuntime
-	if err := client.Get(context.TODO(), key, &runtime); err != nil {
-		return nil, err
-	}
-	return &runtime, nil
-}
-
 // GetJuiceFSRuntime gets JuiceFS Runtime object with the given name and namespace
 func GetJuiceFSRuntime(client client.Reader, name, namespace string) (*datav1alpha1.JuiceFSRuntime, error) {
 
@@ -174,16 +160,4 @@ func GetCacheRuntime(client client.Reader, name, namespace string) (*datav1alpha
 	}
 
 	return &runtime, nil
-}
-
-func GetCacheRuntimeClass(client client.Client, name string) (*datav1alpha1.CacheRuntimeClass, error) {
-	key := types.NamespacedName{
-		Name: name,
-	}
-	var runtimeClass datav1alpha1.CacheRuntimeClass
-	if err := client.Get(context.TODO(), key, &runtimeClass); err != nil {
-		return nil, err
-	}
-
-	return &runtimeClass, nil
 }

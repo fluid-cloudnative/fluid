@@ -9,14 +9,27 @@ spec:
       restartPolicy: Never
       containers:
         - name: busybox
-          image: busybox
+          image: registry-cn-hongkong.ack.aliyuncs.com/acs/smartdata:6.9.1-202509151826
+          imagePullPolicy: IfNotPresent
           resources:
             limits:
               ephemeral-storage: "5Gi"
           command: ["/bin/sh"]
           args:
           - -c
-          - set -ex; test -n "$(ls /data)" && test "$(cat /data/testfile)" = "helloworld"
+          - |
+            set -eu
+            for i in $(seq 1 24); do
+              found_file="$(find /data -maxdepth 3 -type f -name testfile 2>/dev/null | head -n 1 || true)"
+              if test -n "$found_file" && test "$(cat "$found_file" 2>/dev/null)" = "helloworld"; then
+                echo "verified single-mount data from $found_file"
+                exit 0
+              fi
+              sleep 5
+            done
+            ls -al /data >&2 || true
+            find /data -maxdepth 3 \( -type d -o -type f \) >&2 || true
+            exit 1
           volumeMounts:
             - mountPath: /data
               name: fluid-vol

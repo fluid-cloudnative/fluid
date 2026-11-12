@@ -17,6 +17,7 @@ limitations under the License.
 package plugins
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -45,7 +46,6 @@ import (
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	"github.com/golang/glog"
 	csicommon "github.com/kubernetes-csi/drivers/pkg/csi-common"
-	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -134,9 +134,21 @@ func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 		mountType = common.AlluxioMountType
 	}
 
+	if !filepath.IsAbs(fluidPath) {
+		return nil, status.Errorf(codes.InvalidArgument, "%s must be an absolute path, but got \"%s\"", common.VolumeAttrFluidPath, fluidPath)
+	}
+	fluidPath = filepath.Clean(fluidPath)
+	if err := checkPathUnderMountRoot(common.VolumeAttrFluidPath, fluidPath); err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+
 	mountPath := fluidPath
 	if subPath != "" {
-		mountPath = fluidPath + "/" + subPath
+		subPath, err = utils.NormalizeSubPath(subPath)
+		if err != nil {
+			return nil, status.Errorf(codes.InvalidArgument, "invalid %s: %v", common.VolumeAttrFluidSubPath, err)
+		}
+		mountPath = filepath.Join(mountPath, subPath)
 	}
 
 	// 1. Wait the runtime fuse ready and check the sub path existence
@@ -159,6 +171,17 @@ func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 		}
 	}
 
+	// 2. Resolve the bind mount source below the FUSE mount point. Every component of subPath is
+	// opened without following symlinks, so a symlink planted anywhere under the mount point cannot
+	// redirect the mount to an arbitrary path on the host.
+	mountSource, closeMountSource, err := resolveMountSource(fluidPath, subPath)
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, err.Error())
+	}
+	// The source pins the resolved inode only while the descriptor is open, so it must outlive the
+	// mount call below.
+	defer closeMountSource()
+
 	// use symlink
 	if useSymlink(req) {
 		if err := utils.CreateSymlink(targetPath, mountPath); err != nil {
@@ -174,9 +197,9 @@ func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 	// }
 
 	if readOnly {
-		args = append(args, "-o", "ro", mountPath, targetPath)
+		args = append(args, "-o", "ro", mountSource, targetPath)
 	} else {
-		args = append(args, mountPath, targetPath)
+		args = append(args, mountSource, targetPath)
 	}
 	command, err := cmdguard.Command("mount", args...)
 	if err != nil {
@@ -390,6 +413,22 @@ func (ns *nodeServer) NodeGetCapabilities(ctx context.Context, req *csi.NodeGetC
 			},
 		},
 	}, nil
+}
+
+// checkPathUnderMountRoot rejects a path that does not live under the mount root configured via
+// the MOUNT_ROOT env. The path comes from PV volume attributes, which are not under CSI's control,
+// so an arbitrary host path such as "/etc" must not be accepted for mounting.
+func checkPathUnderMountRoot(attrName, path string) error {
+	mountRoot, err := utils.GetMountRoot()
+	if err != nil {
+		return errors.Wrapf(err, "failed to get mount root for validating %s \"%s\"", attrName, path)
+	}
+
+	if !utils.IsSubPath(mountRoot, path) {
+		return fmt.Errorf("%s \"%s\" must be under the mount root \"%s\"", attrName, path, mountRoot)
+	}
+
+	return nil
 }
 
 // getRuntimeNamespacedName first checks volume context for runtime's namespace and name as a fast path.

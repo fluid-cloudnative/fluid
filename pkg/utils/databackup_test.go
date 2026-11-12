@@ -169,6 +169,50 @@ func TestParseBackupRestorePath(t *testing.T) {
 
 }
 
+// TestParseBackupRestorePathRejectsShellMetacharacters checks that paths carrying shell
+// metacharacters or control characters are rejected at the parsing boundary, since the parsed
+// path is consumed by engine commands and rendered into Helm values.
+func TestParseBackupRestorePathRejectsShellMetacharacters(t *testing.T) {
+	rejected := []string{
+		"local:///tmp/a;b",
+		"local:///tmp/a&b",
+		"local:///tmp/a|b",
+		"local:///tmp/a$b",
+		"local:///tmp/a`b",
+		"local:///tmp/a'b",
+		"local:///tmp/a\"b",
+		"local:///tmp/a>b",
+		"local:///tmp/a<b",
+		"local:///tmp/a(b)c",
+		"local:///tmp/a*b",
+		"pvc://pvc1/a;b",
+		// Newlines and NUL are covered by the control-character check, which the
+		// metacharacter list alone would miss.
+		"local:///tmp/a\nb",
+		"local:///tmp/a\x00b",
+	}
+
+	for _, backupRestorePath := range rejected {
+		if _, _, err := ParseBackupRestorePath(backupRestorePath); err == nil {
+			t.Errorf("%q should be rejected, but err is nil", backupRestorePath)
+		}
+	}
+
+	// Ordinary paths must keep working.
+	legitimate := []string{
+		"local:///host1/erf",
+		"pvc://pvc1/erf",
+		"pvc://pvc1/sub-dir_1/a.b",
+		"local:///var/lib/fluid/backup",
+	}
+
+	for _, backupRestorePath := range legitimate {
+		if _, _, err := ParseBackupRestorePath(backupRestorePath); err != nil {
+			t.Errorf("%q should be accepted, but got err: %v", backupRestorePath, err)
+		}
+	}
+}
+
 func TestGetBackupUserDir(t *testing.T) {
 	tests := []struct {
 		name      string
@@ -222,25 +266,6 @@ func TestGetRpcPortFromMasterContainer(t *testing.T) {
 				},
 			},
 			wantRpcPort: 34,
-		},
-		{
-			name: "goosefs-test",
-			args: args{
-				container: &corev1.Container{
-					Name: "goosefs-master",
-					Ports: []corev1.ContainerPort{
-						{
-							Name:     "rpc",
-							HostPort: 44,
-						},
-						{
-							Name:     "rpc-test",
-							HostPort: 5202,
-						},
-					},
-				},
-			},
-			wantRpcPort: 44,
 		},
 	}
 	for _, tt := range tests {

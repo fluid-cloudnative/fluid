@@ -1,0 +1,91 @@
+{{- if eq (lower .Values.dataProcess.policy) "cron" }}
+apiVersion: {{ ternary "batch/v1" "batch/v1beta1" (.Capabilities.APIVersions.Has "batch/v1/CronJob") }}
+kind: CronJob
+metadata:
+  name: {{ printf "%s-job" .Release.Name }}
+  labels:
+    release: {{ .Release.Name }}
+    role: dataprocess-cronjob
+    app: fluid-dataprocess
+    targetDataset: {{ required "targetDataset should be set" .Values.dataProcess.targetDataset }}
+    fluid.io/jobPolicy: cron
+    {{- include "library.fluid.labels" . | nindent 4 }}
+  ownerReferences:
+  {{- if .Values.owner.enabled }}
+    - apiVersion: {{ .Values.owner.apiVersion }}
+      blockOwnerDeletion: {{ .Values.owner.blockOwnerDeletion }}
+      controller: {{ .Values.owner.controller }}
+      kind: {{ .Values.owner.kind }}
+      name: {{ .Values.owner.name }}
+      uid: {{ .Values.owner.uid }}
+  {{- end }}
+spec:
+  schedule: "{{ .Values.dataProcess.schedule }}"
+  jobTemplate:
+    spec:
+      backoffLimit: 3
+      completions: 1
+      parallelism: 1
+      template:
+        metadata:
+          name: {{ printf "%s-process" .Release.Name }}
+          annotations:
+            sidecar.istio.io/inject: "false"
+            {{- if .Values.dataProcess.annotations }}
+            {{ toYaml .Values.dataProcess.annotations | nindent 12 }}
+            {{- end }}
+          labels:
+            release: {{ .Release.Name }}
+            role: dataprocess-pod
+            app: fluid-dataprocess
+            cronjob: {{ printf "%s-job" .Release.Name }}
+            targetDataset: {{ required "targetDataset should be set" .Values.dataProcess.targetDataset }}
+            {{- include "library.fluid.labels" . | nindent 12 }}
+            {{- if .Values.dataProcess.labels }}
+            {{ toYaml .Values.dataProcess.labels | nindent 12 }}
+            {{- end }}
+        spec:
+          {{- if .Values.dataProcess.serviceAccountName }}
+          serviceAccountName: {{ .Values.dataProcess.serviceAccountName | quote }}
+          {{- end }}
+          {{- if .Values.dataProcess.jobProcessor.podSpec }}
+{{- toYaml .Values.dataProcess.jobProcessor.podSpec | nindent 10 }}
+          {{- else if .Values.dataProcess.scriptProcessor }}
+          restartPolicy: {{ .Values.dataProcess.scriptProcessor.restartPolicy | default "Never" | quote }}
+          containers:
+            - name: script-processor
+              image: {{ required "DataProcess image should be set" .Values.dataProcess.scriptProcessor.image }}
+              imagePullPolicy: {{ .Values.dataProcess.scriptProcessor.imagePullPolicy }}
+              {{- if .Values.dataProcess.scriptProcessor.command }}
+              command:
+              {{ toYaml .Values.dataProcess.scriptProcessor.command | nindent 14 }}
+              {{- end }}
+              args: ["/fluid-scripts/preprocess.sh"]
+              {{- if .Values.dataProcess.scriptProcessor.resources}}
+              resources:
+              {{- toYaml .Values.dataProcess.scriptProcessor.resources | nindent 16}}
+              {{- end }}
+              {{- if .Values.dataProcess.scriptProcessor.envs }}
+              env:
+              {{ toYaml .Values.dataProcess.scriptProcessor.envs | nindent 14 }}
+              {{- end }}
+              volumeMounts:
+                - name: script-cm-vol
+                  mountPath: /fluid-scripts/preprocess.sh
+                  subPath: preprocess.sh
+              {{- if .Values.dataProcess.scriptProcessor.volumeMounts }}
+                {{- toYaml .Values.dataProcess.scriptProcessor.volumeMounts | nindent 16 }}
+              {{- end }}
+          {{- if .Values.dataProcess.scriptProcessor.affinity }}
+          affinity:
+{{ toYaml .Values.dataProcess.scriptProcessor.affinity | indent 12  }}
+          {{- end }}
+          volumes:
+            - name: script-cm-vol
+              configMap:
+                name: {{ .Release.Name }}-scripts
+          {{- if .Values.dataProcess.scriptProcessor.volumes }}
+            {{- toYaml .Values.dataProcess.scriptProcessor.volumes | nindent 12 }}
+          {{- end }}
+          {{- end }}
+{{- end }}

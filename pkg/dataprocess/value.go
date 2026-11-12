@@ -30,6 +30,12 @@ type DataProcessValue struct {
 }
 
 type DataProcessInfo struct {
+	// Policy for DataProcess, including Once, Cron, OnEvent
+	Policy string `json:"policy"`
+
+	// Schedule The schedule in Cron format, only set when policy is cron, see https://en.wikipedia.org/wiki/Cron.
+	Schedule string `json:"schedule,omitempty"`
+
 	TargetDataset string `json:"targetDataset,omitempty"`
 
 	ServiceAccountName string `json:"serviceAccountName,omitempty"`

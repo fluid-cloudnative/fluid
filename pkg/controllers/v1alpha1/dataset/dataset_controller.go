@@ -66,6 +66,7 @@ type reconcileRequestContext struct {
 
 // +kubebuilder:rbac:groups=data.fluid.io,resources=datasets,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=data.fluid.io,resources=datasets/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=data.fluid.io,resources=thinruntimes,verbs=get;list;watch;create;update;patch;delete
 
 func (r *DatasetReconciler) Reconcile(context context.Context, req ctrl.Request) (ctrl.Result, error) {
 	ctx := reconcileRequestContext{
@@ -266,6 +267,9 @@ func (r *DatasetReconciler) SetupWithManager(mgr ctrl.Manager, options controlle
 	return ctrl.NewControllerManagedBy(mgr).
 		WithOptions(options).
 		For(&datav1alpha1.Dataset{}).
+		// Watch the ThinRuntime created for a reference dataset, so that the owning dataset is
+		// reconciled again (and the runtime is re-created) once the runtime is deleted or lost.
+		Owns(&datav1alpha1.ThinRuntime{}).
 		Complete(r)
 }
 

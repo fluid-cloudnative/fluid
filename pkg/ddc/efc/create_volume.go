@@ -29,7 +29,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func (e *EFCEngine) CreateVolume() (err error) {
+func (e *EFCEngine) CreateVolume(ctx context.Context) (err error) {
 	if e.runtime == nil {
 		e.runtime, err = e.getRuntime()
 		if err != nil {
@@ -37,12 +37,12 @@ func (e *EFCEngine) CreateVolume() (err error) {
 		}
 	}
 
-	err = e.createFusePersistentVolume()
+	err = e.createFusePersistentVolume(ctx)
 	if err != nil {
 		return err
 	}
 
-	err = e.createFusePersistentVolumeClaim()
+	err = e.createFusePersistentVolumeClaim(ctx)
 	if err != nil {
 		return err
 	}
@@ -50,7 +50,7 @@ func (e *EFCEngine) CreateVolume() (err error) {
 }
 
 // createFusePersistentVolume
-func (e *EFCEngine) createFusePersistentVolume() (err error) {
+func (e *EFCEngine) createFusePersistentVolume(ctx context.Context) (err error) {
 	runtimeInfo, err := e.getRuntimeInfo()
 	if err != nil {
 		return err
@@ -63,33 +63,33 @@ func (e *EFCEngine) createFusePersistentVolume() (err error) {
 	// e.g. /runtime-mnt/efc-sock
 	sessMgrWorkDir := filepath.Join(mountRoot, "efc-sock")
 
-	return e.createPersistentVolumeForRuntime(runtimeInfo, e.getMountPath(), common.EFCMountType, sessMgrWorkDir)
+	return e.createPersistentVolumeForRuntime(ctx, runtimeInfo, e.getMountPath(), common.EFCMountType, sessMgrWorkDir)
 }
 
 // createFusePersistentVolume
-func (e *EFCEngine) createFusePersistentVolumeClaim() (err error) {
+func (e *EFCEngine) createFusePersistentVolumeClaim(ctx context.Context) (err error) {
 	runtimeInfo, err := e.getRuntimeInfo()
 	if err != nil {
 		return err
 	}
 
-	return volumehelper.CreatePersistentVolumeClaimForRuntime(e.Client, runtimeInfo, e.Log)
+	return volumehelper.CreatePersistentVolumeClaimForRuntime(ctx, e.Client, runtimeInfo, e.Log)
 }
 
-func (e *EFCEngine) createPersistentVolumeForRuntime(runtime base.RuntimeInfoInterface, mountPath string, mountType string, sessMgrWorkDir string) error {
-	accessModes, err := utils.GetAccessModesOfDataset(e.Client, runtime.GetName(), runtime.GetNamespace())
+func (e *EFCEngine) createPersistentVolumeForRuntime(ctx context.Context, runtime base.RuntimeInfoInterface, mountPath string, mountType string, sessMgrWorkDir string) error {
+	accessModes, err := utils.GetAccessModesOfDatasetWithContext(ctx, e.Client, runtime.GetName(), runtime.GetNamespace())
 	if err != nil {
 		return err
 	}
 
-	storageCapacity, err := utils.GetPVCStorageCapacityOfDataset(e.Client, runtime.GetName(), runtime.GetNamespace())
+	storageCapacity, err := utils.GetPVCStorageCapacityOfDatasetWithContext(ctx, e.Client, runtime.GetName(), runtime.GetNamespace())
 	if err != nil {
 		return err
 	}
 
 	pvName := runtime.GetPersistentVolumeName()
 
-	found, err := kubeclient.IsPersistentVolumeExist(e.Client, pvName, common.GetExpectedFluidAnnotations())
+	found, err := kubeclient.IsPersistentVolumeExistWithContext(ctx, e.Client, pvName, common.GetExpectedFluidAnnotations())
 	if err != nil {
 		return err
 	}
@@ -164,7 +164,7 @@ func (e *EFCEngine) createPersistentVolumeForRuntime(runtime base.RuntimeInfoInt
 				},
 			}
 		}
-		err = e.Client.Create(context.TODO(), pv)
+		err = e.Client.Create(ctx, pv)
 		if err != nil {
 			return err
 		}

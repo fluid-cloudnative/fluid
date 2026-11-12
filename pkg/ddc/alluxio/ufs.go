@@ -25,6 +25,9 @@ import (
 	"os"
 )
 
+// IsMountWithConfigMap checks if the mount configuration is stored in a ConfigMap.
+// It looks up the environment variable MountConfigStorage and compares it to ConfigmapStorageName.
+// If the environment variable is set, it returns whether it matches ConfigmapStorageName; otherwise, it returns the default value true.
 func IsMountWithConfigMap() bool {
 	if envVal, exists := os.LookupEnv(MountConfigStorage); exists {
 		return envVal == ConfigmapStorageName
@@ -112,6 +115,10 @@ func (e *AlluxioEngine) PrepareUFS() (err error) {
 	return
 }
 
+// ShouldUpdateUFS determines whether the UFS configuration needs to be updated.
+// It retrieves the current dataset, analyzes the path differences to identify
+// which UFS entries require updates, and checks whether remounting is needed
+// for hostpath UFS mounts before returning the update result.
 func (e *AlluxioEngine) ShouldUpdateUFS() (ufsToUpdate *utils.UFSToUpdate) {
 	// 1. get the dataset
 	dataset, err := utils.GetDataset(e.Client, e.name, e.namespace)
@@ -130,6 +137,16 @@ func (e *AlluxioEngine) ShouldUpdateUFS() (ufsToUpdate *utils.UFSToUpdate) {
 	return
 }
 
+// UpdateOnUFSChange handles the updates when the Underlying File System (UFS) changes.
+// It checks if an update is required, sets the dataset status to Updating, and processes
+// the added or removed mount points for the Alluxio engine.
+//
+// Parameters:
+// - ufsToUpdate (*utils.UFSToUpdate): The object containing information about which UFS paths need to be updated.
+//
+// Returns:
+// - updateReady (bool): Returns true when the update process has completed.
+// - err (error): Returns an error if the status update or UFS processing fails, otherwise returns nil.
 func (e *AlluxioEngine) UpdateOnUFSChange(ufsToUpdate *utils.UFSToUpdate) (updateReady bool, err error) {
 	// 1. check if need to update ufs
 	if !ufsToUpdate.ShouldUpdate() {
@@ -156,6 +173,16 @@ func (e *AlluxioEngine) UpdateOnUFSChange(ufsToUpdate *utils.UFSToUpdate) (updat
 	return
 }
 
+// checkIfRemountRequired checks whether a remount operation is needed for the given UFS.
+// It compares the runtime's MountTime with the Alluxio master container's start time.
+// If the master container started after the last mount, the in-memory mount state may not
+// have survived the restart, so it finds unmounted UFS paths and adds them to ufsToUpdate
+// for remount scheduling. If no paths need remounting, it refreshes the runtime's MountTime
+// to prevent the check from re-firing on every reconcile.
+//
+// Parameters:
+//   - ufsToUpdate (*utils.UFSToUpdate): An in/out parameter that may be mutated via
+//     AddMountPaths to carry unmounted paths back to the caller for remount scheduling.
 func (e *AlluxioEngine) checkIfRemountRequired(ufsToUpdate *utils.UFSToUpdate) {
 	runtime, err := e.getRuntime()
 	if err != nil {
@@ -216,6 +243,8 @@ func (e *AlluxioEngine) ShouldSyncDatasetMounts() (should bool, err error) {
 	return false, nil
 }
 
+// SyncDatasetMounts is a no-op for the Alluxio engine.
+// Mount synchronization is not currently required for Alluxio runtimes.
 func (e *AlluxioEngine) SyncDatasetMounts() (err error) {
 	return nil
 }

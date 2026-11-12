@@ -1,4 +1,4 @@
-package plugins_test
+package plugins
 
 import (
 	"testing"

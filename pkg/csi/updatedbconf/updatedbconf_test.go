@@ -111,11 +111,11 @@ var _ = Describe("updateConfig", func() {
 			content := `PRUNE_BIND_MOUNTS="yes"
 PRUNEPATHS="/tmp /var/spool /media /var/lib/os-prober /var/lib/ceph /home/.ecryptfs /var/lib/schroot"
 PRUNEFS="foo bar"`
-			newFs := []string{"fuse.alluxio-fuse", "fuse.jindofs-fuse", "JuiceFS", "fuse.goosefs-fuse"}
+			newFs := []string{"fuse.alluxio-fuse", "fuse.jindofs-fuse", "JuiceFS"}
 			newPaths := []string{"/runtime-mnt"}
 			want := `PRUNE_BIND_MOUNTS="yes"
 PRUNEPATHS="/tmp /var/spool /media /var/lib/os-prober /var/lib/ceph /home/.ecryptfs /var/lib/schroot /runtime-mnt"
-PRUNEFS="foo bar fuse.alluxio-fuse fuse.jindofs-fuse JuiceFS fuse.goosefs-fuse"`
+PRUNEFS="foo bar fuse.alluxio-fuse fuse.jindofs-fuse JuiceFS"`
 
 			got, err := updateConfig(content, newFs, newPaths)
 			Expect(err).ToNot(HaveOccurred())
@@ -128,11 +128,11 @@ PRUNEFS="foo bar fuse.alluxio-fuse fuse.jindofs-fuse JuiceFS fuse.goosefs-fuse"`
 			content := `PRUNE_BIND_MOUNTS="yes"
 PRUNEPATHS="/tmp /var/spool /media /var/lib/os-prober /var/lib/ceph /home/.ecryptfs /var/lib/schroot /runtime-mnt"
 PRUNEFS="foo bar"`
-			newFs := []string{"fuse.alluxio-fuse", "fuse.jindofs-fuse", "JuiceFS", "fuse.goosefs-fuse"}
+			newFs := []string{"fuse.alluxio-fuse", "fuse.jindofs-fuse", "JuiceFS"}
 			newPaths := []string{"/runtime-mnt"}
 			want := `PRUNE_BIND_MOUNTS="yes"
 PRUNEPATHS="/tmp /var/spool /media /var/lib/os-prober /var/lib/ceph /home/.ecryptfs /var/lib/schroot /runtime-mnt"
-PRUNEFS="foo bar fuse.alluxio-fuse fuse.jindofs-fuse JuiceFS fuse.goosefs-fuse"`
+PRUNEFS="foo bar fuse.alluxio-fuse fuse.jindofs-fuse JuiceFS"`
 
 			got, err := updateConfig(content, newFs, newPaths)
 			Expect(err).ToNot(HaveOccurred())
@@ -143,10 +143,10 @@ PRUNEFS="foo bar fuse.alluxio-fuse fuse.jindofs-fuse JuiceFS fuse.goosefs-fuse"`
 	Context("when path or fs config is empty", func() {
 		It("should add new configuration lines", func() {
 			content := `PRUNE_BIND_MOUNTS="yes"`
-			newFs := []string{"fuse.alluxio-fuse", "fuse.jindofs-fuse", "JuiceFS", "fuse.goosefs-fuse"}
+			newFs := []string{"fuse.alluxio-fuse", "fuse.jindofs-fuse", "JuiceFS"}
 			newPaths := []string{"/runtime-mnt"}
 			want := `PRUNE_BIND_MOUNTS="yes"
-PRUNEFS="fuse.alluxio-fuse fuse.jindofs-fuse JuiceFS fuse.goosefs-fuse"
+PRUNEFS="fuse.alluxio-fuse fuse.jindofs-fuse JuiceFS"
 PRUNEPATHS="/runtime-mnt"`
 
 			got, err := updateConfig(content, newFs, newPaths)

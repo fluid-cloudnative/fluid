@@ -344,7 +344,7 @@ func TestJuiceFSFileUtils_QueryMetaDataInfoIntoFile(t *testing.T) {
 	defer patches.Reset()
 	a := JuiceFileUtils{log: fake.NullLogger()}
 
-	keySets := []KeyOfMetaDataFile{DatasetName, Namespace, UfsTotal, FileNum, ""}
+	keySets := []KeyOfMetaDataFile{DatasetName, Namespace, UfsTotal, FileNum}
 	for index, keySet := range keySets {
 		_, err := a.QueryMetaDataInfoIntoFile(keySet, "/tmp/file")
 		if err == nil {
@@ -360,6 +360,61 @@ func TestJuiceFSFileUtils_QueryMetaDataInfoIntoFile(t *testing.T) {
 			t.Errorf("%d check failure, want nil, got err: %v", index, err)
 			return
 		}
+	}
+
+}
+
+// TestJuiceFSFileUtils_QueryMetaDataInfoIntoFileUnknownKey checks that an unrecognized key is
+// rejected by QueryMetaDataInfoIntoFile itself, before exec is reached, so it needs no stub.
+func TestJuiceFSFileUtils_QueryMetaDataInfoIntoFileUnknownKey(t *testing.T) {
+	a := JuiceFileUtils{log: fake.NullLogger()}
+	value, err := a.QueryMetaDataInfoIntoFile("bogus", "/tmp/file")
+	if err == nil {
+		t.Errorf("unknown key should return an error, got value %q", value)
+	}
+	if value != "" {
+		t.Errorf("unknown key should return an empty value, got %q", value)
+	}
+}
+
+// TestMetaDataQueryCommand asserts sed receives its script and filename as separate argv
+// elements, so the file name is passed through verbatim instead of being parsed as a script.
+func TestMetaDataQueryCommand(t *testing.T) {
+	var tests = []struct {
+		key  KeyOfMetaDataFile
+		want []string
+	}{
+		{DatasetName, []string{"sed", "-n", "1p", "/tmp/file"}},
+		{Namespace, []string{"sed", "-n", "2p", "/tmp/file"}},
+		{UfsTotal, []string{"sed", "-n", "3p", "/tmp/file"}},
+		{FileNum, []string{"sed", "-n", "4p", "/tmp/file"}},
+	}
+	for _, test := range tests {
+		got, err := metaDataQueryCommand(test.key, "/tmp/file")
+		if err != nil {
+			t.Errorf("key %s: unexpected error: %v", test.key, err)
+			continue
+		}
+		if !reflect.DeepEqual(got, test.want) {
+			t.Errorf("key %s: want %v, got %v", test.key, test.want, got)
+		}
+	}
+
+	// An unrecognized key must fail instead of running sed with an empty script.
+	if _, err := metaDataQueryCommand("", "/tmp/file"); err == nil {
+		t.Error("unknown key should return an error, got nil")
+	}
+
+	// A file name containing spaces must stay in a single argv element. Joining it into a
+	// shell string would word-split it into several sed operands.
+	pathWithSpace := "/pvc/tmp/dir with space/metadata.yaml"
+	got, err := metaDataQueryCommand(FileNum, pathWithSpace)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	want := []string{"sed", "-n", "4p", pathWithSpace}
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("file name must be a single argv element\nwant: %v\ngot:  %v", want, got)
 	}
 }
 

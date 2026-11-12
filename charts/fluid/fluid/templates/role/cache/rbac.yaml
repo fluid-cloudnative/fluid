@@ -5,98 +5,28 @@ metadata:
   name: cacheruntime-controller
 rules:
   - apiGroups:
-    - ""
+      - ""
     resources:
-    - namespaces
+      - namespaces
     verbs:
-    - get
-    - list
-    - watch
+      - get
+      - list
+      - watch
   - apiGroups:
-    - ""
+      - ""
     resources:
-    - configmaps
+      - configmaps
     verbs:
-    - get
-    - list
-    - watch
-    - create
-    - update
-    - patch
-    - delete
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - delete
   - apiGroups:
-    - ""
+      - ""
     resources:
-    - persistentvolumeclaims
-    verbs:
-    - get
-    - list
-    - watch
-    - create
-    - update
-    - patch
-    - delete
-  - apiGroups:
-    - ""
-    resources:
-    - persistentvolumes
-    verbs:
-    - get
-    - list
-    - watch
-    - create
-    - delete
-  - apiGroups:
-    - ""
-    resources:
-    - pods
-    verbs:
-    - get
-    - list
-    - watch
-    - update
-  - apiGroups:
-    - ""
-    resources:
-    - pods/exec
-    verbs:
-    - create
-  - apiGroups:
-    - ""
-    resources:
-    - nodes
-    verbs:
-    - get
-    - list
-    - watch
-    - patch
-  - apiGroups:
-    - ""
-    resources:
-    - events
-    verbs:
-    - create
-    - patch
-  - apiGroups:
-    - ""
-    resources:
-    - services
-    verbs:
-    - create
-    - patch
-    - delete
-    - list
-    - watch
-    - get
-  - apiGroups:
-      - data.fluid.io
-    resources:
-      - cacheruntimes
-      - cacheruntimeclasses
-      - datasets
-      - cacheruntimes/status
-      - cacheruntimeclasses/status
-      - datasets/status
+      - persistentvolumeclaims
     verbs:
       - get
       - list
@@ -108,29 +38,17 @@ rules:
   - apiGroups:
       - ""
     resources:
-      - serviceaccounts
+      - persistentvolumes
     verbs:
-      - create
-      - list
       - get
+      - list
+      - watch
+      - create
       - delete
   - apiGroups:
-      - rbac.authorization.k8s.io
+      - ""
     resources:
-      - clusterroles
-      - clusterrolebindings
-    verbs:
-      - create
-      - list
-      - get
-      - delete
-  - apiGroups:
-      - apps
-    resources:
-      - daemonsets
-      - statefulsets
-      - daemonsets/status
-      - statefulsets/status
+      - pods
     verbs:
       - get
       - list
@@ -139,6 +57,122 @@ rules:
       - update
       - patch
       - delete
+  - apiGroups:
+      - ""
+    resources:
+      - pods/status
+    verbs:
+      - get
+      - update
+      - patch
+  - apiGroups:
+      - ""
+    resources:
+      - pods/exec
+    verbs:
+      - create
+  - apiGroups:
+      - ""
+    resources:
+      - nodes
+    verbs:
+      - get
+      - list
+      - watch
+      - patch
+  - apiGroups:
+      - ""
+    resources:
+      - events
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - patch
+      - delete
+  - apiGroups:
+      - ""
+    resources:
+      - services
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - delete
+  - apiGroups:
+      - data.fluid.io
+    resources:
+      - cacheruntimes
+      - cacheruntimes/status
+      - cacheruntimes/finalizers
+      - datasets
+      - datasets/status
+    verbs:
+      - get
+      - list
+      - watch
+      - update
+      - patch
+  - apiGroups:
+      - data.fluid.io
+    resources:
+      - cacheruntimeclasses
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - apps
+    resources:
+      - controllerrevisions
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - patch
+      - delete
+  - apiGroups:
+      - apps
+    resources:
+      - daemonsets
+      - daemonsets/status
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - patch
+  - apiGroups:
+      - workload.fluid.io
+    resources:
+      - advancedstatefulsets
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - update
+      - patch
+  - apiGroups:
+      - workload.fluid.io
+    resources:
+      - advancedstatefulsets/status
+    verbs:
+      - get
+      - update
+      - patch
+  - apiGroups:
+      - workload.fluid.io
+    resources:
+      - advancedstatefulsets/finalizers
+    verbs:
+      - update
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role

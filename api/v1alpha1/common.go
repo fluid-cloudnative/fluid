@@ -198,7 +198,7 @@ type MetadataSyncPolicy struct {
 }
 
 func (msb *MetadataSyncPolicy) AutoSyncEnabled() bool {
-	return msb.AutoSync == nil || *msb.AutoSync
+	return msb == nil || msb.AutoSync == nil || *msb.AutoSync
 }
 
 // VersionSpec represents the settings for the  version that fluid is orchestrating.
@@ -317,4 +317,37 @@ type ClientMetrics struct {
 	// It is a list separated by comma where supported items are [MountPod, Sidecar, All (indicates MountPod and Sidecar), None].
 	// Defaults to None when it is not explicitly set.
 	ScrapeTarget string `json:"scrapeTarget,omitempty"`
+}
+
+type CacheRuntimeMountUfsOutput struct {
+	// Mounted are the ufs paths that have been mounted.
+	Mounted []string `json:"mounted,omitempty"`
+}
+
+// CacheRuntimeReportSummary defines the return structure for ReportSummary execution entry.
+// It contains cache status information such as capacity, hit ratio, and cached data size.
+type CacheRuntimeReportSummary struct {
+	// Cached is the amount of data cached, in bytes.
+	// +optional
+	Cached string `json:"cached,omitempty"`
+
+	// CachedPercentage is the percentage of data cached over the total data in the underlying filesystem.
+	// +optional
+	CachedPercentage string `json:"cachedPercentage,omitempty"`
+
+	// CacheCapacity is the total cache capacity, in bytes.
+	// +optional
+	CacheCapacity string `json:"cacheCapacity,omitempty"`
+
+	// CacheHitRatio defines the total cache hit ratio (both local hit and remote hit).
+	// +optional
+	CacheHitRatio string `json:"cacheHitRatio,omitempty"`
+
+	// FileNum represents the file numbers of the dataset
+	// +optional
+	FileNum string `json:"fileNum,omitempty"`
+
+	// UfsTotal is the total size of the dataset in the cluster, in GB.
+	// +optional
+	UfsTotal string `json:"ufsTotal,omitempty"`
 }

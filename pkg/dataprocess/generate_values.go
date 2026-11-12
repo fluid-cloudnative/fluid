@@ -110,6 +110,8 @@ func GenDataProcessValue(dataset *datav1alpha1.Dataset, dataProcess *datav1alpha
 
 func transformCommonPart(value *DataProcessValue, dataProcess *datav1alpha1.DataProcess) {
 	value.Name = dataProcess.Name
+	value.DataProcessInfo.Policy = string(dataProcess.Spec.Policy)
+	value.DataProcessInfo.Schedule = dataProcess.Spec.Schedule
 	value.DataProcessInfo.Labels = dataProcess.Spec.Processor.PodMetadata.Labels
 	value.DataProcessInfo.Annotations = dataflow.InjectAffinityAnnotation(dataProcess.Annotations, dataProcess.Spec.Processor.PodMetadata.Annotations)
 	value.Owner = transformer.GenerateOwnerReferenceFromObject(dataProcess)

@@ -213,6 +213,9 @@ var _ = Describe("AlluxioEngine setup master internal tests", Label("pkg.ddc.all
 	})
 })
 
+// TestGetConfigmapName verifies that getHelmValuesConfigMapName()
+// returns the expected ConfigMap name generated from the engine name
+// and implementation type.
 func TestGetConfigmapName(t *testing.T) {
 	engine := AlluxioEngine{
 		name:       "hbase",

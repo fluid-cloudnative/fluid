@@ -10,6 +10,10 @@ owner:
   controller: false
 
 dataProcess:
+  # policy for DataProcess: Once, Cron, OnEvent
+  policy: ""
+  # schedule for cron policy, see https://en.wikipedia.org/wiki/Cron
+  schedule: ""
   targetDataset: ""
   labels: {}
   annotations: {}

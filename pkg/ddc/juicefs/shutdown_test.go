@@ -44,8 +44,8 @@ import (
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
-	"github.com/fluid-cloudnative/fluid/pkg/utils/helm"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/testutil"
 )
 
 const (
@@ -105,6 +105,8 @@ func mockRunningPodsOfStatefulSet() (pods []corev1.Pod) {
 }
 
 func TestDestroyWorker(t *testing.T) {
+	t.Setenv(testutil.FluidUnitTestEnv, "true")
+
 	// runtimeInfoSpark tests destroy Worker in exclusive mode.
 	runtimeInfoSpark, err := base.BuildRuntimeInfo("spark", "fluid", common.JuiceFSRuntime)
 	if err != nil {
@@ -179,6 +181,29 @@ func TestDestroyWorker(t *testing.T) {
 	testNodes := []runtime.Object{}
 	for _, nodeInput := range nodeInputs {
 		testNodes = append(testNodes, nodeInput.DeepCopy())
+	}
+	runtimeInputs := []*datav1alpha1.JuiceFSRuntime{
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      runtimeInfoSpark.GetName(),
+				Namespace: runtimeInfoSpark.GetNamespace(),
+			},
+			Spec: datav1alpha1.JuiceFSRuntimeSpec{
+				Fuse: datav1alpha1.JuiceFSFuseSpec{},
+			},
+		},
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      runtimeInfoHadoop.GetName(),
+				Namespace: runtimeInfoHadoop.GetNamespace(),
+			},
+			Spec: datav1alpha1.JuiceFSRuntimeSpec{
+				Fuse: datav1alpha1.JuiceFSFuseSpec{},
+			},
+		},
+	}
+	for _, runtimeInput := range runtimeInputs {
+		testNodes = append(testNodes, runtimeInput.DeepCopy())
 	}
 
 	client := fake.NewFakeClientWithScheme(testScheme, testNodes...)
@@ -285,6 +310,12 @@ func TestJuiceFSEngine_destroyMaster(t *testing.T) {
 	mockExecDeleteReleaseErr := func(name string, namespace string) error {
 		return errors.New("fail to delete chart")
 	}
+	originalCheckHelmRelease := checkHelmRelease
+	originalDeleteHelmRelease := deleteHelmRelease
+	t.Cleanup(func() {
+		checkHelmRelease = originalCheckHelmRelease
+		deleteHelmRelease = originalDeleteHelmRelease
+	})
 
 	fakeClient := fake.NewFakeClientWithScheme(testScheme)
 	engine := JuiceFSEngine{
@@ -300,40 +331,34 @@ func TestJuiceFSEngine_destroyMaster(t *testing.T) {
 	}
 
 	// check release found & delete common
-	checkReleasePatch := ApplyFunc(helm.CheckRelease, mockExecCheckReleaseCommonFound)
-	deleteReleasePatch := ApplyFunc(helm.DeleteRelease, mockExecDeleteReleaseCommon)
+	checkHelmRelease = mockExecCheckReleaseCommonFound
+	deleteHelmRelease = mockExecDeleteReleaseCommon
 	err := engine.destroyMaster()
 	if err != nil {
 		t.Errorf("fail to exec check helm release: %v", err)
 	}
-	checkReleasePatch.Reset()
-	deleteReleasePatch.Reset()
 
 	// check release not found
-	checkReleasePatch.ApplyFunc(helm.CheckRelease, mockExecCheckReleaseCommonNotFound)
+	checkHelmRelease = mockExecCheckReleaseCommonNotFound
 	err = engine.destroyMaster()
 	if err != nil {
 		t.Errorf("fail to exec check helm release: %v", err)
 	}
-	checkReleasePatch.Reset()
 
 	// check release error
-	checkReleasePatch.ApplyFunc(helm.CheckRelease, mockExecCheckReleaseErr)
+	checkHelmRelease = mockExecCheckReleaseErr
 	err = engine.destroyMaster()
 	if err == nil {
 		t.Errorf("fail to exec check helm release: %v", err)
 	}
-	checkReleasePatch.Reset()
 
 	// check release found & delete common error
-	checkReleasePatch.ApplyFunc(helm.CheckRelease, mockExecCheckReleaseCommonFound)
-	deleteReleasePatch.ApplyFunc(helm.DeleteRelease, mockExecDeleteReleaseErr)
+	checkHelmRelease = mockExecCheckReleaseCommonFound
+	deleteHelmRelease = mockExecDeleteReleaseErr
 	err = engine.destroyMaster()
 	if err == nil {
 		t.Errorf("fail to exec check helm release: %v", err)
 	}
-	checkReleasePatch.Reset()
-	deleteReleasePatch.Reset()
 }
 
 func TestJuiceFSEngine_cleanupCache(t *testing.T) {
@@ -379,21 +404,26 @@ func TestJuiceFSEngine_cleanupCache(t *testing.T) {
 
 	testObjs := []runtime.Object{testRuntime.DeepCopy(), testRuntimeWithTiredStore.DeepCopy(), testConfigMap.DeepCopy()}
 	client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
+	originalGetRunningJuiceFSWorkerPods := getRunningJuiceFSWorkerPods
+	originalDeleteJuiceFSCacheDirs := deleteJuiceFSCacheDirs
+	resetCleanupSeams := func() {
+		getRunningJuiceFSWorkerPods = originalGetRunningJuiceFSWorkerPods
+		deleteJuiceFSCacheDirs = originalDeleteJuiceFSCacheDirs
+	}
+	mockRunningWorkerPods := func(_ *JuiceFSEngine, _ string, _ string) ([]corev1.Pod, error) {
+		return mockRunningPodsOfStatefulSet(), nil
+	}
+	unexpectedDeleteCacheDirs := func(_ operations.JuiceFileUtils, _ []string) error {
+		return errors.New("delete cache dirs should not be called")
+	}
 
 	Convey("Test CleanupCache ", t, func() {
 		Convey("cleanup success", func() {
-			var engine *JuiceFSEngine
-			patch1 := ApplyMethod(reflect.TypeOf(engine), "GetRunningPodsOfStatefulSet",
-				func(_ *JuiceFSEngine, dsName string, namespace string) ([]corev1.Pod, error) {
-					r := mockRunningPodsOfStatefulSet()
-					return r, nil
-				})
-			defer patch1.Reset()
-			patch2 := ApplyMethod(reflect.TypeOf(operations.JuiceFileUtils{}), "DeleteCacheDirs",
-				func(_ operations.JuiceFileUtils, cacheDirs []string) error {
-					return nil
-				})
-			defer patch2.Reset()
+			defer resetCleanupSeams()
+			getRunningJuiceFSWorkerPods = mockRunningWorkerPods
+			deleteJuiceFSCacheDirs = func(_ operations.JuiceFileUtils, _ []string) error {
+				return nil
+			}
 
 			e := &JuiceFSEngine{
 				name:        "test",
@@ -408,18 +438,11 @@ func TestJuiceFSEngine_cleanupCache(t *testing.T) {
 			So(got, ShouldEqual, nil)
 		})
 		Convey("test1", func() {
-			var engine *JuiceFSEngine
-			patch1 := ApplyMethod(reflect.TypeOf(engine), "GetRunningPodsOfStatefulSet",
-				func(_ *JuiceFSEngine, dsName string, namespace string) ([]corev1.Pod, error) {
-					r := mockRunningPodsOfStatefulSet()
-					return r, nil
-				})
-			defer patch1.Reset()
-			patch2 := ApplyMethod(reflect.TypeOf(operations.JuiceFileUtils{}), "DeleteCacheDirs",
-				func(_ operations.JuiceFileUtils, cacheDirs []string) error {
-					return errors.New("delete dir error")
-				})
-			defer patch2.Reset()
+			defer resetCleanupSeams()
+			getRunningJuiceFSWorkerPods = mockRunningWorkerPods
+			deleteJuiceFSCacheDirs = func(_ operations.JuiceFileUtils, _ []string) error {
+				return errors.New("delete dir error")
+			}
 
 			e := &JuiceFSEngine{
 				name:      "test",
@@ -433,18 +456,11 @@ func TestJuiceFSEngine_cleanupCache(t *testing.T) {
 			So(got, ShouldNotBeNil)
 		})
 		Convey("test2", func() {
-			var engine *JuiceFSEngine
-			patch1 := ApplyMethod(reflect.TypeOf(engine), "GetRunningPodsOfStatefulSet",
-				func(_ *JuiceFSEngine, dsName string, namespace string) ([]corev1.Pod, error) {
-					r := mockRunningPodsOfStatefulSet()
-					return r, nil
-				})
-			defer patch1.Reset()
-			patch2 := ApplyMethod(reflect.TypeOf(operations.JuiceFileUtils{}), "DeleteCacheDirs",
-				func(_ operations.JuiceFileUtils, cacheDirs []string) error {
-					return errors.New("delete dir error")
-				})
-			defer patch2.Reset()
+			defer resetCleanupSeams()
+			getRunningJuiceFSWorkerPods = mockRunningWorkerPods
+			deleteJuiceFSCacheDirs = func(_ operations.JuiceFileUtils, _ []string) error {
+				return errors.New("delete dir error")
+			}
 
 			e := &JuiceFSEngine{
 				name:      "test",
@@ -458,12 +474,11 @@ func TestJuiceFSEngine_cleanupCache(t *testing.T) {
 			So(got, ShouldNotBeNil)
 		})
 		Convey("test3", func() {
-			var engine *JuiceFSEngine
-			patch1 := ApplyMethod(reflect.TypeOf(engine), "GetRunningPodsOfStatefulSet",
-				func(_ *JuiceFSEngine, dsName string, namespace string) ([]corev1.Pod, error) {
-					return []corev1.Pod{}, apierrs.NewNotFound(schema.GroupResource{}, "test")
-				})
-			defer patch1.Reset()
+			defer resetCleanupSeams()
+			getRunningJuiceFSWorkerPods = func(_ *JuiceFSEngine, _ string, _ string) ([]corev1.Pod, error) {
+				return []corev1.Pod{}, apierrs.NewNotFound(schema.GroupResource{}, "test")
+			}
+			deleteJuiceFSCacheDirs = unexpectedDeleteCacheDirs
 
 			e := &JuiceFSEngine{
 				name:      "test",
@@ -477,12 +492,11 @@ func TestJuiceFSEngine_cleanupCache(t *testing.T) {
 			So(got, ShouldEqual, nil)
 		})
 		Convey("test4", func() {
-			var engine *JuiceFSEngine
-			patch1 := ApplyMethod(reflect.TypeOf(engine), "GetRunningPodsOfStatefulSet",
-				func(_ *JuiceFSEngine, dsName string, namespace string) ([]corev1.Pod, error) {
-					return []corev1.Pod{}, errors.New("new error")
-				})
-			defer patch1.Reset()
+			defer resetCleanupSeams()
+			getRunningJuiceFSWorkerPods = func(_ *JuiceFSEngine, _ string, _ string) ([]corev1.Pod, error) {
+				return []corev1.Pod{}, errors.New("new error")
+			}
+			deleteJuiceFSCacheDirs = unexpectedDeleteCacheDirs
 
 			e := &JuiceFSEngine{
 				name:      "test",
@@ -513,6 +527,10 @@ func TestJuiceFSEngine_getUUID_community(t *testing.T) {
 	ExecErr := func(a operations.JuiceFileUtils, source string) (status string, err error) {
 		return "", errors.New("fail to run the command")
 	}
+	originalGetJuiceFSStatus := getJuiceFSStatus
+	t.Cleanup(func() {
+		getJuiceFSStatus = originalGetJuiceFSStatus
+	})
 	pod := corev1.Pod{}
 	e := JuiceFSEngine{
 		name:        "test",
@@ -523,14 +541,13 @@ func TestJuiceFSEngine_getUUID_community(t *testing.T) {
 		Client:      client,
 	}
 
-	patches := ApplyMethod(operations.JuiceFileUtils{}, "GetStatus", ExecErr)
-	defer patches.Reset()
+	getJuiceFSStatus = ExecErr
 	_, err := e.getUUID(pod, common.JuiceFSWorkerContainer)
 	if err == nil {
 		t.Error("getUUID failure, want err, got nil")
 	}
 
-	patches.ApplyMethod(operations.JuiceFileUtils{}, "GetStatus", ExecCommon)
+	getJuiceFSStatus = ExecCommon
 	got, err := e.getUUID(pod, common.JuiceFSWorkerContainer)
 	if err != nil {
 		t.Errorf("getUUID failure, want nil, got err: %v", err)

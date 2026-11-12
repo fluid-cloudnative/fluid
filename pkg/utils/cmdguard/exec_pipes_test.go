@@ -62,11 +62,6 @@ var _ = Describe("ValidateShellPipeString", func() {
 			Expect(err).NotTo(HaveOccurred())
 		})
 
-		It("should accept command with goosefs as first command", func() {
-			err := validateShellPipeString("goosefs fs ls / | grep data")
-			Expect(err).NotTo(HaveOccurred())
-		})
-
 		// Test for allowed piped commands
 		It("should accept command with wc -l", func() {
 			err := validateShellPipeString("ls file | wc -l")
@@ -244,12 +239,6 @@ var _ = Describe("ShellCommand", func() {
 		// Test for allowed commands
 		It("should accept allowed commands like alluxio", func() {
 			cmd, err := ShellCommand("bash", "-c", "alluxio fs ls /")
-			Expect(err).NotTo(HaveOccurred())
-			Expect(cmd).NotTo(BeNil())
-		})
-
-		It("should accept allowed commands like goosefs", func() {
-			cmd, err := ShellCommand("bash", "-c", "goosefs fs ls /")
 			Expect(err).NotTo(HaveOccurred())
 			Expect(cmd).NotTo(BeNil())
 		})

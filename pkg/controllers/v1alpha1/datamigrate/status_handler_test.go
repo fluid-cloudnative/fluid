@@ -1,5 +1,5 @@
 /*
-Copyright 2026 The Fluid Authors.
+Copyright 2023 The Fluid Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -527,21 +527,116 @@ var _ = Describe("CronStatusHandler", func() {
 })
 
 var _ = Describe("OnEventStatusHandler", func() {
-	Describe("GetOperationStatus", func() {
-		It("should return nil result and nil error (stub)", func() {
-			testScheme := runtime.NewScheme()
-			Expect(v1alpha1.AddToScheme(testScheme)).To(Succeed())
-			dm := &v1alpha1.DataMigrate{}
-			dm.Name = "test"
-			dm.Namespace = "default"
-			fakeClient := fake.NewFakeClientWithScheme(testScheme, dm)
-			handler := &OnEventStatusHandler{Client: fakeClient, dataMigrate: dm}
+	var (
+		testScheme  *runtime.Scheme
+		mockMigrate v1alpha1.DataMigrate
+	)
+
+	BeforeEach(func() {
+		testScheme = runtime.NewScheme()
+		Expect(v1alpha1.AddToScheme(testScheme)).To(Succeed())
+		Expect(batchv1.AddToScheme(testScheme)).To(Succeed())
+
+		mockMigrate = v1alpha1.DataMigrate{
+			ObjectMeta: v1.ObjectMeta{
+				Name:      "test-migrate",
+				Namespace: "default",
+			},
+			Spec: v1alpha1.DataMigrateSpec{
+				Parallelism: 1,
+			},
+			Status: v1alpha1.OperationStatus{
+				Phase: common.PhasePending,
+			},
+		}
+	})
+
+	DescribeTable("GetOperationStatus",
+		func(job batchv1.Job, expectedPhase common.Phase, expectedConditionType common.ConditionType) {
+			releaseName := utils.GetDataMigrateReleaseName(mockMigrate.Name)
+			jobName := utils.GetDataMigrateJobName(releaseName)
+			job.Name = jobName
+			job.Namespace = "default"
+			c := fake.NewFakeClientWithScheme(testScheme, &mockMigrate, &job)
+			handler := &OnEventStatusHandler{Client: c, Log: fake.NullLogger(), dataMigrate: &mockMigrate}
 			ctx := cruntime.ReconcileRequestContext{Log: fake.NullLogger()}
 
-			result, err := handler.GetOperationStatus(ctx, &dm.Status)
-
+			opStatus, err := handler.GetOperationStatus(ctx, &mockMigrate.Status)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(result).To(BeNil())
-		})
+			Expect(opStatus).NotTo(BeNil())
+			Expect(opStatus.Phase).To(Equal(expectedPhase))
+			Expect(opStatus.Conditions).To(HaveLen(1))
+			Expect(opStatus.Conditions[0].Type).To(Equal(expectedConditionType))
+			Expect(opStatus.Duration).NotTo(BeEmpty())
+		},
+		Entry("job success yields PhaseComplete",
+			batchv1.Job{
+				Status: batchv1.JobStatus{
+					Conditions: []batchv1.JobCondition{{
+						Type:               batchv1.JobComplete,
+						LastProbeTime:      v1.NewTime(time.Now()),
+						LastTransitionTime: v1.NewTime(time.Now()),
+					}},
+				},
+			},
+			common.PhaseComplete,
+			common.Complete,
+		),
+		Entry("job failed yields PhaseFailed",
+			batchv1.Job{
+				Status: batchv1.JobStatus{
+					Conditions: []batchv1.JobCondition{{
+						Type:               batchv1.JobFailed,
+						LastProbeTime:      v1.NewTime(time.Now()),
+						LastTransitionTime: v1.NewTime(time.Now()),
+					}},
+				},
+			},
+			common.PhaseFailed,
+			common.Failed,
+		),
+	)
+
+	It("returns unchanged status when job is still running", func() {
+		releaseName := utils.GetDataMigrateReleaseName(mockMigrate.Name)
+		jobName := utils.GetDataMigrateJobName(releaseName)
+		runningJob := batchv1.Job{
+			ObjectMeta: v1.ObjectMeta{Name: jobName, Namespace: "default"},
+			Status:     batchv1.JobStatus{},
+		}
+		c := fake.NewFakeClientWithScheme(testScheme, &mockMigrate, &runningJob)
+		handler := &OnEventStatusHandler{Client: c, Log: fake.NullLogger(), dataMigrate: &mockMigrate}
+		ctx := cruntime.ReconcileRequestContext{Log: fake.NullLogger()}
+		original := mockMigrate.Status.DeepCopy()
+
+		opStatus, err := handler.GetOperationStatus(ctx, &mockMigrate.Status)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(opStatus).NotTo(BeNil())
+		Expect(*opStatus).To(Equal(*original))
+	})
+
+	It("skips NodeAffinity generation when Parallelism > 1", func() {
+		mockMigrate.Spec.Parallelism = 2
+		mockMigrate.Status.NodeAffinity = nil
+		releaseName := utils.GetDataMigrateReleaseName(mockMigrate.Name)
+		jobName := utils.GetDataMigrateJobName(releaseName)
+		completedJob := batchv1.Job{
+			ObjectMeta: v1.ObjectMeta{Name: jobName, Namespace: "default"},
+			Status: batchv1.JobStatus{
+				Conditions: []batchv1.JobCondition{{
+					Type:               batchv1.JobComplete,
+					LastProbeTime:      v1.NewTime(time.Now()),
+					LastTransitionTime: v1.NewTime(time.Now()),
+				}},
+			},
+		}
+		c := fake.NewFakeClientWithScheme(testScheme, &mockMigrate, &completedJob)
+		handler := &OnEventStatusHandler{Client: c, Log: fake.NullLogger(), dataMigrate: &mockMigrate}
+		ctx := cruntime.ReconcileRequestContext{Log: fake.NullLogger()}
+		opStatus, err := handler.GetOperationStatus(ctx, &mockMigrate.Status)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(opStatus.Phase).To(Equal(common.PhaseComplete))
+		// NodeAffinity must not be set for parallel migrations
+		Expect(opStatus.NodeAffinity).To(BeNil())
 	})
 })

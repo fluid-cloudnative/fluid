@@ -54,6 +54,12 @@ const (
 
 	CacheCapacity CacheStateName = "cacheCapacity"
 
+	// FileNum represents the file numbers of the dataset
+	FileNum CacheStateName = "fileNum"
+
+	// UfsTotal is the total size of the dataset in the cluster, in GB.
+	UfsTotal CacheStateName = "ufsTotal"
+
 	// CacheHitRatio defines total cache hit ratio(both local hit and remote hit), it is a metric to learn
 	// how much profit a distributed cache brings.
 	CacheHitRatio CacheStateName = "cacheHitRatio"

@@ -98,7 +98,7 @@ func TestEFCEngine_CreateVolume(t *testing.T) {
 	}
 	engine.runtimeInfo = runtimeInfo
 	engine.runtimeInfo.SetFuseName(engine.getFuseName())
-	if err := engine.CreateVolume(); err != nil {
+	if err := engine.CreateVolume(context.Background()); err != nil {
 		t.Errorf("fail to exec CreateVolume with error %v", err)
 	}
 
@@ -161,7 +161,7 @@ func TestEFCEngine_createFusePersistentVolume(t *testing.T) {
 		name:      "hbase",
 	}
 
-	err := engine.createFusePersistentVolume()
+	err := engine.createFusePersistentVolume(context.Background())
 	if err != nil {
 		t.Errorf("fail to exec createFusePersistentVolume with error %v", err)
 	}
@@ -243,7 +243,7 @@ func TestEFCEngine_createFusePersistentVolumeClaim(t *testing.T) {
 	}
 	engine.runtimeInfo.SetFuseName(engine.getFuseName())
 
-	if err := engine.createFusePersistentVolumeClaim(); err != nil {
+	if err := engine.createFusePersistentVolumeClaim(context.Background()); err != nil {
 		t.Errorf("fail to exec createFusePersistentVolumeClaim with error %v", err)
 	}
 

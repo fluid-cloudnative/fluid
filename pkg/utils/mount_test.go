@@ -25,8 +25,6 @@ import (
 
 	. "github.com/agiledragon/gomonkey/v2"
 	. "github.com/smartystreets/goconvey/convey"
-	v1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/mount"
 )
 
@@ -72,6 +70,44 @@ func TestMountRootWithoutEnvSet(t *testing.T) {
 			t.Errorf("Unexpected result %s", tc.expected)
 		}
 
+	}
+}
+
+func TestNormalizeSubPath(t *testing.T) {
+	testCases := []struct {
+		subPath   string
+		expected  string
+		expectErr bool
+	}{
+		{subPath: "sub-c", expected: "sub-c"},
+		{subPath: "sub-c/sub-d", expected: "sub-c/sub-d"},
+		// A mount point written as "dataset://ns/ds//sub-c" yields a leading separator
+		{subPath: "/sub-c", expected: "sub-c"},
+		{subPath: "//sub-c", expected: "sub-c"},
+		{subPath: "/sub-c/sub-d", expected: "sub-c/sub-d"},
+		{subPath: "sub-c/", expected: "sub-c"},
+		{subPath: "./sub-c", expected: "sub-c"},
+		{subPath: "", expected: ""},
+		{subPath: "/", expected: ""},
+		{subPath: "../etc", expectErr: true},
+		{subPath: "sub-c/../../etc", expectErr: true},
+	}
+
+	for _, tc := range testCases {
+		got, err := NormalizeSubPath(tc.subPath)
+		if tc.expectErr {
+			if err == nil {
+				t.Errorf("NormalizeSubPath(%q) expected an error, but got none", tc.subPath)
+			}
+			continue
+		}
+		if err != nil {
+			t.Errorf("NormalizeSubPath(%q) got unexpected error %v", tc.subPath, err)
+			continue
+		}
+		if got != tc.expected {
+			t.Errorf("NormalizeSubPath(%q) = %q, expected %q", tc.subPath, got, tc.expected)
+		}
 	}
 }
 
@@ -225,84 +261,4 @@ func TestCheckMountPointBroken(t *testing.T) {
 			So(broken, ShouldBeFalse)
 		})
 	})
-}
-
-func TestGetRuntimeNameFromFusePod(t *testing.T) {
-	type args struct {
-		pod v1.Pod
-	}
-	tests := []struct {
-		name            string
-		args            args
-		wantRuntimeName string
-		wantErr         bool
-	}{
-		{
-			name: "test-right",
-			args: args{
-				pod: v1.Pod{
-					ObjectMeta: metav1.ObjectMeta{Name: "test-fuse-123"},
-				},
-			},
-			wantRuntimeName: "test",
-			wantErr:         false,
-		},
-		{
-			name: "test-error",
-			args: args{
-				pod: v1.Pod{
-					ObjectMeta: metav1.ObjectMeta{Name: "test"},
-				},
-			},
-			wantRuntimeName: "",
-			wantErr:         true,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			gotRuntimeName, err := GetRuntimeNameFromFusePod(tt.args.pod)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("GetRuntimeNameFromFusePod() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if gotRuntimeName != tt.wantRuntimeName {
-				t.Errorf("GetRuntimeNameFromFusePod() gotRuntimeName = %v, want %v", gotRuntimeName, tt.wantRuntimeName)
-			}
-		})
-	}
-}
-
-func TestIsFusePod(t *testing.T) {
-	type args struct {
-		pod v1.Pod
-	}
-	tests := []struct {
-		name string
-		args args
-		want bool
-	}{
-		{
-			name: "test-true",
-			args: args{
-				pod: v1.Pod{
-					ObjectMeta: metav1.ObjectMeta{Labels: map[string]string{"role": "juicefs-fuse"}},
-				},
-			},
-			want: true,
-		},
-		{
-			name: "test-false",
-			args: args{
-				pod: v1.Pod{},
-			},
-			want: false,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := IsFusePod(tt.args.pod); got != tt.want {
-				t.Errorf("IsFusePod() = %v, want %v", got, tt.want)
-			}
-		})
-	}
 }

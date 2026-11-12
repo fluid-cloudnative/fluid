@@ -73,7 +73,7 @@ func newTestJindoEngine(client client.Client, name string, namespace string, wit
 
 func doTestCases(testCases []TestCase, t *testing.T) {
 	for _, test := range testCases {
-		err := test.engine.DeleteVolume()
+		err := test.engine.DeleteVolume(context.Background())
 		pv := &v1.PersistentVolume{}
 		nullPV := v1.PersistentVolume{}
 		key := types.NamespacedName{

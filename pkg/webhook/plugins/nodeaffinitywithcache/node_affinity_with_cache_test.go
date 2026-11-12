@@ -17,6 +17,7 @@ limitations under the License.
 package nodeaffinitywithcache
 
 import (
+	"reflect"
 	"testing"
 
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
@@ -30,6 +31,25 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
+
+func hasNodeSelectorRequirements(got []corev1.NodeSelectorRequirement, want []corev1.NodeSelectorRequirement) bool {
+	if len(got) != len(want) {
+		return false
+	}
+	for _, wantItem := range want {
+		matched := false
+		for _, gotItem := range got {
+			if reflect.DeepEqual(gotItem, wantItem) {
+				matched = true
+				break
+			}
+		}
+		if !matched {
+			return false
+		}
+	}
+	return true
+}
 
 const simpleTieredLocality = `
 preferred:
@@ -250,15 +270,20 @@ func newCacheAlluxioRuntime() *datav1alpha1.AlluxioRuntime {
 
 func TestTieredLocalityMutatePodWithDatasetSched(t *testing.T) {
 	alluxioRuntime := newCacheAlluxioRuntime()
-
 	cl := fake.NewFakeClientWithScheme(testScheme, alluxioRuntime)
 
 	runtimeInfo, err := base.BuildRuntimeInfo(alluxioRuntime.Name, alluxioRuntime.Namespace, "alluxio")
-	require.NoError(t, err)
+	if err != nil {
+		t.Errorf("fail to build runtime info: %v", err)
+		return
+	}
 	runtimeInfo.SetFuseNodeSelector(map[string]string{})
 
 	plugin, err := NewPlugin(cl, customizedTieredLocality)
-	require.NoError(t, err)
+	if err != nil {
+		t.Errorf("fail to create plugin: %v", err)
+		return
+	}
 
 	pod := &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
@@ -277,6 +302,146 @@ func TestTieredLocalityMutatePodWithDatasetSched(t *testing.T) {
 	require.NotNil(t, pod.Spec.Affinity.NodeAffinity)
 	require.NotNil(t, pod.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution)
 	assert.Len(t, pod.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms, 1)
+}
+
+func TestTieredLocalityMutatePodMergesExistingRequiredTerms(t *testing.T) {
+	alluxioRuntime := newCacheAlluxioRuntime()
+	cl := fake.NewFakeClientWithScheme(testScheme, alluxioRuntime)
+
+	runtimeInfo, err := base.BuildRuntimeInfo(alluxioRuntime.Name, alluxioRuntime.Namespace, "alluxio")
+	if err != nil {
+		t.Errorf("fail to build runtime info: %v", err)
+		return
+	}
+	runtimeInfo.SetFuseNodeSelector(map[string]string{})
+
+	plugin, err := NewPlugin(cl, customizedTieredLocality)
+	if err != nil {
+		t.Errorf("fail to create plugin: %v", err)
+		return
+	}
+
+	pod := &corev1.Pod{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test",
+			Namespace: "test",
+			Labels: map[string]string{
+				"fluid.io/dataset." + alluxioRuntime.Name + ".sched": "required",
+			},
+		},
+		Spec: corev1.PodSpec{
+			Affinity: &corev1.Affinity{
+				NodeAffinity: &corev1.NodeAffinity{
+					RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
+						NodeSelectorTerms: []corev1.NodeSelectorTerm{
+							{
+								MatchExpressions: []corev1.NodeSelectorRequirement{{
+									Key:      "app.kubernetes.io/zone",
+									Operator: corev1.NodeSelectorOpIn,
+									Values:   []string{"zone-app-a"},
+								}},
+							},
+							{
+								MatchExpressions: []corev1.NodeSelectorRequirement{{
+									Key:      "kubernetes.io/hostname",
+									Operator: corev1.NodeSelectorOpIn,
+									Values:   []string{"node-a"},
+								}},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	_, err = plugin.Mutate(pod, map[string]base.RuntimeInfoInterface{alluxioRuntime.Name: runtimeInfo})
+	if err != nil {
+		t.Errorf("fail to mutate pod: %v", err)
+		return
+	}
+
+	terms := pod.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms
+	if len(terms) != 2 {
+		t.Errorf("want 2 node selector terms, got:%v", terms)
+		return
+	}
+	if !hasNodeSelectorRequirements(terms[0].MatchExpressions, []corev1.NodeSelectorRequirement{
+		{Key: "app.kubernetes.io/zone", Operator: corev1.NodeSelectorOpIn, Values: []string{"zone-app-a"}},
+		{Key: runtimeInfo.GetCommonLabelName(), Operator: corev1.NodeSelectorOpIn, Values: []string{"true"}},
+	}) {
+		t.Errorf("unexpected term[0] match expressions: %v", terms[0].MatchExpressions)
+	}
+	if !hasNodeSelectorRequirements(terms[1].MatchExpressions, []corev1.NodeSelectorRequirement{
+		{Key: "kubernetes.io/hostname", Operator: corev1.NodeSelectorOpIn, Values: []string{"node-a"}},
+		{Key: runtimeInfo.GetCommonLabelName(), Operator: corev1.NodeSelectorOpIn, Values: []string{"true"}},
+	}) {
+		t.Errorf("unexpected term[1] match expressions: %v", terms[1].MatchExpressions)
+	}
+}
+
+func TestTieredLocalityMutatePodSkipsEmptyExistingRequiredTerms(t *testing.T) {
+	alluxioRuntime := newCacheAlluxioRuntime()
+	cl := fake.NewFakeClientWithScheme(testScheme, alluxioRuntime)
+
+	runtimeInfo, err := base.BuildRuntimeInfo(alluxioRuntime.Name, alluxioRuntime.Namespace, "alluxio")
+	if err != nil {
+		t.Errorf("fail to build runtime info: %v", err)
+		return
+	}
+	runtimeInfo.SetFuseNodeSelector(map[string]string{})
+
+	plugin, err := NewPlugin(cl, customizedTieredLocality)
+	if err != nil {
+		t.Errorf("fail to create plugin: %v", err)
+		return
+	}
+
+	pod := &corev1.Pod{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test",
+			Namespace: "test",
+			Labels: map[string]string{
+				"fluid.io/dataset." + alluxioRuntime.Name + ".sched": "required",
+			},
+		},
+		Spec: corev1.PodSpec{
+			Affinity: &corev1.Affinity{
+				NodeAffinity: &corev1.NodeAffinity{
+					RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
+						NodeSelectorTerms: []corev1.NodeSelectorTerm{
+							{},
+							{
+								MatchExpressions: []corev1.NodeSelectorRequirement{{
+									Key:      "kubernetes.io/hostname",
+									Operator: corev1.NodeSelectorOpIn,
+									Values:   []string{"node-a"},
+								}},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	_, err = plugin.Mutate(pod, map[string]base.RuntimeInfoInterface{alluxioRuntime.Name: runtimeInfo})
+	if err != nil {
+		t.Errorf("fail to mutate pod: %v", err)
+		return
+	}
+
+	terms := pod.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms
+	if len(terms) != 1 {
+		t.Errorf("want 1 node selector term, got:%v", terms)
+		return
+	}
+	if !hasNodeSelectorRequirements(terms[0].MatchExpressions, []corev1.NodeSelectorRequirement{
+		{Key: "kubernetes.io/hostname", Operator: corev1.NodeSelectorOpIn, Values: []string{"node-a"}},
+		{Key: runtimeInfo.GetCommonLabelName(), Operator: corev1.NodeSelectorOpIn, Values: []string{"true"}},
+	}) {
+		t.Errorf("unexpected term match expressions: %v", terms[0].MatchExpressions)
+	}
 }
 
 func TestTieredLocalityMutatePodWithPreferredTerms(t *testing.T) {

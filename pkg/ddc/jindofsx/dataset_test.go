@@ -247,9 +247,6 @@ var _ = Describe("JindoFSxEngine Dataset Operations", func() {
 				err = fakeClient.List(context.TODO(), &datasets)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(datasets.Items[0].Status.Phase).To(Equal(expectedPhase))
-				Expect(datasets.Items[0].Status.CacheStates).To(Equal(common.CacheStateList{
-					common.Cached: "true",
-				}))
 				Expect(datasets.Items[0].Status.HCFSStatus).To(Equal(&datav1alpha1.HCFSStatus{
 					Endpoint:                    "test Endpoint",
 					UnderlayerFileSystemVersion: "Underlayer HCFS Compatible Version",
@@ -317,9 +314,6 @@ var _ = Describe("JindoFSxEngine Dataset Operations", func() {
 				},
 				Status: datav1alpha1.DatasetStatus{
 					Phase: datav1alpha1.BoundDatasetPhase,
-					CacheStates: map[common.CacheStateName]string{
-						common.Cached: "true",
-					},
 					HCFSStatus: &datav1alpha1.HCFSStatus{
 						Endpoint:                    "test Endpoint",
 						UnderlayerFileSystemVersion: "Underlayer HCFS Compatible Version",
@@ -334,7 +328,6 @@ var _ = Describe("JindoFSxEngine Dataset Operations", func() {
 			err = client.List(context.TODO(), &datasets)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(datasets.Items[0].Status.Phase).To(Equal(expectedResult.Status.Phase))
-			Expect(datasets.Items[0].Status.CacheStates).To(Equal(expectedResult.Status.CacheStates))
 			Expect(datasets.Items[0].Status.HCFSStatus).To(Equal(expectedResult.Status.HCFSStatus))
 		})
 	})

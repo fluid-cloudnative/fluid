@@ -1,0 +1,35 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: read-ref-job
+  namespace: default
+  labels:
+    app: read-ref-job
+spec:
+  template:
+    metadata:
+      name: read-ref-job
+      labels:
+        app: read-ref-job
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: read-ref-job
+        image: busybox
+        imagePullPolicy: IfNotPresent
+        resources:
+          limits:
+            memory: "512Mi"
+            ephemeral-storage: "5Gi"
+        command: ['sh']
+        args:
+        - -c
+        - set -ex; test -n "$(cat /data/minio/bar)"
+        volumeMounts:
+        - name: data-vol
+          mountPath: /data
+      automountServiceAccountToken: false
+      volumes:
+      - name: data-vol
+        persistentVolumeClaim:
+          claimName: curvine-demo-ref

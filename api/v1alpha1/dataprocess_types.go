@@ -111,6 +111,17 @@ type DataProcessSpec struct {
 	// TTLSecondsAfterFinished is the time second to clean up data operations after finished or failed
 	// +optional
 	TTLSecondsAfterFinished *int32 `json:"ttlSecondsAfterFinished,omitempty"`
+
+	//+kubebuilder:default:=Once
+	//+kubebuilder:validation:Enum=Once;Cron;OnEvent
+	// Policy defines the operation policy, including Once, Cron, OnEvent
+	// +optional
+	Policy Policy `json:"policy,omitempty"`
+
+	// Schedule defines the Cron schedule, only used when Policy is Cron.
+	// See https://en.wikipedia.org/wiki/Cron.
+	// +optional
+	Schedule string `json:"schedule,omitempty"`
 }
 
 // +kubebuilder:printcolumn:name="Dataset",type="string",JSONPath=`.spec.dataset.name`

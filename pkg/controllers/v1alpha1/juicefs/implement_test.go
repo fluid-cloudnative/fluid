@@ -45,8 +45,8 @@ type mockEngine struct{}
 func (m *mockEngine) ID() string                                             { return "mock" }
 func (m *mockEngine) Shutdown() error                                        { return nil }
 func (m *mockEngine) Setup(_ cruntime.ReconcileRequestContext) (bool, error) { return true, nil }
-func (m *mockEngine) CreateVolume() error                                    { return nil }
-func (m *mockEngine) DeleteVolume() error                                    { return nil }
+func (m *mockEngine) CreateVolume(context.Context) error                     { return nil }
+func (m *mockEngine) DeleteVolume(context.Context) error                     { return nil }
 func (m *mockEngine) Sync(_ cruntime.ReconcileRequestContext) error          { return nil }
 func (m *mockEngine) Validate(_ cruntime.ReconcileRequestContext) error      { return nil }
 func (m *mockEngine) Operate(_ cruntime.ReconcileRequestContext, _ *datav1alpha1.OperationStatus, _ dataoperation.OperationInterface) (ctrl.Result, error) {

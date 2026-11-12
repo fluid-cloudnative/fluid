@@ -241,7 +241,7 @@ var _ = Describe("Dataset", func() {
 		})
 
 		DescribeTable("updating dataset phase",
-			func(phase datav1alpha1.DatasetPhase, expectedPhase datav1alpha1.DatasetPhase, expectedCacheStates common.CacheStateList, expectedHCFSStatus *datav1alpha1.HCFSStatus) {
+			func(phase datav1alpha1.DatasetPhase, expectedPhase datav1alpha1.DatasetPhase, expectedHCFSStatus *datav1alpha1.HCFSStatus) {
 				err := engine.UpdateDatasetStatus(phase)
 				Expect(err).NotTo(HaveOccurred())
 
@@ -249,13 +249,11 @@ var _ = Describe("Dataset", func() {
 				err = client.List(context.TODO(), &datasets)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(datasets.Items[0].Status.Phase).To(Equal(expectedPhase))
-				Expect(datasets.Items[0].Status.CacheStates).To(Equal(expectedCacheStates))
 				Expect(datasets.Items[0].Status.HCFSStatus).To(Equal(expectedHCFSStatus))
 			},
 			Entry("with Bound phase",
 				datav1alpha1.BoundDatasetPhase,
 				datav1alpha1.BoundDatasetPhase,
-				common.CacheStateList{common.Cached: "true"},
 				&datav1alpha1.HCFSStatus{
 					Endpoint:                    "test Endpoint",
 					UnderlayerFileSystemVersion: "Underlayer HCFS Compatible Version",
@@ -264,7 +262,6 @@ var _ = Describe("Dataset", func() {
 			Entry("with Failed phase",
 				datav1alpha1.FailedDatasetPhase,
 				datav1alpha1.FailedDatasetPhase,
-				common.CacheStateList{common.Cached: "true"},
 				&datav1alpha1.HCFSStatus{
 					Endpoint:                    "test Endpoint",
 					UnderlayerFileSystemVersion: "Underlayer HCFS Compatible Version",
@@ -273,7 +270,6 @@ var _ = Describe("Dataset", func() {
 			Entry("with None phase",
 				datav1alpha1.NoneDatasetPhase,
 				datav1alpha1.NoneDatasetPhase,
-				common.CacheStateList{common.Cached: "true"},
 				&datav1alpha1.HCFSStatus{
 					Endpoint:                    "test Endpoint",
 					UnderlayerFileSystemVersion: "Underlayer HCFS Compatible Version",
@@ -338,9 +334,6 @@ var _ = Describe("Dataset", func() {
 				},
 				Status: datav1alpha1.DatasetStatus{
 					Phase: datav1alpha1.BoundDatasetPhase,
-					CacheStates: map[common.CacheStateName]string{
-						common.Cached: "true",
-					},
 					HCFSStatus: &datav1alpha1.HCFSStatus{
 						Endpoint:                    "test Endpoint",
 						UnderlayerFileSystemVersion: "Underlayer HCFS Compatible Version",
@@ -354,7 +347,6 @@ var _ = Describe("Dataset", func() {
 			err = client.List(context.TODO(), &datasets)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(datasets.Items[0].Status.Phase).To(Equal(expectedResult.Status.Phase))
-			Expect(datasets.Items[0].Status.CacheStates).To(Equal(expectedResult.Status.CacheStates))
 			Expect(datasets.Items[0].Status.HCFSStatus).To(Equal(expectedResult.Status.HCFSStatus))
 		})
 	})

@@ -201,6 +201,27 @@ func (r *dataProcessOperation) Validate(ctx runtime.ReconcileRequestContext) ([]
 		}, err
 	}
 
+	// DataProcess with Cron policy must specify a non-empty schedule
+	if dataProcess.Spec.Policy == datav1alpha1.Cron && dataProcess.Spec.Schedule == "" {
+		r.Recorder.Eventf(dataProcess,
+			corev1.EventTypeWarning,
+			common.DataProcessScheduleNotSpecified,
+			"DataProcess(%s)'s policy is Cron but spec.schedule is not specified",
+			dataProcess.Name,
+		)
+		err := fmt.Errorf("DataProcess(%s/%s)'s policy is Cron but spec.schedule is not specified", dataProcess.Namespace, dataProcess.Name)
+		now := time.Now()
+		return []datav1alpha1.Condition{
+			{
+				Type:               common.Failed,
+				Status:             corev1.ConditionTrue,
+				Reason:             common.DataProcessScheduleNotSpecified,
+				Message:            "DataProcess's policy is Cron but spec.schedule is not specified",
+				LastProbeTime:      metav1.NewTime(now),
+				LastTransitionTime: metav1.NewTime(now),
+			},
+		}, err
+	}
 	return nil, nil
 }
 
@@ -219,15 +240,37 @@ func (r *dataProcessOperation) RemoveTargetDatasetStatusInProgress(dataset *data
 	// DataProcess does not need to recover Dataset status after execution.
 }
 
+// GetStatusHandler implements dataoperation.OperationInterface.
+// Unlike DataLoad, which returns nil for an unrecognized policy, this defaults
+// to OnceStatusHandler since policy is optional with a kubebuilder default of
+// Once, so an empty value should be treated the same as Once.
 func (r *dataProcessOperation) GetStatusHandler() dataoperation.StatusHandler {
-	// TODO: Support dataProcess.Spec.Policy
-	return &OnceStatusHandler{Client: r.Client, dataProcess: r.dataProcess}
+	policy := r.dataProcess.Spec.Policy
+	switch policy {
+	case datav1alpha1.Cron:
+		return &CronStatusHandler{Client: r.Client, dataProcess: r.dataProcess}
+	case datav1alpha1.OnEvent:
+		return &OnEventStatusHandler{Client: r.Client, dataProcess: r.dataProcess}
+	case datav1alpha1.Once:
+		fallthrough
+	default:
+		return &OnceStatusHandler{Client: r.Client, dataProcess: r.dataProcess}
+	}
 }
 
 // GetTTL implements dataoperation.OperationInterface.
+// Cron and OnEvent policies are recurring/event-driven operations and should
+// not be cleaned up via TTL; only Once (and the default/empty policy, which
+// behaves like Once, see GetStatusHandler) uses TTLSecondsAfterFinished.
 func (r *dataProcessOperation) GetTTL() (ttl *int32, err error) {
+	dataProcess := r.dataProcess
 
-	ttl = r.dataProcess.Spec.TTLSecondsAfterFinished
+	switch dataProcess.Spec.Policy {
+	case datav1alpha1.Cron, datav1alpha1.OnEvent:
+		ttl = nil
+	default:
+		ttl = dataProcess.Spec.TTLSecondsAfterFinished
+	}
 	return
 }
 

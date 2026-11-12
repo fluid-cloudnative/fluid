@@ -17,6 +17,8 @@
 package thin
 
 import (
+	"encoding/json"
+	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -134,5 +136,103 @@ var _ = Describe("ThinEngine extractVolumeMountOptions", func() {
 			[]string{"ro", "noexec"},
 			false,
 		),
+		Entry("no mount options configured",
+			&corev1.PersistentVolume{
+				ObjectMeta: metav1.ObjectMeta{},
+				Spec:       corev1.PersistentVolumeSpec{},
+			},
+			nil,
+			false,
+		),
 	)
+})
+
+var _ = Describe("ThinEngine transformFuseConfig", func() {
+	var (
+		engine  ThinEngine
+		runtime *datav1alpha1.ThinRuntime
+		dataset *datav1alpha1.Dataset
+		value   *ThinValue
+	)
+
+	BeforeEach(func() {
+		engine = ThinEngine{
+			name:      "thin-test",
+			namespace: "fluid",
+			Client:    fake.NewFakeClientWithScheme(testScheme),
+			Log:       fake.NullLogger(),
+		}
+		runtime = &datav1alpha1.ThinRuntime{
+			ObjectMeta: metav1.ObjectMeta{Name: "thin-test", Namespace: "fluid"},
+		}
+		dataset = &datav1alpha1.Dataset{}
+		value = &ThinValue{}
+	})
+
+	It("returns an error when the configured fuse config storage is unsupported", func() {
+		By("using an unsupported storage backend")
+		GinkgoTB().Setenv(EnvFuseConfigStorage, "invalid")
+		dataset.Spec.Mounts = []datav1alpha1.Mount{{MountPoint: "s3://bucket/data"}}
+
+		err := engine.transformFuseConfig(runtime, dataset, value)
+
+		Expect(err).To(MatchError(ContainSubstring("FUSE config storage \"invalid\" is not supported")))
+	})
+
+	It("returns an error when a pvc mount is not yet bound", func() {
+		By("providing a pvc mount whose claim is still pending")
+		pendingPVC := &corev1.PersistentVolumeClaim{
+			ObjectMeta: metav1.ObjectMeta{Name: "pending-pvc", Namespace: "fluid"},
+			Status:     corev1.PersistentVolumeClaimStatus{Phase: corev1.ClaimPending},
+		}
+		engine.Client = fake.NewFakeClientWithScheme(testScheme, pendingPVC)
+		dataset.Spec.Mounts = []datav1alpha1.Mount{{MountPoint: "pvc://pending-pvc"}}
+
+		err := engine.transformFuseConfig(runtime, dataset, value)
+
+		Expect(err).To(MatchError(ContainSubstring("failed to extract volume info from PersistentVolumeClaim \"pending-pvc\"")))
+		Expect(err).To(MatchError(ContainSubstring("persistent volume claim pending-pvc not bounded yet")))
+	})
+
+	It("serializes secret-backed mount options when fuse config storage is secret", func() {
+		GinkgoTB().Setenv(EnvFuseConfigStorage, "secret")
+		engine.Client = fake.NewFakeClientWithScheme(testScheme, &corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{Name: "my-s3-secret", Namespace: "fluid"},
+			Data: map[string][]byte{
+				"access-key-id":     []byte("test-ak"),
+				"access-key-secret": []byte("test-sk"),
+			},
+		})
+		dataset.Spec.Mounts = []datav1alpha1.Mount{{
+			MountPoint: "s3://bucket/data",
+			Options: map[string]string{
+				"endpoint": "https://minio.example.com",
+			},
+			EncryptOptions: []datav1alpha1.EncryptOption{{
+				Name: "access-key-id",
+				ValueFrom: datav1alpha1.EncryptOptionSource{
+					SecretKeyRef: datav1alpha1.SecretKeySelector{Name: "my-s3-secret", Key: "access-key-id"},
+				},
+			}, {
+				Name: "access-key-secret",
+				ValueFrom: datav1alpha1.EncryptOptionSource{
+					SecretKeyRef: datav1alpha1.SecretKeySelector{Name: "my-s3-secret", Key: "access-key-secret"},
+				},
+			}},
+		}}
+
+		err := engine.transformFuseConfig(runtime, dataset, value)
+
+		Expect(err).NotTo(HaveOccurred())
+		Expect(value.Fuse.ConfigStorage).To(Equal("secret"))
+		Expect(value.Fuse.Volumes).To(BeEmpty())
+		Expect(value.Fuse.VolumeMounts).To(BeEmpty())
+
+		config := &Config{}
+		Expect(json.Unmarshal([]byte(value.Fuse.ConfigValue), config)).To(Succeed())
+		Expect(config.Mounts).To(HaveLen(1))
+		Expect(config.Mounts[0].Options).To(HaveKeyWithValue("endpoint", "https://minio.example.com"))
+		Expect(config.Mounts[0].Options).To(HaveKeyWithValue("access-key-id", "test-ak"))
+		Expect(config.Mounts[0].Options).To(HaveKeyWithValue("access-key-secret", "test-sk"))
+	})
 })

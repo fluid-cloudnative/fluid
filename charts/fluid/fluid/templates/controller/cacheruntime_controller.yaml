@@ -1,3 +1,6 @@
+{{- if hasKey .Values.runtime "cache" }}
+{{- fail "values key `runtime.cache` has been renamed to `runtime.cacheruntime`, please update your values file or --set flags" }}
+{{- end }}
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -10,8 +13,8 @@ spec:
   selector:
     matchLabels:
       control-plane: cacheruntime-controller
-  {{ if .Values.runtime.cache.enabled -}}
-  replicas: {{ .Values.runtime.cache.replicas }}
+  {{ if .Values.runtime.cacheruntime.enabled -}}
+  replicas: {{ .Values.runtime.cacheruntime.replicas }}
   {{- else }}
   replicas: 0
   {{- end }}
@@ -20,8 +23,8 @@ spec:
       labels:
         control-plane: cacheruntime-controller
       annotations:
-      {{ if gt (.Values.runtime.cache.replicas | int) 1 -}}
-        controller.runtime.fluid.io/replicas: {{ .Values.runtime.cache.replicas | quote }}
+      {{ if gt (.Values.runtime.cacheruntime.replicas | int) 1 -}}
+        controller.runtime.fluid.io/replicas: {{ .Values.runtime.cacheruntime.replicas | quote }}
       {{- end }}
     spec:
       {{- with .Values.image.imagePullSecrets }}
@@ -30,24 +33,24 @@ spec:
       {{- end }}
       serviceAccountName: cacheruntime-controller
       {{ include "fluid.controlplane.affinity" . | nindent 6 }}
-      {{- if .Values.runtime.cache.tolerations }}
+      {{- if .Values.runtime.cacheruntime.tolerations }}
       tolerations:
-{{ toYaml .Values.runtime.cache.tolerations | indent 6 }}
+{{ toYaml .Values.runtime.cacheruntime.tolerations | indent 6 }}
       {{- end }}
       #hostNetwork: true
       containers:
-      - image: {{ include "fluid.controlplane.imageTransform" (list .Values.runtime.cache.controller.imagePrefix .Values.runtime.cache.controller.imageName .Values.runtime.cache.controller.imageTag . ) }}
+      - image: {{ include "fluid.controlplane.imageTransform" (list .Values.runtime.cacheruntime.controller.imagePrefix .Values.runtime.cacheruntime.controller.imageName .Values.runtime.cacheruntime.controller.imageTag . ) }}
         imagePullPolicy: IfNotPresent
         name: manager
         args:
           - --development=false
           - --pprof-addr=:6060
           - --enable-leader-election
-          - --runtime-workers={{ .Values.runtime.cache.runtimeWorkers }}
-          - --kube-api-qps={{ .Values.runtime.cache.kubeClientQPS }}
-          - --kube-api-burst={{ .Values.runtime.cache.kubeClientBurst }}
-          - --workqueue-qps={{ .Values.runtime.cache.workQueueQPS }}
-          - --workqueue-burst={{ .Values.runtime.cache.workQueueBurst }}
+          - --runtime-workers={{ .Values.runtime.cacheruntime.runtimeWorkers }}
+          - --kube-api-qps={{ .Values.runtime.cacheruntime.kubeClientQPS }}
+          - --kube-api-burst={{ .Values.runtime.cacheruntime.kubeClientBurst }}
+          - --workqueue-qps={{ .Values.runtime.cacheruntime.workQueueQPS }}
+          - --workqueue-burst={{ .Values.runtime.cacheruntime.workQueueBurst }}
           - --leader-election-namespace={{ include "fluid.namespace" . }}
         command: ["cacheruntime-controller", "start"]
         env:
@@ -77,13 +80,13 @@ spec:
           {{- include "fluid.controllers.envs.syncScheduleInfoNodeExcludeSelector" . | nindent 10 }}
           - name: HELM_DRIVER
             value: {{ template "fluid.helmDriver" . }}
-          {{- if .Values.runtime.cache.env }}
-          {{ toYaml .Values.runtime.cache.env | nindent 10 }}
+          {{- if .Values.runtime.cacheruntime.env }}
+          {{ toYaml .Values.runtime.cacheruntime.env | nindent 10 }}
           {{- end }}
         ports:
         - containerPort: 8080
           name: metrics
           protocol: TCP
         resources:
-          {{- include "fluid.controlplane.resources" (list $ .Values.runtime.cache.resources) | nindent 10 }}
+          {{- include "fluid.controlplane.resources" (list $ .Values.runtime.cacheruntime.resources) | nindent 10 }}
       terminationGracePeriodSeconds: 10

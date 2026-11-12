@@ -18,10 +18,16 @@ package common
 
 import (
 	"strconv"
+
+	"github.com/fluid-cloudnative/fluid/pkg/common/features"
+	utilfeature "github.com/fluid-cloudnative/fluid/pkg/utils/feature"
 )
 
 // HostPIDEnabled check if HostPID is true for runtime fuse pod.
 func HostPIDEnabled(annotations map[string]string) bool {
+	if !utilfeature.DefaultFeatureGate.Enabled(features.RuntimeFuseHostPID) {
+		return false
+	}
 	if annotations == nil {
 		return false
 	}

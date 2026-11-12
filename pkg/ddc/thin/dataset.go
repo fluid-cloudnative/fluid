@@ -31,12 +31,6 @@ import (
 )
 
 func (t *ThinEngine) UpdateDatasetStatus(phase datav1alpha1.DatasetPhase) (err error) {
-	runtime, err := t.getRuntime()
-	if err != nil {
-		return err
-	}
-
-	// 2. update the dataset status
 	err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
 		dataset, err := utils.GetDataset(t.Client, t.name, t.namespace)
 		if err != nil {
@@ -85,7 +79,6 @@ func (t *ThinEngine) UpdateDatasetStatus(phase datav1alpha1.DatasetPhase) (err e
 				cond)
 		}
 
-		datasetToUpdate.Status.CacheStates = runtime.Status.CacheStates
 		if !reflect.DeepEqual(dataset.Status, datasetToUpdate.Status) {
 			t.Log.V(1).Info("Update DatasetStatus", "dataset", fmt.Sprintf("%s/%s", datasetToUpdate.GetNamespace(), datasetToUpdate.GetName()))
 			err = t.Client.Status().Update(context.TODO(), datasetToUpdate)

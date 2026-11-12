@@ -18,22 +18,56 @@ package engine
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
+	"reflect"
+	"time"
+
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/retry"
-	"reflect"
 )
 
-func (e *CacheEngine) BindToDataset() (err error) {
+func (e *CacheEngine) BindToDataset(runtime *datav1alpha1.CacheRuntime, runtimeClass *datav1alpha1.CacheRuntimeClass) (err error) {
 	e.Log.V(1).Info("Start to BindToDataset")
 
-	return e.UpdateDatasetStatus(datav1alpha1.BoundDatasetPhase)
+	err = e.updateMountTime()
+	if err != nil {
+		return
+	}
+
+	return e.UpdateDatasetStatus(datav1alpha1.BoundDatasetPhase, runtime, runtimeClass, true)
 }
 
-func (e *CacheEngine) UpdateDatasetStatus(phase datav1alpha1.DatasetPhase) (err error) {
+// UpdateDatasetStatus transitions the Dataset to phase. fetchCacheStates controls whether it
+// execs into the master pod for fresh cache states (only relevant for BoundDatasetPhase); the
+// caller decides this so that rate-limiting via permitSync stays a concern of Sync alone.
+func (e *CacheEngine) UpdateDatasetStatus(phase datav1alpha1.DatasetPhase, runtime *datav1alpha1.CacheRuntime, runtimeClass *datav1alpha1.CacheRuntimeClass, fetchCacheStates bool) (err error) {
+	var cacheStates common.CacheStateList
+
+	current, err := utils.GetDataset(e.Client, e.name, e.namespace)
+	if err != nil {
+		return err
+	}
+	if current.Status.Phase == phase {
+		// already in the desired phase, nothing to do
+		return nil
+	}
+
+	// GetCacheStates execs into the master pod with a floor of MinExecutionTimeoutSeconds,
+	// so callers keep it behind the same rate limiter that bounds other engine RPCs, and it's
+	// only attempted for BoundDatasetPhase.
+	if phase == datav1alpha1.BoundDatasetPhase && fetchCacheStates {
+		e.Log.V(1).Info("Start to update cache states")
+		cacheStates, err = e.GetCacheStates(runtime, runtimeClass)
+		if err != nil {
+			e.Log.Error(err, "Failed to get cache states, keeping previous cache states in dataset status")
+		}
+	}
+
 	err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
 		dataset, err := utils.GetDataset(e.Client, e.name, e.namespace)
 		if err != nil {
@@ -44,12 +78,10 @@ func (e *CacheEngine) UpdateDatasetStatus(phase datav1alpha1.DatasetPhase) (err 
 
 		switch phase {
 		case datav1alpha1.BoundDatasetPhase:
-			// Stores dataset mount info
 			if len(datasetToUpdate.Status.Mounts) == 0 {
 				datasetToUpdate.Status.Mounts = datasetToUpdate.Spec.Mounts
 			}
 
-			// Stores binding relation between dataset and runtime
 			if len(datasetToUpdate.Status.Runtimes) == 0 {
 				datasetToUpdate.Status.Runtimes = []datav1alpha1.Runtime{}
 			}
@@ -59,6 +91,13 @@ func (e *CacheEngine) UpdateDatasetStatus(phase datav1alpha1.DatasetPhase) (err 
 				common.AccelerateCategory,
 				common.CacheRuntime,
 				0))
+
+			// keep previous values if cache states are nil
+			if cacheStates != nil {
+				datasetToUpdate.Status.CacheStates = cacheStates
+				datasetToUpdate.Status.FileNum = cacheStates[common.FileNum]
+				datasetToUpdate.Status.UfsTotal = cacheStates[common.UfsTotal]
+			}
 
 			cond = utils.NewDatasetCondition(datav1alpha1.DatasetReady, datav1alpha1.DatasetReadyReason,
 				"The ddc runtime is ready.",
@@ -77,8 +116,6 @@ func (e *CacheEngine) UpdateDatasetStatus(phase datav1alpha1.DatasetPhase) (err 
 		datasetToUpdate.Status.Conditions = utils.UpdateDatasetCondition(datasetToUpdate.Status.Conditions,
 			cond)
 
-		// TODO(cache runtime): update datasetToUpdate.Status.CacheStates
-
 		if !reflect.DeepEqual(dataset.Status, datasetToUpdate.Status) {
 			e.Log.Info("the dataset status", "status", datasetToUpdate.Status)
 			err = e.Client.Status().Update(context.TODO(), datasetToUpdate)
@@ -96,4 +133,97 @@ func (e *CacheEngine) UpdateDatasetStatus(phase datav1alpha1.DatasetPhase) (err 
 	}
 
 	return
+}
+
+func (e *CacheEngine) GetCacheStates(runtime *datav1alpha1.CacheRuntime, runtimeClass *datav1alpha1.CacheRuntimeClass) (common.CacheStateList, error) {
+
+	handler := resolveArchitectureApi(e.name, e.namespace, runtime, runtimeClass)
+
+	executionEntries := handler.GetExecutionEntries()
+	if executionEntries == nil || executionEntries.ReportSummary == nil {
+		err := fmt.Errorf("ReportSummary command is empty or not configured for this cache runtime")
+		e.Log.Info(err.Error(),
+			"name", e.name, "namespace", e.namespace)
+		return nil, err
+	}
+	reportSummaryEntry := executionEntries.ReportSummary
+
+	timeout := max(reportSummaryEntry.TimeoutSeconds, common.MinExecutionTimeoutSeconds)
+
+	// Resolve target pod/container according to the runtime architecture.
+	podName, containerName, err := handler.GetExecutionPodInfo()
+	if err != nil {
+		e.Log.Error(err, "Failed to get pod info")
+		return nil, err
+	}
+
+	if podName == "" {
+		err := fmt.Errorf("no pod available, can not get cache states")
+		e.Log.Info(err.Error())
+		return nil, err
+	}
+
+	cacheFileUtil := NewCacheFileUtil(podName, containerName, e.namespace, e.Log)
+	stdout, err := cacheFileUtil.Execute(reportSummaryEntry.Command, time.Duration(timeout)*time.Second)
+	if err != nil {
+		e.Log.Error(err, "Failed to execute ReportSummary command", "stdout", stdout)
+		return nil, err
+	}
+
+	var reportSummary datav1alpha1.CacheRuntimeReportSummary
+	err = json.Unmarshal([]byte(stdout), &reportSummary)
+	if err != nil {
+		e.Log.Error(err, "Failed to unmarshal ReportSummary output", "stdout", stdout)
+		return nil, err
+	}
+
+	cacheStates := make(common.CacheStateList)
+	cacheStates[common.Cached] = reportSummary.Cached
+	cacheStates[common.CachedPercentage] = reportSummary.CachedPercentage
+	cacheStates[common.CacheCapacity] = reportSummary.CacheCapacity
+	cacheStates[common.CacheHitRatio] = reportSummary.CacheHitRatio
+	cacheStates[common.FileNum] = reportSummary.FileNum
+	cacheStates[common.UfsTotal] = reportSummary.UfsTotal
+
+	return cacheStates, nil
+}
+
+func (e *CacheEngine) generateDatasetMountOptions(m *datav1alpha1.Mount, sharedEncryptOptions []datav1alpha1.EncryptOption,
+	sharedOptions map[string]string) (mOptions map[string]string, encryptOptions map[string]string, err error) {
+
+	mOptions = make(map[string]string)
+	encryptOptions = make(map[string]string)
+
+	for k, v := range sharedOptions {
+		mOptions[k] = v
+	}
+	for key, value := range m.Options {
+		mOptions[key] = value
+	}
+
+	err = e.collectEncryptOptions(sharedEncryptOptions, encryptOptions)
+	if err != nil {
+		return
+	}
+	err = e.collectEncryptOptions(m.EncryptOptions, encryptOptions)
+	if err != nil {
+		return
+	}
+
+	return
+}
+
+func (e *CacheEngine) collectEncryptOptions(encryptOpts []datav1alpha1.EncryptOption, existingEncryptOpts map[string]string) error {
+
+	for _, item := range encryptOpts {
+		sRef := item.ValueFrom.SecretKeyRef
+		if sRef.Name == "" || sRef.Key == "" {
+			return fmt.Errorf("encryptOption %s has empty secretKeyRef name or key", item.Name)
+		}
+
+		secretPath := getSecretFilePath(sRef.Name, sRef.Key)
+
+		existingEncryptOpts[item.Name] = secretPath
+	}
+	return nil
 }

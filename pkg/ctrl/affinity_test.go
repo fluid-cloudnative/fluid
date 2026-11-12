@@ -142,7 +142,7 @@ func TestBuildWorkersAffinity(t *testing.T) {
 								LabelSelector: &metav1.LabelSelector{
 									MatchExpressions: []metav1.LabelSelectorRequirement{
 										{
-											Key:      "fluid.io/dataset-placement",
+											Key:      common.LabelAnnotationDatasetPlacement,
 											Operator: metav1.LabelSelectorOpIn,
 											Values:   []string{"Exclusive"},
 										},
@@ -319,7 +319,7 @@ func TestBuildWorkersAffinityForEFCRuntime(t *testing.T) {
 							LabelSelector: &metav1.LabelSelector{
 								MatchExpressions: []metav1.LabelSelectorRequirement{
 									{
-										Key:      "fluid.io/dataset-placement",
+										Key:      common.LabelAnnotationDatasetPlacement,
 										Operator: metav1.LabelSelectorOpIn,
 										Values:   []string{"Exclusive"},
 									},

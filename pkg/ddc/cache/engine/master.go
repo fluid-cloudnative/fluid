@@ -17,8 +17,15 @@
 package engine
 
 import (
+	"context"
+	"reflect"
+
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/cache/component"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/client-go/util/retry"
 )
 
 func (e *CacheEngine) SetupMasterComponent(masterValue *common.CacheRuntimeComponentValue) (bool, error) {
@@ -50,5 +57,52 @@ func (e *CacheEngine) shouldSetupMaster() (bool, error) {
 }
 
 func (e *CacheEngine) setupMasterInternal(masterValue *common.CacheRuntimeComponentValue) error {
-	return newNotImplementError("setupMasterInternal")
+	manager := component.NewComponentHelper(masterValue.ComponentType, e.Client)
+	err := manager.Reconciler(context.TODO(), masterValue)
+	if err != nil {
+		return err
+	}
+
+	// update status of master
+	err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+		runtime, err := e.getRuntime()
+		if err != nil {
+			return err
+		}
+
+		identity := &common.ComponentIdentity{
+			Name:      masterValue.Name,
+			Namespace: masterValue.Namespace,
+		}
+		masterStatus, err := manager.ConstructComponentStatus(context.TODO(), identity)
+		if err != nil {
+			return err
+		}
+		// from RuntimePhaseNone to RuntimePhaseNotReady, not reconcile the master component the next time.
+		masterStatus.Phase = datav1alpha1.RuntimePhaseNotReady
+
+		runtimeToUpdate := runtime.DeepCopy()
+		runtimeToUpdate.Status.Master = masterStatus
+
+		if len(runtimeToUpdate.Status.Conditions) == 0 {
+			runtimeToUpdate.Status.Conditions = []datav1alpha1.RuntimeCondition{}
+		}
+		cond := utils.NewRuntimeCondition(datav1alpha1.RuntimeMasterInitialized, datav1alpha1.RuntimeMasterInitializedReason,
+			"The master is initialized.", corev1.ConditionTrue)
+		runtimeToUpdate.Status.Conditions =
+			utils.UpdateRuntimeCondition(runtimeToUpdate.Status.Conditions,
+				cond)
+
+		if !reflect.DeepEqual(runtime.Status, runtimeToUpdate.Status) {
+			return e.Client.Status().Update(context.TODO(), runtimeToUpdate)
+		}
+
+		return nil
+	})
+	if err != nil {
+		e.Log.Error(err, "failed to update runtime status")
+		return err
+	}
+
+	return nil
 }

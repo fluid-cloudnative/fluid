@@ -17,6 +17,7 @@ limitations under the License.
 package operations
 
 import (
+	"context"
 	"fmt"
 	"strconv"
 	"strings"
@@ -52,7 +53,7 @@ func (j JuiceFileUtils) exec(command []string, verbose bool) (stdout string, std
 	redactedCommand := securityutils.FilterCommand(command)
 
 	j.log.V(1).Info("Exec command start", "command", redactedCommand)
-	stdout, stderr, err = kubeclient.ExecCommandInContainerWithTimeout(j.podName, j.container, j.namespace, command, common.FileUtilsExecTimeout)
+	stdout, stderr, err = kubeclient.ExecCommandInContainerWithTimeoutContext(context.TODO(), j.podName, j.container, j.namespace, command, common.FileUtilsExecTimeout)
 	if err != nil {
 		err = errors.Wrapf(err, "error when executing command %v", redactedCommand)
 		return
@@ -305,9 +306,12 @@ var (
 	FileNum     KeyOfMetaDataFile = "filenum"
 )
 
-// QueryMetaDataInfoIntoFile queries the metadata info file.
-func (j JuiceFileUtils) QueryMetaDataInfoIntoFile(key KeyOfMetaDataFile, filename string) (value string, err error) {
-	line := ""
+// metaDataQueryCommand builds the argv used to read a single line out of the metadata info file.
+//
+// sed's script and the filename are kept as separate argv elements. Quoting them into a single
+// argument makes sed treat the whole thing as its script, so the file must be its own element.
+func metaDataQueryCommand(key KeyOfMetaDataFile, filename string) (command []string, err error) {
+	var line string
 	switch key {
 	case DatasetName:
 		line = "1p"
@@ -318,13 +322,21 @@ func (j JuiceFileUtils) QueryMetaDataInfoIntoFile(key KeyOfMetaDataFile, filenam
 	case FileNum:
 		line = "4p"
 	default:
-		j.log.Error(errors.New("the key not in  metadatafile"), "key", key)
+		return nil, errors.Errorf("the key %s is not in the metadatafile", key)
+	}
+	return []string{"sed", "-n", line, filename}, nil
+}
+
+// QueryMetaDataInfoIntoFile queries the metadata info file.
+func (j JuiceFileUtils) QueryMetaDataInfoIntoFile(key KeyOfMetaDataFile, filename string) (value string, err error) {
+	command, err := metaDataQueryCommand(key, filename)
+	if err != nil {
+		j.log.Error(err, "unsupported metadata key", "key", key)
+		return
 	}
 	var (
-		str     = "'" + line + "' " + filename
-		command = []string{"sed", "-n", str}
-		stdout  string
-		stderr  string
+		stdout string
+		stderr string
 	)
 	stdout, stderr, err = j.exec(command, false)
 	if err != nil {

@@ -5,35 +5,32 @@
 ### 开启minio
 
 ```shell
-docker run -ti -p 9000:9000 --name minio minio/minio server /data
+# MinIO 官方已不再发布镜像，这里使用 ACK 镜像仓库中的副本
+docker run -ti -p 9000:9000 --name minio registry-cn-hongkong.ack.aliyuncs.com/acs/minio:RELEASE.2022-10-24T18-35-07Z-update server /data
 ```
 ```
-Endpoint: http://172.17.0.8:9000  http://127.0.0.1:9000 
-RootUser: minioadmin 
-RootPass: minioadmin 
+Formatting 1st pool, 1 set(s), 1 drives per set.
+WARNING: Host local has more than 0 drives of set. A host failure will result in data becoming unavailable.
+WARNING: Detected default credentials 'minioadmin:minioadmin', we recommend that you change these values with 'MINIO_ROOT_USER' and 'MINIO_ROOT_PASSWORD' environment variables
+MinIO Object Storage Server
+Copyright: 2015-2022 MinIO, Inc.
+License: GNU AGPLv3 <https://www.gnu.org/licenses/agpl-3.0.html>
+Version: RELEASE.2022-10-24T18-35-07Z (go1.19.2 linux/amd64)
 
-Browser Access:
-   http://172.17.0.8:9000  http://127.0.0.1:9000
+Status:         1 Online, 0 Offline.
+API: http://172.17.0.2:9000  http://127.0.0.1:9000
+Console: http://172.17.0.2:41919 http://127.0.0.1:41919
 
-Command-line Access: https://docs.min.io/docs/minio-client-quickstart-guide
-   $ mc alias set myminio http://172.17.0.8:9000 minioadmin minioadmin
-
-Object API (Amazon S3 compatible):
-   Go:         https://docs.min.io/docs/golang-client-quickstart-guide
-   Java:       https://docs.min.io/docs/java-client-quickstart-guide
-   Python:     https://docs.min.io/docs/python-client-quickstart-guide
-   JavaScript: https://docs.min.io/docs/javascript-client-quickstart-guide
-   .NET:       https://docs.min.io/docs/dotnet-client-quickstart-guide
-Detected default credentials 'minioadmin:minioadmin', please change the credentials immediately using 'MINIO_ROOT_USER' and 'MINIO_ROOT_PASSWORD'
-IAM initialization complete
+Documentation: https://min.io/docs/minio/linux/index.html
 ```
 
 ### 生成minio数据
 ```shell
-# create a new bucket
-$ mc mb myminio/fluid
-# there are some PDFs in my local folder fluid
-$ mc cp fluid/* myminio/fluid/
+# MinIO 官方已不再发布 mc，任意 S3 客户端均可，例如 7.75 及以上版本的 curl（--aws-sigv4）
+# 创建一个新的 bucket
+$ curl -sSf -X PUT --aws-sigv4 aws:amz:us-east-1:s3 --user minioadmin:minioadmin http://127.0.0.1:9000/fluid
+# 本地 fluid 目录中有一些 PDF 文件
+$ for f in fluid/*; do curl -sSf -T "$f" --aws-sigv4 aws:amz:us-east-1:s3 --user minioadmin:minioadmin http://127.0.0.1:9000/fluid/; done
 ```
 
 ### dataset.yaml

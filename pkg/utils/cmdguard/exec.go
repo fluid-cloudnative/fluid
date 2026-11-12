@@ -112,3 +112,36 @@ func checkCommandArgs(arg ...string) (err error) {
 
 	return
 }
+
+// argIllegalChars is illegalChars extended with the characters that carry no meaning in a
+// plain argument or filesystem path but that a shell would act on: input redirection, quoting,
+// glob and brace expansion, home expansion, history expansion and comments.
+var argIllegalChars = append(append([]rune{}, illegalChars...),
+	'<', '"', '\\', '!', '*', '?', '{', '}', '[', ']', '~', '#')
+
+// ValidateArg validates a single argument, such as a path, that comes from user input and is
+// later embedded in a command or rendered into a script.
+//
+// It is deliberately stricter than the argument check ValidateCommandSlice applies: on top of
+// illegalChars it rejects the characters listed in argIllegalChars and every control character,
+// newline and NUL included. Call it where such a value is first parsed, so that the consumers
+// which never reach ValidateCommandSlice are covered as well - values rendered into Helm charts,
+// for example, are executed inside a pod and never pass through this package.
+//
+// Whitespace is intentionally allowed. Spaces occur in real paths and are harmless once the
+// value is passed as its own element of an argv vector.
+func ValidateArg(arg string) error {
+	for _, illegalChar := range argIllegalChars {
+		if strings.ContainsRune(arg, illegalChar) {
+			return fmt.Errorf("arg %q contains illegal character %q", arg, illegalChar)
+		}
+	}
+
+	for _, r := range arg {
+		if r < 0x20 || r == 0x7f {
+			return fmt.Errorf("arg %q contains illegal control character %q", arg, r)
+		}
+	}
+
+	return nil
+}
