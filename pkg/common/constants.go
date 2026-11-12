@@ -46,6 +46,7 @@ const (
 
 	RuntimeMountUfsFailed = "RuntimeMountUfsFailed"
 
+	RuntimeResourcesConflict = "RuntimeResourcesConflict"
 	RuntimeVersionIncomplete = "RuntimeVersionIncomplete"
 )
 

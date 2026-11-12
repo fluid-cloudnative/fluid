@@ -88,6 +88,15 @@ topology:
               - worker
               - start
             imagePullPolicy: IfNotPresent
+            # A full set of requirements, so the spec-update case has keys the CacheRuntime
+            # does not name and must not lose.
+            resources:
+              requests:
+                cpu: 100m
+                memory: 256Mi
+              limits:
+                cpu: "1"
+                memory: 2Gi
             readinessProbe:
               tcpSocket:
                 port: 8997
