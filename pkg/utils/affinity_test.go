@@ -71,3 +71,98 @@ func TestInjectNodeSelectorTermsToAffinity(t *testing.T) {
 		})
 	}
 }
+
+func TestToNodeSelectorRequirements(t *testing.T) {
+	tests := []struct {
+		name      string
+		selectors map[string]string
+		want      []v1.NodeSelectorRequirement
+	}{
+		{
+			name:      "nil_map",
+			selectors: nil,
+			want:      nil,
+		},
+		{
+			name:      "empty_map",
+			selectors: map[string]string{},
+			want:      nil,
+		},
+		{
+			name: "single_entry",
+			selectors: map[string]string{
+				"zone": "us-east-1a",
+			},
+			want: []v1.NodeSelectorRequirement{
+				{
+					Key:      "zone",
+					Operator: v1.NodeSelectorOpIn,
+					Values:   []string{"us-east-1a"},
+				},
+			},
+		},
+		{
+			name: "multiple_entries_sorted",
+			selectors: map[string]string{
+				"region":   "us-east-1",
+				"arch":     "amd64",
+				"zone":     "us-east-1a",
+				"instance": "large",
+			},
+			want: []v1.NodeSelectorRequirement{
+				{
+					Key:      "arch",
+					Operator: v1.NodeSelectorOpIn,
+					Values:   []string{"amd64"},
+				},
+				{
+					Key:      "instance",
+					Operator: v1.NodeSelectorOpIn,
+					Values:   []string{"large"},
+				},
+				{
+					Key:      "region",
+					Operator: v1.NodeSelectorOpIn,
+					Values:   []string{"us-east-1"},
+				},
+				{
+					Key:      "zone",
+					Operator: v1.NodeSelectorOpIn,
+					Values:   []string{"us-east-1a"},
+				},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := ToNodeSelectorRequirements(tt.selectors)
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("ToNodeSelectorRequirements() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+
+	t.Run("deterministic_order_over_repeated_calls", func(t *testing.T) {
+		multi := map[string]string{
+			"z": "1",
+			"a": "2",
+			"m": "3",
+			"b": "4",
+			"k": "5",
+		}
+		expected := []v1.NodeSelectorRequirement{
+			{Key: "a", Operator: v1.NodeSelectorOpIn, Values: []string{"2"}},
+			{Key: "b", Operator: v1.NodeSelectorOpIn, Values: []string{"4"}},
+			{Key: "k", Operator: v1.NodeSelectorOpIn, Values: []string{"5"}},
+			{Key: "m", Operator: v1.NodeSelectorOpIn, Values: []string{"3"}},
+			{Key: "z", Operator: v1.NodeSelectorOpIn, Values: []string{"1"}},
+		}
+		for i := 0; i < 100; i++ {
+			got := ToNodeSelectorRequirements(multi)
+			if !reflect.DeepEqual(got, expected) {
+				t.Fatalf("iteration %d: ToNodeSelectorRequirements produced non-deterministic output: got %v, expected %v", i, got, expected)
+			}
+		}
+	})
+}

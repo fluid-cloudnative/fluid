@@ -135,7 +135,8 @@ func (p *NodeAffinityWithCache) Mutate(pod *corev1.Pod, runtimeInfos map[string]
 
 func (p *NodeAffinityWithCache) getTieredLocalityPreferredSchedulingTerms(preferredRuntimes map[string]base.RuntimeInfoInterface,
 	preferredLocality map[string]int32) (preferredSchedulingTerms []corev1.PreferredSchedulingTerm, err error) {
-	for name, runtimeInfo := range preferredRuntimes {
+	for _, name := range utils.OrderedKeys(preferredRuntimes) {
+		runtimeInfo := preferredRuntimes[name]
 		if runtimeInfo == nil {
 			log.Info("Warning: pvc has no runtime, skip inject affinity", "Name", name)
 			continue
@@ -171,7 +172,8 @@ func (p *NodeAffinityWithCache) getTieredLocalityPreferredSchedulingTerms(prefer
 func (p *NodeAffinityWithCache) getTieredLocalityNodeSelectorTerms(runtimeInfos map[string]base.RuntimeInfoInterface,
 	requireLocalityNames []string) (requiredSchedulingTerms []corev1.NodeSelectorTerm, err error) {
 
-	for name, runtimeInfo := range runtimeInfos {
+	for _, name := range utils.OrderedKeys(runtimeInfos) {
+		runtimeInfo := runtimeInfos[name]
 		if runtimeInfo == nil {
 			log.Info("Warning: pvc has no runtime, skip inject affinity", "Name", name)
 			continue

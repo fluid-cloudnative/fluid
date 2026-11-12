@@ -81,3 +81,22 @@ func InjectPreferredSchedulingTermsToAffinity(terms []corev1.PreferredScheduling
 
 	return result
 }
+
+// ToNodeSelectorRequirements converts a key-value selector map into a slice of
+// corev1.NodeSelectorRequirement sorted by key in ascending order.
+func ToNodeSelectorRequirements(selectors map[string]string) []corev1.NodeSelectorRequirement {
+	if len(selectors) == 0 {
+		return nil
+	}
+
+	keys := OrderedKeys(selectors)
+	requirements := make([]corev1.NodeSelectorRequirement, 0, len(keys))
+	for _, key := range keys {
+		requirements = append(requirements, corev1.NodeSelectorRequirement{
+			Key:      key,
+			Operator: corev1.NodeSelectorOpIn,
+			Values:   []string{selectors[key]},
+		})
+	}
+	return requirements
+}
