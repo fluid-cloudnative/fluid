@@ -52,7 +52,11 @@ func getTestEFCEngineNode(client client.Client, name string, namespace string, w
 	}
 	return engine
 }
-
+// TestSyncScheduleInfoToCacheNodes verifies that SyncScheduleInfoToCacheNodes
+// correctly synchronizes scheduling information to cache nodes by updating
+// node labels based on the locations of worker pods. It covers scenarios
+// including creating new labels, adding labels to existing nodes, and
+// skipping synchronization when the worker pod has no controller.
 func TestSyncScheduleInfoToCacheNodes(t *testing.T) {
 	type fields struct {
 		// runtime   *datav1alpha1.EFCRuntime
