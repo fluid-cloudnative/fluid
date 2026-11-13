@@ -112,6 +112,11 @@ func mockFluidObjectsForTests(namespacedName types.NamespacedName) (*datav1alpha
 	return dataset, runtime
 }
 
+// mockAlluxioEngineForTests builds a minimal AlluxioEngine instance for unit tests.
+// It validates that the given dataset and runtime are a matching pair (same namespace/name,
+// and runtime is owned by the dataset) and panics otherwise.
+// The returned engine has a basic runtime info, a fake logger and a fake event recorder.
+// Client and Helper are intentionally left nil so that test cases can inject them when needed.
 func mockAlluxioEngineForTests(dataset *datav1alpha1.Dataset, runtime *datav1alpha1.AlluxioRuntime) *AlluxioEngine {
 	if dataset.Namespace != runtime.Namespace ||
 		dataset.Name != runtime.Name ||
