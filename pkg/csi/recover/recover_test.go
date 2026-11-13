@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"os"
 	"reflect"
+	"runtime"
 	"time"
 
 	. "github.com/agiledragon/gomonkey/v2"
@@ -198,15 +199,16 @@ var _ = Describe("FuseRecover", func() {
 			})
 			defer patch1.Reset()
 
+			patchRun := ApplyPrivateMethod(r, "run", func(_ <-chan struct{}) {
+				return
+			})
+			defer patchRun.Reset()
+
 			ctx, cancel := context.WithTimeout(context.Background(), 200*time.Millisecond)
 			defer cancel()
 
-			go func() {
-				err := r.Start(ctx)
-				Expect(err).NotTo(HaveOccurred())
-			}()
-
-			time.Sleep(150 * time.Millisecond)
+			err := r.Start(ctx)
+			Expect(err).NotTo(HaveOccurred())
 		})
 	})
 
@@ -358,18 +360,12 @@ var _ = Describe("FuseRecover", func() {
 					NamespacedDatasetName: "test",
 				}
 
-				mountCalled := false
-				patch1 := ApplyMethod(reflect.TypeOf(fakeMounter), "Mount", func(_ *mount.FakeMounter, source string, target string, fstype string, options []string) error {
-					mountCalled = true
-					Expect(options).To(ContainElement("ro"))
-					Expect(options).To(ContainElement("bind"))
-					return nil
-				})
-				defer patch1.Reset()
-
 				err := r.recoverBrokenMount(point)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(mountCalled).To(BeTrue())
+
+				Expect(fakeMounter.MountPoints).To(HaveLen(1))
+				Expect(fakeMounter.MountPoints[0].Opts).To(ContainElement("ro"))
+				Expect(fakeMounter.MountPoints[0].Opts).To(ContainElement("bind"))
 			})
 		})
 
@@ -696,6 +692,12 @@ var _ = Describe("FuseRecover", func() {
 	})
 
 	Describe("shouldRecover", func() {
+		BeforeEach(func() {
+			if runtime.GOOS == "darwin" {
+				Skip("Skipping on macOS because mount.New is inlined and cannot be mocked without -gcflags=all=-l")
+			}
+		})
+
 		Context("when mount point does not exist", func() {
 			It("should return false without error", func() {
 				r := &FuseRecover{
@@ -704,8 +706,12 @@ var _ = Describe("FuseRecover", func() {
 					},
 				}
 
-				fakeMounter := mount.New("")
-				patch1 := ApplyMethod(reflect.TypeOf(fakeMounter), "IsLikelyNotMountPoint", func(_ *mount.Mounter, file string) (bool, error) {
+				patchNew := ApplyFunc(mount.New, func(mountPath string) mount.Interface {
+					return &mount.FakeMounter{}
+				})
+				defer patchNew.Reset()
+
+				patch1 := ApplyMethod(reflect.TypeOf(&mount.FakeMounter{}), "IsLikelyNotMountPoint", func(_ *mount.FakeMounter, file string) (bool, error) {
 					return true, os.ErrNotExist
 				})
 				defer patch1.Reset()
@@ -724,8 +730,12 @@ var _ = Describe("FuseRecover", func() {
 					},
 				}
 
-				fakeMounter := mount.New("")
-				patch1 := ApplyMethod(reflect.TypeOf(fakeMounter), "IsLikelyNotMountPoint", func(_ *mount.Mounter, file string) (bool, error) {
+				patchNew := ApplyFunc(mount.New, func(mountPath string) mount.Interface {
+					return &mount.FakeMounter{}
+				})
+				defer patchNew.Reset()
+
+				patch1 := ApplyMethod(reflect.TypeOf(&mount.FakeMounter{}), "IsLikelyNotMountPoint", func(_ *mount.FakeMounter, file string) (bool, error) {
 					return true, nil
 				})
 				defer patch1.Reset()
@@ -744,8 +754,12 @@ var _ = Describe("FuseRecover", func() {
 					},
 				}
 
-				fakeMounter := mount.New("")
-				patch1 := ApplyMethod(reflect.TypeOf(fakeMounter), "IsLikelyNotMountPoint", func(_ *mount.Mounter, file string) (bool, error) {
+				patchNew := ApplyFunc(mount.New, func(mountPath string) mount.Interface {
+					return &mount.FakeMounter{}
+				})
+				defer patchNew.Reset()
+
+				patch1 := ApplyMethod(reflect.TypeOf(&mount.FakeMounter{}), "IsLikelyNotMountPoint", func(_ *mount.FakeMounter, file string) (bool, error) {
 					return false, fmt.Errorf("unexpected error")
 				})
 				defer patch1.Reset()
@@ -764,8 +778,12 @@ var _ = Describe("FuseRecover", func() {
 					},
 				}
 
-				fakeMounter := mount.New("")
-				patch1 := ApplyMethod(reflect.TypeOf(fakeMounter), "IsLikelyNotMountPoint", func(_ *mount.Mounter, file string) (bool, error) {
+				patchNew := ApplyFunc(mount.New, func(mountPath string) mount.Interface {
+					return &mount.FakeMounter{}
+				})
+				defer patchNew.Reset()
+
+				patch1 := ApplyMethod(reflect.TypeOf(&mount.FakeMounter{}), "IsLikelyNotMountPoint", func(_ *mount.FakeMounter, file string) (bool, error) {
 					return false, nil
 				})
 				defer patch1.Reset()
