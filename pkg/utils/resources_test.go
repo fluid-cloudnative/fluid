@@ -100,6 +100,98 @@ func TestTransformRequirementsToResources(t *testing.T) {
 	}
 }
 
+func TestTransformInternalResourcesToCoreV1Resources(t *testing.T) {
+	testCases := map[string]struct {
+		internal common.Resources
+		want     corev1.ResourceRequirements
+		wantErr  bool
+	}{
+		"requests and limits": {
+			internal: common.Resources{
+				Requests: common.ResourceList{"cpu": "100m", "memory": "1Gi"},
+				Limits:   common.ResourceList{"cpu": "2", "memory": "4Gi"},
+			},
+			want: corev1.ResourceRequirements{
+				Requests: corev1.ResourceList{
+					corev1.ResourceCPU:    resource.MustParse("100m"),
+					corev1.ResourceMemory: resource.MustParse("1Gi"),
+				},
+				Limits: corev1.ResourceList{
+					corev1.ResourceCPU:    resource.MustParse("2"),
+					corev1.ResourceMemory: resource.MustParse("4Gi"),
+				},
+			},
+		},
+		"empty lists become nil so that the result equals a zero-valued requirement": {
+			internal: common.Resources{
+				Requests: common.ResourceList{},
+				Limits:   common.ResourceList{},
+			},
+			want: corev1.ResourceRequirements{},
+		},
+		"extended resource": {
+			internal: common.Resources{
+				Limits: common.ResourceList{"nvidia.com/gpu": "1"},
+			},
+			want: corev1.ResourceRequirements{
+				Limits: corev1.ResourceList{"nvidia.com/gpu": resource.MustParse("1")},
+			},
+		},
+		"invalid quantity in requests": {
+			internal: common.Resources{
+				Requests: common.ResourceList{"cpu": "not-a-quantity"},
+			},
+			wantErr: true,
+		},
+		"invalid quantity in limits": {
+			internal: common.Resources{
+				Limits: common.ResourceList{"memory": "10VeryBig"},
+			},
+			wantErr: true,
+		},
+	}
+
+	for name, item := range testCases {
+		got, err := TransformInternalResourcesToCoreV1Resources(item.internal)
+		if item.wantErr {
+			if err == nil {
+				t.Errorf("%s: expected an error but got none", name)
+			}
+			continue
+		}
+		if err != nil {
+			t.Errorf("%s: unexpected error %v", name, err)
+			continue
+		}
+		if !reflect.DeepEqual(got, item.want) {
+			t.Errorf("%s check failure, want: %v, got: %v", name, item.want, got)
+		}
+	}
+}
+
+// TestTransformResourcesRoundTrip makes sure a value that went through the Helm values ConfigMap
+// can be compared against the live workload it was rendered into.
+func TestTransformResourcesRoundTrip(t *testing.T) {
+	for _, original := range []corev1.ResourceRequirements{
+		{
+			Requests: corev1.ResourceList{corev1.ResourceCPU: resource.MustParse("1000m")},
+			Limits:   corev1.ResourceList{corev1.ResourceCPU: resource.MustParse("4")},
+		},
+		{
+			Requests: corev1.ResourceList{corev1.ResourceMemory: resource.MustParse("1Gi")},
+		},
+	} {
+		roundTripped, err := TransformInternalResourcesToCoreV1Resources(
+			TransformCoreV1ResourcesToInternalResources(original))
+		if err != nil {
+			t.Fatalf("unexpected error round tripping %v: %v", original, err)
+		}
+		if !ResourceRequirementsEqual(original, roundTripped) {
+			t.Errorf("round trip changed the resources, want: %v, got: %v", original, roundTripped)
+		}
+	}
+}
+
 func mockRequiredResource(req, limit corev1.ResourceList) corev1.ResourceRequirements {
 	res := corev1.ResourceRequirements{}
 	if len(req) > 0 {
