@@ -154,6 +154,10 @@ const (
 	LabelCacheRuntimeName = CacheRuntimeLabelAnnotationPrefix + "name"
 
 	LabelCacheRuntimeComponentName = CacheRuntimeLabelAnnotationPrefix + "component-name"
+
+	// AnnotationCacheRuntimeClassName is set on the CacheRuntimeClass snapshot of a CacheRuntime
+	// and names the CacheRuntimeClass the snapshot was taken from.
+	AnnotationCacheRuntimeClassName = CacheRuntimeLabelAnnotationPrefix + "runtime-class-name"
 )
 
 // LabelToModify modifies the labelKey in operationType.
