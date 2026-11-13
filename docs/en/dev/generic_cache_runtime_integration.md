@@ -187,6 +187,10 @@ In that case the Master and Worker components start as usual, the Dataset reache
 
 Note that Fluid still creates a PVC/PV for such a Dataset and reports them as Bound, but an application pod that mounts the PVC stays in ContainerCreating forever (reporting `timeout waiting for FUSE mount point`). For this kind of cache system, applications should talk to the cache service directly instead of going through the Dataset → PVC → volumeMounts path. For a complete configuration example, see [Deploy Mooncake with CacheRuntime](../samples/cacheruntime/mooncake_cache_runtime.md).
 
+#### Releasing a New Version of the RuntimeClass
+
+A CacheRuntime is bound to a snapshot of its CacheRuntimeClass taken when it is first set up, so editing a CacheRuntimeClass only affects CacheRuntimes created afterwards. Images, `options`, `executionEntries` and `dataOperationSpecs` of one class version can therefore change together. To roll out a new version alongside running CacheRuntimes, publish it as a new CacheRuntimeClass (for example with the version in its name) and have new CacheRuntimes reference it. See [CacheRuntime Spec Field Update Capabilities](../samples/cacheruntime/cacheruntime_spec_update.md#4-cacheruntimeclass-snapshot).
+
 ### Step 2.5 User Creates Runtime
 
 ```yaml
