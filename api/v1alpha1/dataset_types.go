@@ -392,3 +392,28 @@ func (dataset *Dataset) RemoveDataOperationInProgress(operationType, name string
 	dataset.Status.OperationRef[operationType] = strings.Join(dataOpKeys, ",")
 	return dataset.Status.OperationRef[operationType]
 }
+
+// CanStartDataOperation checks if the data operation can be started on this dataset.
+func (dataset *Dataset) CanStartDataOperation(operationType string, maxParallel int32, name string) bool {
+	if dataset.Status.OperationRef == nil {
+		return true
+	}
+
+	opRef, ok := dataset.Status.OperationRef[operationType]
+	if !ok || opRef == "" {
+		return true
+	}
+
+	if maxParallel <= 0 {
+		return true
+	}
+
+	opRefs := strings.Split(opRef, ",")
+	for _, op := range opRefs {
+		if op == name {
+			return true // Already in progress
+		}
+	}
+
+	return int32(len(opRefs)) < maxParallel
+}
