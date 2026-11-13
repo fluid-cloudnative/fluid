@@ -53,6 +53,9 @@ func newEFCEngineREP(client client.Client, name string, namespace string) *EFCEn
 	return engine
 }
 
+// TestSyncReplicas verifies that SyncReplicas correctly handles scale-out (hbase: spec=3, worker=2),
+// scale-in (hadoop: spec=1, worker=3), and no-scale (obj: spec=2, worker=2) scenarios by checking
+// the runtime conditions set after reconciliation.
 func TestSyncReplicas(t *testing.T) {
 	nodeInputs := []*v1.Node{
 		{
