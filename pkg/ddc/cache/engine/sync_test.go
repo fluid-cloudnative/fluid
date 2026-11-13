@@ -294,7 +294,14 @@ var _ = Describe("CacheEngine Sync Tests", Label("pkg.ddc.cache.engine.sync_test
 				}
 				clientDs := &appsv1.DaemonSet{
 					ObjectMeta: metav1.ObjectMeta{Name: "test-runtime-client", Namespace: "default"},
-					Status:     appsv1.DaemonSetStatus{NumberReady: 0, DesiredNumberScheduled: 0},
+					Spec: appsv1.DaemonSetSpec{
+						Template: corev1.PodTemplateSpec{
+							Spec: corev1.PodSpec{
+								Containers: []corev1.Container{{Name: "client", Image: "test-client:latest"}},
+							},
+						},
+					},
+					Status: appsv1.DaemonSetStatus{NumberReady: 0, DesiredNumberScheduled: 0},
 				}
 				engine.Client = fake.NewClientBuilder().
 					WithScheme(scheme).
@@ -744,7 +751,14 @@ var _ = Describe("CacheEngine Sync Tests", Label("pkg.ddc.cache.engine.sync_test
 				}
 				clientDs := &appsv1.DaemonSet{
 					ObjectMeta: metav1.ObjectMeta{Name: "test-runtime-client", Namespace: "default"},
-					Status:     appsv1.DaemonSetStatus{NumberReady: 0, DesiredNumberScheduled: 0},
+					Spec: appsv1.DaemonSetSpec{
+						Template: corev1.PodTemplateSpec{
+							Spec: corev1.PodSpec{
+								Containers: []corev1.Container{{Name: "client", Image: "test-client:latest"}},
+							},
+						},
+					},
+					Status: appsv1.DaemonSetStatus{NumberReady: 0, DesiredNumberScheduled: 0},
 				}
 				fakeClient := fake.NewClientBuilder().
 					WithScheme(scheme).
@@ -817,7 +831,14 @@ var _ = Describe("CacheEngine Sync Tests", Label("pkg.ddc.cache.engine.sync_test
 				}
 				clientDs := &appsv1.DaemonSet{
 					ObjectMeta: metav1.ObjectMeta{Name: "test-runtime-client", Namespace: "default"},
-					Status:     appsv1.DaemonSetStatus{NumberReady: 0, DesiredNumberScheduled: 0},
+					Spec: appsv1.DaemonSetSpec{
+						Template: corev1.PodTemplateSpec{
+							Spec: corev1.PodSpec{
+								Containers: []corev1.Container{{Name: "client", Image: "test-client:latest"}},
+							},
+						},
+					},
+					Status: appsv1.DaemonSetStatus{NumberReady: 0, DesiredNumberScheduled: 0},
 				}
 				fakeClient := fake.NewClientBuilder().
 					WithScheme(scheme).
@@ -888,7 +909,14 @@ var _ = Describe("CacheEngine Sync Tests", Label("pkg.ddc.cache.engine.sync_test
 				}
 				clientDs := &appsv1.DaemonSet{
 					ObjectMeta: metav1.ObjectMeta{Name: "test-runtime-client", Namespace: "default"},
-					Status:     appsv1.DaemonSetStatus{NumberReady: 0, DesiredNumberScheduled: 0},
+					Spec: appsv1.DaemonSetSpec{
+						Template: corev1.PodTemplateSpec{
+							Spec: corev1.PodSpec{
+								Containers: []corev1.Container{{Name: "client", Image: "test-client:latest"}},
+							},
+						},
+					},
+					Status: appsv1.DaemonSetStatus{NumberReady: 0, DesiredNumberScheduled: 0},
 				}
 				engine.Client = fake.NewClientBuilder().
 					WithScheme(scheme).
