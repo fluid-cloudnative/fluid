@@ -112,7 +112,7 @@ func TestCreateRuntimeValueConfigMapCreatesMissingConfigMap(t *testing.T) {
 	baseClient := fake.NewFakeClientWithScheme(scheme, runtimeObj, runtimeClass, dataset)
 	engine := &CacheEngine{Client: baseClient, name: "demo", namespace: "default"}
 
-	if err := engine.createRuntimeValueConfigMap(context.Background(), runtimeObj, nil); err != nil {
+	if err := engine.createRuntimeValueConfigMap(context.Background(), runtimeObj, runtimeClass, nil); err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}
 
@@ -135,7 +135,7 @@ func TestGenerateRuntimeConfigDataWithCanceledContext(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
 
-	if _, err := engine.generateRuntimeConfigData(ctx, runtimeObj); err != context.Canceled {
+	if _, err := engine.generateRuntimeConfigData(ctx, runtimeObj, runtimeClass); err != context.Canceled {
 		t.Fatalf("expected context.Canceled, got %v", err)
 	}
 }
@@ -151,7 +151,7 @@ func TestSyncRuntimeValueConfigMapWithCanceledContext(t *testing.T) {
 	cancel()
 	ctx := cruntime.ReconcileRequestContext{Context: canceledCtx}
 
-	if err := engine.syncRuntimeValueConfigMap(ctx, runtimeObj); err != context.Canceled {
+	if err := engine.syncRuntimeValueConfigMap(ctx, runtimeObj, runtimeClass); err != context.Canceled {
 		t.Fatalf("expected context.Canceled, got %v", err)
 	}
 }
@@ -163,7 +163,7 @@ func TestSyncRuntimeValueConfigMapSkipsUnchangedData(t *testing.T) {
 	dataset := newDatasetForConfigMapTest()
 
 	baseEngine := &CacheEngine{Client: fake.NewFakeClientWithScheme(scheme, runtimeObj, runtimeClass, dataset), name: "demo", namespace: "default"}
-	data, err := baseEngine.generateRuntimeConfigData(context.Background(), runtimeObj)
+	data, err := baseEngine.generateRuntimeConfigData(context.Background(), runtimeObj, runtimeClass)
 	if err != nil {
 		t.Fatalf("failed to generate runtime config data: %v", err)
 	}
@@ -176,7 +176,7 @@ func TestSyncRuntimeValueConfigMapSkipsUnchangedData(t *testing.T) {
 	engine := &CacheEngine{Client: testClient, name: "demo", namespace: "default"}
 	ctx := cruntime.ReconcileRequestContext{Context: context.Background()}
 
-	if err := engine.syncRuntimeValueConfigMap(ctx, runtimeObj); err != nil {
+	if err := engine.syncRuntimeValueConfigMap(ctx, runtimeObj, runtimeClass); err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}
 	if testClient.updateCount != 0 {
@@ -281,7 +281,7 @@ func TestGenerateRuntimeConfigDataWithMissingComponentTopology(t *testing.T) {
 			baseClient := fake.NewFakeClientWithScheme(scheme, runtimeObj, runtimeClass, dataset)
 			engine := &CacheEngine{Client: baseClient, name: "demo", namespace: "default"}
 
-			if _, err := engine.generateRuntimeConfigData(context.Background(), runtimeObj); err != nil {
+			if _, err := engine.generateRuntimeConfigData(context.Background(), runtimeObj, runtimeClass); err != nil {
 				t.Fatalf("expected no error, got %v", err)
 			}
 		})
@@ -305,7 +305,7 @@ func TestGenerateRuntimeConfigDataWithoutAnyComponent(t *testing.T) {
 			baseClient := fake.NewFakeClientWithScheme(scheme, runtimeObj, runtimeClass, dataset)
 			engine := &CacheEngine{Client: baseClient, name: "demo", namespace: "default"}
 
-			_, err := engine.generateRuntimeConfigData(context.Background(), runtimeObj)
+			_, err := engine.generateRuntimeConfigData(context.Background(), runtimeObj, runtimeClass)
 			if err == nil {
 				t.Fatal("expected error, got nil")
 			}
@@ -479,9 +479,10 @@ func sourceRuntimeSh(t *testing.T, script string, keys ...string) []string {
 
 func TestGenerateRuntimeConfigDataIncludesRuntimeSh(t *testing.T) {
 	runtimeObj := newClientlessRuntimeForConfigMapTest()
-	engine := newEngineForConfigMapTest(t, runtimeObj, newCacheRuntimeClassForConfigMapTest(), newDatasetForConfigMapTest())
+	runtimeClass := newCacheRuntimeClassForConfigMapTest()
+	engine := newEngineForConfigMapTest(t, runtimeObj, runtimeClass, newDatasetForConfigMapTest())
 
-	data, err := engine.generateRuntimeConfigData(context.Background(), runtimeObj)
+	data, err := engine.generateRuntimeConfigData(context.Background(), runtimeObj, runtimeClass)
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}
@@ -536,9 +537,10 @@ func TestGenerateRuntimeShQuotesHostileValues(t *testing.T) {
 	dataset.Spec.Mounts[0].Name = "it's-a-mount"
 
 	runtimeObj := newClientlessRuntimeForConfigMapTest()
-	engine := newEngineForConfigMapTest(t, runtimeObj, newCacheRuntimeClassForConfigMapTest(), dataset)
+	runtimeClass := newCacheRuntimeClassForConfigMapTest()
+	engine := newEngineForConfigMapTest(t, runtimeObj, runtimeClass, dataset)
 
-	data, err := engine.generateRuntimeConfigData(context.Background(), runtimeObj)
+	data, err := engine.generateRuntimeConfigData(context.Background(), runtimeObj, runtimeClass)
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}
@@ -568,14 +570,15 @@ func TestGenerateRuntimeShIsDeterministic(t *testing.T) {
 	runtimeObj.Spec.Options = map[string]string{"x": "1", "y": "2", "z": "3"}
 	runtimeObj.Spec.Master.Options = map[string]string{"m1": "1", "m2": "2", "m3": "3"}
 
-	engine := newEngineForConfigMapTest(t, runtimeObj, newCacheRuntimeClassForConfigMapTest(), dataset)
+	runtimeClass := newCacheRuntimeClassForConfigMapTest()
+	engine := newEngineForConfigMapTest(t, runtimeObj, runtimeClass, dataset)
 
-	first, err := engine.generateRuntimeConfigData(context.Background(), runtimeObj)
+	first, err := engine.generateRuntimeConfigData(context.Background(), runtimeObj, runtimeClass)
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}
 	for i := 0; i < 20; i++ {
-		next, err := engine.generateRuntimeConfigData(context.Background(), runtimeObj)
+		next, err := engine.generateRuntimeConfigData(context.Background(), runtimeObj, runtimeClass)
 		if err != nil {
 			t.Fatalf("expected no error, got %v", err)
 		}
@@ -590,9 +593,10 @@ func TestGenerateRuntimeShWithoutAnyEnabledComponent(t *testing.T) {
 	// Every component disabled: the script still sources cleanly and reports all three as
 	// off, instead of leaving the variables unset.
 	runtimeObj := newCacheRuntimeForConfigMapTest()
-	engine := newEngineForConfigMapTest(t, runtimeObj, newCacheRuntimeClassForConfigMapTest(), newDatasetForConfigMapTest())
+	runtimeClass := newCacheRuntimeClassForConfigMapTest()
+	engine := newEngineForConfigMapTest(t, runtimeObj, runtimeClass, newDatasetForConfigMapTest())
 
-	data, err := engine.generateRuntimeConfigData(context.Background(), runtimeObj)
+	data, err := engine.generateRuntimeConfigData(context.Background(), runtimeObj, runtimeClass)
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}
@@ -615,9 +619,10 @@ func TestGenerateRuntimeShExportsTieredStoreLevels(t *testing.T) {
 			Low:           "0.7",
 		}},
 	}
-	engine := newEngineForConfigMapTest(t, runtimeObj, newCacheRuntimeClassForConfigMapTest(), newDatasetForConfigMapTest())
+	runtimeClass := newCacheRuntimeClassForConfigMapTest()
+	engine := newEngineForConfigMapTest(t, runtimeObj, runtimeClass, newDatasetForConfigMapTest())
 
-	data, err := engine.generateRuntimeConfigData(context.Background(), runtimeObj)
+	data, err := engine.generateRuntimeConfigData(context.Background(), runtimeObj, runtimeClass)
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}

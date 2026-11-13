@@ -357,6 +357,131 @@ function scale_worker_and_verify() {
     syslog "Worker scaled to $target_replicas replicas successfully (asts replicas=$asts_replicas, ready=$asts_ready)"
 }
 
+function update_worker_resources_and_verify() {
+    local worker_component_name="${dataset_name}-worker"
+    local worker_selector="cacheruntime.fluid.io/component-name=${worker_component_name}"
+    local resources_path="{.spec.template.spec.containers[0].resources}"
+    local deadline=300
+    local counter=0
+
+    # The CacheRuntimeClass template declares requests {cpu 100m, memory 256Mi} and
+    # limits {cpu 1, memory 2Gi}. Name only limits.memory on the CacheRuntime: the other
+    # three keys must keep their template values (#6173).
+    syslog "Raising worker limits.memory to 3Gi on the CacheRuntime"
+    kubectl patch cacheruntime $dataset_name --type merge -p '{"spec":{"worker":{"resources":{"limits":{"memory":"3Gi"}}}}}'
+
+    while true; do
+        local limits_memory=""
+        limits_memory=$(kubectl get advancedstatefulset "$worker_component_name" -ojsonpath='{.spec.template.spec.containers[0].resources.limits.memory}' 2>/dev/null)
+        if [[ "$limits_memory" == "3Gi" ]]; then
+            break
+        fi
+
+        counter=$((counter + 1))
+        if [[ $((counter * 5)) -ge $deadline ]]; then
+            panic "timeout ${deadline}s waiting for worker limits.memory to sync to 3Gi (got: ${limits_memory:-<empty>}, resources: $(kubectl get advancedstatefulset "$worker_component_name" -ojsonpath="$resources_path" 2>/dev/null))"
+        fi
+        sleep 5
+    done
+
+    local key want got
+    for key in "limits.cpu=1" "requests.cpu=100m" "requests.memory=256Mi"; do
+        want=${key#*=}
+        got=$(kubectl get advancedstatefulset "$worker_component_name" -ojsonpath="{.spec.template.spec.containers[0].resources.${key%%=*}}" 2>/dev/null)
+        if [[ "$got" != "$want" ]]; then
+            panic "worker ${key%%=*} lost the template value: expected $want, got ${got:-<empty>} (resources: $(kubectl get advancedstatefulset "$worker_component_name" -ojsonpath="$resources_path" 2>/dev/null))"
+        fi
+    done
+    syslog "AdvancedStatefulSet resources merged: $(kubectl get advancedstatefulset "$worker_component_name" -ojsonpath="$resources_path")"
+
+    # Wait for the update to reach the pods. The bundled AdvancedStatefulSet controller only
+    # updates images in place, so a resources change recreates the pods.
+    counter=0
+    while true; do
+        local generation="" observed="" replicas="" updated="" ready=""
+        generation=$(kubectl get advancedstatefulset "$worker_component_name" -ojsonpath='{.metadata.generation}' 2>/dev/null)
+        observed=$(kubectl get advancedstatefulset "$worker_component_name" -ojsonpath='{.status.observedGeneration}' 2>/dev/null)
+        replicas=$(kubectl get advancedstatefulset "$worker_component_name" -ojsonpath='{.spec.replicas}' 2>/dev/null)
+        updated=$(kubectl get advancedstatefulset "$worker_component_name" -ojsonpath='{.status.updatedReplicas}' 2>/dev/null)
+        ready=$(kubectl get advancedstatefulset "$worker_component_name" -ojsonpath='{.status.readyReplicas}' 2>/dev/null)
+        if [[ -n "$generation" ]] && [[ "$observed" == "$generation" ]] && \
+            [[ "$updated" == "$replicas" ]] && [[ "$ready" == "$replicas" ]]; then
+            break
+        fi
+
+        counter=$((counter + 1))
+        if [[ $((counter * 5)) -ge $deadline ]]; then
+            panic "timeout ${deadline}s waiting for worker resources update to roll out (generation: $generation, observed: ${observed:-<empty>}, replicas: $replicas, updated: ${updated:-<empty>}, ready: ${ready:-<empty>})"
+        fi
+        sleep 5
+    done
+
+    local pod_limits_memory="" pod_requests_cpu=""
+    pod_limits_memory=$(kubectl get pod -l "$worker_selector" -ojsonpath='{.items[0].spec.containers[0].resources.limits.memory}')
+    pod_requests_cpu=$(kubectl get pod -l "$worker_selector" -ojsonpath='{.items[0].spec.containers[0].resources.requests.cpu}')
+    if [[ "$pod_limits_memory" != "3Gi" ]] || [[ "$pod_requests_cpu" != "100m" ]]; then
+        panic "worker pod resources not updated: limits.memory=${pod_limits_memory:-<empty>}, requests.cpu=${pod_requests_cpu:-<empty>}"
+    fi
+
+    wait_cache_worker_ready
+    syslog "Worker resources merged onto the template baseline and rolled out"
+}
+
+function verify_runtime_class_edit_not_propagated() {
+    local worker_component_name="${dataset_name}-worker"
+    local class_name="curvine-demo"
+    local snapshot_name="fluid-runtime-class-snapshot-${dataset_name}"
+    local resources_path='{.spec.template.spec.containers[0].resources}'
+    # limits.cpu is not overridden by the CacheRuntime, so with a live class it would follow the edit.
+    local class_cpu_path='/topology/worker/template/spec/containers/0/resources/limits/cpu'
+    local deadline=120
+    local counter=0
+
+    if ! kubectl get configmap "$snapshot_name" >/dev/null 2>&1; then
+        panic "CacheRuntimeClass snapshot configmap $snapshot_name not found"
+    fi
+
+    local resources_before="" replicas_before=""
+    resources_before=$(kubectl get advancedstatefulset "$worker_component_name" -ojsonpath="$resources_path")
+    replicas_before=$(kubectl get cacheruntime "$dataset_name" -ojsonpath='{.spec.worker.replicas}')
+
+    local class_cpu=""
+    class_cpu=$(kubectl get cacheruntimeclass "$class_name" -ojsonpath='{.topology.worker.template.spec.containers[0].resources.limits.cpu}')
+    syslog "Editing CacheRuntimeClass $class_name worker limits.cpu from $class_cpu to 4"
+    kubectl patch cacheruntimeclass "$class_name" --type json \
+        -p "[{\"op\":\"replace\",\"path\":\"${class_cpu_path}\",\"value\":\"4\"}]"
+
+    # Edit the CacheRuntime too. Seeing the new replicas on the AdvancedStatefulSet proves a
+    # sync ran after the class edit; the class edit itself must not reach the workload.
+    local target_replicas=$((replicas_before + 1))
+    kubectl patch cacheruntime "$dataset_name" --type merge -p "{\"spec\":{\"worker\":{\"replicas\":${target_replicas}}}}"
+    while true; do
+        local replicas=""
+        replicas=$(kubectl get advancedstatefulset "$worker_component_name" -ojsonpath='{.spec.replicas}' 2>/dev/null)
+        if [[ "$replicas" == "$target_replicas" ]]; then
+            break
+        fi
+        counter=$((counter + 1))
+        if [[ $((counter * 5)) -ge $deadline ]]; then
+            panic "timeout ${deadline}s waiting for a sync after the CacheRuntimeClass edit (worker replicas: ${replicas:-<empty>}, want $target_replicas)"
+        fi
+        sleep 5
+    done
+
+    # The runtime config configmap is not checked: it legitimately changes with the replicas.
+    local resources_after=""
+    resources_after=$(kubectl get advancedstatefulset "$worker_component_name" -ojsonpath="$resources_path")
+
+    kubectl patch cacheruntimeclass "$class_name" --type json \
+        -p "[{\"op\":\"replace\",\"path\":\"${class_cpu_path}\",\"value\":\"${class_cpu}\"}]"
+    kubectl patch cacheruntime "$dataset_name" --type merge -p "{\"spec\":{\"worker\":{\"replicas\":${replicas_before}}}}"
+
+    if [[ "$resources_after" != "$resources_before" ]]; then
+        panic "CacheRuntimeClass edit reached worker $worker_component_name: resources $resources_before -> $resources_after"
+    fi
+    syslog "CacheRuntimeClass edit did not reach the existing CacheRuntime (worker resources: $resources_after)"
+}
+
 function delete_dataset_and_runtime() {
     kubectl delete --ignore-not-found -f test/gha-e2e/curvine/dataload.yaml
     kubectl delete --ignore-not-found -f test/gha-e2e/curvine/ref-dataset.yaml
@@ -497,10 +622,17 @@ function main() {
     create_job test/gha-e2e/curvine/read_ref_job.yaml $read_ref_job_name
     wait_job_completed $read_ref_job_name
 
+    # verify a partial resources update keeps the template's other requirements
+    update_worker_resources_and_verify
+
+    # verify editing the CacheRuntimeClass does not reach the existing CacheRuntime
+    verify_runtime_class_edit_not_propagated
+
     # verify scale-up and scale-down: scale up writes through the scale subresource (the same
     # path an HPA takes), scale down writes spec directly via patch. The write assertions run
     # unconditionally - landing the write needs no spare node - while the pod-count checks are
     # skipped on single-node clusters where anti-affinity prevents scheduling the second pod
+
     local node_count=""
     node_count=$(kubectl get nodes --no-headers 2>/dev/null | wc -l | tr -d ' ')
     if [[ "$node_count" -ge 2 ]]; then

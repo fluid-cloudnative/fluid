@@ -49,6 +49,9 @@ func (e *CacheEngine) transformClient(dataset *datav1alpha1.Dataset, runtime *da
 	// before the reconcile reaches Sync, so an image that never becomes ready would hide it.
 	e.reportIncompleteVersion(runtime, common.ComponentTypeClient, runtimeClient.RuntimeVersion, componentTemplateImage(componentDefinition))
 	e.transformComponentPodTemplate(runtime.Spec, runtimeClient.RuntimeComponentCommonSpec, dataset, value.Client)
+	if err = e.checkComponentResources(runtime, value.Client); err != nil {
+		return err
+	}
 
 	// transform tiered store configuration into pod resource request or volumes .
 	err = e.TransformRuntimeTieredStore(&runtimeClient.TieredStore, &value.Client.PodTemplateSpec.Spec)

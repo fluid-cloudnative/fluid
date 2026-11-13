@@ -19,6 +19,7 @@ package engine
 import (
 	"os"
 	"reflect"
+	"strings"
 	"time"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
@@ -47,18 +48,20 @@ func (e *CacheEngine) Sync(ctx cruntime.ReconcileRequestContext) (err error) {
 	if err != nil {
 		return err
 	}
-	runtimeClass, err := e.getRuntimeClass(runtime.Spec.RuntimeClassName)
+	// The class is read once, from the snapshot the runtime is bound to, and passed down so
+	// every step of this sync sees the same class.
+	runtimeClass, err := e.getBoundRuntimeClass(ctx, runtime)
 	if err != nil {
 		return err
 	}
 
-	err = e.syncRuntimeValueConfigMap(ctx, runtime)
+	err = e.syncRuntimeValueConfigMap(ctx, runtime, runtimeClass)
 	if err != nil {
 		return err
 	}
 
 	// handle ufs change - support dynamic mount updates
-	err = e.UpdateOnUFSChange(runtime)
+	err = e.UpdateOnUFSChange(runtime, runtimeClass)
 	if err != nil {
 		e.Log.Error(err, "Failed to update UFS")
 		return err
@@ -127,12 +130,13 @@ func (e *CacheEngine) Sync(ctx cruntime.ReconcileRequestContext) (err error) {
 	return nil
 }
 
-func (e *CacheEngine) syncRuntimeValueConfigMap(ctx cruntime.ReconcileRequestContext, runtime *datav1alpha1.CacheRuntime) error {
+func (e *CacheEngine) syncRuntimeValueConfigMap(ctx cruntime.ReconcileRequestContext, runtime *datav1alpha1.CacheRuntime,
+	runtimeClass *datav1alpha1.CacheRuntimeClass) error {
 	configMap, err := kubeclient.GetConfigmapByNameWithContext(ctx, e.Client, common.GetCacheRuntimeConfigConfigMapName(e.name), e.namespace)
 	if err != nil {
 		return err
 	}
-	data, err := e.generateRuntimeConfigData(ctx, runtime)
+	data, err := e.generateRuntimeConfigData(ctx, runtime, runtimeClass)
 	if err != nil {
 		return err
 	}
@@ -191,15 +195,23 @@ func (e *CacheEngine) permitSync() (permit bool) {
 	return
 }
 
-// syncRuntimeSpec synchronizes CacheRuntime spec changes to component workloads
-// This enables in-place updates for compatible fields without pod recreation
-// Note: Only Master and Worker components support in-place update (using AdvancedStatefulSet)
-// Client component uses DaemonSet and does NOT support in-place update
-func (e *CacheEngine) syncRuntimeSpec(ctx cruntime.ReconcileRequestContext, runtime *datav1alpha1.CacheRuntime, runtimeClass *datav1alpha1.CacheRuntimeClass) error {
+// syncRuntimeSpec syncs the replicas, image and resources the CacheRuntime declares to the master
+// and worker AdvancedStatefulSets, resolved against runtimeClass, the class the runtime is bound
+// to (see getBoundRuntimeClass). The AdvancedStatefulSet applies an image change in place,
+// restarting the container, and recreates the Pods for a resources change. The client runs as a
+// DaemonSet and is not synced after creation.
+func (e *CacheEngine) syncRuntimeSpec(ctx cruntime.ReconcileRequestContext, runtime *datav1alpha1.CacheRuntime,
+	runtimeClass *datav1alpha1.CacheRuntimeClass) error {
 	e.Log.V(1).Info("start syncing runtime spec")
 	defer func() {
 		e.Log.V(1).Info("finished syncing runtime spec")
 	}()
+
+	// getRuntimeClass rejects a class without a topology, so this only guards direct callers;
+	// like the transform path, a missing topology leaves no component to sync.
+	if runtimeClass.Topology == nil {
+		return nil
+	}
 
 	// Sync Master component if enabled (supports in-place update via AdvancedStatefulSet)
 	if runtimeClass.Topology.Master != nil && !runtime.Spec.Master.Disabled {
@@ -208,12 +220,18 @@ func (e *CacheEngine) syncRuntimeSpec(ctx cruntime.ReconcileRequestContext, runt
 			Namespace: e.namespace,
 		}
 		manager := component.NewComponentHelper(common.ComponentTypeMaster, e.Client)
+		podSpec, err := manager.GetPodSpec(ctx.Context, masterIdentity)
+		if err != nil {
+			e.Log.Error(err, "failed to read the master pod spec", "component", masterIdentity.Name)
+			return err
+		}
 		masterTemplateImage := componentTemplateImage(runtimeClass.Topology.Master)
 		e.reportIncompleteVersion(runtime, common.ComponentTypeMaster, runtime.Spec.Master.RuntimeVersion, masterTemplateImage)
 		masterSpec := component.ComponentSpec{
-			Version:   desiredComponentVersion(runtime.Spec.Master.RuntimeVersion, masterTemplateImage),
-			Resources: desiredComponentResources(runtime.Spec.Master.Resources, runtimeClass.Topology.Master),
-			Replicas:  &runtime.Spec.Master.Replicas,
+			Version: desiredComponentVersion(runtime.Spec.Master.RuntimeVersion, masterTemplateImage),
+			Resources: e.validDesiredResources(runtime, common.ComponentTypeMaster,
+				desiredComponentResources(runtime.Spec.Master.Resources, runtimeClass.Topology.Master), podSpec),
+			Replicas: &runtime.Spec.Master.Replicas,
 		}
 		if err := manager.SyncComponentSpec(ctx.Context, masterIdentity, masterSpec); err != nil {
 			e.Log.Error(err, "failed to sync master component spec", "component", masterIdentity.Name)
@@ -236,13 +254,15 @@ func (e *CacheEngine) syncRuntimeSpec(ctx cruntime.ReconcileRequestContext, runt
 		// spec: tieredStore is not a supported update field, and SyncComponentSpec
 		// only patches resources, so a spec-derived quota would move the container's
 		// memory while the tmpfs volumes kept their original size.
-		workerResources := desiredComponentResources(runtime.Spec.Worker.Resources, runtimeClass.Topology.Worker)
+		podSpec, err := manager.GetPodSpec(ctx.Context, workerIdentity)
+		if err != nil {
+			e.Log.Error(err, "failed to read the worker pod spec", "component", workerIdentity.Name)
+			return err
+		}
+		workerResources := e.validDesiredResources(runtime, common.ComponentTypeWorker,
+			desiredComponentResources(runtime.Spec.Worker.Resources, runtimeClass.Topology.Worker), podSpec)
+		// nil only when the merged resources conflict: leave them unsynced.
 		if workerResources != nil {
-			podSpec, err := manager.GetPodSpec(ctx.Context, workerIdentity)
-			if err != nil {
-				e.Log.Error(err, "failed to read the worker pod spec", "component", workerIdentity.Name)
-				return err
-			}
 			resources := withTieredStoreMemoryQuota(*workerResources, chargedTieredStoreMemoryQuota(podSpec))
 			workerResources = &resources
 		}
@@ -267,28 +287,21 @@ func (e *CacheEngine) syncRuntimeSpec(ctx cruntime.ReconcileRequestContext, runt
 }
 
 // desiredComponentResources resolves the resources that should be synced to a
-// component's workload. A value set on the CacheRuntime wins; when the CacheRuntime
-// sets none, the CacheRuntimeClass template value is used, which is what the creation
-// path rendered into the workload. A nil return means neither declares resources, and
-// the workload's current resources are left untouched.
+// component's workload. It mirrors the creation path: the values set on the CacheRuntime
+// are overlaid key by key on the CacheRuntimeClass template baseline, so a key the
+// CacheRuntime does not name keeps the template value. When neither side declares a key,
+// it is cleared from the workload.
 //
 // Only the first container is considered, matching the creation path, which also only
 // fills in resources for Containers[0].
 func desiredComponentResources(runtimeResources corev1.ResourceRequirements, componentDefinition *datav1alpha1.RuntimeComponentDefinition) *corev1.ResourceRequirements {
-	if runtimeResources.Requests != nil || runtimeResources.Limits != nil {
-		return runtimeResources.DeepCopy()
+	var templateResources corev1.ResourceRequirements
+	if componentDefinition != nil && len(componentDefinition.Template.Spec.Containers) > 0 {
+		templateResources = componentDefinition.Template.Spec.Containers[0].Resources
 	}
 
-	if componentDefinition == nil || len(componentDefinition.Template.Spec.Containers) == 0 {
-		return nil
-	}
-
-	templateResources := componentDefinition.Template.Spec.Containers[0].Resources
-	if templateResources.Requests == nil && templateResources.Limits == nil {
-		return nil
-	}
-
-	return templateResources.DeepCopy()
+	desired := mergeResourceRequirements(templateResources, runtimeResources)
+	return &desired
 }
 
 func (e *CacheEngine) syncDatasetCacheStates(ctx cruntime.ReconcileRequestContext, runtime *datav1alpha1.CacheRuntime, runtimeClass *datav1alpha1.CacheRuntimeClass) (err error) {
@@ -327,4 +340,42 @@ func (e *CacheEngine) syncDatasetCacheStates(ctx cruntime.ReconcileRequestContex
 	}
 
 	return
+}
+
+// validDesiredResources returns the desired resources to sync to the workload whose pod spec
+// is given. When the merged requests and limits conflict it emits a Warning event on the
+// runtime naming the conflicting keys and returns nil, so the sync leaves the workload's
+// resources as they are while image and replicas still sync. Container claims the sync would
+// add without the workload's pod spec declaring them are dropped with a Warning event, and the
+// rest is still synced:
+// without DynamicResourceAllocation the API server ignores claims anyway, so they must not
+// hold back a requests or limits edit.
+func (e *CacheEngine) validDesiredResources(runtime *datav1alpha1.CacheRuntime, componentType common.ComponentType,
+	desired *corev1.ResourceRequirements, podSpec *corev1.PodSpec) *corev1.ResourceRequirements {
+	if desired == nil {
+		return nil
+	}
+	if err := validateResourceRequirements(*desired); err != nil {
+		e.Log.Info("Skip syncing conflicting resources", "component", componentType, "conflicts", err.Error())
+		if e.Recorder != nil {
+			e.Recorder.Eventf(runtime, corev1.EventTypeWarning, common.RuntimeResourcesConflict,
+				"%s resources are not synced: the CacheRuntime and its CacheRuntimeClass template merge into %v",
+				componentType, err)
+		}
+		return nil
+	}
+
+	declared, undeclared := splitDeclaredClaims(desired.Claims, podSpec)
+	if len(undeclared) == 0 {
+		return desired
+	}
+	e.Log.Info("Skip syncing claims the workload does not declare", "component", componentType, "claims", undeclared)
+	if e.Recorder != nil {
+		e.Recorder.Eventf(runtime, corev1.EventTypeWarning, common.RuntimeResourcesConflict,
+			"%s resource claims %s are not synced: the workload's pod-level resourceClaims do not declare them; recreate the CacheRuntime to add them",
+			componentType, strings.Join(undeclared, ", "))
+	}
+	synced := desired.DeepCopy()
+	synced.Claims = declared
+	return synced
 }
