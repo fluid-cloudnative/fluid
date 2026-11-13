@@ -685,7 +685,7 @@ var _ = Describe("CacheEngine Sync Tests", Label("pkg.ddc.cache.engine.sync_test
 	Describe("syncRuntimeValueConfigMap", func() {
 		Context("when configmap does not exist", func() {
 			It("should create new configmap", func() {
-				err := engine.syncRuntimeValueConfigMap(ctx, runtimeObj)
+				err := engine.syncRuntimeValueConfigMap(ctx, runtimeObj, runtimeClass)
 				Expect(err).NotTo(HaveOccurred())
 
 				// Verify configmap was created
@@ -756,7 +756,7 @@ var _ = Describe("CacheEngine Sync Tests", Label("pkg.ddc.cache.engine.sync_test
 			})
 
 			It("should update existing configmap", func() {
-				err := engine.syncRuntimeValueConfigMap(ctx, runtimeObj)
+				err := engine.syncRuntimeValueConfigMap(ctx, runtimeObj, runtimeClass)
 				Expect(err).NotTo(HaveOccurred())
 
 				// Verify configmap was updated
@@ -773,7 +773,7 @@ var _ = Describe("CacheEngine Sync Tests", Label("pkg.ddc.cache.engine.sync_test
 		Context("when configmap data is unchanged", func() {
 			BeforeEach(func() {
 				// First sync to create configmap
-				err := engine.syncRuntimeValueConfigMap(ctx, runtimeObj)
+				err := engine.syncRuntimeValueConfigMap(ctx, runtimeObj, runtimeClass)
 				Expect(err).NotTo(HaveOccurred())
 
 				// Get the created configmap
@@ -830,7 +830,7 @@ var _ = Describe("CacheEngine Sync Tests", Label("pkg.ddc.cache.engine.sync_test
 
 			It("should not update configmap when data is same", func() {
 				// Second sync with same data
-				err := engine.syncRuntimeValueConfigMap(ctx, runtimeObj)
+				err := engine.syncRuntimeValueConfigMap(ctx, runtimeObj, runtimeClass)
 				Expect(err).NotTo(HaveOccurred())
 
 				// Verify configmap still exists
@@ -897,7 +897,7 @@ var _ = Describe("CacheEngine Sync Tests", Label("pkg.ddc.cache.engine.sync_test
 					WithStatusSubresource(minimalRuntime).
 					Build()
 
-				err := engine.syncRuntimeValueConfigMap(ctx, minimalRuntime)
+				err := engine.syncRuntimeValueConfigMap(ctx, minimalRuntime, runtimeClass)
 				Expect(err).NotTo(HaveOccurred())
 			})
 		})

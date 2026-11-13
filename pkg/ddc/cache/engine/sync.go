@@ -48,18 +48,20 @@ func (e *CacheEngine) Sync(ctx cruntime.ReconcileRequestContext) (err error) {
 	if err != nil {
 		return err
 	}
-	runtimeClass, err := e.getRuntimeClass(runtime.Spec.RuntimeClassName)
+	// The class is read once, from the snapshot the runtime is bound to, and passed down so
+	// every step of this sync sees the same class.
+	runtimeClass, err := e.getBoundRuntimeClass(ctx, runtime)
 	if err != nil {
 		return err
 	}
 
-	err = e.syncRuntimeValueConfigMap(ctx, runtime)
+	err = e.syncRuntimeValueConfigMap(ctx, runtime, runtimeClass)
 	if err != nil {
 		return err
 	}
 
 	// handle ufs change - support dynamic mount updates
-	err = e.UpdateOnUFSChange(runtime)
+	err = e.UpdateOnUFSChange(runtime, runtimeClass)
 	if err != nil {
 		e.Log.Error(err, "Failed to update UFS")
 		return err
@@ -128,12 +130,13 @@ func (e *CacheEngine) Sync(ctx cruntime.ReconcileRequestContext) (err error) {
 	return nil
 }
 
-func (e *CacheEngine) syncRuntimeValueConfigMap(ctx cruntime.ReconcileRequestContext, runtime *datav1alpha1.CacheRuntime) error {
+func (e *CacheEngine) syncRuntimeValueConfigMap(ctx cruntime.ReconcileRequestContext, runtime *datav1alpha1.CacheRuntime,
+	runtimeClass *datav1alpha1.CacheRuntimeClass) error {
 	configMap, err := kubeclient.GetConfigmapByNameWithContext(ctx, e.Client, common.GetCacheRuntimeConfigConfigMapName(e.name), e.namespace)
 	if err != nil {
 		return err
 	}
-	data, err := e.generateRuntimeConfigData(ctx, runtime)
+	data, err := e.generateRuntimeConfigData(ctx, runtime, runtimeClass)
 	if err != nil {
 		return err
 	}
@@ -192,11 +195,13 @@ func (e *CacheEngine) permitSync() (permit bool) {
 	return
 }
 
-// syncRuntimeSpec synchronizes CacheRuntime spec changes to component workloads
-// This enables in-place updates for compatible fields without pod recreation
-// Note: Only Master and Worker components support in-place update (using AdvancedStatefulSet)
-// Client component uses DaemonSet and does NOT support in-place update
-func (e *CacheEngine) syncRuntimeSpec(ctx cruntime.ReconcileRequestContext, runtime *datav1alpha1.CacheRuntime, runtimeClass *datav1alpha1.CacheRuntimeClass) error {
+// syncRuntimeSpec syncs the replicas, image and resources the CacheRuntime declares to the master
+// and worker AdvancedStatefulSets, resolved against runtimeClass, the class the runtime is bound
+// to (see getBoundRuntimeClass). The AdvancedStatefulSet applies an image change in place,
+// restarting the container, and recreates the Pods for a resources change. The client runs as a
+// DaemonSet and is not synced after creation.
+func (e *CacheEngine) syncRuntimeSpec(ctx cruntime.ReconcileRequestContext, runtime *datav1alpha1.CacheRuntime,
+	runtimeClass *datav1alpha1.CacheRuntimeClass) error {
 	e.Log.V(1).Info("start syncing runtime spec")
 	defer func() {
 		e.Log.V(1).Info("finished syncing runtime spec")

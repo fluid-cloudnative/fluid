@@ -48,6 +48,10 @@ const (
 
 	RuntimeResourcesConflict = "RuntimeResourcesConflict"
 	RuntimeVersionIncomplete = "RuntimeVersionIncomplete"
+
+	RuntimeClassSnapshotInvalid = "RuntimeClassSnapshotInvalid"
+
+	RuntimeClassChanged = "RuntimeClassChanged"
 )
 
 // Events related to all type of Data Operations
