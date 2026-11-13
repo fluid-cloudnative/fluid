@@ -394,8 +394,8 @@ function update_worker_resources_and_verify() {
     done
     syslog "AdvancedStatefulSet resources merged: $(kubectl get advancedstatefulset "$worker_component_name" -ojsonpath="$resources_path")"
 
-    # Wait for the update to reach the pods, in place or by recreation depending on the
-    # cluster's support for InPlacePodVerticalScaling.
+    # Wait for the update to reach the pods. The bundled AdvancedStatefulSet controller only
+    # updates images in place, so a resources change recreates the pods.
     counter=0
     while true; do
         local generation="" observed="" replicas="" updated="" ready=""
@@ -425,6 +425,61 @@ function update_worker_resources_and_verify() {
 
     wait_cache_worker_ready
     syslog "Worker resources merged onto the template baseline and rolled out"
+}
+
+function verify_runtime_class_edit_not_propagated() {
+    local worker_component_name="${dataset_name}-worker"
+    local class_name="curvine-demo"
+    local snapshot_name="fluid-runtime-class-snapshot-${dataset_name}"
+    local resources_path='{.spec.template.spec.containers[0].resources}'
+    # limits.cpu is not overridden by the CacheRuntime, so with a live class it would follow the edit.
+    local class_cpu_path='/topology/worker/template/spec/containers/0/resources/limits/cpu'
+    local deadline=120
+    local counter=0
+
+    if ! kubectl get configmap "$snapshot_name" >/dev/null 2>&1; then
+        panic "CacheRuntimeClass snapshot configmap $snapshot_name not found"
+    fi
+
+    local resources_before="" replicas_before=""
+    resources_before=$(kubectl get advancedstatefulset "$worker_component_name" -ojsonpath="$resources_path")
+    replicas_before=$(kubectl get cacheruntime "$dataset_name" -ojsonpath='{.spec.worker.replicas}')
+
+    local class_cpu=""
+    class_cpu=$(kubectl get cacheruntimeclass "$class_name" -ojsonpath='{.topology.worker.template.spec.containers[0].resources.limits.cpu}')
+    syslog "Editing CacheRuntimeClass $class_name worker limits.cpu from $class_cpu to 4"
+    kubectl patch cacheruntimeclass "$class_name" --type json \
+        -p "[{\"op\":\"replace\",\"path\":\"${class_cpu_path}\",\"value\":\"4\"}]"
+
+    # Edit the CacheRuntime too. Seeing the new replicas on the AdvancedStatefulSet proves a
+    # sync ran after the class edit; the class edit itself must not reach the workload.
+    local target_replicas=$((replicas_before + 1))
+    kubectl patch cacheruntime "$dataset_name" --type merge -p "{\"spec\":{\"worker\":{\"replicas\":${target_replicas}}}}"
+    while true; do
+        local replicas=""
+        replicas=$(kubectl get advancedstatefulset "$worker_component_name" -ojsonpath='{.spec.replicas}' 2>/dev/null)
+        if [[ "$replicas" == "$target_replicas" ]]; then
+            break
+        fi
+        counter=$((counter + 1))
+        if [[ $((counter * 5)) -ge $deadline ]]; then
+            panic "timeout ${deadline}s waiting for a sync after the CacheRuntimeClass edit (worker replicas: ${replicas:-<empty>}, want $target_replicas)"
+        fi
+        sleep 5
+    done
+
+    # The runtime config configmap is not checked: it legitimately changes with the replicas.
+    local resources_after=""
+    resources_after=$(kubectl get advancedstatefulset "$worker_component_name" -ojsonpath="$resources_path")
+
+    kubectl patch cacheruntimeclass "$class_name" --type json \
+        -p "[{\"op\":\"replace\",\"path\":\"${class_cpu_path}\",\"value\":\"${class_cpu}\"}]"
+    kubectl patch cacheruntime "$dataset_name" --type merge -p "{\"spec\":{\"worker\":{\"replicas\":${replicas_before}}}}"
+
+    if [[ "$resources_after" != "$resources_before" ]]; then
+        panic "CacheRuntimeClass edit reached worker $worker_component_name: resources $resources_before -> $resources_after"
+    fi
+    syslog "CacheRuntimeClass edit did not reach the existing CacheRuntime (worker resources: $resources_after)"
 }
 
 function delete_dataset_and_runtime() {
@@ -569,6 +624,9 @@ function main() {
 
     # verify a partial resources update keeps the template's other requirements
     update_worker_resources_and_verify
+
+    # verify editing the CacheRuntimeClass does not reach the existing CacheRuntime
+    verify_runtime_class_edit_not_propagated
 
     # verify scale-up and scale-down: scale up writes through the scale subresource (the same
     # path an HPA takes), scale down writes spec directly via patch. The write assertions run
