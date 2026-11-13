@@ -63,6 +63,20 @@ jobs:
           cluster_name: ${{ env.KIND_CLUSTER }}
           kubectl_version: ${{ matrix.kubernetes-version }}
 
+      - name: Free disk space
+        run: |
+          echo ">>> System disk usage before cleanup"
+          df -h
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /usr/local/lib/android
+          sudo rm -rf /opt/ghc
+          sudo rm -rf /opt/hostedtoolcache/CodeQL
+          sudo rm -rf /usr/local/.ghcup
+          sudo apt-get clean
+          docker image prune --all --force
+          echo ">>> System disk usage after cleanup"
+          df -h
+
       - name: Build current fluid docker images
         env:
           IMG_REPO: fluidcloudnative
