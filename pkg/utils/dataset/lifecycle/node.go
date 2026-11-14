@@ -80,7 +80,59 @@ func SyncScheduleInfoToCacheNodes(runtimeInfo base.RuntimeInfoInterface, client 
 	// Apply changes to nodes
 	applyNodeChanges(nodesToAddScheduleInfo, nodesToRemoveScheduleInfo, runtimeInfo, client)
 
+	// Nodes that keep the runtime label are skipped above, so refresh their capacity
+	// labels here in case they were written from an outdated tiered store.
+	syncCapacityInfoOnNodes(utils.SubtractString(desiredNodeNames, nodesToAddScheduleInfo), runtimeInfo, client)
+
 	return nil
+}
+
+// syncCapacityInfoOnNodes updates the capacity labels on nodes that already have the
+// runtime label, if they no longer match the tiered store of the runtime.
+func syncCapacityInfoOnNodes(nodeNames []string, runtimeInfo base.RuntimeInfoInterface, client client.Client) {
+	for _, nodeName := range nodeNames {
+		if err := syncCapacityInfoOnNode(nodeName, runtimeInfo, client); err != nil {
+			rootLog.Info("Failed to sync capacity info on node, continuing", "node", nodeName, "error", err)
+		}
+	}
+}
+
+func syncCapacityInfoOnNode(nodeName string, runtimeInfo base.RuntimeInfoInterface, cli client.Client) error {
+	node := corev1.Node{}
+	if err := cli.Get(context.TODO(), types.NamespacedName{Name: nodeName}, &node); err != nil {
+		return err
+	}
+
+	if !hasRuntimeLabel(node, runtimeInfo) {
+		return nil
+	}
+
+	var wanted common.LabelsToModify
+	labelNodeWithCapacityInfo(&node, runtimeInfo, &wanted)
+
+	var labelsToModify common.LabelsToModify
+	wantedKeys := map[string]bool{}
+	for _, label := range wanted.GetLabels() {
+		wantedKeys[label.GetLabelKey()] = true
+		if value, found := node.Labels[label.GetLabelKey()]; !found || value != label.GetLabelValue() {
+			labelsToModify.Update(label.GetLabelKey(), label.GetLabelValue())
+		}
+	}
+
+	// A memory or disk label is only written for a tier the runtime has, so drop it once the tier is gone
+	for _, key := range []string{runtimeInfo.GetLabelNameForMemory(), runtimeInfo.GetLabelNameForDisk()} {
+		if _, found := node.Labels[key]; found && !wantedKeys[key] {
+			labelsToModify.Delete(key)
+		}
+	}
+
+	if len(labelsToModify.GetLabels()) == 0 {
+		return nil
+	}
+
+	rootLog.Info("Updating outdated capacity labels on node", "node", nodeName, "runtime", runtimeInfo.GetName(), "namespace", runtimeInfo.GetNamespace())
+	_, err := utils.ChangeNodeLabelWithPatchMode(cli, &node, labelsToModify)
+	return err
 }
 
 // getDesiredNodesWithScheduleInfo retrieves the desired cache nodes with schedule info
