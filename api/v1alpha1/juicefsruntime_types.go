@@ -40,6 +40,11 @@ type JuiceFSRuntimeSpec struct {
 	// The spec of init users
 	InitUsers InitUsersSpec `json:"initUsers,omitempty"`
 
+	// ImagePullSecrets that will be used to pull images for all JuiceFS components.
+	// Worker and fuse can override them with their own imagePullSecrets.
+	// +optional
+	ImagePullSecrets []corev1.LocalObjectReference `json:"imagePullSecrets,omitempty"`
+
 	// The component spec of JuiceFS master
 	Master JuiceFSCompTemplateSpec `json:"master,omitempty"`
 
@@ -89,6 +94,11 @@ type JuiceFSRuntimeSpec struct {
 
 // JuiceFSCompTemplateSpec is a description of the JuiceFS components
 type JuiceFSCompTemplateSpec struct {
+	// ImagePullSecrets that will be used to pull images for this component.
+	// If unspecified, the runtime's imagePullSecrets are used.
+	// +optional
+	ImagePullSecrets []corev1.LocalObjectReference `json:"imagePullSecrets,omitempty"`
+
 	// Replicas is the desired number of replicas of the given template.
 	// If unspecified, defaults to 1.
 	// +kubebuilder:validation:Minimum=1
@@ -141,6 +151,11 @@ type JuiceFSFuseSpec struct {
 
 	// One of the three policies: `Always`, `IfNotPresent`, `Never`
 	ImagePullPolicy string `json:"imagePullPolicy,omitempty"`
+
+	// ImagePullSecrets that will be used to pull the JuiceFS fuse image.
+	// If unspecified, the runtime's imagePullSecrets are used.
+	// +optional
+	ImagePullSecrets []corev1.LocalObjectReference `json:"imagePullSecrets,omitempty"`
 
 	// Environment variables that will be used by JuiceFS Fuse
 	Env []corev1.EnvVar `json:"env,omitempty"`

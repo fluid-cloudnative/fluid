@@ -56,3 +56,6 @@
 
 0.2.15
 - Support encryptOptions through envs
+
+0.2.17
+- Support worker and fuse level imagePullSecrets
