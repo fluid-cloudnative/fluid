@@ -504,6 +504,106 @@ var _ = Describe("Dataset Lifecycle Node Tests", Label("pkg.utils.dataset.lifecy
 		})
 	})
 
+	Describe("Test syncCapacityInfoOnNode()", func() {
+		var nodeLabels map[string]string
+
+		BeforeEach(func() {
+			// the runtime now has 1GiB in memory and 2GiB on SSD
+			tieredStore := datav1alpha1.TieredStore{
+				Levels: []datav1alpha1.Level{
+					{
+						MediumType: common.Memory,
+						Quota:      resource.NewQuantity(1<<30, resource.BinarySI),
+					},
+					{
+						MediumType: common.SSD,
+						Quota:      resource.NewQuantity(2<<30, resource.BinarySI),
+					},
+				},
+			}
+
+			var err error
+			runtimeInfo, err = base.BuildRuntimeInfo("spark", "fluid", "alluxio", base.WithTieredStore(tieredStore))
+			Expect(err).To(BeNil())
+		})
+
+		JustBeforeEach(func() {
+			Expect(client.Create(context.TODO(), &corev1.Node{
+				ObjectMeta: metav1.ObjectMeta{Name: "cache-node", Labels: nodeLabels},
+			})).To(Succeed())
+		})
+
+		When("the node was labelled with an empty tiered store", func() {
+			BeforeEach(func() {
+				resources = nil
+				nodeLabels = map[string]string{
+					"fluid.io/s-alluxio-fluid-spark":     "true",
+					"fluid.io/s-h-alluxio-t-fluid-spark": "0B",
+					"other-label":                        "keep",
+				}
+			})
+
+			It("should write the current capacity labels", func() {
+				Expect(syncCapacityInfoOnNode("cache-node", runtimeInfo, client)).To(Succeed())
+
+				gotNode, err := kubeclient.GetNode(client, "cache-node")
+				Expect(err).To(BeNil())
+				Expect(gotNode.Labels).To(HaveKeyWithValue("fluid.io/s-h-alluxio-m-fluid-spark", "1GiB"))
+				Expect(gotNode.Labels).To(HaveKeyWithValue("fluid.io/s-h-alluxio-d-fluid-spark", "2GiB"))
+				Expect(gotNode.Labels).To(HaveKeyWithValue("fluid.io/s-h-alluxio-t-fluid-spark", "3GiB"))
+				Expect(gotNode.Labels).To(HaveKeyWithValue("other-label", "keep"))
+			})
+		})
+
+		When("the node has a label for a tier the runtime no longer has", func() {
+			BeforeEach(func() {
+				tieredStore := datav1alpha1.TieredStore{
+					Levels: []datav1alpha1.Level{{
+						MediumType: common.SSD,
+						Quota:      resource.NewQuantity(2<<30, resource.BinarySI),
+					}},
+				}
+
+				var err error
+				runtimeInfo, err = base.BuildRuntimeInfo("spark", "fluid", "alluxio", base.WithTieredStore(tieredStore))
+				Expect(err).To(BeNil())
+
+				resources = nil
+				nodeLabels = map[string]string{
+					"fluid.io/s-alluxio-fluid-spark":     "true",
+					"fluid.io/s-h-alluxio-m-fluid-spark": "1GiB",
+					"fluid.io/s-h-alluxio-d-fluid-spark": "2GiB",
+					"fluid.io/s-h-alluxio-t-fluid-spark": "3GiB",
+				}
+			})
+
+			It("should remove the stale tier label", func() {
+				Expect(syncCapacityInfoOnNode("cache-node", runtimeInfo, client)).To(Succeed())
+
+				gotNode, err := kubeclient.GetNode(client, "cache-node")
+				Expect(err).To(BeNil())
+				Expect(gotNode.Labels).NotTo(HaveKey("fluid.io/s-h-alluxio-m-fluid-spark"))
+				Expect(gotNode.Labels).To(HaveKeyWithValue("fluid.io/s-h-alluxio-d-fluid-spark", "2GiB"))
+				Expect(gotNode.Labels).To(HaveKeyWithValue("fluid.io/s-h-alluxio-t-fluid-spark", "2GiB"))
+			})
+		})
+
+		When("the node doesn't have the runtime label", func() {
+			BeforeEach(func() {
+				resources = nil
+				nodeLabels = map[string]string{"other-label": "keep"}
+			})
+
+			It("should leave the node alone", func() {
+				Expect(syncCapacityInfoOnNode("cache-node", runtimeInfo, client)).To(Succeed())
+
+				gotNode, err := kubeclient.GetNode(client, "cache-node")
+				Expect(err).To(BeNil())
+				Expect(gotNode.Labels).To(Equal(map[string]string{"other-label": "keep"}))
+			})
+		})
+	})
+
 	Describe("Test calculateNodeDifferences", func() {
 		Context("when given current and previous node lists", func() {
 			It("should calculate correct differences", func() {
