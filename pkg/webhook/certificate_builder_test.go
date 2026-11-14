@@ -144,6 +144,70 @@ var _ = Describe("CertificateBuilder", func() {
 		}
 	})
 
+	Describe("PatchValidatingCABundle", func() {
+		var (
+			mockWebhookName                    = "mockValidatingWebhookName"
+			testValidatingWebhookConfiguration *admissionregistrationv1.ValidatingWebhookConfiguration
+		)
+
+		BeforeEach(func() {
+			testValidatingWebhookConfiguration = &admissionregistrationv1.ValidatingWebhookConfiguration{
+				ObjectMeta: metav1.ObjectMeta{Name: mockWebhookName},
+				Webhooks: []admissionregistrationv1.ValidatingWebhook{
+					{Name: "webhook1", ClientConfig: admissionregistrationv1.WebhookClientConfig{CABundle: []byte{3, 5, 54, 34}}},
+					{Name: "webhook2", ClientConfig: admissionregistrationv1.WebhookClientConfig{CABundle: []byte{3, 8, 54, 4}}},
+				},
+			}
+			testScheme.AddKnownTypes(schema.GroupVersion{Group: "admissionregistration.k8s.io", Version: "v1"},
+				testValidatingWebhookConfiguration, &admissionregistrationv1.MutatingWebhookConfiguration{})
+		})
+
+		It("should patch the CABundle of every webhook, and leave an already patched configuration alone", func() {
+			ca := []byte{1, 2, 3}
+			client := fake.NewFakeClientWithScheme(testScheme, testValidatingWebhookConfiguration)
+			cb := NewCertificateBuilder(client, log)
+			Expect(cb.PatchValidatingCABundle(mockWebhookName, ca)).To(Succeed())
+
+			var vc admissionregistrationv1.ValidatingWebhookConfiguration
+			Expect(client.Get(context.TODO(), types.NamespacedName{Name: mockWebhookName}, &vc)).To(Succeed())
+			Expect(vc.Webhooks).To(HaveLen(2))
+			for _, wh := range vc.Webhooks {
+				Expect(wh.ClientConfig.CABundle).To(Equal(ca))
+			}
+
+			// Patch again, should not change
+			Expect(cb.PatchValidatingCABundle(mockWebhookName, ca)).To(Succeed())
+			var vc2 admissionregistrationv1.ValidatingWebhookConfiguration
+			Expect(client.Get(context.TODO(), types.NamespacedName{Name: mockWebhookName}, &vc2)).To(Succeed())
+			Expect(reflect.DeepEqual(vc, vc2)).To(BeTrue())
+		})
+
+		It("should fail when the configuration does not exist", func() {
+			client := fake.NewFakeClientWithScheme(testScheme, testValidatingWebhookConfiguration)
+			cb := NewCertificateBuilder(client, log)
+			err := cb.PatchValidatingCABundle("missing", []byte{1})
+			Expect(err).To(HaveOccurred())
+			Expect(utils.IgnoreNotFound(err)).To(BeNil())
+		})
+
+		It("should not touch a MutatingWebhookConfiguration of the same name", func() {
+			ca := []byte{1, 2, 3}
+			mutating := &admissionregistrationv1.MutatingWebhookConfiguration{
+				ObjectMeta: metav1.ObjectMeta{Name: mockWebhookName},
+				Webhooks: []admissionregistrationv1.MutatingWebhook{
+					{Name: "webhook1", ClientConfig: admissionregistrationv1.WebhookClientConfig{CABundle: []byte{9}}},
+				},
+			}
+			client := fake.NewFakeClientWithScheme(testScheme, testValidatingWebhookConfiguration, mutating)
+			cb := NewCertificateBuilder(client, log)
+			Expect(cb.PatchValidatingCABundle(mockWebhookName, ca)).To(Succeed())
+
+			var mc admissionregistrationv1.MutatingWebhookConfiguration
+			Expect(client.Get(context.TODO(), types.NamespacedName{Name: mockWebhookName}, &mc)).To(Succeed())
+			Expect(mc.Webhooks[0].ClientConfig.CABundle).To(Equal([]byte{9}))
+		})
+	})
+
 	Describe("Additional edge cases", func() {
 		It("should fail BuildOrSyncCABundle if cert dir is invalid", func() {
 			os.Setenv(common.MyPodNamespace, "default")

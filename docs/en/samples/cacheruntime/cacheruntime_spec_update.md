@@ -9,7 +9,7 @@ The current version supports in-place updates for the following three fields:
 - **Resource limits** (`resources`)
 - **Replica count** (`replicas`)
 
-Modifications to other fields **will not be propagated to the AdvancedStatefulSet** and require redeployment to take effect.
+An update that changes any other field **is rejected by the Fluid webhook** (see section 4); such a field can only be changed by deleting and recreating the CacheRuntime.
 
 ---
 
@@ -19,7 +19,7 @@ Modifications to other fields **will not be propagated to the AdvancedStatefulSe
 |-----------|---------------|---------------------|
 | **Master** | AdvancedStatefulSet | ✅ Supports `runtimeVersion`, `resources` and `replicas` |
 | **Worker** | AdvancedStatefulSet | ✅ Supports `runtimeVersion`, `resources` and `replicas` |
-| **Client** | DaemonSet | ❌ Not supported (any changes require redeployment) |
+| **Client** | DaemonSet | ❌ Not supported (an update to any client field is rejected) |
 
 **Notes**:
 - Modifying `runtimeVersion`, `resources` and `replicas` on Master and Worker components automatically propagates to the underlying AdvancedStatefulSet.
@@ -152,11 +152,19 @@ The new value is synced to the AdvancedStatefulSet's `spec.replicas`, which then
 
 ## 4. Unsupported Update Fields
 
-**Any field not listed in section 3 cannot be updated in place**; changes to it are not propagated to the AdvancedStatefulSet.
+**Any field not listed in section 3 cannot be updated in place**: the controller reads it only when the component is created. `tieredStore` is the worst case: a changed quota would reach the runtime ConfigMap while the tmpfs `sizeLimit` of the Worker Pod kept its creation-time value, and the mismatch would only surface when the Worker restarts.
+
+The Fluid webhook therefore rejects such an update at admission time, naming every field that cannot change:
+
+```bash
+$ kubectl patch cacheruntime demo --type merge -p '{"spec":{"worker":{"tieredStore":{"levels":[{"processMemory":{"quota":"4Gi"}}]}}}}'
+Error from server (Forbidden): admission webhook "update.cacheruntime.fluid.io" denied the request: only master/worker replicas, runtimeVersion and resources can be updated in place: spec.worker.tieredStore: Forbidden: field is immutable
+```
 
 **Notes**:
-- Such a field takes effect only after the CacheRuntime is redeployed.
-- The system does not automatically detect or propagate these changes.
+- To change such a field, delete the CacheRuntime and create it again.
+- Only `spec` is compared. Writes to `metadata` and `status`, such as the controller's own finalizer and condition updates, are never rejected, and `kubectl scale` writes through the scale subresource, which is not checked.
+- The check is done by the Fluid webhook (`webhook.enabled`, on by default). With the webhook disabled, the update is accepted and silently ignored. `webhook.cacheRuntimeValidation.failurePolicy` (default `Fail`) decides whether a CacheRuntime update is rejected or let through unchecked while the webhook is unreachable.
 
 ---
 
@@ -167,9 +175,9 @@ The new value is synced to the AdvancedStatefulSet's `spec.replicas`, which then
 | `runtimeVersion` | ✅ Yes | Automatically synced to AdvancedStatefulSet |
 | `resources` | ✅ Yes | Automatically synced to AdvancedStatefulSet (requires K8s >= 1.27) |
 | `replicas` | ✅ Yes | Automatically synced to AdvancedStatefulSet (scaling in discards that Worker's cache) |
-| All other fields | ❌ No | Not synced; redeployment required |
+| All other fields | ❌ No | Rejected by the webhook; delete and recreate the CacheRuntime |
 
 **Key Takeaways**:
 1. The current version supports dynamic updates for `runtimeVersion`, `resources` and `replicas`.
 2. In cgroupv1 environments, `runtimeVersion` and `resources` must be updated separately (step-by-step); `replicas` is not subject to this limitation.
-3. Modifications to other fields will not take effect and require redeployment.
+3. An update to any other field is rejected by the webhook; delete and recreate the CacheRuntime to change it.

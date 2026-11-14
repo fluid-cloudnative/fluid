@@ -472,6 +472,47 @@ function verify_scale_subresource() {
     syslog "Verified scale subresource of cacheruntime $dataset_name (spec.replicas=${spec_replicas}, status.replicas=${pod_count} selector-matched pods, selector=${expected_selector})"
 }
 
+function verify_immutable_spec_update_rejected() {
+    # The validating webhook rejects an update to a spec field the controller
+    # cannot apply in place. tieredStore is the field whose half-applied update
+    # motivated the check: the ConfigMap quota would follow the spec while the
+    # Worker's tmpfs sizeLimit kept its creation-time value.
+    local deadline=120
+    local counter=0
+    local patch='{"spec":{"worker":{"tieredStore":{"levels":[{"low":"0.5","high":"0.8","emptyDir":{"quota":"2Gi"}}]}}}}'
+    local output=""
+
+    syslog "Verifying that an update to spec.worker.tieredStore is rejected"
+    while true; do
+        if output=$(kubectl patch cacheruntime $dataset_name --type merge -p "$patch" 2>&1); then
+            panic "patching spec.worker.tieredStore was accepted, expected the validating webhook to reject it: $output"
+        fi
+        if [[ "$output" == *"update.cacheruntime.fluid.io"* ]] && [[ "$output" == *"spec.worker.tieredStore"* ]]; then
+            break
+        fi
+        # right after install the webhook may still be waiting for its caBundle
+        counter=$((counter + 5))
+        if [[ $counter -ge $deadline ]]; then
+            panic "timeout ${deadline}s waiting for the validating webhook to reject the update, last error: $output"
+        fi
+        syslog "update rejected for another reason, retrying: $output"
+        sleep 5
+    done
+    syslog "Rejected as expected: $output"
+
+    local quota=""
+    quota=$(kubectl get cacheruntime $dataset_name -ojsonpath='{@.spec.worker.tieredStore.levels[0].emptyDir.quota}')
+    if [[ "$quota" != "1Gi" ]]; then
+        panic "spec.worker.tieredStore changed although the update was rejected: quota=${quota:-<empty>}"
+    fi
+
+    # only spec is compared: a metadata write, like the controller's own, goes through
+    if ! output=$(kubectl annotate cacheruntime $dataset_name e2e.fluid.io/touched=true --overwrite 2>&1); then
+        panic "annotating the cacheruntime was rejected, the webhook must compare spec only: $output"
+    fi
+    syslog "Metadata write accepted while spec.worker.tieredStore is immutable"
+}
+
 function main() {
     syslog "[TESTCASE $testname STARTS AT $(date)]"
     trap dump_env_and_clean_up EXIT
@@ -484,6 +525,7 @@ function main() {
 
     verify_status_selector
     verify_scale_subresource
+    verify_immutable_spec_update_rejected
 
     check_dataset_cache_state
 

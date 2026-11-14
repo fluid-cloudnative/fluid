@@ -118,3 +118,37 @@ func (c *CertificateBuilder) PatchCABundle(webhookName string, ca []byte) error 
 
 	return nil
 }
+
+// PatchValidatingCABundle patches the caBundle to the ValidatingWebhookConfiguration
+func (c *CertificateBuilder) PatchValidatingCABundle(webhookName string, ca []byte) error {
+
+	var v v1.ValidatingWebhookConfiguration
+
+	c.log.Info("start patch ValidatingWebhookConfiguration caBundle", "name", webhookName)
+
+	ctx := context.Background()
+
+	if err := c.Get(ctx, client.ObjectKey{Name: webhookName}, &v); err != nil {
+		c.log.Error(err, "fail to get validatingWebHook", "name", webhookName)
+		return err
+	}
+
+	current := v.DeepCopy()
+	for i := range v.Webhooks {
+		v.Webhooks[i].ClientConfig.CABundle = ca
+	}
+
+	if reflect.DeepEqual(v.Webhooks, current.Webhooks) {
+		c.log.Info("no need to patch the ValidatingWebhookConfiguration", "name", webhookName)
+		return nil
+	}
+
+	if err := c.Patch(ctx, &v, client.MergeFrom(current)); err != nil {
+		c.log.Error(err, "fail to patch CABundle to validatingWebHook", "name", webhookName)
+		return err
+	}
+
+	c.log.Info("finished patch ValidatingWebhookConfiguration caBundle", "name", webhookName)
+
+	return nil
+}

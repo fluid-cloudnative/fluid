@@ -55,6 +55,17 @@ rules:
       - list
       - watch
   - apiGroups:
+      - admissionregistration.k8s.io
+    resources:
+      - validatingwebhookconfigurations
+    resourceNames:
+      - fluid-cacheruntime-validating-webhook
+    verbs:
+      - get
+      - patch
+      - list
+      - watch
+  - apiGroups:
       - data.fluid.io
     resources:
       - datasets

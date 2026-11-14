@@ -9,7 +9,7 @@
 - **资源限制** (`resources`)
 - **副本数** (`replicas`)
 
-其他字段的修改**不会同步到 AdvancedStatefulSet**，需要重新部署才能生效。
+修改其他任何字段的更新**会被 Fluid webhook 拒绝**（见第 4 节），这类字段只能通过删除并重建 CacheRuntime 来修改。
 
 ---
 
@@ -19,7 +19,7 @@
 |------|-------------|------------|
 | **Master** | AdvancedStatefulSet | ✅ 支持 `runtimeVersion`、`resources` 和 `replicas` |
 | **Worker** | AdvancedStatefulSet | ✅ 支持 `runtimeVersion`、`resources` 和 `replicas` |
-| **Client** | DaemonSet | ❌ 不支持（任何变更都需重新部署） |
+| **Client** | DaemonSet | ❌ 不支持（修改任何 Client 字段的更新都会被拒绝） |
 
 **说明**：
 - Master 和 Worker 的 `runtimeVersion`、`resources` 和 `replicas` 字段修改会自动同步到 AdvancedStatefulSet
@@ -164,11 +164,19 @@ kubectl patch cacheruntime my-cache --type='merge' -p '{"spec":{"worker":{"repli
 
 ## 4. 不支持更新的字段
 
-**第 3 节未列出的字段一律不支持原地更新**，修改后不会同步到 AdvancedStatefulSet。
+**第 3 节未列出的字段一律不支持原地更新**：控制器只在创建组件时读取它们。`tieredStore` 是最糟的情况：修改后的配额会写入运行时 ConfigMap，而 Worker Pod 的 tmpfs `sizeLimit` 仍是创建时的值，这个不一致要等到 Worker 重启时才会暴露。
+
+因此 Fluid webhook 会在准入阶段拒绝这类更新，并列出每个不允许修改的字段：
+
+```bash
+$ kubectl patch cacheruntime demo --type merge -p '{"spec":{"worker":{"tieredStore":{"levels":[{"processMemory":{"quota":"4Gi"}}]}}}}'
+Error from server (Forbidden): admission webhook "update.cacheruntime.fluid.io" denied the request: only master/worker replicas, runtimeVersion and resources can be updated in place: spec.worker.tieredStore: Forbidden: field is immutable
+```
 
 **说明**：
-- 这类字段修改后，需要重新部署 CacheRuntime 才能生效
-- 系统不会自动检测或同步这类变更
+- 要修改这类字段，需要删除 CacheRuntime 后重新创建
+- 只比较 `spec`。对 `metadata` 和 `status` 的写入（例如控制器自己更新 finalizer 和 condition）不会被拒绝；`kubectl scale` 走 scale 子资源，也不会被检查
+- 该检查由 Fluid webhook 完成（`webhook.enabled`，默认开启）。关闭 webhook 后，这类更新会被接受并静默忽略。`webhook.cacheRuntimeValidation.failurePolicy`（默认 `Fail`）决定 webhook 不可达时 CacheRuntime 的更新是被拒绝还是不经检查放行
 
 ---
 
@@ -179,9 +187,9 @@ kubectl patch cacheruntime my-cache --type='merge' -p '{"spec":{"worker":{"repli
 | `runtimeVersion` | ✅ 支持 | 自动同步到 AdvancedStatefulSet |
 | `resources` | ✅ 支持 | 自动同步到 AdvancedStatefulSet（需 K8s >= 1.27） |
 | `replicas` | ✅ 支持 | 自动同步到 AdvancedStatefulSet（缩容会丢失该 Worker 上的缓存） |
-| 其他所有字段 | ❌ 不支持 | 不会同步，需重新部署 |
+| 其他所有字段 | ❌ 不支持 | 被 webhook 拒绝，需删除并重建 CacheRuntime |
 
 **关键要点**：
 1. 当前版本支持 `runtimeVersion`、`resources` 和 `replicas` 三个字段的动态更新
 2. Cgroupv1 环境需分步更新 `runtimeVersion` 和 `resources`，`replicas` 不受此限制
-3. 其他字段的修改不会生效，必须重新部署
+3. 修改其他字段的更新会被 webhook 拒绝，需删除并重建 CacheRuntime
