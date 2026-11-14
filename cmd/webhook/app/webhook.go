@@ -133,6 +133,9 @@ func handle() {
 				&admissionregistrationv1.MutatingWebhookConfiguration{}: {
 					Field: fields.SelectorFromSet(fields.Set{"metadata.name": common.WebhookName}),
 				},
+				&admissionregistrationv1.ValidatingWebhookConfiguration{}: {
+					Field: fields.SelectorFromSet(fields.Set{"metadata.name": common.ValidatingWebhookName}),
+				},
 			},
 		},
 	})

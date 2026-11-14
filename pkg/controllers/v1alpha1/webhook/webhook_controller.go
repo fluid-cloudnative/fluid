@@ -27,13 +27,24 @@ import (
 
 type WebhookReconciler struct {
 	CertBuilder *webhook.CertificateBuilder
+	// WebhookName is the MutatingWebhookConfiguration whose caBundle is patched.
 	WebhookName string
-	CaCert      []byte
+	// ValidatingWebhookName is the ValidatingWebhookConfiguration whose caBundle
+	// is patched. Empty means there is none.
+	ValidatingWebhookName string
+	CaCert                []byte
 }
 
-func (r *WebhookReconciler) Reconcile(context.Context, ctrl.Request) (ctrl.Result, error) {
-	// patch ca of MutatingWebhookConfiguration
-	err := r.CertBuilder.PatchCABundle(r.WebhookName, r.CaCert)
+// Reconcile patches the caBundle of the webhook configuration the request names.
+// A request that names neither, such as the empty request of a manual run,
+// patches the MutatingWebhookConfiguration.
+func (r *WebhookReconciler) Reconcile(_ context.Context, req ctrl.Request) (ctrl.Result, error) {
+	var err error
+	if r.ValidatingWebhookName != "" && req.Name == r.ValidatingWebhookName {
+		err = r.CertBuilder.PatchValidatingCABundle(r.ValidatingWebhookName, r.CaCert)
+	} else {
+		err = r.CertBuilder.PatchCABundle(r.WebhookName, r.CaCert)
+	}
 	if err != nil {
 		return utils.RequeueAfterInterval(10 * time.Second)
 	}
