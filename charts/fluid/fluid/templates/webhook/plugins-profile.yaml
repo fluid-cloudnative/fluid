@@ -12,6 +12,10 @@ data:
   reuses that release's defaults. Fall back to the chart's own group then, so pods
   matching the rule still get a plugin. Keep the fallback in line with the clientless
   group in values.yaml.
+  Only a missing key falls back: a clientless group set explicitly, even to an empty map
+  or null to turn its plugins off, is kept as it is.
+  The fallback applies with forceReplacePluginsProfile too, on purpose: forcing the values
+  that lack the group would leave the always-rendered clientless rule without a plugin.
   Values that are not maps are left for the paths below to handle as before.
 */}}
 {{- $clientless := dict "withDataset" (list "RuntimeConfigInjector") "withoutDataset" (list) }}
@@ -20,7 +24,7 @@ data:
 {{- $valuesProfile = deepCopy $valuesProfile }}
 {{- $valuesPlugins := get $valuesProfile "plugins" }}
 {{- if kindIs "map" $valuesPlugins }}
-{{- if get $valuesPlugins "clientless" }}
+{{- if hasKey $valuesPlugins "clientless" }}
 {{- $clientless = get $valuesPlugins "clientless" }}
 {{- else }}
 {{- $_ := set $valuesPlugins "clientless" $clientless }}
