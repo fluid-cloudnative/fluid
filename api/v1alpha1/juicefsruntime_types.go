@@ -96,6 +96,7 @@ type JuiceFSRuntimeSpec struct {
 type JuiceFSCompTemplateSpec struct {
 	// ImagePullSecrets that will be used to pull images for this component.
 	// If unspecified, the runtime's imagePullSecrets are used.
+	// Only the worker uses it for now, it has no effect on master and jobWorker.
 	// +optional
 	ImagePullSecrets []corev1.LocalObjectReference `json:"imagePullSecrets,omitempty"`
 

@@ -4926,7 +4926,7 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_JuiceFSCompTemplateSpec(ref com
 				Properties: map[string]spec.Schema{
 					"imagePullSecrets": {
 						SchemaProps: spec.SchemaProps{
-							Description: "ImagePullSecrets that will be used to pull images for this component. If unspecified, the runtime's imagePullSecrets are used.",
+							Description: "ImagePullSecrets that will be used to pull images for this component. If unspecified, the runtime's imagePullSecrets are used. Only the worker uses it for now, it has no effect on master and jobWorker.",
 							Type:        []string{"array"},
 							Items: &spec.SchemaOrArray{
 								Schema: &spec.Schema{

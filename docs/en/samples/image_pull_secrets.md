@@ -83,3 +83,26 @@ spec:
 
 ```
 In conclusion, image pull secrets setting successfully
+
+
+## Setting image pull secrets in JuiceFSRuntime
+
+JuiceFSRuntime can also set image pull secrets in its spec, so different runtimes can pull from different private registries without changing the controller. `spec.imagePullSecrets` applies to the worker and fuse, and `spec.worker.imagePullSecrets` or `spec.fuse.imagePullSecrets` override it for that component. When none of them is set, the `IMAGE_PULL_SECRETS` value of the controller is used as before.
+
+```yaml
+apiVersion: data.fluid.io/v1alpha1
+kind: JuiceFSRuntime
+metadata:
+  name: jfsdemo
+spec:
+  imagePullSecrets:
+  - name: test-1
+  worker:
+    imagePullSecrets:
+    - name: worker-registry
+  fuse:
+    imagePullSecrets:
+    - name: fuse-registry
+```
+
+`spec.master.imagePullSecrets` and `spec.jobWorker.imagePullSecrets` have no effect for now. The secrets are applied when the runtime's worker and fuse are created, so changing them on an existing runtime needs the runtime to be recreated.

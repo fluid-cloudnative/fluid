@@ -79,3 +79,26 @@ spec:
 ```
 
 综上, 镜像拉取密钥设置成功
+
+
+## 在 JuiceFSRuntime 中设置镜像拉取密钥
+
+JuiceFSRuntime 也可以在 spec 中设置镜像拉取密钥，这样不同的 runtime 可以从不同的私有镜像仓库拉取镜像，而不需要修改 controller。`spec.imagePullSecrets` 作用于 worker 和 fuse，`spec.worker.imagePullSecrets` 和 `spec.fuse.imagePullSecrets` 可以为对应组件单独覆盖。如果都没有设置，则和之前一样使用 controller 的 `IMAGE_PULL_SECRETS`。
+
+```yaml
+apiVersion: data.fluid.io/v1alpha1
+kind: JuiceFSRuntime
+metadata:
+  name: jfsdemo
+spec:
+  imagePullSecrets:
+  - name: test-1
+  worker:
+    imagePullSecrets:
+    - name: worker-registry
+  fuse:
+    imagePullSecrets:
+    - name: fuse-registry
+```
+
+`spec.master.imagePullSecrets` 和 `spec.jobWorker.imagePullSecrets` 目前不生效。密钥在创建 runtime 的 worker 和 fuse 时生效，修改已有 runtime 的密钥需要重新创建 runtime。

@@ -1320,6 +1320,7 @@ _Appears in:_
 #### JuiceFSRuntime
 
 
+| `imagePullSecrets` _[LocalObjectReference](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#localobjectreference-v1-core) array_ | ImagePullSecrets that will be used to pull images for this component.<br />If unspecified, the runtime's imagePullSecrets are used.<br />Only the worker uses it for now, it has no effect on master and jobWorker. |  | Optional: \{\} <br /> |
 
 JuiceFSRuntime is the Schema for the juicefsruntimes API
 
@@ -1348,6 +1349,7 @@ _Appears in:_
 
 | Field | Description | Default | Validation |
 | --- | --- | --- | --- |
+| `imagePullSecrets` _[LocalObjectReference](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#localobjectreference-v1-core) array_ | ImagePullSecrets that will be used to pull the JuiceFS fuse image.<br />If unspecified, the runtime's imagePullSecrets are used. |  | Optional: \{\} <br /> |
 | `juicefsVersion` _[VersionSpec](#versionspec)_ | The version information that instructs fluid to orchestrate a particular version of JuiceFS. |  |  |
 | `initUsers` _[InitUsersSpec](#initusersspec)_ | The spec of init users |  |  |
 | `master` _[JuiceFSCompTemplateSpec](#juicefscomptemplatespec)_ | The component spec of JuiceFS master |  |  |
@@ -1391,6 +1393,7 @@ _Appears in:_
 #### MasterSpec
 
 
+| `imagePullSecrets` _[LocalObjectReference](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#localobjectreference-v1-core) array_ | ImagePullSecrets that will be used to pull images for all JuiceFS components.<br />Worker and fuse can override them with their own imagePullSecrets. |  | Optional: \{\} <br /> |
 
 MasterSpec defines the configurations for Vineyard Master component
 which is also regarded as the Etcd component in Vineyard.
