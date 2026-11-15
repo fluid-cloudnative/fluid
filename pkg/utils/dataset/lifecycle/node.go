@@ -103,6 +103,11 @@ func syncCapacityInfoOnNode(nodeName string, runtimeInfo base.RuntimeInfoInterfa
 		return err
 	}
 
+	if nodeExcludeSelector != nil && nodeExcludeSelector.Matches(labels.Set(node.Labels)) {
+		rootLog.V(1).Info("Skip syncCapacityInfoOnNode to node that matches nodeExcludeSelector", "nodeExcludeSelector", nodeExcludeSelector.String(), "node", node.Name)
+		return nil
+	}
+
 	if !hasRuntimeLabel(node, runtimeInfo) {
 		return nil
 	}
