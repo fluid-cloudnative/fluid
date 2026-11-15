@@ -291,6 +291,8 @@ _Appears in:_
 
 
 
+
+
 #### CacheRuntimeSpec
 
 
@@ -676,6 +678,8 @@ _Appears in:_
 | `processor` _[Processor](#processor)_ | Processor specify how to process data. |  | Required: \{\} <br /> |
 | `runAfter` _[OperationRef](#operationref)_ | Specifies that the preceding operation in a workflow |  | Optional: \{\} <br /> |
 | `ttlSecondsAfterFinished` _integer_ | TTLSecondsAfterFinished is the time second to clean up data operations after finished or failed |  | Optional: \{\} <br /> |
+| `policy` _[Policy](#policy)_ | Policy defines the operation policy, including Once, Cron, OnEvent | Once | Enum: [Once Cron OnEvent] <br />Optional: \{\} <br /> |
+| `schedule` _string_ | Schedule defines the Cron schedule, only used when Policy is Cron.<br />See https://en.wikipedia.org/wiki/Cron. |  | Optional: \{\} <br /> |
 
 
 #### DataRestoreLocation
@@ -927,6 +931,24 @@ _Appears in:_
 | `podMetadata` _[PodMetadata](#podmetadata)_ | PodMetadata defines labels and annotations that will be propagated to all EFC's pods |  | Optional: \{\} <br /> |
 
 
+#### EmptyDirMediumSource
+
+
+
+EmptyDirMediumSource describes emptyDir volume as a storage medium.
+Can be backed by node's default storage or memory (tmpfs).
+
+
+
+_Appears in:_
+- [RuntimeTieredStoreLevel](#runtimetieredstorelevel)
+
+| Field | Description | Default | Validation |
+| --- | --- | --- | --- |
+| `quota` _[Quantity](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#quantity-resource-api)_ | Quota specifies the maximum storage capacity for the emptyDir volume.<br />For Memory medium, this limit is also constrained by the sum of container memory limits.<br />The actual limit = min(Quota, sum of container memory limits).<br />Example: "100Gi" limits the emptyDir to 100GiB. |  | Required: \{\} <br /> |
+| `medium` _[StorageMedium](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#storagemedium-v1-core)_ | medium represents what type of storage medium should back this directory.<br />The default is "" which means to use the node's default medium.<br />Must be an empty string (default) or Memory.<br />More info: https://kubernetes.io/docs/concepts/storage/volumes#emptydir |  | Optional: \{\} <br /> |
+
+
 #### EncryptOption
 
 
@@ -1104,6 +1126,25 @@ _Appears in:_
 
 
 
+#### HostPathMediumSource
+
+
+
+HostPathMediumSource describes hostPath volumes as a storage medium.
+Multiple paths can be configured to distribute cache across different disks.
+
+
+
+_Appears in:_
+- [RuntimeTieredStoreLevel](#runtimetieredstorelevel)
+
+| Field | Description | Default | Validation |
+| --- | --- | --- | --- |
+| `paths` _string array_ | Paths is a list of file paths on the host machine to be used for caching.<br />Multiple paths allow distributing cache across different mount points or disks.<br />Example: ["/mnt/cache1", "/mnt/cache2"] |  | MinItems: 1 <br />Required: \{\} <br /> |
+| `quotas` _[Quantity](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#quantity-resource-api) array_ | Quotas is a list of storage quotas corresponding to each path.<br />The length of Quotas must match the length of Paths.<br />Each quota defines the maximum cache size for the corresponding path.<br />Example: ["100Gi", "50Gi"] allocates 100GiB to the first path and 50GiB to the second. |  | MinItems: 1 <br />Required: \{\} <br /> |
+| `type` _[HostPathType](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#hostpathtype-v1-core)_ | Type specifies the type of hostPath volume.<br />Defaults to empty string (no validation).<br />More info: https://kubernetes.io/docs/concepts/storage/volumes#hostpath |  | Optional: \{\} <br /> |
+
+
 #### InitFuseSpec
 
 
@@ -1279,6 +1320,7 @@ _Appears in:_
 
 | Field | Description | Default | Validation |
 | --- | --- | --- | --- |
+| `imagePullSecrets` _[LocalObjectReference](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#localobjectreference-v1-core) array_ | ImagePullSecrets that will be used to pull images for this component.<br />If unspecified, the runtime's imagePullSecrets are used.<br />Only the worker uses it for now, it has no effect on master and jobWorker. |  | Optional: \{\} <br /> |
 | `replicas` _integer_ | Replicas is the desired number of replicas of the given template.<br />If unspecified, defaults to 1.<br />replicas is the min replicas of dataset in the cluster |  | Minimum: 1 <br />Optional: \{\} <br /> |
 | `ports` _[ContainerPort](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#containerport-v1-core) array_ | Ports used by JuiceFS |  | Optional: \{\} <br /> |
 | `resources` _[ResourceRequirements](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#resourcerequirements-v1-core)_ | Resources that will be requested by the JuiceFS component. |  | Optional: \{\} <br /> |
@@ -1307,6 +1349,7 @@ _Appears in:_
 | `image` _string_ | Image for JuiceFS fuse |  |  |
 | `imageTag` _string_ | Image for JuiceFS fuse |  |  |
 | `imagePullPolicy` _string_ | One of the three policies: `Always`, `IfNotPresent`, `Never` |  |  |
+| `imagePullSecrets` _[LocalObjectReference](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#localobjectreference-v1-core) array_ | ImagePullSecrets that will be used to pull the JuiceFS fuse image.<br />If unspecified, the runtime's imagePullSecrets are used. |  | Optional: \{\} <br /> |
 | `env` _[EnvVar](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#envvar-v1-core) array_ | Environment variables that will be used by JuiceFS Fuse |  |  |
 | `resources` _[ResourceRequirements](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#resourcerequirements-v1-core)_ | Resources that will be requested by JuiceFS Fuse. |  |  |
 | `options` _object (keys:string, values:string)_ | Options mount options that fuse pod will use |  | Optional: \{\} <br /> |
@@ -1320,7 +1363,6 @@ _Appears in:_
 #### JuiceFSRuntime
 
 
-| `imagePullSecrets` _[LocalObjectReference](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#localobjectreference-v1-core) array_ | ImagePullSecrets that will be used to pull images for this component.<br />If unspecified, the runtime's imagePullSecrets are used.<br />Only the worker uses it for now, it has no effect on master and jobWorker. |  | Optional: \{\} <br /> |
 
 JuiceFSRuntime is the Schema for the juicefsruntimes API
 
@@ -1349,9 +1391,9 @@ _Appears in:_
 
 | Field | Description | Default | Validation |
 | --- | --- | --- | --- |
-| `imagePullSecrets` _[LocalObjectReference](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#localobjectreference-v1-core) array_ | ImagePullSecrets that will be used to pull the JuiceFS fuse image.<br />If unspecified, the runtime's imagePullSecrets are used. |  | Optional: \{\} <br /> |
 | `juicefsVersion` _[VersionSpec](#versionspec)_ | The version information that instructs fluid to orchestrate a particular version of JuiceFS. |  |  |
 | `initUsers` _[InitUsersSpec](#initusersspec)_ | The spec of init users |  |  |
+| `imagePullSecrets` _[LocalObjectReference](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#localobjectreference-v1-core) array_ | ImagePullSecrets that will be used to pull images for all JuiceFS components.<br />Worker and fuse can override them with their own imagePullSecrets. |  | Optional: \{\} <br /> |
 | `master` _[JuiceFSCompTemplateSpec](#juicefscomptemplatespec)_ | The component spec of JuiceFS master |  |  |
 | `worker` _[JuiceFSCompTemplateSpec](#juicefscomptemplatespec)_ | The component spec of JuiceFS worker |  |  |
 | `jobWorker` _[JuiceFSCompTemplateSpec](#juicefscomptemplatespec)_ | The component spec of JuiceFS job Worker |  |  |
@@ -1393,7 +1435,6 @@ _Appears in:_
 #### MasterSpec
 
 
-| `imagePullSecrets` _[LocalObjectReference](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#localobjectreference-v1-core) array_ | ImagePullSecrets that will be used to pull images for all JuiceFS components.<br />Worker and fuse can override them with their own imagePullSecrets. |  | Optional: \{\} <br /> |
 
 MasterSpec defines the configurations for Vineyard Master component
 which is also regarded as the Etcd component in Vineyard.
@@ -1419,24 +1460,6 @@ _Appears in:_
 | `podMetadata` _[PodMetadata](#podmetadata)_ | PodMetadata defines labels and annotations that will be propagated to Vineyard's pods including Master and Worker.<br />Default is not set. |  | Optional: \{\} <br /> |
 | `networkMode` _[NetworkMode](#networkmode)_ | Whether to use hostnetwork or not<br />Default is HostNetwork |  | Enum: [HostNetwork  ContainerNetwork] <br />Optional: \{\} <br /> |
 | `endpoint` _[ExternalEndpointSpec](#externalendpointspec)_ | ExternalEndpoint defines the configurations for external etcd cluster<br />Default is not set<br />If set, the Vineyard Master component will not be deployed,<br />which means the Vineyard Worker component will use an external Etcd cluster.<br />E,g.<br />  endpoint:<br />    uri: "etcd-svc.etcd-namespace.svc.cluster.local:2379"<br />    encryptOptions:<br />      - name: access-key<br />		   valueFrom:<br />          secretKeyRef:<br />            name: etcd-secret<br />			   key: accesskey |  | Optional: \{\} <br /> |
-
-
-#### MediumSource
-
-
-
-MediumSource describes the storage medium type for tiered store.
-Only one of its members may be specified.
-
-
-
-_Appears in:_
-- [RuntimeTieredStoreLevel](#runtimetieredstorelevel)
-
-| Field | Description | Default | Validation |
-| --- | --- | --- | --- |
-| `processMemory` _[ProcessMemoryMediumSource](#processmemorymediumsource)_ | ProcessMemory indicates that process memory should be used as the storage medium.<br />The cache will be stored in the process's memory space. |  | Optional: \{\} <br /> |
-| `volume` _[VolumeMediumSource](#volumemediumsource)_ | Volume indicates that a Kubernetes volume should be used as the storage medium.<br />Supported volume types include hostPath, emptyDir, and ephemeral volumes. |  | Optional: \{\} <br /> |
 
 
 
@@ -1467,7 +1490,6 @@ Refer to <a href="https://docs.alluxio.io/os/user/stable/en/ufs/S3.html">Alluxio
 
 
 _Appears in:_
-- [CacheRuntimeStatus](#cacheruntimestatus)
 - [DatasetSpec](#datasetspec)
 - [DatasetStatus](#datasetstatus)
 - [RuntimeStatus](#runtimestatus)
@@ -1663,6 +1685,7 @@ _Underlying type:_ _string_
 _Appears in:_
 - [DataLoadSpec](#dataloadspec)
 - [DataMigrateSpec](#datamigratespec)
+- [DataProcessSpec](#dataprocessspec)
 
 | Field | Description |
 | --- | --- |
@@ -1693,14 +1716,16 @@ _Appears in:_
 
 
 ProcessMemoryMediumSource describes process memory as a storage medium.
-When specified, cache data will be stored in the process's memory space,
-and the quota will be added to the container's resource requests and limits.
+Cache data will be stored in the process's memory space.
 
 
 
 _Appears in:_
-- [MediumSource](#mediumsource)
+- [RuntimeTieredStoreLevel](#runtimetieredstorelevel)
 
+| Field | Description | Default | Validation |
+| --- | --- | --- | --- |
+| `quota` _[Quantity](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#quantity-resource-api)_ | Quota specifies the amount of memory to allocate for caching.<br />This value will be added to the container's resource requests and limits.<br />Example: "4Gi" allocates 4GiB memory for cache. |  | Required: \{\} <br /> |
 
 
 #### Processor
@@ -2007,7 +2032,9 @@ _Appears in:_
 
 
 
-RuntimeTieredStoreLevel describes the configuration for a single tier in the tiered storage
+RuntimeTieredStoreLevel describes the configuration for a single tier in the tiered storage.
+Each tier can use different storage media (e.g., memory, SSD, HDD).
+Only one of ProcessMemory, EmptyDir, or HostPath should be specified.
 
 
 
@@ -2016,9 +2043,9 @@ _Appears in:_
 
 | Field | Description | Default | Validation |
 | --- | --- | --- | --- |
-| `medium` _[MediumSource](#mediumsource)_ | Medium describes the storage medium type for this tier.<br />Supported types include process memory and various volume types. |  | Optional: \{\} <br /> |
-| `path` _string array_ | Path is a list of file paths to be used for the cache tier.<br />Multiple paths can be specified to distribute cache across different mount points.<br />For example: ["/mnt/cache1", "/mnt/cache2"]. |  | MinItems: 1 <br />Optional: \{\} <br /> |
-| `quota` _[Quantity](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#quantity-resource-api) array_ | Quota is a list of storage quotas for each path in the tier.<br />The length of Quota should match the length of Path.<br />Each quota corresponds to the path at the same index.<br />For example: ["100Gi", "50Gi"] allocates 100GiB to the first path and 50GiB to the second path. |  | Optional: \{\} <br /> |
+| `processMemory` _[ProcessMemoryMediumSource](#processmemorymediumsource)_ | ProcessMemory indicates that process memory should be used as one storage medium.<br />When specified, cache data will be stored in the process's memory space,<br />and the quota will be added to the container's resource requests and limits. |  | Optional: \{\} <br /> |
+| `emptyDir` _[EmptyDirMediumSource](#emptydirmediumsource)_ | EmptyDir indicates that an emptyDir volume should be used as the storage medium. |  | Optional: \{\} <br /> |
+| `hostPath` _[HostPathMediumSource](#hostpathmediumsource)_ | HostPath indicates that one or more hostPath volumes should be used as a storage medium. |  | Optional: \{\} <br /> |
 | `high` _string_ | High is the ratio of high watermark of the tier (e.g., "0.9").<br />When cache usage exceeds this ratio, eviction will be triggered. |  | Optional: \{\} <br /> |
 | `low` _string_ | Low is the ratio of low watermark of the tier (e.g., "0.7").<br />Eviction will continue until cache usage falls below this ratio. |  | Optional: \{\} <br /> |
 
@@ -2467,25 +2494,6 @@ _Appears in:_
 | `disablePrometheus` _boolean_ | Disable monitoring metrics for Vineyard Runtime<br />Default is false |  | Optional: \{\} <br /> |
 | `podMetadata` _[PodMetadata](#podmetadata)_ | PodMetadata defines labels and annotations that will be propagated to Vineyard's pods. |  | Optional: \{\} <br /> |
 | `volumes` _[Volume](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#volume-v1-core) array_ | Volumes is the list of Kubernetes volumes that can be mounted by the vineyard components (Master and Worker).<br />Default is null. |  | Optional: \{\} <br /> |
-
-
-#### VolumeMediumSource
-
-
-
-VolumeMediumSource describes a Kubernetes volume as a storage medium.
-Only one of its members may be specified.
-
-
-
-_Appears in:_
-- [MediumSource](#mediumsource)
-
-| Field | Description | Default | Validation |
-| --- | --- | --- | --- |
-| `hostPath` _[HostPathVolumeSource](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#hostpathvolumesource-v1-core)_ | HostPath represents a pre-existing file or directory on the host machine that is directly exposed to the container.<br />More info: https://kubernetes.io/docs/concepts/storage/volumes#hostpath |  | Optional: \{\} <br /> |
-| `emptyDir` _[EmptyDirVolumeSource](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#emptydirvolumesource-v1-core)_ | EmptyDir represents a temporary directory that shares a pod's lifetime.<br />More info: https://kubernetes.io/docs/concepts/storage/volumes#emptydir |  | Optional: \{\} <br /> |
-| `ephemeral` _[EphemeralVolumeSource](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#ephemeralvolumesource-v1-core)_ | Ephemeral represents a volume that is handled by a cluster storage driver.<br />The volume's lifecycle is tied to the pod that defines it.<br />More info: https://kubernetes.io/docs/concepts/storage/ephemeral-volumes/ |  | Optional: \{\} <br /> |
 
 
 
