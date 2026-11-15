@@ -109,8 +109,11 @@ func CollectRuntimeInfosFromAnnotations(client client.Reader, annotations map[st
 		}
 		seen[datasetName] = struct{}{}
 
-		// A dataset name is a k8s object name, so an invalid one can never resolve. Reject it here
-		// with a message naming the annotation, instead of letting it fail later as a not-found.
+		// An invalid dataset name can never resolve. Reject it here with a message naming the
+		// annotation, instead of letting it fail later as a not-found or not-bound.
+		// The check is DNS-1035 rather than the DNS-1123 a volume name needs, because the dataset
+		// controller only accepts DNS-1035 names: a name starting with a digit, e.g. "20-hbase",
+		// is a valid volume name but never names a dataset that gets bound.
 		if nameErrs := validation.IsDNS1035Label(datasetName); len(nameErrs) > 0 {
 			nameErr := errors.New(strings.Join(nameErrs, "; "))
 			setupLog.Error(nameErr,

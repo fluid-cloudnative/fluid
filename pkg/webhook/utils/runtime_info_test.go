@@ -340,6 +340,17 @@ var _ = Describe("CollectRuntimeInfosFromAnnotations", func() {
 			Expect(err.Error()).To(ContainSubstring(common.LabelAnnotationDatasets))
 			Expect(err.Error()).To(ContainSubstring("a DNS-1035 label must consist of"))
 		})
+
+		// A name starting with a digit passes the DNS-1123 check of the volume name, but the
+		// dataset controller never binds a dataset with such a name, so it is rejected up front.
+		It("should reject a name starting with a digit even if such a dataset is bound", func() {
+			_, err := collect("20-hbase", true,
+				cacheDataset("20-hbase", v1alpha1.BoundDatasetPhase), cacheRuntime("20-hbase"))
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("20-hbase"))
+			Expect(err.Error()).To(ContainSubstring(common.LabelAnnotationDatasets))
+			Expect(err.Error()).To(ContainSubstring("a DNS-1035 label must consist of"))
+		})
 	})
 
 	Context("when a dataset name leaves no room for the config map prefix", func() {
