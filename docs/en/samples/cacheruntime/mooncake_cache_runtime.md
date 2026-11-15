@@ -297,7 +297,7 @@ metadata:
   name: mooncake-client-1
   namespace: default              # has to match the Dataset's namespace
   labels:
-    fluid.io/inject: "true"
+    clientless.fluid.io/inject: "true"
   annotations:
     fluid.io/datasets: "mooncake-demo"
 spec:

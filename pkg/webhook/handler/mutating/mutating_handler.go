@@ -115,7 +115,7 @@ func (a *FluidMutatingHandler) Handle(ctx context.Context, req admission.Request
 				// reader means its dataset or runtime config is not there yet: the pod has to
 				// wait for it, which is a denial rather than a webhook failure.
 				if webhookutils.IsRejectPodError(err) ||
-					(webhookutils.IsNeedRetryWithApiReaderError(err) && utils.InjectEnabled(pod.GetLabels())) {
+					(webhookutils.IsNeedRetryWithApiReaderError(err) && utils.ClientlessEnabled(pod.GetLabels())) {
 					return admission.Denied(err.Error())
 				}
 				return admission.Errored(http.StatusInternalServerError, err)
@@ -154,11 +154,11 @@ func (a *FluidMutatingHandler) MutatePod(pod *corev1.Pod, useDirectReader bool) 
 
 	// A pod matching both the clientless rule and a fuse rule would be routed to the fuse
 	// plugins only, silently skipping the runtime config it asked for, so refuse it instead.
-	if utils.InjectEnabled(pod.GetLabels()) &&
+	if utils.ClientlessEnabled(pod.GetLabels()) &&
 		(utils.ServerlessEnabled(pod.GetLabels()) || utils.ServerfulFuseEnabled(pod.GetLabels())) {
 		return webhookutils.NewRejectPodError(fmt.Errorf(
 			"label %s=true cannot be combined with fuse injection labels (%s, %s, or the deprecated %s and serverless platform label): runtime config injection is only for cache runtimes without a fuse client",
-			common.LabelAnnotationInject, common.InjectServerless, common.InjectServerfulFuse, common.InjectFuseSidecar))
+			common.InjectClientless, common.InjectServerless, common.InjectServerfulFuse, common.InjectFuseSidecar))
 	}
 
 	pvcNames := kubeclient.GetPVCNamesFromPod(pod)
@@ -172,7 +172,7 @@ func (a *FluidMutatingHandler) MutatePod(pod *corev1.Pod, useDirectReader bool) 
 	// its datasets come from an annotation instead of from PVCs. Collect them only for
 	// such pods, so that the serverless and serverful paths keep seeing exactly the PVCs
 	// they see today.
-	if utils.InjectEnabled(pod.GetLabels()) {
+	if utils.ClientlessEnabled(pod.GetLabels()) {
 		annotationRuntimeInfos, annErr := webhookutils.CollectRuntimeInfosFromAnnotations(handlerClient, pod.Annotations, pod.Namespace, setupLog, utils.SkipPrecheckEnable(pod.Annotations))
 		if annErr != nil {
 			setupLog.Error(annErr, "failed to collect runtime infos from annotation", "annotation", common.LabelAnnotationDatasets)
@@ -199,7 +199,7 @@ func (a *FluidMutatingHandler) MutatePod(pod *corev1.Pod, useDirectReader bool) 
 		} else {
 			pluginsList = pluginsRegistry.GetPodWithDatasetHandler()
 		}
-	case utils.InjectEnabled(pod.GetLabels()):
+	case utils.ClientlessEnabled(pod.GetLabels()):
 		if len(runtimeInfos) == 0 {
 			pluginsList = pluginsRegistry.GetClientlessPodWithoutDatasetHandler()
 		} else {

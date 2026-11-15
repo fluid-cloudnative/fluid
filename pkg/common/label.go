@@ -97,11 +97,6 @@ const (
 	// i.e. fluid.io/datasets
 	LabelAnnotationDatasets = LabelAnnotationPrefix + "datasets"
 
-	// LabelAnnotationInject is a pod label that triggers fluid's mutating webhook for
-	// cache runtimes without a fuse client. It is matched by the webhook's objectSelector.
-	// i.e. fluid.io/inject
-	LabelAnnotationInject = LabelAnnotationPrefix + "inject"
-
 	// i.e. fuse.runtime.fluid.io/generation
 	LabelRuntimeFuseGeneration = "fuse.runtime." + LabelAnnotationPrefix + "generation"
 )

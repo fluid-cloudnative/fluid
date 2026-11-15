@@ -2041,7 +2041,7 @@ plugins:
 
 	// handle admits an app pod that opts in to injection for the dataset.
 	handle := func(cachedObjs, readerObjs []runtime.Object) admission.Response {
-		return handleWithLabels(map[string]string{common.LabelAnnotationInject: common.True}, cachedObjs, readerObjs)
+		return handleWithLabels(map[string]string{common.InjectClientless: common.True}, cachedObjs, readerObjs)
 	}
 
 	BeforeEach(func() {
@@ -2093,8 +2093,8 @@ plugins:
 
 		for _, fuseLabel := range []string{common.InjectServerless, common.InjectServerfulFuse, common.InjectFuseSidecar} {
 			resp := handleWithLabels(map[string]string{
-				common.LabelAnnotationInject: common.True,
-				fuseLabel:                    common.True,
+				common.InjectClientless: common.True,
+				fuseLabel:               common.True,
 			}, objs, objs)
 			Expect(resp.Allowed).To(BeFalse(), fuseLabel)
 			Expect(resp.Result.Code).To(Equal(int32(http.StatusForbidden)), fuseLabel)
@@ -2113,8 +2113,8 @@ plugins:
 		defer func() { utils.DeprecatedServerlessPlatformKey = original }()
 
 		resp := handleWithLabels(map[string]string{
-			common.LabelAnnotationInject: common.True,
-			"serverless-platform":        "any",
+			common.InjectClientless: common.True,
+			"serverless-platform":   "any",
 		}, objs, objs)
 		Expect(resp.Allowed).To(BeFalse())
 		Expect(resp.Result.Message).To(ContainSubstring("cannot be combined with fuse injection labels"))
@@ -2129,7 +2129,7 @@ plugins:
 			ObjectMeta: metav1.ObjectMeta{
 				Name:        "app",
 				Namespace:   namespace,
-				Labels:      map[string]string{common.LabelAnnotationInject: common.True},
+				Labels:      map[string]string{common.InjectClientless: common.True},
 				Annotations: map[string]string{common.LabelAnnotationDatasets: datasetName},
 			},
 			Spec: corev1.PodSpec{

@@ -66,5 +66,5 @@ webhooks:
     admissionReviewVersions: ["v1","v1beta1"]
     objectSelector:
       matchLabels:
-        fluid.io/inject: "true"
+        clientless.fluid.io/inject: "true"
 {{- end }}
