@@ -53,6 +53,12 @@ func TestGenerateDataLoadValueFile(t *testing.T) {
 	for _, datasetInput := range datasetInputs {
 		testObjs = append(testObjs, datasetInput.DeepCopy())
 	}
+	testObjs = append(testObjs, &datav1alpha1.AlluxioRuntime{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test-dataset",
+			Namespace: "fluid",
+		},
+	})
 	client := fake.NewFakeClientWithScheme(testScheme, testObjs...)
 
 	context := cruntime.ReconcileRequestContext{
@@ -480,7 +486,7 @@ func Test_genDataLoadValue(t *testing.T) {
 		Log:       fake.NullLogger(),
 	}
 	for k, item := range testCases {
-		got, _ := engine.genDataLoadValue(item.image, item.targetDataset, item.dataload)
+		got, _ := engine.genDataLoadValue(item.image, []corev1.LocalObjectReference{}, item.targetDataset, item.dataload)
 		if !reflect.DeepEqual(got, item.want) {
 			t.Errorf("case %s, got %v,want:%v", k, got, item.want)
 		}

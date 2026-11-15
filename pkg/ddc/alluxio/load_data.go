@@ -79,7 +79,12 @@ func (e *AlluxioEngine) generateDataLoadValueFile(r cruntime.ReconcileRequestCon
 
 	image := fmt.Sprintf("%s:%s", imageName, imageTag)
 
-	dataLoadValue, err := e.genDataLoadValue(image, targetDataset, dataload)
+	runtime, err := utils.GetAlluxioRuntime(r.Client, dataload.Spec.Dataset.Name, dataload.Spec.Dataset.Namespace)
+	if err != nil {
+		return "", err
+	}
+
+	dataLoadValue, err := e.genDataLoadValue(image, dataOperationImagePullSecrets(runtime), targetDataset, dataload)
 	if err != nil {
 		return
 	}
@@ -104,11 +109,7 @@ func (e *AlluxioEngine) generateDataLoadValueFile(r cruntime.ReconcileRequestCon
 // image, the target Dataset, and the DataLoad CR. It fills scheduling options (affinity including
 // run-after injection, nodeSelector, tolerations, schedulerName), resolves target paths with
 // Fluid-native mount detection, and attaches owner references for the rendered load Job.
-func (e *AlluxioEngine) genDataLoadValue(image string, targetDataset *datav1alpha1.Dataset, dataload *datav1alpha1.DataLoad) (*cdataload.DataLoadValue, error) {
-	// image pull secrets
-	// if the environment variable is not set, it is still an empty slice
-	imagePullSecrets := docker.GetImagePullSecretsFromEnv(common.EnvImagePullSecretsKey)
-
+func (e *AlluxioEngine) genDataLoadValue(image string, imagePullSecrets []v1.LocalObjectReference, targetDataset *datav1alpha1.Dataset, dataload *datav1alpha1.DataLoad) (*cdataload.DataLoadValue, error) {
 	dataloadInfo := cdataload.DataLoadInfo{
 		BackoffLimit:     3,
 		TargetDataset:    dataload.Spec.Dataset.Name,
