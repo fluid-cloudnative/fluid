@@ -26,6 +26,7 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	apiequality "k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/retry"
 
@@ -86,7 +87,13 @@ func (j *JuiceFSEngine) SyncRuntime(ctx cruntime.ReconcileRequestContext) (chang
 			j.Log.Info("Fuse Spec is updated", "name", ctx.Name, "namespace", ctx.Namespace)
 		}
 
-		changed = workerChanged || fuseChanged
+		// the runtime-wide secrets are shared by worker and fuse, so they are recorded once both have been synced
+		globalSecretsChanged := !apiequality.Semantic.DeepEqual(valueToSync.ImagePullSecrets, latestValue.ImagePullSecrets)
+		if globalSecretsChanged {
+			valueToSync.ImagePullSecrets = latestValue.ImagePullSecrets
+		}
+
+		changed = workerChanged || fuseChanged || globalSecretsChanged
 		if changed {
 			j.Log.Info("Committing changed value to configmap", "name", ctx.Name, "namespace", ctx.Namespace)
 			if innerErr = j.SaveValueToConfigmap(valueToSync); innerErr != nil {
@@ -221,6 +228,16 @@ func (j *JuiceFSEngine) checkAndSetWorkerChanges(oldValue, latestValue *JuiceFS,
 		workersToUpdate.Spec.Template.ObjectMeta.Annotations =
 			utils.UnionMapsWithOverride(utils.GetMapsDifference(workersToUpdate.Spec.Template.ObjectMeta.Annotations, oldValue.Worker.Annotations), newAnnos)
 		oldValue.Worker.Annotations = latestValue.Worker.Annotations
+		workerChanged = true
+	}
+
+	// imagePullSecrets, the worker's own list takes precedence over the runtime-wide one
+	oldWorkerSecrets := effectiveImagePullSecrets(oldValue.Worker.ImagePullSecrets, oldValue.ImagePullSecrets)
+	newWorkerSecrets := effectiveImagePullSecrets(latestValue.Worker.ImagePullSecrets, latestValue.ImagePullSecrets)
+	if !apiequality.Semantic.DeepEqual(oldWorkerSecrets, newWorkerSecrets) {
+		j.Log.Info("syncWorkerSpec: image pull secrets changed", "old", oldWorkerSecrets, "new", newWorkerSecrets)
+		workersToUpdate.Spec.Template.Spec.ImagePullSecrets = newWorkerSecrets
+		oldValue.Worker.ImagePullSecrets = latestValue.Worker.ImagePullSecrets
 		workerChanged = true
 	}
 
@@ -372,6 +389,16 @@ func (j *JuiceFSEngine) checkAndSetFuseChanges(oldValue, latestValue *JuiceFS, r
 			utils.UnionMapsWithOverride(utils.GetMapsDifference(fusesToUpdate.Spec.Template.ObjectMeta.Annotations, oldValue.Fuse.Annotations), newAnnos)
 		oldValue.Fuse.Annotations = latestValue.Fuse.Annotations
 		fuseChanged = true
+	}
+
+	// imagePullSecrets, the fuse's own list takes precedence over the runtime-wide one
+	oldFuseSecrets := effectiveImagePullSecrets(oldValue.Fuse.ImagePullSecrets, oldValue.ImagePullSecrets)
+	newFuseSecrets := effectiveImagePullSecrets(latestValue.Fuse.ImagePullSecrets, latestValue.ImagePullSecrets)
+	if !apiequality.Semantic.DeepEqual(oldFuseSecrets, newFuseSecrets) {
+		j.Log.Info("syncFuseSpec: image pull secrets changed", "old", oldFuseSecrets, "new", newFuseSecrets)
+		fusesToUpdate.Spec.Template.Spec.ImagePullSecrets = newFuseSecrets
+		oldValue.Fuse.ImagePullSecrets = latestValue.Fuse.ImagePullSecrets
+		fuseChanged, fuseGenerationNeedUpdate = true, true
 	}
 
 	containerIdx := utils.GetContainerIndex(fusesToUpdate.Spec.Template.Spec.Containers, JuiceFSFuseContainerName)
@@ -639,4 +666,12 @@ func (j JuiceFSEngine) isCommandChanged(crtCommand, runtimeCommand string) (chan
 	}
 	newCommand = runtimeCommand
 	return
+}
+
+// effectiveImagePullSecrets returns the component's own secrets if it has any, otherwise the runtime-wide ones.
+func effectiveImagePullSecrets(component, global []corev1.LocalObjectReference) []corev1.LocalObjectReference {
+	if len(component) > 0 {
+		return component
+	}
+	return global
 }
