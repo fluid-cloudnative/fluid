@@ -1,0 +1,15 @@
+apiVersion: data.fluid.io/v1alpha1
+kind: DataLoad
+metadata:
+  name: curvine-dataload-runafter-removed
+spec:
+  dataset:
+    name: curvine-demo
+    namespace: default
+  # The preceding DataLoad is never created, so this DataLoad stays Pending and waits for it
+  # until the test removes spec.runAfter.
+  runAfter:
+    kind: DataLoad
+    name: curvine-dataload-never-created
+  target:
+    - path: /minio
