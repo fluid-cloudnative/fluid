@@ -2,7 +2,7 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: dataset-controller
+  name: {{ include "fluid.fullname" . }}-dataset-controller
 rules:
   - apiGroups:
     - ""
@@ -176,11 +176,11 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: dataset-clusterrolebinding
+  name: {{ include "fluid.fullname" . }}-dataset-clusterrolebinding
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: dataset-controller
+  name: {{ include "fluid.fullname" . }}-dataset-controller
 subjects:
   - kind: ServiceAccount
     name: dataset-controller

@@ -2,7 +2,7 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: vineyardruntime-controller
+  name: {{ include "fluid.fullname" . }}-vineyardruntime-controller
 rules:
   - apiGroups:
     - ""
@@ -139,11 +139,11 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: vineyardruntime-clusterrolebinding
+  name: {{ include "fluid.fullname" . }}-vineyardruntime-clusterrolebinding
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: vineyardruntime-controller
+  name: {{ include "fluid.fullname" . }}-vineyardruntime-controller
 subjects:
   - kind: ServiceAccount
     name: vineyardruntime-controller
