@@ -160,6 +160,13 @@ func reconcileOperationDataFlow(ctx reconcileRequestContext,
 	opStatus datav1alpha1.OperationStatus,
 	updateStatusFn func() error) (needRequeue bool, err error) {
 
+	// spec.runAfter can be removed while the operation is still waiting for it. There is
+	// nothing left to wait for, so release the operation instead of dereferencing nil.
+	if runAfter == nil {
+		ctx.Log.Info("spec.runAfter is no longer set, stop waiting for the preceding operation")
+		return releaseWaitingOperation(updateStatusFn)
+	}
+
 	opRefNamespace := ctx.Namespace
 	if len(runAfter.Namespace) != 0 {
 		opRefNamespace = runAfter.Namespace
@@ -186,10 +193,13 @@ func reconcileOperationDataFlow(ctx reconcileRequestContext,
 		return true, nil
 	}
 
-	// set opStatus.waitingFor.operationComplete back to false
-	err = retry.RetryOnConflict(retry.DefaultBackoff, updateStatusFn)
+	return releaseWaitingOperation(updateStatusFn)
+}
 
-	if err != nil {
+// releaseWaitingOperation sets opStatus.waitingFor.operationComplete back to false so that
+// the operation's own controller moves on from Pending.
+func releaseWaitingOperation(updateStatusFn func() error) (needRequeue bool, err error) {
+	if err = retry.RetryOnConflict(retry.DefaultBackoff, updateStatusFn); err != nil {
 		return true, errors.Wrapf(err, "failed to update operation status waitingFor.OperationComplete=false")
 	}
 

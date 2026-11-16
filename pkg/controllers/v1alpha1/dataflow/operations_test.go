@@ -18,18 +18,21 @@ package dataflow
 
 import (
 	"context"
+	"errors"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/utils/ptr"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
@@ -859,5 +862,78 @@ var _ = Describe("reconcileDataMigrate and reconcileDataProcess not-found events
 			Expect(needRequeue).To(BeTrue())
 			Eventually(recorder.Events).Should(Receive(ContainSubstring(common.DataOperationNotFound)))
 		})
+	})
+})
+
+// A user may remove spec.runAfter while the operation is still waiting for the preceding one,
+// which leaves status.waitingFor.operationComplete=true without a reference to wait on.
+var _ = Describe("reconcile a data operation whose spec.runAfter was removed while waiting", func() {
+
+	const namespace = "default"
+
+	var s *runtime.Scheme
+
+	BeforeEach(func() {
+		s = runtime.NewScheme()
+		_ = datav1alpha1.AddToScheme(s)
+	})
+
+	staleWaitingStatus := func() datav1alpha1.OperationStatus {
+		return datav1alpha1.OperationStatus{
+			Phase: common.PhasePending,
+			WaitingFor: datav1alpha1.WaitingStatus{
+				OperationComplete: ptr.To(true),
+			},
+		}
+	}
+
+	DescribeTable("should release the operation without panicking",
+		func(newObj func() client.Object, reconcileFn func(reconcileRequestContext) (bool, error)) {
+			obj := newObj()
+			ctx := makeTestCtx(s, obj.GetName(), namespace, obj)
+
+			var (
+				needRequeue bool
+				err         error
+			)
+			Expect(func() { needRequeue, err = reconcileFn(ctx) }).NotTo(Panic())
+			Expect(err).NotTo(HaveOccurred())
+			Expect(needRequeue).To(BeFalse())
+
+			updated := newObj()
+			Expect(ctx.Client.Get(context.TODO(), client.ObjectKeyFromObject(obj), updated)).To(Succeed())
+			opStatus, err := utils.GetOperationStatus(updated)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(opStatus.WaitingFor.OperationComplete).To(HaveValue(BeFalse()))
+			Expect(opStatus.Phase).To(Equal(common.PhasePending))
+		},
+		Entry("DataLoad", func() client.Object {
+			return &datav1alpha1.DataLoad{ObjectMeta: metav1.ObjectMeta{Name: loadName, Namespace: namespace}, Status: staleWaitingStatus()}
+		}, reconcileDataLoad),
+		Entry("DataBackup", func() client.Object {
+			return &datav1alpha1.DataBackup{ObjectMeta: metav1.ObjectMeta{Name: backupName, Namespace: namespace}, Status: staleWaitingStatus()}
+		}, reconcileDataBackup),
+		Entry("DataMigrate", func() client.Object {
+			return &datav1alpha1.DataMigrate{ObjectMeta: metav1.ObjectMeta{Name: migrateName, Namespace: namespace}, Status: staleWaitingStatus()}
+		}, reconcileDataMigrate),
+		Entry("DataProcess", func() client.Object {
+			return &datav1alpha1.DataProcess{ObjectMeta: metav1.ObjectMeta{Name: processName, Namespace: namespace}, Status: staleWaitingStatus()}
+		}, reconcileDataProcess),
+	)
+
+	It("should request requeue and return the error when releasing the operation fails", func() {
+		waitingLoad := &datav1alpha1.DataLoad{ObjectMeta: metav1.ObjectMeta{Name: loadName, Namespace: namespace}, Status: staleWaitingStatus()}
+		ctx := makeTestCtx(s, loadName, namespace, waitingLoad)
+		updateErr := errors.New("status update failed")
+
+		var (
+			needRequeue bool
+			err         error
+		)
+		Expect(func() {
+			needRequeue, err = reconcileOperationDataFlow(ctx, waitingLoad, nil, waitingLoad.Status, func() error { return updateErr })
+		}).NotTo(Panic())
+		Expect(err).To(MatchError(ContainSubstring(updateErr.Error())))
+		Expect(needRequeue).To(BeTrue())
 	})
 })

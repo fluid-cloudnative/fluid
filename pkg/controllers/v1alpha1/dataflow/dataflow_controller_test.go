@@ -156,6 +156,38 @@ var _ = Describe("DataFlowReconciler", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(result).To(Equal(ctrl.Result{}))
 		})
+
+		It("should not panic and should release a DataLoad whose RunAfter was removed while it was waiting", func() {
+			s := runtime.NewScheme()
+			_ = datav1alpha1.AddToScheme(s)
+
+			waitingLoad := &datav1alpha1.DataLoad{
+				ObjectMeta: metav1.ObjectMeta{Name: "test", Namespace: "default"},
+				Status: datav1alpha1.OperationStatus{
+					Phase: common.PhasePending,
+					WaitingFor: datav1alpha1.WaitingStatus{
+						OperationComplete: ptr.To(true),
+					},
+				},
+			}
+
+			r := newTestDataFlowReconciler(s, waitingLoad)
+			req := ctrl.Request{
+				NamespacedName: types.NamespacedName{Name: "test", Namespace: "default"},
+			}
+
+			var (
+				result ctrl.Result
+				err    error
+			)
+			Expect(func() { result, err = r.Reconcile(context.TODO(), req) }).NotTo(Panic())
+			Expect(err).NotTo(HaveOccurred())
+			Expect(result).To(Equal(ctrl.Result{}))
+
+			updated := &datav1alpha1.DataLoad{}
+			Expect(r.Get(context.TODO(), req.NamespacedName, updated)).To(Succeed())
+			Expect(updated.Status.WaitingFor.OperationComplete).To(HaveValue(BeFalse()))
+		})
 	})
 })
 
