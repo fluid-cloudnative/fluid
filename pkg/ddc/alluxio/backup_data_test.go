@@ -18,6 +18,7 @@ package alluxio
 
 import (
 	"os"
+	"reflect"
 	"strings"
 	"testing"
 
@@ -110,6 +111,66 @@ func TestGenerateDataBackupValueFile(t *testing.T) {
 				}
 				if values.InitUsers.Enabled {
 					t.Error("expected InitUsers to be disabled, but it was enabled")
+				}
+			},
+		},
+		{
+			name: "runtime imagePullSecrets reach the value file",
+			dataBackup: &datav1alpha1.DataBackup{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-backup",
+					Namespace: testDatasetNamespace,
+				},
+				Spec: datav1alpha1.DataBackupSpec{
+					Dataset:    testDatasetName,
+					BackupPath: "pvc://backup-pvc/data",
+				},
+			},
+			runtime: &datav1alpha1.AlluxioRuntime{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      testDatasetName,
+					Namespace: testDatasetNamespace,
+				},
+				Spec: datav1alpha1.AlluxioRuntimeSpec{
+					Replicas:         1,
+					ImagePullSecrets: []corev1.LocalObjectReference{{Name: "runtime-secret"}},
+				},
+			},
+			dataset: &datav1alpha1.Dataset{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      testDatasetName,
+					Namespace: testDatasetNamespace,
+					UID:       "test-uid",
+				},
+			},
+			masterPod: &corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-dataset-master-0",
+					Namespace: testDatasetNamespace,
+				},
+				Spec: corev1.PodSpec{
+					NodeName: "test-node",
+					Containers: []corev1.Container{
+						{
+							Name: "alluxio-master",
+							Ports: []corev1.ContainerPort{
+								{
+									Name:          "rpc",
+									ContainerPort: 19998,
+								},
+							},
+						},
+					},
+				},
+				Status: corev1.PodStatus{
+					PodIP: "10.0.0.1",
+				},
+			},
+			expectError: false,
+			expectValueCheck: func(t *testing.T, values *cdatabackup.DataBackupValue) {
+				expected := []corev1.LocalObjectReference{{Name: "runtime-secret"}}
+				if !reflect.DeepEqual(values.DataBackup.ImagePullSecrets, expected) {
+					t.Errorf("expected imagePullSecrets %v, got %v", expected, values.DataBackup.ImagePullSecrets)
 				}
 			},
 		},

@@ -34,6 +34,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"sigs.k8s.io/yaml"
 )
 
 // TestGenerateDataLoadValueFile verifies that generateDataLoadValueFile creates
@@ -113,7 +114,7 @@ func TestGenerateDataLoadValueFile(t *testing.T) {
 
 	// Generate the values file and assert that the returned temp file path matches the expected pattern.
 	for _, test := range testCases {
-		engine := AlluxioEngine{}
+		engine := AlluxioEngine{Client: client, name: "test-dataset", namespace: "fluid"}
 		if fileName, err := engine.generateDataLoadValueFile(context, &test.dataLoad); !strings.Contains(fileName, test.expectFileName) {
 			t.Errorf("fail to generate the dataload value file: %v", err)
 		}
@@ -532,4 +533,63 @@ func TestCheckRuntimeReady(t *testing.T) {
 		t.Errorf("fail to exec the function CheckRuntimeReady")
 	}
 	patch2.Reset()
+}
+
+// TestGenerateDataLoadValueFileImagePullSecrets checks that the DataLoad value file carries the
+// AlluxioRuntime's imagePullSecrets, and falls back to the controller env when the runtime has none.
+func TestGenerateDataLoadValueFileImagePullSecrets(t *testing.T) {
+	testCases := []struct {
+		name               string
+		runtimeSecrets     []corev1.LocalObjectReference
+		envSecrets         string
+		expectedSecretList []corev1.LocalObjectReference
+	}{
+		{
+			name:               "runtime secrets replace the env default",
+			runtimeSecrets:     []corev1.LocalObjectReference{{Name: "runtime-secret"}},
+			envSecrets:         "env-secret",
+			expectedSecretList: []corev1.LocalObjectReference{{Name: "runtime-secret"}},
+		},
+		{
+			name:               "env default without runtime secrets",
+			envSecrets:         "env-secret",
+			expectedSecretList: []corev1.LocalObjectReference{{Name: "env-secret"}},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Setenv(common.EnvImagePullSecretsKey, tc.envSecrets)
+			client := fake.NewFakeClientWithScheme(testScheme,
+				&datav1alpha1.Dataset{ObjectMeta: metav1.ObjectMeta{Name: "test-dataset", Namespace: "fluid"}},
+				&datav1alpha1.AlluxioRuntime{
+					ObjectMeta: metav1.ObjectMeta{Name: "test-dataset", Namespace: "fluid"},
+					Spec:       datav1alpha1.AlluxioRuntimeSpec{ImagePullSecrets: tc.runtimeSecrets},
+				},
+			)
+			dataLoad := datav1alpha1.DataLoad{
+				ObjectMeta: metav1.ObjectMeta{Name: "test-dataload", Namespace: "fluid"},
+				Spec: datav1alpha1.DataLoadSpec{
+					Dataset: datav1alpha1.TargetDataset{Name: "test-dataset", Namespace: "fluid"},
+				},
+			}
+			engine := AlluxioEngine{Client: client, name: "test-dataset", namespace: "fluid"}
+
+			fileName, err := engine.generateDataLoadValueFile(cruntime.ReconcileRequestContext{Client: client}, &dataLoad)
+			if err != nil {
+				t.Fatalf("failed to generate the dataload value file: %v", err)
+			}
+			data, err := os.ReadFile(fileName)
+			if err != nil {
+				t.Fatalf("failed to read the dataload value file: %v", err)
+			}
+			var values cdataload.DataLoadValue
+			if err := yaml.Unmarshal(data, &values); err != nil {
+				t.Fatalf("failed to unmarshal the dataload value file: %v", err)
+			}
+			if !reflect.DeepEqual(values.DataLoadInfo.ImagePullSecrets, tc.expectedSecretList) {
+				t.Errorf("expected imagePullSecrets %v, got %v", tc.expectedSecretList, values.DataLoadInfo.ImagePullSecrets)
+			}
+		})
+	}
 }

@@ -79,7 +79,7 @@ func (e *AlluxioEngine) generateDataLoadValueFile(r cruntime.ReconcileRequestCon
 
 	image := fmt.Sprintf("%s:%s", imageName, imageTag)
 
-	runtime, err := utils.GetAlluxioRuntime(r.Client, dataload.Spec.Dataset.Name, dataload.Spec.Dataset.Namespace)
+	runtime, err := e.getRuntime()
 	if err != nil {
 		return "", err
 	}
