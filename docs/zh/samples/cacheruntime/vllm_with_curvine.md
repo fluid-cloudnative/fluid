@@ -12,7 +12,7 @@
 1. 已在 Kubernetes 集群上安装 Fluid，并开启了 CacheRuntime。请参考[安装文档](../../userguide/install.md)，CacheRuntime 默认关闭，需要在 Helm 安装时加上 `--set runtime.cacheruntime.enabled=true`。安装后 `kubectl get pod -n fluid-system` 应能看到 `cacheruntime-controller`。
 2. 集群中至少有一个带 NVIDIA GPU 的节点，并已安装 [NVIDIA device plugin](https://github.com/NVIDIA/k8s-device-plugin)，节点上报了 `nvidia.com/gpu` 资源。
 3. 有一个可用的 MinIO 或 S3 兼容的对象存储服务。
-4. 本地可以执行 `kubectl` 和 `curl`（7.75.0 及以上，需要 `--aws-sigv4`）。
+4. 本地可以执行 `kubectl`（1.23 及以上，需要 `kubectl wait --for=jsonpath`）和 `curl`（7.75.0 及以上，需要 `--aws-sigv4`）。
 
 本示例使用镜像 `vllm/vllm-openai:v0.33.0` 和 `curvine/curvine:v0.3.6-alpha` 验证。所有资源都创建在 `default` 命名空间，文中的命令也假定当前命名空间是 `default`。
 
@@ -51,7 +51,9 @@ $ modelscope download --model Qwen/Qwen2.5-0.5B-Instruct --local_dir ./Qwen2.5-0
 
 ```shell
 $ kubectl port-forward svc/minio 19000:9000 &
-$ until curl -s -o /dev/null http://127.0.0.1:19000/minio/health/live; do sleep 1; done   # 等待端口转发建立
+$ PF_PID=$!   # 记下端口转发进程号，便于之后结束它
+$ timeout 60 sh -c 'until curl -s -o /dev/null http://127.0.0.1:19000/minio/health/live; do sleep 1; done' \
+    || echo "60 秒内无法通过端口转发访问 MinIO"   # 等待端口转发建立
 
 $ (
     cd Qwen2.5-0.5B-Instruct || exit 1
@@ -64,7 +66,7 @@ $ (
     done
   )
 
-$ kill %1   # 结束端口转发
+$ kill "$PF_PID"   # 结束端口转发
 ```
 
 应看到每个文件各一行 `uploaded ...`。如果缺了 `config.json` 等文件，vLLM 启动时会报 `Invalid repository ID or local directory specified`。

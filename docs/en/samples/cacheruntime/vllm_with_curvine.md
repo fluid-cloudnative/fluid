@@ -12,7 +12,7 @@ Inference services usually keep model weights in object storage. Every replica h
 1. Fluid is installed on the Kubernetes cluster with CacheRuntime enabled. See the [installation guide](../../userguide/install.md). CacheRuntime is disabled by default; add `--set runtime.cacheruntime.enabled=true` to the Helm installation. After installation, `kubectl get pod -n fluid-system` should list `cacheruntime-controller`.
 2. The cluster has at least one node with an NVIDIA GPU, and the [NVIDIA device plugin](https://github.com/NVIDIA/k8s-device-plugin) is installed so that the node reports the `nvidia.com/gpu` resource.
 3. A MinIO or S3-compatible object storage service is available.
-4. `kubectl` and `curl` (7.75.0 or later, for `--aws-sigv4`) are available locally.
+4. `kubectl` (1.23 or later, for `kubectl wait --for=jsonpath`) and `curl` (7.75.0 or later, for `--aws-sigv4`) are available locally.
 
 This example was verified with the images `vllm/vllm-openai:v0.33.0` and `curvine/curvine:v0.3.6-alpha`. All resources are created in the `default` namespace, and the commands assume that `default` is the current namespace.
 
@@ -51,7 +51,9 @@ Forward the MinIO port to your local machine, then upload each file in the model
 
 ```shell
 $ kubectl port-forward svc/minio 19000:9000 &
-$ until curl -s -o /dev/null http://127.0.0.1:19000/minio/health/live; do sleep 1; done   # wait for the port-forward
+$ PF_PID=$!   # remember the port-forward process so it can be stopped later
+$ timeout 60 sh -c 'until curl -s -o /dev/null http://127.0.0.1:19000/minio/health/live; do sleep 1; done' \
+    || echo "MinIO is not reachable through the port-forward after 60s"   # wait for the port-forward
 
 $ (
     cd Qwen2.5-0.5B-Instruct || exit 1
@@ -64,7 +66,7 @@ $ (
     done
   )
 
-$ kill %1   # stop the port-forward
+$ kill "$PF_PID"   # stop the port-forward
 ```
 
 You should see one `uploaded ...` line per file. If a file such as `config.json` is missing, vLLM fails to start with `Invalid repository ID or local directory specified`.
