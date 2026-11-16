@@ -8,7 +8,7 @@ jobs:
     docker:
       # specify the version
       # cimg/go publishes per-minor tags; use the latest 1.26.x, which tracks
-      # the newest 1.26 patch. go.mod pins `toolchain go1.26.10`; if the image's
+      # the newest 1.26 patch. go.mod pins `toolchain go1.26.11`; if the image's
       # bundled Go is older than that, `go` auto-downloads the toolchain at build
       # time (requires network access, available on CircleCI).
       - image: cimg/go:1.26

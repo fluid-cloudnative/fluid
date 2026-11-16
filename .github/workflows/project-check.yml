@@ -7,7 +7,7 @@ on:
     branches: [ master, release-* ]
 
 env:
-  GO_VERSION: 1.26.10
+  GO_VERSION: 1.26.11
 
 # Declare default permissions as read only.
 permissions:
