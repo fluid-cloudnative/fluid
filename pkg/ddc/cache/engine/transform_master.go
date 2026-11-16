@@ -45,6 +45,9 @@ func (e *CacheEngine) transformMaster(dataset *datav1alpha1.Dataset, runtime *da
 	// before the reconcile reaches Sync, so an image that never becomes ready would hide it.
 	e.reportIncompleteVersion(runtime, common.ComponentTypeMaster, runtimeMaster.RuntimeVersion, componentTemplateImage(componentDefinition))
 	e.transformComponentPodTemplate(runtime.Spec, runtimeMaster.RuntimeComponentCommonSpec, dataset, value.Master)
+	if err = e.checkComponentResources(runtime, value.Master); err != nil {
+		return err
+	}
 
 	// transform all volume-related configurations
 	err = e.transformVolumes(runtime.Spec.Volumes, runtime.Spec.Master.VolumeMounts, dataset, componentDefinition, commonConfig, true, &value.Master.PodTemplateSpec.Spec)

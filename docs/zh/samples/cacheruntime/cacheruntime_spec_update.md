@@ -87,6 +87,7 @@ spec:
 - `requests.memory`: 内存请求
 - `limits.cpu`: CPU 限制
 - `limits.memory`: 内存限制
+- `claims`: 动态资源分配（DRA）的资源声明，只能引用模板中声明的 Pod 级 `resourceClaims`，见下方限制
 
 **示例**:
 ```yaml
@@ -101,18 +102,43 @@ spec:
         memory: 16Gi
 ```
 
-**取值优先级**：
+**取值方式**：
 
-每次 reconcile 时，`resources` 按以下顺序取值：
+每次 reconcile 时，`resources` 按以下方式取值：
 
-1. CacheRuntime 上设置的值（只要声明了 `requests` 或 `limits`）；
-2. 否则取 CacheRuntimeClass 模板中声明的值；
-3. 两者都未声明时不做同步，工作负载保持当前的资源配置。
+1. 以 CacheRuntimeClass 模板中声明的 `resources` 为基线；
+2. 将 CacheRuntime 上设置的 `resources` 按 key 叠加到该基线上——`requests` 与 `limits` 按资源名
+   合并，`claims` 按 claim 名合并；
+3. 两者都未声明的 key 会从工作负载上清除。
+
+也就是说，CacheRuntime 只需要表达相对模板的差异。只设置 `limits.memory` 时，仅该值被修改，模板中的
+`requests.cpu`、`requests.memory` 和 `limits.cpu` 保持不变。
+
+从 CacheRuntime 中删除某个 key 也遵循同样的规则：模板中有该 key 时回到模板的值，没有时从工作负载上清除。
+`limits: {}` 这样的空列表不包含任何 key，效果与不写 `limits` 相同。
 
 **限制**：
 - ⚠️ 不能超过节点可用资源
-- ⚠️ 当 CacheRuntimeClass 模板声明了 `resources` 时，从 CacheRuntime 中删除 `resources` **不会**
-  让组件变为不受限，而是回退到模板中的值。如需放宽限制，请显式设置目标值，而不是删除该字段。
+- ⚠️ CacheRuntimeClass 模板中声明的 key **可以覆盖，但不能删除**：从 CacheRuntime 中省略某个 key 不会
+  让组件变为不受限，而是保留模板中的值。如需调整资源要求，请在 CacheRuntime 中显式设置目标值。
+- ⚠️ CacheRuntimeClass 的修改如何影响已有 CacheRuntime，由 #6213 跟踪；请勿依赖这些修改会传递到已有实例。
+- ⚠️ **以 CacheRuntime 和模板为准**：直接修改 master 或 worker 的 AdvancedStatefulSet 上的 resources，
+  会在下一次 reconcile 时被改回。
+- ⚠️ **合并后 request 不能超过 limit**：模板和 CacheRuntime 各自合法，合并后仍可能出现 request 大于 limit，
+  例如模板 `requests.cpu: 1` 加上 CacheRuntime `limits.cpu: 500m`。hugepages（`hugepages-*`）和扩展资源
+  （如 `nvidia.com/gpu`）要求更严：request 必须等于 limit，且设置了 request 就必须设置 limit，例如模板
+  `nvidia.com/gpu` 的 request 和 limit 都为 1，CacheRuntime 只把 limit 改成 2，合并后同样冲突。
+  此时控制器不同步该组件的 `resources`，工作负载保持当前值，并在 CacheRuntime 上发出
+  `RuntimeResourcesConflict` Warning event，写明冲突的 key；新建的 CacheRuntime 若带有这样的组合，会创建失败。
+  请在 CacheRuntime 上同时设置对应的 request（hugepages 和扩展资源设为与 limit 相等），或修改模板。
+- ⚠️ **`claims` 只能引用工作负载已声明的 Pod 级 `resourceClaims`**：CacheRuntime 只能设置容器的
+  `resources.claims`，不能添加 Pod 级的 `spec.resourceClaims`；创建后在 CacheRuntimeClass 模板中新增的
+  Pod 级 `resourceClaims` 也不会同步到已有的工作负载。创建时，引用模板中未声明的 claim 名会导致
+  master/worker Pod 被 API server 拒绝（`must be one of the names in pod.spec.resourceClaims`），组件会
+  一直处于 NotReady；未启用 `DynamicResourceAllocation` 的集群（K8s 1.34 之前默认关闭）则会静默丢弃
+  `claims`。更新时，若某个 claim 既未在工作负载中声明、工作负载上也还没有（无论来自 CacheRuntime 还是模板
+  修改），控制器不同步这个 claim，`resources` 的其余部分照常同步，并在 CacheRuntime 上发出
+  `RuntimeResourcesConflict` Warning event，写明该 claim。如需使用新的 claim，请重建 CacheRuntime。
 - ⚠️ **Kubernetes 版本要求**：需要 K8s >= 1.27 且启用 `InPlacePodVerticalScaling` Feature Gate
   ```bash
   # 检查 Feature Gate 是否启用
