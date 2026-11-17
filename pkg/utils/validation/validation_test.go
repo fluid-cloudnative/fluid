@@ -18,7 +18,7 @@ package validation
 
 import (
 	"fmt"
-	"path/filepath"
+	"path"
 	"strings"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -44,7 +44,7 @@ var _ = Describe("IsValidMountRoot", func() {
 		for _, test := range testCases {
 			tc := test
 			It(fmt.Sprintf("should accept %s", tc.name), func() {
-				tt := filepath.Clean(tc.input)
+				tt := path.Clean(tc.input)
 				GinkgoWriter.Println(tt)
 				got := IsValidMountRoot(tc.input)
 				Expect(got).To(BeNil())
@@ -102,7 +102,7 @@ var _ = Describe("IsValidMountRoot", func() {
 			for _, input := range inputs {
 				err := IsValidMountRoot(input)
 				if err == nil {
-					Expect(strings.HasPrefix(input, string(filepath.Separator))).To(BeTrue(), "valid input must start with '/'")
+					Expect(strings.HasPrefix(input, "/")).To(BeTrue(), "valid input must start with '/'")
 				}
 			}
 		})
