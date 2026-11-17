@@ -74,5 +74,57 @@ var _ = Describe("MountPropagationInjector Plugin", func() {
 			Expect(err).To(HaveOccurred())
 			Expect(shouldStop).To(BeTrue())
 		})
+
+		It("should mutate pod with multiple runtimeInfos", func() {
+			runtimeInfo2, err := base.BuildRuntimeInfo("test2", "fluid", "juicefs")
+			Expect(err).NotTo(HaveOccurred())
+			runtimeInfo3, err := base.BuildRuntimeInfo("test3", "fluid", "jindo")
+			Expect(err).NotTo(HaveOccurred())
+
+			pod.Spec.Volumes = []corev1.Volume{
+				{
+					Name: "vol-test",
+					VolumeSource: corev1.VolumeSource{
+						PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
+							ClaimName: "test",
+						},
+					},
+				},
+				{
+					Name: "vol-test3",
+					VolumeSource: corev1.VolumeSource{
+						PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
+							ClaimName: "test3",
+						},
+					},
+				},
+			}
+			pod.Spec.Containers = []corev1.Container{
+				{
+					Name: "app",
+					VolumeMounts: []corev1.VolumeMount{
+						{Name: "vol-test", MountPath: "/mnt/test"},
+						{Name: "vol-test3", MountPath: "/mnt/test3"},
+					},
+				},
+			}
+
+			runtimeMap := map[string]base.RuntimeInfoInterface{
+				"test3": runtimeInfo3,
+				"test":  runtimeInfo,
+				"test2": runtimeInfo2,
+			}
+
+			for i := 0; i < 20; i++ {
+				testPod := pod.DeepCopy()
+				shouldStop, err := plugin.Mutate(testPod, runtimeMap)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(shouldStop).To(BeFalse())
+
+				hostToContainer := corev1.MountPropagationHostToContainer
+				Expect(testPod.Spec.Containers[0].VolumeMounts[0].MountPropagation).To(Equal(&hostToContainer))
+				Expect(testPod.Spec.Containers[0].VolumeMounts[1].MountPropagation).To(Equal(&hostToContainer))
+			}
+		})
 	})
 })

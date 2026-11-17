@@ -17,6 +17,7 @@ limitations under the License.
 package fileprefetcher
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
@@ -437,8 +438,7 @@ var _ = Describe("Mutate", func() {
 				}
 			}
 			Expect(fileListEnv).NotTo(BeNil())
-			Expect(fileListEnv.Value).To(ContainSubstring("/data/pvc1-vol/**"))
-			Expect(fileListEnv.Value).To(ContainSubstring("/data/pvc2-vol/**"))
+			Expect(fileListEnv.Value).To(Equal("/data/pvc1-vol/**;/data/pvc2-vol/**"))
 		})
 	})
 })
@@ -519,7 +519,28 @@ var _ = Describe("buildFilePrefetcherSidecarContainer with multiple volumes", fu
 			for _, vm := range containerSpec.VolumeMounts {
 				volumeNames = append(volumeNames, vm.Name)
 			}
-			Expect(volumeNames).To(ContainElements("vol1", "vol2", "vol3", filePrefetcherStatusVolumeName))
+			Expect(volumeNames).To(Equal([]string{"vol1", "vol2", "vol3", filePrefetcherStatusVolumeName}))
+		})
+
+		It("should append extraEnvs in deterministic key-sorted order", func() {
+			config := filePrefetcherConfig{
+				Image:            "test-image",
+				AsyncPrefetch:    true,
+				VolumeMountPaths: map[string]string{},
+				ExtraEnvs: map[string]string{
+					"ENV_Z": "val_z",
+					"ENV_A": "val_a",
+					"ENV_M": "val_m",
+				},
+			}
+			containerSpec, _ := prefetcher.buildFilePrefetcherSidecarContainer(config)
+			var extraEnvNames []string
+			for _, env := range containerSpec.Env {
+				if strings.HasPrefix(env.Name, "ENV_") {
+					extraEnvNames = append(extraEnvNames, env.Name)
+				}
+			}
+			Expect(extraEnvNames).To(Equal([]string{"ENV_A", "ENV_M", "ENV_Z"}))
 		})
 	})
 })
