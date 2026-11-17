@@ -38,9 +38,12 @@ func TestSyncImagePullSecrets(t *testing.T) {
 	cases := []struct {
 		name string
 		// old and latest values: global, worker, fuse
-		oldGlobal, oldWorker, oldFuse         []corev1.LocalObjectReference
-		newGlobal, newWorker, newFuse         []corev1.LocalObjectReference
-		wantWorker, wantFuse                  []corev1.LocalObjectReference
+		oldGlobal, oldWorker, oldFuse []corev1.LocalObjectReference
+		newGlobal, newWorker, newFuse []corev1.LocalObjectReference
+		wantWorker, wantFuse          []corev1.LocalObjectReference
+		// live templates, when they differ from what the old value implies
+		liveWorker, liveFuse                  []corev1.LocalObjectReference
+		liveSet                               bool
 		workerChanged, fuseChanged, fuseBumps bool
 	}{
 		{
@@ -70,6 +73,19 @@ func TestSyncImagePullSecrets(t *testing.T) {
 			workerChanged: true, fuseChanged: true, fuseBumps: true,
 		},
 		{
+			name:      "template left on the old secrets by a skipped sync catches up",
+			oldGlobal: pullSecrets("b"), newGlobal: pullSecrets("b"),
+			liveWorker: pullSecrets("a"), liveFuse: pullSecrets("a"), liveSet: true,
+			wantWorker: pullSecrets("b"), wantFuse: pullSecrets("b"),
+			workerChanged: true, fuseChanged: true, fuseBumps: true,
+		},
+		{
+			name:      "override added while the runtime-wide secrets rotate keeps the template as is",
+			oldGlobal: pullSecrets("a"), newGlobal: pullSecrets("b"), newWorker: pullSecrets("a"),
+			wantWorker: pullSecrets("a"), wantFuse: pullSecrets("b"),
+			fuseChanged: true, fuseBumps: true,
+		},
+		{
 			name:      "no change",
 			oldGlobal: pullSecrets("g"), newGlobal: pullSecrets("g"),
 			wantWorker: pullSecrets("g"), wantFuse: pullSecrets("g"),
@@ -88,12 +104,18 @@ func TestSyncImagePullSecrets(t *testing.T) {
 
 			worker := &appsv1.StatefulSet{Spec: appsv1.StatefulSetSpec{Template: corev1.PodTemplateSpec{Spec: corev1.PodSpec{Containers: []corev1.Container{{Name: JuiceFSWorkerContainerName}}}}}}
 			worker.Spec.Template.Spec.ImagePullSecrets = effectiveImagePullSecrets(c.oldWorker, c.oldGlobal)
+			if c.liveSet {
+				worker.Spec.Template.Spec.ImagePullSecrets = c.liveWorker
+			}
 			gotWorkerChanged := engine.checkAndSetWorkerChanges(oldValue, latestValue, runtime, worker)
 			assert.Equal(t, c.workerChanged, gotWorkerChanged)
 			assert.Equal(t, c.wantWorker, worker.Spec.Template.Spec.ImagePullSecrets)
 
 			fuse := constructBaseFuseDaemonset()
 			fuse.Spec.Template.Spec.ImagePullSecrets = effectiveImagePullSecrets(c.oldFuse, c.oldGlobal)
+			if c.liveSet {
+				fuse.Spec.Template.Spec.ImagePullSecrets = c.liveFuse
+			}
 			gotFuseChanged, gotBump := engine.checkAndSetFuseChanges(oldValue, latestValue, runtime, fuse)
 			// the shared fuse fixture can report changes for other fields, so only the positive case is checked
 			if c.fuseChanged {
@@ -101,6 +123,38 @@ func TestSyncImagePullSecrets(t *testing.T) {
 			}
 			assert.Equal(t, c.fuseBumps, gotBump)
 			assert.Equal(t, c.wantFuse, fuse.Spec.Template.Spec.ImagePullSecrets)
+
+			// the overrides are recorded whether or not the template changed
+			assert.Equal(t, c.newWorker, oldValue.Worker.ImagePullSecrets)
+			assert.Equal(t, c.newFuse, oldValue.Fuse.ImagePullSecrets)
 		})
 	}
+}
+
+// Rotating the runtime-wide secrets from a to b while adding a worker override a, then
+// removing the override, has to leave the worker on b.
+func TestSyncImagePullSecretsRotationThenOverrideRemoval(t *testing.T) {
+	engine := &JuiceFSEngine{name: "test", namespace: "default"}
+	runtime := &datav1alpha1.JuiceFSRuntime{}
+	worker := &appsv1.StatefulSet{Spec: appsv1.StatefulSetSpec{Template: corev1.PodTemplateSpec{Spec: corev1.PodSpec{
+		Containers:       []corev1.Container{{Name: JuiceFSWorkerContainerName}},
+		ImagePullSecrets: pullSecrets("a"),
+	}}}}
+
+	saved := constructBaseRuntimeValue()
+	saved.ImagePullSecrets = pullSecrets("a")
+
+	// rotation plus override: the effective list stays a
+	latest := constructBaseRuntimeValue()
+	latest.ImagePullSecrets, latest.Worker.ImagePullSecrets = pullSecrets("b"), pullSecrets("a")
+	assert.False(t, engine.checkAndSetWorkerChanges(saved, latest, runtime, worker))
+	saved.ImagePullSecrets = latest.ImagePullSecrets
+	assert.Equal(t, pullSecrets("a"), saved.Worker.ImagePullSecrets)
+
+	// override removed: the worker falls back to b
+	latest = constructBaseRuntimeValue()
+	latest.ImagePullSecrets = pullSecrets("b")
+	assert.True(t, engine.checkAndSetWorkerChanges(saved, latest, runtime, worker))
+	assert.Equal(t, pullSecrets("b"), worker.Spec.Template.Spec.ImagePullSecrets)
+	assert.Nil(t, saved.Worker.ImagePullSecrets)
 }

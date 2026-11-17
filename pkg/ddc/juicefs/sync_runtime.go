@@ -69,6 +69,9 @@ func (j *JuiceFSEngine) SyncRuntime(ctx cruntime.ReconcileRequestContext) (chang
 			return innerErr
 		}
 
+		// the per-component overrides are recorded even when the effective list stays the same
+		oldWorkerSecrets, oldFuseSecrets := valueToSync.Worker.ImagePullSecrets, valueToSync.Fuse.ImagePullSecrets
+
 		// 1. sync workers. syncWorkerSpec should not have a retryOnConflict logic because we want the process to be atomic
 		workerChanged, innerErr := j.syncWorkerSpec(ctx, runtime, valueToSync, latestValue)
 		if innerErr != nil {
@@ -93,8 +96,11 @@ func (j *JuiceFSEngine) SyncRuntime(ctx cruntime.ReconcileRequestContext) (chang
 			valueToSync.ImagePullSecrets = latestValue.ImagePullSecrets
 		}
 
+		overridesChanged := !apiequality.Semantic.DeepEqual(oldWorkerSecrets, valueToSync.Worker.ImagePullSecrets) ||
+			!apiequality.Semantic.DeepEqual(oldFuseSecrets, valueToSync.Fuse.ImagePullSecrets)
+
 		changed = workerChanged || fuseChanged || globalSecretsChanged
-		if changed {
+		if changed || overridesChanged {
 			j.Log.Info("Committing changed value to configmap", "name", ctx.Name, "namespace", ctx.Namespace)
 			if innerErr = j.SaveValueToConfigmap(valueToSync); innerErr != nil {
 				j.Log.Error(innerErr, "failed to save changed value to configmap")
@@ -231,15 +237,16 @@ func (j *JuiceFSEngine) checkAndSetWorkerChanges(oldValue, latestValue *JuiceFS,
 		workerChanged = true
 	}
 
-	// imagePullSecrets, the worker's own list takes precedence over the runtime-wide one
-	oldWorkerSecrets := effectiveImagePullSecrets(oldValue.Worker.ImagePullSecrets, oldValue.ImagePullSecrets)
+	// imagePullSecrets, the worker's own list takes precedence over the runtime-wide one.
+	// Compare against the live template rather than the saved value: the runtime-wide list
+	// is shared with fuse, so the saved value can be ahead of a template that was not synced yet.
 	newWorkerSecrets := effectiveImagePullSecrets(latestValue.Worker.ImagePullSecrets, latestValue.ImagePullSecrets)
-	if !apiequality.Semantic.DeepEqual(oldWorkerSecrets, newWorkerSecrets) {
-		j.Log.Info("syncWorkerSpec: image pull secrets changed", "old", oldWorkerSecrets, "new", newWorkerSecrets)
+	if !apiequality.Semantic.DeepEqual(workersToUpdate.Spec.Template.Spec.ImagePullSecrets, newWorkerSecrets) {
+		j.Log.Info("syncWorkerSpec: image pull secrets changed", "old", workersToUpdate.Spec.Template.Spec.ImagePullSecrets, "new", newWorkerSecrets)
 		workersToUpdate.Spec.Template.Spec.ImagePullSecrets = newWorkerSecrets
-		oldValue.Worker.ImagePullSecrets = latestValue.Worker.ImagePullSecrets
 		workerChanged = true
 	}
+	oldValue.Worker.ImagePullSecrets = latestValue.Worker.ImagePullSecrets
 
 	containerIdx := utils.GetContainerIndex(workersToUpdate.Spec.Template.Spec.Containers, JuiceFSWorkerContainerName)
 
@@ -391,15 +398,15 @@ func (j *JuiceFSEngine) checkAndSetFuseChanges(oldValue, latestValue *JuiceFS, r
 		fuseChanged = true
 	}
 
-	// imagePullSecrets, the fuse's own list takes precedence over the runtime-wide one
-	oldFuseSecrets := effectiveImagePullSecrets(oldValue.Fuse.ImagePullSecrets, oldValue.ImagePullSecrets)
+	// imagePullSecrets, the fuse's own list takes precedence over the runtime-wide one.
+	// Compared against the live template for the same reason as the worker.
 	newFuseSecrets := effectiveImagePullSecrets(latestValue.Fuse.ImagePullSecrets, latestValue.ImagePullSecrets)
-	if !apiequality.Semantic.DeepEqual(oldFuseSecrets, newFuseSecrets) {
-		j.Log.Info("syncFuseSpec: image pull secrets changed", "old", oldFuseSecrets, "new", newFuseSecrets)
+	if !apiequality.Semantic.DeepEqual(fusesToUpdate.Spec.Template.Spec.ImagePullSecrets, newFuseSecrets) {
+		j.Log.Info("syncFuseSpec: image pull secrets changed", "old", fusesToUpdate.Spec.Template.Spec.ImagePullSecrets, "new", newFuseSecrets)
 		fusesToUpdate.Spec.Template.Spec.ImagePullSecrets = newFuseSecrets
-		oldValue.Fuse.ImagePullSecrets = latestValue.Fuse.ImagePullSecrets
 		fuseChanged, fuseGenerationNeedUpdate = true, true
 	}
+	oldValue.Fuse.ImagePullSecrets = latestValue.Fuse.ImagePullSecrets
 
 	containerIdx := utils.GetContainerIndex(fusesToUpdate.Spec.Template.Spec.Containers, JuiceFSFuseContainerName)
 
