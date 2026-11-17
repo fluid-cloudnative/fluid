@@ -23,6 +23,7 @@ import (
 	"testing"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 	cdatabackup "github.com/fluid-cloudnative/fluid/pkg/databackup"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
@@ -49,6 +50,7 @@ func TestGenerateDataBackupValueFile(t *testing.T) {
 		runtime          *datav1alpha1.AlluxioRuntime
 		dataset          *datav1alpha1.Dataset
 		masterPod        *corev1.Pod
+		envSecrets       string
 		expectError      bool
 		errorMsg         string
 		expectValueCheck func(t *testing.T, values *cdatabackup.DataBackupValue)
@@ -166,9 +168,70 @@ func TestGenerateDataBackupValueFile(t *testing.T) {
 					PodIP: "10.0.0.1",
 				},
 			},
+			envSecrets:  "env-secret",
 			expectError: false,
 			expectValueCheck: func(t *testing.T, values *cdatabackup.DataBackupValue) {
 				expected := []corev1.LocalObjectReference{{Name: "runtime-secret"}}
+				if !reflect.DeepEqual(values.DataBackup.ImagePullSecrets, expected) {
+					t.Errorf("expected imagePullSecrets %v, got %v", expected, values.DataBackup.ImagePullSecrets)
+				}
+			},
+		},
+		{
+			name: "env imagePullSecrets without runtime secrets",
+			dataBackup: &datav1alpha1.DataBackup{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-backup",
+					Namespace: testDatasetNamespace,
+				},
+				Spec: datav1alpha1.DataBackupSpec{
+					Dataset:    testDatasetName,
+					BackupPath: "pvc://backup-pvc/data",
+				},
+			},
+			runtime: &datav1alpha1.AlluxioRuntime{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      testDatasetName,
+					Namespace: testDatasetNamespace,
+				},
+				Spec: datav1alpha1.AlluxioRuntimeSpec{
+					Replicas: 1,
+				},
+			},
+			dataset: &datav1alpha1.Dataset{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      testDatasetName,
+					Namespace: testDatasetNamespace,
+					UID:       "test-uid",
+				},
+			},
+			masterPod: &corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test-dataset-master-0",
+					Namespace: testDatasetNamespace,
+				},
+				Spec: corev1.PodSpec{
+					NodeName: "test-node",
+					Containers: []corev1.Container{
+						{
+							Name: "alluxio-master",
+							Ports: []corev1.ContainerPort{
+								{
+									Name:          "rpc",
+									ContainerPort: 19998,
+								},
+							},
+						},
+					},
+				},
+				Status: corev1.PodStatus{
+					PodIP: "10.0.0.1",
+				},
+			},
+			envSecrets:  "env-secret",
+			expectError: false,
+			expectValueCheck: func(t *testing.T, values *cdatabackup.DataBackupValue) {
+				expected := []corev1.LocalObjectReference{{Name: "env-secret"}}
 				if !reflect.DeepEqual(values.DataBackup.ImagePullSecrets, expected) {
 					t.Errorf("expected imagePullSecrets %v, got %v", expected, values.DataBackup.ImagePullSecrets)
 				}
@@ -246,6 +309,9 @@ func TestGenerateDataBackupValueFile(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
+			if tc.envSecrets != "" {
+				t.Setenv(common.EnvImagePullSecretsKey, tc.envSecrets)
+			}
 			objs := []runtime.Object{}
 			if tc.runtime != nil {
 				objs = append(objs, tc.runtime)
