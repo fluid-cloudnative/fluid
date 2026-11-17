@@ -33,7 +33,6 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/utils/ptr"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 	fakeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
@@ -44,7 +43,7 @@ import (
 
 var _ = Describe("Dataset Lifecycle Node Tests", Label("pkg.utils.dataset.lifecycle.node_test.go"), func() {
 	var (
-		client      client.Client
+		client      ctrlclient.Client
 		runtimeInfo base.RuntimeInfoInterface
 		testScheme  *runtime.Scheme
 		resources   []runtime.Object
