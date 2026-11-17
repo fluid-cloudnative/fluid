@@ -381,19 +381,32 @@ var _ = Describe("Fuse Injector", func() {
 
 	Describe("assembleMountInfos", func() {
 		Context("when given path to runtime type map", func() {
-			It("should return colon-separated strings", func() {
+			It("should return colon-separated strings in deterministic key-sorted order", func() {
 				path2RuntimeTypeMap := map[string]string{
 					"/data1": "alluxio",
 					"/data2": "juicefs",
 				}
 
 				mountPathStr, mountTypeStr := assembleMountInfos(path2RuntimeTypeMap)
-				Expect(mountPathStr).To(ContainSubstring("/data1"))
-				Expect(mountPathStr).To(ContainSubstring("/data2"))
-				Expect(mountPathStr).To(ContainSubstring(":"))
-				Expect(mountTypeStr).To(ContainSubstring("alluxio"))
-				Expect(mountTypeStr).To(ContainSubstring("juicefs"))
-				Expect(mountTypeStr).To(ContainSubstring(":"))
+				Expect(mountPathStr).To(Equal("/data1:/data2"))
+				Expect(mountTypeStr).To(Equal("alluxio:juicefs"))
+			})
+		})
+
+		Context("when given multiple paths in random map order", func() {
+			It("should consistently return deterministic sorted colon-separated strings", func() {
+				path2RuntimeTypeMap := map[string]string{
+					"/var/data/z": "jindo",
+					"/var/data/a": "alluxio",
+					"/var/data/m": "juicefs",
+				}
+
+				// Repeat across 50 iterations because unordered map range fails only intermittently on three keys.
+				for i := 0; i < 50; i++ {
+					mountPathStr, mountTypeStr := assembleMountInfos(path2RuntimeTypeMap)
+					Expect(mountPathStr).To(Equal("/var/data/a:/var/data/m:/var/data/z"))
+					Expect(mountTypeStr).To(Equal("alluxio:juicefs:jindo"))
+				}
 			})
 		})
 
