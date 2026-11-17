@@ -1,3 +1,8 @@
+# Cluster-scoped RBAC resources keep their historical names by default.
+# Set this to a unique prefix when multiple Fluid releases share a cluster.
+rbac:
+  clusterScopedNamePrefix: ""
+
 # Default values for fluid.
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.

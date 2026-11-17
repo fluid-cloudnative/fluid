@@ -2,7 +2,7 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: {{ include "fluid.fullname" . }}-thinruntime-controller
+  name: {{ include "fluid.clusterRBACName" (dict "root" . "name" "thinruntime-controller") }}
 rules:
   - apiGroups:
     - ""
@@ -155,11 +155,11 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: {{ include "fluid.fullname" . }}-thinruntime-clusterrolebinding
+  name: {{ include "fluid.clusterRBACName" (dict "root" . "name" "thinruntime-clusterrolebinding") }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: {{ include "fluid.fullname" . }}-thinruntime-controller
+  name: {{ include "fluid.clusterRBACName" (dict "root" . "name" "thinruntime-controller") }}
 subjects:
   - kind: ServiceAccount
     name: thinruntime-controller

@@ -169,3 +169,16 @@ Check if feature gate DataflowAffinity is enabled in the featureGates.
   value: {{ .Values.runtime.syncScheduleInfoNodeExcludeSelector | quote }}
 {{- end }}
 {{- end -}}
+
+{{/*
+Return a cluster-scoped RBAC name. Empty prefix preserves the chart's
+historical names; setting a prefix opts into per-release names.
+*/}}
+{{- define "fluid.clusterRBACName" -}}
+{{- $prefix := default "" .root.Values.rbac.clusterScopedNamePrefix -}}
+{{- if $prefix -}}
+{{- printf "%s-%s" $prefix .name | trunc 253 | trimSuffix "-" -}}
+{{- else -}}
+{{- .name -}}
+{{- end -}}
+{{- end -}}
