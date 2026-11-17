@@ -188,6 +188,72 @@ var _ = Describe("DataFlowReconciler", func() {
 			Expect(r.Get(context.TODO(), req.NamespacedName, updated)).To(Succeed())
 			Expect(updated.Status.WaitingFor.OperationComplete).To(HaveValue(BeFalse()))
 		})
+
+		// Reconcile runs every data operation kind for the request name, so a waiting DataLoad
+		// also makes it fetch a same-name DataBackup that has no runAfter and is not waiting.
+		It("should leave a same-name operation of another kind that is not waiting untouched", func() {
+			s := runtime.NewScheme()
+			_ = datav1alpha1.AddToScheme(s)
+
+			precedingLoad := &datav1alpha1.DataLoad{
+				ObjectMeta: metav1.ObjectMeta{Name: "preceding", Namespace: "default"},
+				Status: datav1alpha1.OperationStatus{
+					Phase: common.PhaseComplete,
+				},
+			}
+			waitingLoad := &datav1alpha1.DataLoad{
+				ObjectMeta: metav1.ObjectMeta{Name: "test", Namespace: "default"},
+				Spec: datav1alpha1.DataLoadSpec{
+					RunAfter: &datav1alpha1.OperationRef{
+						ObjectRef: datav1alpha1.ObjectRef{
+							Kind: "DataLoad",
+							Name: "preceding",
+						},
+					},
+				},
+				Status: datav1alpha1.OperationStatus{
+					Phase: common.PhasePending,
+					WaitingFor: datav1alpha1.WaitingStatus{
+						OperationComplete: ptr.To(true),
+					},
+				},
+			}
+			completedBackup := &datav1alpha1.DataBackup{
+				ObjectMeta: metav1.ObjectMeta{Name: "test", Namespace: "default"},
+				Status: datav1alpha1.OperationStatus{
+					Phase: common.PhaseComplete,
+				},
+			}
+
+			r := newTestDataFlowReconciler(s, precedingLoad, waitingLoad, completedBackup)
+			req := ctrl.Request{
+				NamespacedName: types.NamespacedName{Name: "test", Namespace: "default"},
+			}
+			backupBefore := &datav1alpha1.DataBackup{}
+			Expect(r.Get(context.TODO(), req.NamespacedName, backupBefore)).To(Succeed())
+
+			var (
+				result ctrl.Result
+				err    error
+			)
+			Expect(func() { result, err = r.Reconcile(context.TODO(), req) }).NotTo(Panic())
+			Expect(err).NotTo(HaveOccurred())
+			Expect(result).To(Equal(ctrl.Result{}))
+
+			releasedLoad := &datav1alpha1.DataLoad{}
+			Expect(r.Get(context.TODO(), req.NamespacedName, releasedLoad)).To(Succeed())
+			Expect(releasedLoad.Status.WaitingFor.OperationComplete).To(HaveValue(BeFalse()))
+
+			backupAfter := &datav1alpha1.DataBackup{}
+			Expect(r.Get(context.TODO(), req.NamespacedName, backupAfter)).To(Succeed())
+			Expect(backupAfter.ResourceVersion).To(Equal(backupBefore.ResourceVersion))
+			Expect(backupAfter.Status).To(Equal(backupBefore.Status))
+
+			// Only the DataLoad stopped waiting.
+			events := r.Recorder.(*record.FakeRecorder).Events
+			Expect(events).To(Receive(ContainSubstring(common.DataOperationWaitingEnded)))
+			Expect(events).To(BeEmpty())
+		})
 	})
 })
 

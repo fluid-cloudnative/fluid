@@ -355,6 +355,11 @@ function verify_dataload_runafter_removed() {
     syslog "DataLoad $dataload_name is Pending and waiting for its preceding operation"
 
     restarts_before=$(dataset_controller_restarts)
+    # With no dataset-controller pod to compare against, the restart checks below would pass vacuously.
+    if [[ ! "$restarts_before" =~ =[0-9]+ ]]; then
+        fail_dataload_runafter_removed "$dataload_name" "$manifest" \
+            "found no dataset-controller pod restart count to compare against (got: ${restarts_before:-<empty>})"
+    fi
     kubectl patch dataload "$dataload_name" --type=json -p '[{"op":"remove","path":"/spec/runAfter"}]'
     syslog "removed spec.runAfter from DataLoad $dataload_name, dataset-controller restarts: $restarts_before"
 

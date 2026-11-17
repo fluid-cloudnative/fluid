@@ -31,7 +31,10 @@ type DataBackupSpec struct {
 	BackupPath string `json:"backupPath,omitempty"`
 	// Manage the user to run Alluxio DataBackup
 	RunAs *User `json:"runAs,omitempty"`
-	// Specifies that the preceding operation in a workflow
+	// Specifies that the preceding operation in a workflow.
+	// The operation waits for the preceding operation only if runAfter is set when the operation is created.
+	// Removing runAfter while the operation is waiting ends the wait.
+	// Adding runAfter later does not make the operation wait.
 	// +optional
 	RunAfter *OperationRef `json:"runAfter,omitempty"`
 	// TTLSecondsAfterFinished is the time second to clean up data operations after finished or failed

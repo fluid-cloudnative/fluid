@@ -518,7 +518,7 @@ _Appears in:_
 | `dataset` _string_ | Dataset defines the target dataset of the DataBackup |  |  |
 | `backupPath` _string_ | BackupPath defines the target path to save data of the DataBackup |  |  |
 | `runAs` _[User](#user)_ | Manage the user to run Alluxio DataBackup |  |  |
-| `runAfter` _[OperationRef](#operationref)_ | Specifies that the preceding operation in a workflow |  | Optional: \{\} <br /> |
+| `runAfter` _[OperationRef](#operationref)_ | Specifies that the preceding operation in a workflow.<br />The operation waits for the preceding operation only if runAfter is set when the operation is created.<br />Removing runAfter while the operation is waiting ends the wait.<br />Adding runAfter later does not make the operation wait. |  | Optional: \{\} <br /> |
 | `ttlSecondsAfterFinished` _integer_ | TTLSecondsAfterFinished is the time second to clean up data operations after finished or failed |  | Optional: \{\} <br /> |
 
 
@@ -564,7 +564,7 @@ _Appears in:_
 | `schedulerName` _string_ | SchedulerName sets the scheduler to be used for DataLoad pod |  | Optional: \{\} <br /> |
 | `policy` _[Policy](#policy)_ | including Once, Cron, OnEvent | Once | Enum: [Once Cron OnEvent] <br />Optional: \{\} <br /> |
 | `schedule` _string_ | The schedule in Cron format, only set when policy is cron, see https://en.wikipedia.org/wiki/Cron. |  | Optional: \{\} <br /> |
-| `runAfter` _[OperationRef](#operationref)_ | Specifies that the preceding operation in a workflow |  | Optional: \{\} <br /> |
+| `runAfter` _[OperationRef](#operationref)_ | Specifies that the preceding operation in a workflow.<br />The operation waits for the preceding operation only if runAfter is set when the operation is created.<br />Removing runAfter while the operation is waiting ends the wait.<br />Adding runAfter later does not make the operation wait. |  | Optional: \{\} <br /> |
 | `ttlSecondsAfterFinished` _integer_ | TTLSecondsAfterFinished is the time second to clean up data operations after finished or failed |  | Optional: \{\} <br /> |
 | `resources` _[ResourceRequirements](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#resourcerequirements-v1-core)_ | Resources that will be requested by the DataLoad job. <br> |  | Optional: \{\} <br /> |
 
@@ -615,7 +615,7 @@ _Appears in:_
 | `tolerations` _[Toleration](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#toleration-v1-core) array_ | Tolerations defines tolerations for DataMigrate pod |  | Optional: \{\} <br /> |
 | `nodeSelector` _object (keys:string, values:string)_ | NodeSelector defiens node selector for DataMigrate pod |  | Optional: \{\} <br /> |
 | `schedulerName` _string_ | SchedulerName sets the scheduler to be used for DataMigrate pod |  | Optional: \{\} <br /> |
-| `runAfter` _[OperationRef](#operationref)_ | Specifies that the preceding operation in a workflow |  | Optional: \{\} <br /> |
+| `runAfter` _[OperationRef](#operationref)_ | Specifies that the preceding operation in a workflow.<br />The operation waits for the preceding operation only if runAfter is set when the operation is created.<br />Removing runAfter while the operation is waiting ends the wait.<br />Adding runAfter later does not make the operation wait. |  | Optional: \{\} <br /> |
 | `ttlSecondsAfterFinished` _integer_ | TTLSecondsAfterFinished is the time second to clean up data operations after finished or failed |  | Optional: \{\} <br /> |
 | `resources` _[ResourceRequirements](https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.35/#resourcerequirements-v1-core)_ | Resources that will be requested by the DataMigrate job. <br> |  | Optional: \{\} <br /> |
 | `parallelism` _integer_ | Parallelism defines the parallelism tasks numbers for DataMigrate. If the value is greater than 1, the job acts<br />as a launcher, and users should define the WorkerSpec. | 1 | Minimum: 1 <br />Optional: \{\} <br /> |
@@ -674,7 +674,7 @@ _Appears in:_
 | --- | --- | --- | --- |
 | `dataset` _[TargetDatasetWithMountPath](#targetdatasetwithmountpath)_ | Dataset specifies the target dataset and its mount path. |  | Required: \{\} <br /> |
 | `processor` _[Processor](#processor)_ | Processor specify how to process data. |  | Required: \{\} <br /> |
-| `runAfter` _[OperationRef](#operationref)_ | Specifies that the preceding operation in a workflow |  | Optional: \{\} <br /> |
+| `runAfter` _[OperationRef](#operationref)_ | Specifies that the preceding operation in a workflow.<br />The operation waits for the preceding operation only if runAfter is set when the operation is created.<br />Removing runAfter while the operation is waiting ends the wait.<br />Adding runAfter later does not make the operation wait. |  | Optional: \{\} <br /> |
 | `ttlSecondsAfterFinished` _integer_ | TTLSecondsAfterFinished is the time second to clean up data operations after finished or failed |  | Optional: \{\} <br /> |
 
 

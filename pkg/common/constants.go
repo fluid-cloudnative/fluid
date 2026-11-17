@@ -78,6 +78,8 @@ const (
 	DataOperationNotFound = "DataOperationNotFound"
 
 	DataOperationWaiting = "DataOperationWaiting"
+
+	DataOperationWaitingEnded = "DataOperationWaitingEnded"
 )
 
 // Events related to DataLoad

@@ -2207,7 +2207,7 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_DataBackupSpec(ref common.Refer
 					},
 					"runAfter": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Specifies that the preceding operation in a workflow",
+							Description: "Specifies that the preceding operation in a workflow. The operation waits for the preceding operation only if runAfter is set when the operation is created. Removing runAfter while the operation is waiting ends the wait. Adding runAfter later does not make the operation wait.",
 							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.OperationRef"),
 						},
 					},
@@ -2439,7 +2439,7 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_DataLoadSpec(ref common.Referen
 					},
 					"runAfter": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Specifies that the preceding operation in a workflow",
+							Description: "Specifies that the preceding operation in a workflow. The operation waits for the preceding operation only if runAfter is set when the operation is created. Removing runAfter while the operation is waiting ends the wait. Adding runAfter later does not make the operation wait.",
 							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.OperationRef"),
 						},
 					},
@@ -2699,7 +2699,7 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_DataMigrateSpec(ref common.Refe
 					},
 					"runAfter": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Specifies that the preceding operation in a workflow",
+							Description: "Specifies that the preceding operation in a workflow. The operation waits for the preceding operation only if runAfter is set when the operation is created. Removing runAfter while the operation is waiting ends the wait. Adding runAfter later does not make the operation wait.",
 							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.OperationRef"),
 						},
 					},
@@ -2926,7 +2926,7 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_DataProcessSpec(ref common.Refe
 					},
 					"runAfter": {
 						SchemaProps: spec.SchemaProps{
-							Description: "Specifies that the preceding operation in a workflow",
+							Description: "Specifies that the preceding operation in a workflow. The operation waits for the preceding operation only if runAfter is set when the operation is created. Removing runAfter while the operation is waiting ends the wait. Adding runAfter later does not make the operation wait.",
 							Ref:         ref("github.com/fluid-cloudnative/fluid/api/v1alpha1.OperationRef"),
 						},
 					},
