@@ -50,7 +50,7 @@ jobs:
           path: ${{ env.GOPATH }}/src/github.com/fluid-cloudnative/fluid
 
       - name: Cache Kind and kubectl binaries
-        uses: actions/cache@v6
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ${{ env.RUNNER_TOOL_CACHE }}/kind/v0.31.0
           key: ${{ runner.os }}-kind-v0.31.0-kubectl-${{ matrix.kubernetes-version }}

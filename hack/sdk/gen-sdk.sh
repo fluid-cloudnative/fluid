@@ -48,7 +48,7 @@ else
         exit 1
     fi
     for i in {1..3}; do
-        if wget -O "${SWAGGER_CODEGEN_JAR}" "${SWAGGER_CODEGEN_JAR_URL}"; then
+        if curl -fsSL --proto '=https' --tlsv1.2 -o "${SWAGGER_CODEGEN_JAR}" "${SWAGGER_CODEGEN_JAR_URL}"; then
             break
         elif [ "$i" -eq 3 ]; then
             echo "Failed to download ${SWAGGER_CODEGEN_JAR} after 3 attempts." >&2
