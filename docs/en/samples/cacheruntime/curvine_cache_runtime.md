@@ -170,7 +170,7 @@ Key fields:
 The `CacheRuntimeClass` defines the Curvine cluster topology including master, worker, and client components:
 
 ```shell
-$ cat<<EOF >cacheruntimeclass.yaml
+$ cat<<'EOF' >cacheruntimeclass.yaml
 apiVersion: data.fluid.io/v1alpha1
 kind: CacheRuntimeClass
 metadata:
@@ -228,7 +228,7 @@ topology:
         restartPolicy: Always
         containers:
           - name: master
-            image: curvine/curvine:0.3.6-alpha
+            image: curvine/curvine:v0.3.6-alpha
             command:
               - /entrypoint.sh
             args:
@@ -254,7 +254,7 @@ topology:
         restartPolicy: Always
         containers:
           - name: worker
-            image: curvine/curvine:0.3.6-alpha
+            image: curvine/curvine:v0.3.6-alpha
             command:
               - /entrypoint.sh
             args:
@@ -278,7 +278,7 @@ topology:
         restartPolicy: Always
         containers:
           - name: client
-            image: curvine/curvine:0.3.6-alpha
+            image: curvine/curvine:v0.3.6-alpha
             command:
               - /entrypoint.sh
             args:
@@ -470,7 +470,7 @@ curvine-demo     12B              12B       1Gi              100%               
 Run a job that reads the cached data. On first read (before DataLoad), data comes from the remote S3 store. After DataLoad, data is served from the local cache:
 
 ```shell
-$ cat<<EOF >read_job.yaml
+$ cat<<'EOF' >read_job.yaml
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -525,7 +525,7 @@ $ kubectl create -f ref-dataset.yaml
 Then a job can mount the reference dataset:
 
 ```shell
-$ cat<<EOF >read_ref_job.yaml
+$ cat<<'EOF' >read_ref_job.yaml
 apiVersion: batch/v1
 kind: Job
 metadata:

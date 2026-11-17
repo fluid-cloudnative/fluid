@@ -170,7 +170,7 @@ $ kubectl create -f dataset.yaml
 `CacheRuntimeClass` 定义了 Curvine 集群的拓扑结构，包括 master、worker 和 client 组件：
 
 ```shell
-$ cat<<EOF >cacheruntimeclass.yaml
+$ cat<<'EOF' >cacheruntimeclass.yaml
 apiVersion: data.fluid.io/v1alpha1
 kind: CacheRuntimeClass
 metadata:
@@ -228,7 +228,7 @@ topology:
         restartPolicy: Always
         containers:
           - name: master
-            image: curvine/curvine:0.3.6-alpha
+            image: curvine/curvine:v0.3.6-alpha
             command:
               - /entrypoint.sh
             args:
@@ -254,7 +254,7 @@ topology:
         restartPolicy: Always
         containers:
           - name: worker
-            image: curvine/curvine:0.3.6-alpha
+            image: curvine/curvine:v0.3.6-alpha
             command:
               - /entrypoint.sh
             args:
@@ -278,7 +278,7 @@ topology:
         restartPolicy: Always
         containers:
           - name: client
-            image: curvine/curvine:0.3.6-alpha
+            image: curvine/curvine:v0.3.6-alpha
             command:
               - /entrypoint.sh
             args:
@@ -470,7 +470,7 @@ curvine-demo     12B              12B       1Gi              100%               
 运行一个从缓存读取数据的 Job。首次读取（DataLoad 之前）数据来自远程 S3 存储；DataLoad 之后，数据从本地缓存提供服务：
 
 ```shell
-$ cat<<EOF >read_job.yaml
+$ cat<<'EOF' >read_job.yaml
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -525,7 +525,7 @@ $ kubectl create -f ref-dataset.yaml
 然后一个 Job 可以挂载引用 Dataset：
 
 ```shell
-$ cat<<EOF >read_ref_job.yaml
+$ cat<<'EOF' >read_ref_job.yaml
 apiVersion: batch/v1
 kind: Job
 metadata:
