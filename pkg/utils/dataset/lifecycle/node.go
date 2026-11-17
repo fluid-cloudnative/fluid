@@ -244,6 +244,11 @@ func removeScheduleInfoFromNode(nodeName string, runtimeInfo base.RuntimeInfoInt
 		return err
 	}
 
+	if nodeExcludeSelector != nil && nodeExcludeSelector.Matches(labels.Set(node.Labels)) {
+		rootLog.V(1).Info("Skip removeScheduleInfoFromNode to node that matches nodeExcludeSelector", "nodeExcludeSelector", nodeExcludeSelector.String(), "node", node.Name)
+		return nil
+	}
+
 	if !hasRuntimeLabel(node, runtimeInfo) {
 		rootLog.Info("Node doesn't have existing schedule info, skip.", "node", nodeName)
 		return
