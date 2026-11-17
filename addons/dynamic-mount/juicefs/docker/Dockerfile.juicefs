@@ -9,13 +9,13 @@ ENV JUICEFS_CLI=/usr/bin/juicefs
 ENV JFS_MOUNT_PATH=/usr/local/juicefs/mount/jfsmount
 
 RUN apt update && \
-    apt install -y gnupg gnupg2 software-properties-common wget && \
+    apt install -y --no-install-recommends ca-certificates gnupg gnupg2 software-properties-common wget && \
     bash -c "if [[ '${TARGETARCH}' == amd64 ]]; then wget -O - https://download.gluster.org/pub/gluster/glusterfs/10/rsa.pub | apt-key add - && \
     echo deb [arch=${TARGETARCH}] https://download.gluster.org/pub/gluster/glusterfs/10/LATEST/Debian/buster/${TARGETARCH}/apt buster main > /etc/apt/sources.list.d/gluster.list && \
-    apt-get update && apt-get install -y uuid-dev libglusterfs-dev glusterfs-common; fi"
+    apt-get update && apt-get install -y --no-install-recommends uuid-dev libglusterfs-dev glusterfs-common; fi"
 
 RUN apt-get update && \
-    apt-get install -y curl fuse iproute2 iputils-ping librados2 librados-dev librbd-dev libcephfs-dev lsof net-tools procps strace tcpdump && \
+    apt-get install -y --no-install-recommends curl fuse iproute2 iputils-ping librados2 librados-dev librbd-dev libcephfs-dev lsof net-tools procps strace tcpdump && \
     rm -rf /var/cache/apt/*
 
 RUN bash -c "curl -o ${JUICEFS_CLI} https://juicefs.com/static/juicefs.4.9 && \
@@ -37,6 +37,6 @@ RUN mkdir /root/.acl && \
 RUN /usr/bin/juicefs version
 
 # Install mount script for dynamic mount
-RUN apt install -y jq 
+RUN apt install -y --no-install-recommends jq 
 COPY mount.sh /opt/mount.sh
 RUN chmod u+x /opt/mount.sh
