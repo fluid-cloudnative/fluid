@@ -90,6 +90,11 @@ func TestGenerateNodeLabels(t *testing.T) {
 						{
 							MatchExpressions: []v1.NodeSelectorRequirement{
 								{
+									Key:      "k8s.rack",
+									Operator: v1.NodeSelectorOpIn,
+									Values:   []string{"rack01"},
+								},
+								{
 									Key:      common.K8sNodeNameLabelKey,
 									Operator: v1.NodeSelectorOpIn,
 									Values:   []string{"node01"},
@@ -98,11 +103,6 @@ func TestGenerateNodeLabels(t *testing.T) {
 									Key:      common.K8sZoneLabelKey,
 									Operator: v1.NodeSelectorOpIn,
 									Values:   []string{"zone01"},
-								},
-								{
-									Key:      "k8s.rack",
-									Operator: v1.NodeSelectorOpIn,
-									Values:   []string{"rack01"},
 								},
 							},
 						},
@@ -120,11 +120,44 @@ func TestGenerateNodeLabels(t *testing.T) {
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
-				// map traversal causes array order to be different, so only compare the length.
-				if len(got.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms) != len(tt.want.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms) {
-					t.Errorf("GenerateNodeAffinity() got = %v, want %v", got, tt.want)
-				}
+				t.Errorf("GenerateNodeAffinity() got = %v, want %v", got, tt.want)
 			}
 		})
+	}
+}
+
+func TestGenerateNodeAffinitySortsCustomizedAffinityAnnotations(t *testing.T) {
+	job := &batchv1.Job{
+		ObjectMeta: metav1.ObjectMeta{
+			Annotations: map[string]string{
+				common.AnnotationDataFlowAffinityInject:                       "true",
+				common.AnnotationDataFlowCustomizedAffinityPrefix + "z-label": "z-value",
+				common.AnnotationDataFlowCustomizedAffinityPrefix + "a-label": "a-value",
+				common.AnnotationDataFlowCustomizedAffinityPrefix + "m-label": "m-value",
+			},
+		},
+	}
+	want := &v1.NodeAffinity{
+		RequiredDuringSchedulingIgnoredDuringExecution: &v1.NodeSelector{
+			NodeSelectorTerms: []v1.NodeSelectorTerm{
+				{
+					MatchExpressions: []v1.NodeSelectorRequirement{
+						{Key: "a-label", Operator: v1.NodeSelectorOpIn, Values: []string{"a-value"}},
+						{Key: "m-label", Operator: v1.NodeSelectorOpIn, Values: []string{"m-value"}},
+						{Key: "z-label", Operator: v1.NodeSelectorOpIn, Values: []string{"z-value"}},
+					},
+				},
+			},
+		},
+	}
+
+	for i := 0; i < 10; i++ {
+		got, err := GenerateNodeAffinity(job)
+		if err != nil {
+			t.Fatalf("GenerateNodeAffinity() error = %v", err)
+		}
+		if !reflect.DeepEqual(got, want) {
+			t.Errorf("GenerateNodeAffinity() got = %v, want %v", got, want)
+		}
 	}
 }
