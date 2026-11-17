@@ -101,4 +101,4 @@ spec:
     - name: fuse-registry
 ```
 
-`spec.master.imagePullSecrets` 和 `spec.jobWorker.imagePullSecrets` 目前不生效。密钥在创建 runtime 的 worker 和 fuse 时生效，修改已有 runtime 的密钥需要重新创建 runtime。
+`spec.master.imagePullSecrets` 和 `spec.jobWorker.imagePullSecrets` 目前不生效。修改已有 runtime 的这些字段会在下一次同步时生效：fuse pod 会重启，worker pod 在被替换时使用新的密钥。对于没有设置自己密钥的 runtime，修改 controller 的 `IMAGE_PULL_SECRETS` 也一样。worker 和 fuse 上的密钥由 controller 管理，直接在 StatefulSet 或 DaemonSet 上修改的密钥会被还原。

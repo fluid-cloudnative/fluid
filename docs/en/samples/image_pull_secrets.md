@@ -105,4 +105,4 @@ spec:
     - name: fuse-registry
 ```
 
-`spec.master.imagePullSecrets` and `spec.jobWorker.imagePullSecrets` have no effect for now. The secrets are applied when the runtime's worker and fuse are created, so changing them on an existing runtime needs the runtime to be recreated.
+`spec.master.imagePullSecrets` and `spec.jobWorker.imagePullSecrets` have no effect for now. Changing these fields on an existing runtime takes effect on the next sync: the fuse pods are restarted, and the worker pods pick up the new secrets as they are replaced. The same goes for the controller's `IMAGE_PULL_SECRETS` on runtimes that don't set their own. The controller owns these secrets on the worker and fuse, so edits made directly on the StatefulSet or DaemonSet are reverted.
