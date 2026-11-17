@@ -5,6 +5,7 @@ metadata:
 spec:
   template:
     spec:
+      automountServiceAccountToken: false
       containers:
       # mc is no longer published either, so create the bucket with a signed S3 request.
       # The curl in the MinIO image predates --aws-sigv4, hence curl's own image.
