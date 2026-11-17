@@ -12,10 +12,6 @@ JuiceFS:
 
 ```wget https://raw.githubusercontent.com/fluid-cloudnative/fluid/master/tools/diagnose-fluid-juicefs.sh```
 
-GooseFS:
-
-```wget https://raw.githubusercontent.com/fluid-cloudnative/fluid/master/tools/diagnose-fluid-goosefs.sh```
-
 JindoFS:
 
 ```wget https://raw.githubusercontent.com/fluid-cloudnative/fluid/master/tools/diagnose-fluid-jindo.sh```
@@ -30,8 +26,6 @@ JindoFS:
    wget https://raw.githubusercontent.com/fluid-cloudnative/fluid/master/tools/diagnose-fluid-alluxio.sh
    # JuiceFS:
    wget https://raw.githubusercontent.com/fluid-cloudnative/fluid/master/tools/diagnose-fluid-juicefs.sh
-   # GooseFS:
-   wget https://raw.githubusercontent.com/fluid-cloudnative/fluid/master/tools/diagnose-fluid-goosefs.sh
    ```
 
 2. Make sure that script is executable, take `diagnose-fluid-alluxio.sh` as an example:
