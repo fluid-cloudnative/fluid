@@ -3,12 +3,14 @@
 ## 环境需求
 
 - Git
-- Golang (version >= 1.16)
+- Golang (version >= 1.26)
 - Docker (version >= 19.03)
 - Kubernetes (version >= 1.18)
 - GNU Make
 
 对于Golang的安装与配置，请参考[此处](https://golang.org/dl/)。
+
+> **注意**：CI和镜像构建所用的Go工具链由`go.mod`中的`toolchain`指令固定。在默认的`GOTOOLCHAIN=auto`下，本地Go版本较旧时会自动下载该工具链，较新时则直接使用本地Go，因此请将本地Go保持在最新的补丁版本（例如Go 1.27.0–1.27.3受[GO-2026-6859](https://pkg.go.dev/vuln/GO-2026-6859)影响，已在Go 1.27.4中修复）。如需使用固定的工具链构建，可显式设置，例如`export GOTOOLCHAIN=go1.26.11`。
 
 对于Docker的安装与配置，请参考[此处](https://docs.docker.com/engine/install/)。
 
