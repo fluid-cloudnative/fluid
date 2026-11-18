@@ -177,7 +177,11 @@ historical names; setting a prefix opts into per-release names.
 {{- define "fluid.clusterRBACName" -}}
 {{- $prefix := default "" .root.Values.rbac.clusterScopedNamePrefix -}}
 {{- if $prefix -}}
-{{- printf "%s-%s" $prefix .name | trunc 253 | trimSuffix "-" -}}
+{{- $name := printf "%s-%s" $prefix .name -}}
+{{- if gt (len $name) 253 -}}
+{{- fail (printf "rbac.clusterScopedNamePrefix is too long: combined RBAC name %q exceeds the Kubernetes 253-character DNS subdomain limit" $name) -}}
+{{- end -}}
+{{- $name -}}
 {{- else -}}
 {{- .name -}}
 {{- end -}}

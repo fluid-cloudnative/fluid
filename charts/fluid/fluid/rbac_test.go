@@ -171,3 +171,24 @@ func TestClusterScopedRBACNamesPreserveDefaultsAndSupportOptInPrefix(t *testing.
 		t.Fatalf("prefix changed number of cluster RBAC objects: got %d, want %d", len(prefixed), len(defaults))
 	}
 }
+
+func TestClusterScopedRBACRejectsOverlongPrefix(t *testing.T) {
+	helm, err := exec.LookPath("helm")
+	if err != nil {
+		t.Skip("helm is not installed; CI runs this test in the Helm-enabled lint job")
+	}
+
+	prefix := strings.Repeat("p", 250)
+	args := []string{
+		"template", "fluid-test", ".", "--namespace", "fluid-system",
+		"--set", "rbac.clusterScopedNamePrefix=" + prefix,
+	}
+	output, err := exec.Command(helm, args...).CombinedOutput()
+	if err == nil {
+		t.Fatalf("helm template accepted a prefix that truncates the resource suffix:\n%s", output)
+	}
+	if !strings.Contains(string(output), "rbac.clusterScopedNamePrefix is too long") ||
+		!strings.Contains(string(output), "253-character") {
+		t.Fatalf("helm template failed without the expected length error:\n%s", output)
+	}
+}
