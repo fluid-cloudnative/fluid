@@ -17,7 +17,12 @@ limitations under the License.
 package engine
 
 import (
+	"errors"
+	"os"
+	"strings"
+
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	cdataload "github.com/fluid-cloudnative/fluid/pkg/dataload"
 	"github.com/fluid-cloudnative/fluid/pkg/dataoperation"
 	fluiderrors "github.com/fluid-cloudnative/fluid/pkg/errors"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
@@ -28,6 +33,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/yaml"
 )
 
 // fakeOperation is a minimal dataoperation.OperationInterface for routing tests.
@@ -46,7 +52,11 @@ func (f *fakeOperation) GetPossibleTargetDatasetNamespacedNames() []types.Namesp
 	return nil
 }
 
-func (f *fakeOperation) GetTargetDataset() (*datav1alpha1.Dataset, error) { return nil, nil }
+// GetTargetDataset is not used by the cache engine generators, which look the
+// dataset up themselves, so fail loudly if a test starts relying on it.
+func (f *fakeOperation) GetTargetDataset() (*datav1alpha1.Dataset, error) {
+	return nil, errors.New("not implemented")
+}
 
 func (f *fakeOperation) GetReleaseNameSpacedName() types.NamespacedName {
 	return types.NamespacedName{}
@@ -111,9 +121,11 @@ var _ = Describe("CacheEngine data operations", Label("pkg.ddc.cache.engine.data
 			Entry("master-worker, master not ready", false, datav1alpha1.RuntimePhaseNotReady, datav1alpha1.RuntimePhaseReady, false),
 			Entry("master-worker, master only partially ready", false, datav1alpha1.RuntimePhasePartialReady, datav1alpha1.RuntimePhaseReady, false),
 			Entry("master-worker, nothing set up yet", false, datav1alpha1.RuntimePhaseNone, datav1alpha1.RuntimePhaseNone, false),
+			Entry("master-worker, worker not set up yet", false, datav1alpha1.RuntimePhaseReady, datav1alpha1.RuntimePhaseNone, false),
 			Entry("master disabled, worker ready", true, datav1alpha1.RuntimePhaseNone, datav1alpha1.RuntimePhaseReady, true),
 			Entry("master disabled, worker partially ready", true, datav1alpha1.RuntimePhaseNone, datav1alpha1.RuntimePhasePartialReady, true),
 			Entry("master disabled, worker not ready", true, datav1alpha1.RuntimePhaseNone, datav1alpha1.RuntimePhaseNotReady, false),
+			Entry("master disabled, worker not set up yet", true, datav1alpha1.RuntimePhaseNone, datav1alpha1.RuntimePhaseNone, false),
 		)
 	})
 
@@ -151,6 +163,61 @@ var _ = Describe("CacheEngine data operations", Label("pkg.ddc.cache.engine.data
 			_, err := engine.GetDataOperationValueFile(cruntime.ReconcileRequestContext{},
 				&fakeOperation{operationType: dataoperation.DataLoadType, object: &datav1alpha1.DataProcess{}})
 			Expect(err).To(MatchError(ContainSubstring("is not a DataLoad")))
+		})
+
+		It("writes a DataLoad value file built from the runtime class DataOperationSpecs", func() {
+			runtimeObj := &datav1alpha1.CacheRuntime{
+				ObjectMeta: metav1.ObjectMeta{Name: "test-runtime", Namespace: "default"},
+				Spec:       datav1alpha1.CacheRuntimeSpec{RuntimeClassName: "test-class"},
+			}
+			runtimeClass := &datav1alpha1.CacheRuntimeClass{
+				ObjectMeta: metav1.ObjectMeta{Name: "test-class"},
+				Topology:   &datav1alpha1.RuntimeTopology{Worker: &datav1alpha1.RuntimeComponentDefinition{}},
+				DataOperationSpecs: []datav1alpha1.DataOperationSpec{{
+					Name:    string(dataoperation.DataLoadType),
+					Image:   "dataload:v1",
+					Command: []string{"/bin/sh", "-c", "load.sh"},
+				}},
+			}
+			dataset := &datav1alpha1.Dataset{
+				ObjectMeta: metav1.ObjectMeta{Name: "test-dataset", Namespace: "default", UID: "dataset-uid"},
+			}
+			dataload := &datav1alpha1.DataLoad{
+				ObjectMeta: metav1.ObjectMeta{Name: "test-load", Namespace: "default"},
+				Spec: datav1alpha1.DataLoadSpec{
+					Dataset: datav1alpha1.TargetDataset{Name: "test-dataset", Namespace: "default"},
+					Target:  []datav1alpha1.TargetPath{{Path: "/data", Replicas: 2}},
+				},
+			}
+			c := fake.NewFakeClientWithScheme(CacheEngineTestScheme, runtimeObj, runtimeClass, dataset, dataload)
+			engine.Client = c
+
+			valueFile, err := engine.GetDataOperationValueFile(cruntime.ReconcileRequestContext{Client: c},
+				&fakeOperation{operationType: dataoperation.DataLoadType, object: dataload})
+			Expect(err).NotTo(HaveOccurred())
+			// best effort: the generator never closes its temp file handle, which blocks removal on Windows
+			DeferCleanup(func() { _ = os.Remove(valueFile) })
+			Expect(strings.Contains(valueFile, "default-test-load-loader-values.yaml")).To(BeTrue())
+
+			data, err := os.ReadFile(valueFile)
+			Expect(err).NotTo(HaveOccurred())
+			var value cdataload.DataLoadValue
+			Expect(yaml.Unmarshal(data, &value)).To(Succeed())
+
+			Expect(value.Name).To(Equal("test-load"))
+			info := value.DataLoadInfo
+			Expect(info.Image).To(Equal("dataload:v1"))
+			Expect(info.Command).To(Equal([]string{"/bin/sh", "-c", "load.sh"}))
+			Expect(info.TargetDataset).To(Equal("test-dataset"))
+			Expect(info.TargetPaths).To(Equal([]cdataload.TargetPath{{Path: "/data", Replicas: 2}}))
+
+			Expect(info.Volumes).To(HaveLen(1))
+			Expect(info.Volumes[0].Name).To(Equal("fluid-runtime-test-runtime-config"))
+			Expect(info.Volumes[0].ConfigMap).NotTo(BeNil())
+			Expect(info.Volumes[0].ConfigMap.Name).To(Equal("fluid-runtime-config-test-runtime"))
+			Expect(info.VolumeMounts).To(HaveLen(1))
+			Expect(info.VolumeMounts[0].Name).To(Equal("fluid-runtime-test-runtime-config"))
+			Expect(info.VolumeMounts[0].MountPath).To(Equal("/etc/fluid/config"))
 		})
 
 		It("routes DataProcess to the DataProcess value file generator", func() {

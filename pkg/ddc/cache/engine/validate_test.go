@@ -36,7 +36,7 @@ var _ = Describe("validateRuntimeClassTopology", Label("pkg.ddc.cache.engine.val
 	})
 
 	It("rejects a topology with no components", func() {
-		Expect(validateRuntimeClassTopology(newClass(&datav1alpha1.RuntimeTopology{}))).To(HaveOccurred())
+		Expect(validateRuntimeClassTopology(newClass(&datav1alpha1.RuntimeTopology{}))).To(MatchError(ContainSubstring("at least one component")))
 	})
 
 	DescribeTable("accepts a topology with at least one component",
