@@ -25,7 +25,49 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 )
+
+func TestTransformWorkerResourcesQuotaListPositive(t *testing.T) {
+	rt := &datav1alpha1.JindoRuntime{
+		ObjectMeta: metav1.ObjectMeta{Name: "jindo", Namespace: "fluid"},
+		Spec: datav1alpha1.JindoRuntimeSpec{
+			TieredStore: datav1alpha1.TieredStore{
+				Levels: []datav1alpha1.Level{{
+					MediumType: common.Memory,
+					Path:       "/dev/shm,/mnt/ram",
+					QuotaList:  "10Gi,5Gi",
+				}},
+			},
+		},
+	}
+	s := runtime.NewScheme()
+	s.AddKnownTypes(datav1alpha1.GroupVersion, rt)
+	_ = corev1.AddToScheme(s)
+	engine := &JindoFSxEngine{
+		name:      "jindo",
+		namespace: "fluid",
+		Client:    fake.NewFakeClientWithScheme(s, rt.DeepCopy()),
+		Log:       fake.NullLogger(),
+	}
+
+	// Jindo hands the quotas over with Mi written as "m"; 512Mi+512Mi must come out as 1Gi.
+	value := &Jindo{}
+	if err := engine.transformWorkerResources(rt, value, "512m,512m"); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if got := value.Worker.Resources.Requests.Memory; got != "1Gi" {
+		t.Errorf("helm value memory request = %q, want 1Gi", got)
+	}
+	persisted, err := engine.getRuntime()
+	if err != nil {
+		t.Fatalf("getRuntime: %v", err)
+	}
+	if got := persisted.Spec.Worker.Resources.Requests.Memory(); got.Cmp(resource.MustParse("1Gi")) != 0 {
+		t.Errorf("persisted runtime memory request = %v, want 1Gi", got)
+	}
+}
 
 func TestTransformWorkerResourcesWithQuotaList(t *testing.T) {
 	newRuntime := func(limit string) *datav1alpha1.JindoRuntime {

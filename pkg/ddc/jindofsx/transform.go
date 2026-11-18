@@ -690,7 +690,7 @@ func (e *JindoFSxEngine) transformWorkerResources(runtime *datav1alpha1.JindoRun
 
 		if !runtime.Spec.Worker.Resources.Limits.Memory().IsZero() &&
 			userQuotasQuantity.Cmp(*runtime.Spec.Worker.Resources.Limits.Memory()) > 0 {
-			return fmt.Errorf("the memory tierdStore's size %v is greater than master limits memory %v",
+			return fmt.Errorf("the memory tierdStore's size %v is greater than worker limits memory %v",
 				userQuotasQuantity, runtime.Spec.Worker.Resources.Limits.Memory())
 		}
 		if needUpdated {
