@@ -168,19 +168,21 @@ $ kubectl delete ns fluid-system
 1. 在一些特定的云厂商实现下， 默认mount根目录`/runtime-mnt`是不可写的,因此需要修改目录位置
 
 ```
-helm install fluid --set runtime.mountRoot=/var/lib/docker/runtime-mnt fluid
+helm install fluid fluid/fluid --set runtime.mountRoot=/var/lib/docker/runtime-mnt
 ```
 
 2. 默认Fuse Recovery的功能并没有打开，如果需要开放该功能，需要按照以下配置
 
 ```
-helm install fluid --set csi.featureGates='FuseRecovery=true' fluid
+helm install fluid fluid/fluid --set csi.featureGates='FuseRecovery=true'
 ```
 
 3. 如果您的Kubernetes集群自定义配置了kubelet root directory，请在安装Fluid时配置KUBELET_ROOTDIR，您可以使用以下命令：
 ```shell
-helm install --set csi.kubelet.rootDir=<kubelet-root-dir> \
-  --set csi.kubelet.certDir=<kubelet-root-dir>/pki fluid fluid.tgz
+KUBELET_ROOTDIR=/data/kubelet  # 替换为节点上的 kubelet 根目录。
+helm install fluid fluid/fluid \
+  --set "csi.kubelet.rootDir=${KUBELET_ROOTDIR}" \
+  --set "csi.kubelet.certDir=${KUBELET_ROOTDIR}/pki"
 ```
 
 > 您可以在Kubernetes节点上执行如下命令查看--root-dir参数配置情况：
