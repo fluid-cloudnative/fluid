@@ -14,6 +14,7 @@ import (
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
+	jindoutils "github.com/fluid-cloudnative/fluid/pkg/utils/jindo"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/client-go/util/retry"
@@ -111,7 +112,10 @@ func (e *JindoCacheEngine) transformWorkerResources(runtime *datav1alpha1.JindoR
 	if e.hasTieredStore(runtime) && e.getTieredStoreType(runtime) == 0 {
 		userQuotas = strings.ReplaceAll(userQuotas, "g", "Gi")
 		needUpdated := false
-		userQuotasQuantity := resource.MustParse(userQuotas)
+		userQuotasQuantity, err := jindoutils.SumQuotas(userQuotas)
+		if err != nil {
+			return err
+		}
 		if runtime.Spec.Worker.Resources.Requests == nil ||
 			runtime.Spec.Worker.Resources.Requests.Memory() == nil ||
 			runtime.Spec.Worker.Resources.Requests.Memory().IsZero() ||
@@ -128,7 +132,7 @@ func (e *JindoCacheEngine) transformWorkerResources(runtime *datav1alpha1.JindoR
 			if value.Worker.Resources.Requests == nil {
 				value.Worker.Resources.Requests = make(common.ResourceList)
 			}
-			value.Worker.Resources.Requests[corev1.ResourceMemory] = userQuotas
+			value.Worker.Resources.Requests[corev1.ResourceMemory] = userQuotasQuantity.String()
 			err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
 				runtime, err := e.getRuntime()
 				if err != nil {

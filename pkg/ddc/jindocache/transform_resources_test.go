@@ -272,6 +272,21 @@ var _ = Describe("JindoCacheEngine resources transformation tests", Label("pkg.d
 				Expect(value.Worker.Resources.Requests[corev1.ResourceMemory]).To(Equal("5Gi"))
 			})
 
+			It("should sum a comma-separated quota list instead of panicking", func() {
+				jindoruntime.Spec.Worker.Resources = corev1.ResourceRequirements{}
+				value := Jindo{}
+				Expect(engine.transformWorkerResources(jindoruntime, &value, "10g,5g")).NotTo(HaveOccurred())
+				Expect(value.Worker.Resources.Requests[corev1.ResourceMemory]).To(Equal("15Gi"))
+			})
+
+			It("should return error instead of panicking when a quota in the list is invalid", func() {
+				jindoruntime.Spec.Worker.Resources = corev1.ResourceRequirements{}
+				value := Jindo{}
+				err := engine.transformWorkerResources(jindoruntime, &value, "10g,abc")
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("invalid quota"))
+			})
+
 			It("should return error when user-defined memory limit is less than mem quota", func() {
 				jindoruntime.Spec.Worker.Resources = corev1.ResourceRequirements{
 					Limits: corev1.ResourceList{

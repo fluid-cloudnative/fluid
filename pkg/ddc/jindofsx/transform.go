@@ -37,6 +37,7 @@ import (
 	jindocommon "github.com/fluid-cloudnative/fluid/pkg/ddc/jindo"
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/docker"
+	jindoutils "github.com/fluid-cloudnative/fluid/pkg/utils/jindo"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/transformer"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -676,7 +677,10 @@ func (e *JindoFSxEngine) transformWorkerResources(runtime *datav1alpha1.JindoRun
 	if e.hasTieredStore(runtime) && e.getTieredStoreType(runtime) == 0 {
 		userQuotas = strings.ReplaceAll(userQuotas, "g", "Gi")
 		needUpdated := false
-		userQuotasQuantity := resource.MustParse(userQuotas)
+		userQuotasQuantity, err := jindoutils.SumQuotas(userQuotas)
+		if err != nil {
+			return err
+		}
 		if runtime.Spec.Worker.Resources.Requests == nil ||
 			runtime.Spec.Worker.Resources.Requests.Memory() == nil ||
 			runtime.Spec.Worker.Resources.Requests.Memory().IsZero() ||
@@ -686,11 +690,11 @@ func (e *JindoFSxEngine) transformWorkerResources(runtime *datav1alpha1.JindoRun
 
 		if !runtime.Spec.Worker.Resources.Limits.Memory().IsZero() &&
 			userQuotasQuantity.Cmp(*runtime.Spec.Worker.Resources.Limits.Memory()) > 0 {
-			return fmt.Errorf("the memory tierdStore's size %v is greater than master limits memory %v",
+			return fmt.Errorf("the memory tierdStore's size %v is greater than worker limits memory %v",
 				userQuotasQuantity, runtime.Spec.Worker.Resources.Limits.Memory())
 		}
 		if needUpdated {
-			value.Worker.Resources.Requests.Memory = userQuotas
+			value.Worker.Resources.Requests.Memory = userQuotasQuantity.String()
 			err = retry.RetryOnConflict(retry.DefaultBackoff, func() error {
 				runtime, err := e.getRuntime()
 				if err != nil {
