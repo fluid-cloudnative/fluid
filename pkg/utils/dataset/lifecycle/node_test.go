@@ -819,11 +819,13 @@ var _ = Describe("Dataset Lifecycle Node Tests", Label("pkg.utils.dataset.lifecy
 		})
 
 		It("should label every node without an exclude selector", func() {
-			Expect(addScheduleInfoToNode("excluded-node", runtimeInfo, client)).To(Succeed())
+			for _, name := range []string{"excluded-node", "real-node"} {
+				Expect(addScheduleInfoToNode(name, runtimeInfo, client)).To(Succeed())
 
-			gotNode, err := kubeclient.GetNode(client, "excluded-node")
-			Expect(err).To(BeNil())
-			Expect(gotNode.Labels).To(HaveKeyWithValue(runtimeInfo.GetRuntimeLabelName(), "true"))
+				gotNode, err := kubeclient.GetNode(client, name)
+				Expect(err).To(BeNil())
+				Expect(gotNode.Labels).To(HaveKeyWithValue(runtimeInfo.GetRuntimeLabelName(), "true"))
+			}
 		})
 	})
 
