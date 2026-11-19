@@ -47,7 +47,7 @@ func InjectNodeSelectorRequirements(matchExpressions []corev1.NodeSelectorRequir
 		result.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution = &corev1.NodeSelector{}
 	}
 	// no element
-	if result.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms == nil {
+	if len(result.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms) == 0 {
 		result.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms = []corev1.NodeSelectorTerm{
 			{
 				MatchExpressions: matchExpressions,
@@ -55,9 +55,11 @@ func InjectNodeSelectorRequirements(matchExpressions []corev1.NodeSelectorRequir
 		}
 		return result
 	}
-	// has element, inject term's match expressions to each element
-	for _, nodeSelectorTerm := range result.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms {
-		nodeSelectorTerm.MatchExpressions = append(nodeSelectorTerm.MatchExpressions, matchExpressions...)
+	// has element, inject term's match expressions to each element.
+	// Index into the slice: ranging by value would append to a copy of each term and drop the result.
+	terms := result.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms
+	for i := range terms {
+		terms[i].MatchExpressions = append(terms[i].MatchExpressions, matchExpressions...)
 	}
 
 	return result
