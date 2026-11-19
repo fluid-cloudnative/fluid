@@ -280,8 +280,12 @@ func (t *ThinEngine) parseFuseOptions(runtime *datav1alpha1.ThinRuntime, profile
 			}
 		}
 	}
-	if profile != nil && profile.Spec.Fuse.Options != nil {
-		options = profile.Spec.Fuse.Options
+	if profile != nil {
+		// Merge into options instead of replacing the map, otherwise the "ro" option above is lost
+		// and the runtime options below would be written into the profile's own map.
+		for k, v := range profile.Spec.Fuse.Options {
+			options[k] = v
+		}
 	}
 	// option in runtime will cover option in profile
 	for k, v := range runtime.Spec.Fuse.Options {
