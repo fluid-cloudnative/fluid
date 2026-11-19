@@ -257,6 +257,87 @@ func TestInjectAffinityByRunAfterOp(t *testing.T) {
 			wantErr: false,
 		},
 		{
+			name: "require policy, operation already has its own required affinity",
+			args: args{
+				runAfter: &datav1alpha1.OperationRef{
+					ObjectRef: datav1alpha1.ObjectRef{
+						Kind: "DataLoad",
+						Name: "test-op",
+					},
+					AffinityStrategy: datav1alpha1.AffinityStrategy{
+						Policy: datav1alpha1.RequireAffinityStrategy,
+					},
+				},
+				objects: []runtime.Object{
+					&datav1alpha1.DataLoad{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      "test-op",
+							Namespace: "default",
+						},
+						Status: datav1alpha1.OperationStatus{
+							Phase: common.PhaseComplete,
+							NodeAffinity: &v1.NodeAffinity{
+								RequiredDuringSchedulingIgnoredDuringExecution: &v1.NodeSelector{
+									NodeSelectorTerms: []v1.NodeSelectorTerm{
+										{
+											MatchExpressions: []v1.NodeSelectorRequirement{
+												{
+													Key:      common.K8sNodeNameLabelKey,
+													Operator: v1.NodeSelectorOpIn,
+													Values:   []string{"node01"},
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+				opNamespace: "default",
+				currentAffinity: &v1.Affinity{
+					NodeAffinity: &v1.NodeAffinity{
+						RequiredDuringSchedulingIgnoredDuringExecution: &v1.NodeSelector{
+							NodeSelectorTerms: []v1.NodeSelectorTerm{
+								{
+									MatchExpressions: []v1.NodeSelectorRequirement{
+										{
+											Key:      "node.kubernetes.io/instance-type",
+											Operator: v1.NodeSelectorOpIn,
+											Values:   []string{"GPU"},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			want: &v1.Affinity{
+				NodeAffinity: &v1.NodeAffinity{
+					RequiredDuringSchedulingIgnoredDuringExecution: &v1.NodeSelector{
+						NodeSelectorTerms: []v1.NodeSelectorTerm{
+							{
+								MatchExpressions: []v1.NodeSelectorRequirement{
+									{
+										Key:      "node.kubernetes.io/instance-type",
+										Operator: v1.NodeSelectorOpIn,
+										Values:   []string{"GPU"},
+									},
+									{
+										Key:      common.K8sNodeNameLabelKey,
+										Operator: v1.NodeSelectorOpIn,
+										Values:   []string{"node01"},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			wantErr: false,
+		},
+		{
 			name: "require policy, customized",
 			args: args{
 				runAfter: &datav1alpha1.OperationRef{

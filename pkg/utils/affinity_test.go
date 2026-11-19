@@ -62,6 +62,117 @@ func TestInjectNodeSelectorTermsToAffinity(t *testing.T) {
 				},
 			},
 		},
+		{
+			// Terms are ORed by Kubernetes, so the requirement has to be added to each of them.
+			name: "requirements are appended to every existing term",
+			args: args{
+				expressions: []v1.NodeSelectorRequirement{
+					{
+						Key:      "kubernetes.io/hostname",
+						Operator: v1.NodeSelectorOpIn,
+						Values:   []string{"node01"},
+					},
+				},
+				affinity: &v1.Affinity{
+					NodeAffinity: &v1.NodeAffinity{
+						RequiredDuringSchedulingIgnoredDuringExecution: &v1.NodeSelector{
+							NodeSelectorTerms: []v1.NodeSelectorTerm{
+								{
+									MatchExpressions: []v1.NodeSelectorRequirement{
+										{
+											Key:      "disktype",
+											Operator: v1.NodeSelectorOpIn,
+											Values:   []string{"ssd"},
+										},
+									},
+								},
+								{
+									MatchExpressions: []v1.NodeSelectorRequirement{
+										{
+											Key:      "disktype",
+											Operator: v1.NodeSelectorOpIn,
+											Values:   []string{"nvme"},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			want: &v1.Affinity{
+				NodeAffinity: &v1.NodeAffinity{
+					RequiredDuringSchedulingIgnoredDuringExecution: &v1.NodeSelector{
+						NodeSelectorTerms: []v1.NodeSelectorTerm{
+							{
+								MatchExpressions: []v1.NodeSelectorRequirement{
+									{
+										Key:      "disktype",
+										Operator: v1.NodeSelectorOpIn,
+										Values:   []string{"ssd"},
+									},
+									{
+										Key:      "kubernetes.io/hostname",
+										Operator: v1.NodeSelectorOpIn,
+										Values:   []string{"node01"},
+									},
+								},
+							},
+							{
+								MatchExpressions: []v1.NodeSelectorRequirement{
+									{
+										Key:      "disktype",
+										Operator: v1.NodeSelectorOpIn,
+										Values:   []string{"nvme"},
+									},
+									{
+										Key:      "kubernetes.io/hostname",
+										Operator: v1.NodeSelectorOpIn,
+										Values:   []string{"node01"},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "empty but non-nil terms get a new term",
+			args: args{
+				expressions: []v1.NodeSelectorRequirement{
+					{
+						Key:      "kubernetes.io/hostname",
+						Operator: v1.NodeSelectorOpIn,
+						Values:   []string{"node01"},
+					},
+				},
+				affinity: &v1.Affinity{
+					NodeAffinity: &v1.NodeAffinity{
+						RequiredDuringSchedulingIgnoredDuringExecution: &v1.NodeSelector{
+							NodeSelectorTerms: []v1.NodeSelectorTerm{},
+						},
+					},
+				},
+			},
+			want: &v1.Affinity{
+				NodeAffinity: &v1.NodeAffinity{
+					RequiredDuringSchedulingIgnoredDuringExecution: &v1.NodeSelector{
+						NodeSelectorTerms: []v1.NodeSelectorTerm{
+							{
+								MatchExpressions: []v1.NodeSelectorRequirement{
+									{
+										Key:      "kubernetes.io/hostname",
+										Operator: v1.NodeSelectorOpIn,
+										Values:   []string{"node01"},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
