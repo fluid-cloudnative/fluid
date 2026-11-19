@@ -5451,7 +5451,7 @@ func schema_fluid_cloudnative_fluid_api_v1alpha1_Level(ref common.ReferenceCallb
 					},
 					"quotaList": {
 						SchemaProps: spec.SchemaProps{
-							Description: "QuotaList are quotas used to set quota on multiple paths. Quotas should be separated with comma. Quotas in this list will be set to paths with the same order in Path. For example, with Path defined with \"/mnt/cache1,/mnt/cache2\" and QuotaList set to \"100Gi, 50Gi\", then we get 100GiB cache storage under \"/mnt/cache1\" and 50GiB under \"/mnt/cache2\". Also note that num of quotas must be consistent with the num of paths defined in Path. For Jindo runtimes, a lowercase \"m\" suffix is read as Mi (not milli), e.g. \"512m\" means 512Mi.",
+							Description: "QuotaList are quotas used to set quota on multiple paths. Quotas should be separated with comma. Quotas in this list will be set to paths with the same order in Path. For example, with Path defined with \"/mnt/cache1,/mnt/cache2\" and QuotaList set to \"100Gi, 50Gi\", then we get 100GiB cache storage under \"/mnt/cache1\" and 50GiB under \"/mnt/cache2\". Also note that num of quotas must be consistent with the num of paths defined in Path. Use binary units such as \"512Mi\" for API input. For Jindo runtimes, a lowercase \"m\" suffix is Jindo's internal notation for Mi, not a valid size for an emptyDir volume.",
 							Type:        []string{"string"},
 							Format:      "",
 						},

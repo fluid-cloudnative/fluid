@@ -67,7 +67,7 @@ type Level struct {
 	// For example, with Path defined with "/mnt/cache1,/mnt/cache2" and QuotaList set to "100Gi, 50Gi",
 	// then we get 100GiB cache storage under "/mnt/cache1" and 50GiB under "/mnt/cache2".
 	// Also note that num of quotas must be consistent with the num of paths defined in Path.
-	// For Jindo runtimes, a lowercase "m" suffix is read as Mi (not milli), e.g. "512m" means 512Mi.
+	// Use binary units such as "512Mi" for API input. For Jindo runtimes, a lowercase "m" suffix is Jindo's internal notation for Mi, not a valid size for an emptyDir volume.
 	// +optional
 	// +kubebuilder:validation:Pattern:="^((\\+|-)?(([0-9]+(\\.[0-9]*)?)|(\\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\\+|-)?(([0-9]+(\\.[0-9]*)?)|(\\.[0-9]+)))),)+((\\+|-)?(([0-9]+(\\.[0-9]*)?)|(\\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\\+|-)?(([0-9]+(\\.[0-9]*)?)|(\\.[0-9]+))))?)$"
 	QuotaList string `json:"quotaList,omitempty"`
