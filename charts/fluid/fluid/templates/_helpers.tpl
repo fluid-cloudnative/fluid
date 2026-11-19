@@ -175,7 +175,8 @@ Return a cluster-scoped RBAC name. Empty prefix preserves the chart's
 historical names; setting a prefix opts into per-release names.
 */}}
 {{- define "fluid.clusterRBACName" -}}
-{{- $prefix := default "" .root.Values.rbac.clusterScopedNamePrefix -}}
+{{- $rbac := .root.Values.rbac | default dict -}}
+{{- $prefix := default "" $rbac.clusterScopedNamePrefix -}}
 {{- if $prefix -}}
 {{- $name := printf "%s-%s" $prefix .name -}}
 {{- if gt (len $name) 253 -}}

@@ -1,5 +1,9 @@
 # Cluster-scoped RBAC resources keep their historical names by default.
-# Set this to a unique prefix when multiple Fluid releases share a cluster.
+# A unique prefix avoids cluster-scoped RBAC name conflicts between releases,
+# but does not make a second Fluid release installable yet: CSIDriver, webhook
+# configuration, and CRDs remain shared. See #6134 for full multi-release support.
+# When enabling/changing the prefix on upgrade, remove old-name RBAC resources
+# manually if a prior pre-upgrade hook failed; its hook RBAC may be left behind.
 rbac:
   clusterScopedNamePrefix: ""
 

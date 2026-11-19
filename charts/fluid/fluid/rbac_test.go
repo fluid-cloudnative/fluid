@@ -54,14 +54,21 @@ var defaultClusterRoleBindingNames = []string{
 
 func renderClusterRBAC(t *testing.T, prefix string) []renderedRBACObject {
 	t.Helper()
+	args := []string{}
+	if prefix != "" {
+		args = append(args, "--set", "rbac.clusterScopedNamePrefix="+prefix)
+	}
+	return renderClusterRBACWithArgs(t, args...)
+}
+
+func renderClusterRBACWithArgs(t *testing.T, extraArgs ...string) []renderedRBACObject {
+	t.Helper()
 	helm, err := exec.LookPath("helm")
 	if err != nil {
 		t.Skip("helm is not installed; CI runs this test in the Helm-enabled lint job")
 	}
 	args := []string{"template", "fluid-test", ".", "--namespace", "fluid-system"}
-	if prefix != "" {
-		args = append(args, "--set", "rbac.clusterScopedNamePrefix="+prefix)
-	}
+	args = append(args, extraArgs...)
 	output, err := exec.Command(helm, args...).CombinedOutput()
 	if err != nil {
 		t.Fatalf("helm template failed: %v\n%s", err, output)
@@ -77,6 +84,29 @@ func renderClusterRBAC(t *testing.T, prefix string) []renderedRBACObject {
 		}
 	}
 	return objects
+}
+
+func TestClusterScopedRBACNullConfigurationUsesDefaults(t *testing.T) {
+	defaults := renderClusterRBAC(t, "")
+	nullRBAC := renderClusterRBACWithArgs(t, "--set", "rbac=null")
+
+	var defaultNames []string
+	for _, obj := range defaults {
+		if obj.Kind == "ClusterRole" || obj.Kind == "ClusterRoleBinding" {
+			defaultNames = append(defaultNames, obj.Kind+":"+obj.Metadata.Name)
+		}
+	}
+	var nullNames []string
+	for _, obj := range nullRBAC {
+		if obj.Kind == "ClusterRole" || obj.Kind == "ClusterRoleBinding" {
+			nullNames = append(nullNames, obj.Kind+":"+obj.Metadata.Name)
+		}
+	}
+	sort.Strings(defaultNames)
+	sort.Strings(nullNames)
+	if !reflect.DeepEqual(nullNames, defaultNames) {
+		t.Fatalf("rbac=null changed cluster RBAC names: got %v, want defaults %v", nullNames, defaultNames)
+	}
 }
 
 func TestClusterScopedRBACNamesPreserveDefaultsAndSupportOptInPrefix(t *testing.T) {
