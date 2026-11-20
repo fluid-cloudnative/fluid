@@ -486,7 +486,7 @@ var _ = Describe("CacheEngine UpdateOnUFSChange Tests", Label("pkg.ddc.cache.eng
 				// Set recent mount time (after pod start) to avoid remount
 				updateRuntimeMountTime(-10 * time.Minute)
 
-				err := engine.UpdateOnUFSChange(rt)
+				err := engine.UpdateOnUFSChange(rt, runtimeClassOf(engine, rt))
 				Expect(err).NotTo(HaveOccurred())
 
 				// Verify dataset status remains Bound (not changed to Updating)
@@ -564,7 +564,7 @@ var _ = Describe("CacheEngine UpdateOnUFSChange Tests", Label("pkg.ddc.cache.eng
 				engine.name = "test-runtime-no-mount"
 				defer func() { engine.name = originalName }()
 
-				err := engine.UpdateOnUFSChange(rt)
+				err := engine.UpdateOnUFSChange(rt, runtimeClassOf(engine, rt))
 				Expect(err).NotTo(HaveOccurred())
 			})
 		})
@@ -575,7 +575,7 @@ var _ = Describe("CacheEngine UpdateOnUFSChange Tests", Label("pkg.ddc.cache.eng
 					return "invalid json output", nil
 				})
 
-				err := engine.UpdateOnUFSChange(rt)
+				err := engine.UpdateOnUFSChange(rt, runtimeClassOf(engine, rt))
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("failed to parse mount ufs output"))
 
@@ -592,7 +592,7 @@ var _ = Describe("CacheEngine UpdateOnUFSChange Tests", Label("pkg.ddc.cache.eng
 					return "   ", nil // Whitespace only
 				})
 
-				err := engine.UpdateOnUFSChange(rt)
+				err := engine.UpdateOnUFSChange(rt, runtimeClassOf(engine, rt))
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("empty output"))
 
@@ -609,7 +609,7 @@ var _ = Describe("CacheEngine UpdateOnUFSChange Tests", Label("pkg.ddc.cache.eng
 					return `{"mounted": ["/mount1"]}`, nil
 				})
 
-				err := engine.UpdateOnUFSChange(rt)
+				err := engine.UpdateOnUFSChange(rt, runtimeClassOf(engine, rt))
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("is not yet mounted"))
 
@@ -626,7 +626,7 @@ var _ = Describe("CacheEngine UpdateOnUFSChange Tests", Label("pkg.ddc.cache.eng
 					return `{"mounted": ["/mount1", "/mount2", "/extra-path"]}`, nil
 				})
 
-				err := engine.UpdateOnUFSChange(rt)
+				err := engine.UpdateOnUFSChange(rt, runtimeClassOf(engine, rt))
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("unexpected mounted paths remain"))
 
@@ -643,7 +643,7 @@ var _ = Describe("CacheEngine UpdateOnUFSChange Tests", Label("pkg.ddc.cache.eng
 					return `{"mounted": ["/mount1", "/mount2"]}`, nil
 				})
 
-				err := engine.UpdateOnUFSChange(rt)
+				err := engine.UpdateOnUFSChange(rt, runtimeClassOf(engine, rt))
 				Expect(err).NotTo(HaveOccurred())
 
 				// Verify dataset status was updated to Bound
@@ -671,7 +671,7 @@ var _ = Describe("CacheEngine UpdateOnUFSChange Tests", Label("pkg.ddc.cache.eng
 				})
 				Expect(fakeClient.Update(context.Background(), dataset)).NotTo(HaveOccurred())
 
-				err := engine.UpdateOnUFSChange(rt)
+				err := engine.UpdateOnUFSChange(rt, runtimeClassOf(engine, rt))
 				Expect(err).NotTo(HaveOccurred())
 
 				// Verify dataset status was updated to Bound
@@ -701,7 +701,7 @@ var _ = Describe("CacheEngine UpdateOnUFSChange Tests", Label("pkg.ddc.cache.eng
 				// Set old mount time (before pod start) to trigger remount
 				updateRuntimeMountTime(-2 * time.Hour)
 
-				err := engine.UpdateOnUFSChange(rt)
+				err := engine.UpdateOnUFSChange(rt, runtimeClassOf(engine, rt))
 				Expect(err).NotTo(HaveOccurred())
 
 				// Verify dataset status was updated to Bound after remount
@@ -712,3 +712,11 @@ var _ = Describe("CacheEngine UpdateOnUFSChange Tests", Label("pkg.ddc.cache.eng
 		})
 	})
 })
+
+// runtimeClassOf reads the CacheRuntimeClass rt names, standing in for the class the runtime is
+// bound to: these tests do not exercise the snapshot.
+func runtimeClassOf(e *CacheEngine, rt *datav1alpha1.CacheRuntime) *datav1alpha1.CacheRuntimeClass {
+	runtimeClass, err := e.getRuntimeClass(rt.Spec.RuntimeClassName)
+	ExpectWithOffset(1, err).NotTo(HaveOccurred())
+	return runtimeClass
+}

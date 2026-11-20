@@ -294,6 +294,43 @@ var _ = Describe("AdvancedStatefulSetManager SyncComponentSpec", func() {
 			})
 		})
 
+		Context("when the resources differ only in claims", func() {
+			withClaims := func(names ...string) *corev1.ResourceRequirements {
+				resources := existingAsts.Spec.Template.Spec.Containers[0].Resources.DeepCopy()
+				resources.Claims = nil
+				for _, name := range names {
+					resources.Claims = append(resources.Claims, corev1.ResourceClaim{Name: name})
+				}
+				return resources
+			}
+			resourceVersion := func() string {
+				asts := &workloadv1alpha1.AdvancedStatefulSet{}
+				Expect(manager.client.Get(ctx, types.NamespacedName{Name: identity.Name, Namespace: identity.Namespace}, asts)).To(Succeed())
+				return asts.ResourceVersion
+			}
+
+			BeforeEach(func() {
+				Expect(manager.SyncComponentSpec(ctx, identity, ComponentSpec{Resources: withClaims("gpu", "nic")})).To(Succeed())
+			})
+
+			It("should not patch for a reordered claim list", func() {
+				before := resourceVersion()
+				Expect(manager.SyncComponentSpec(ctx, identity, ComponentSpec{Resources: withClaims("nic", "gpu")})).To(Succeed())
+				Expect(resourceVersion()).To(Equal(before))
+			})
+
+			DescribeTable("should patch when the set of claims changes",
+				func(names ...string) {
+					before := resourceVersion()
+					Expect(manager.SyncComponentSpec(ctx, identity, ComponentSpec{Resources: withClaims(names...)})).To(Succeed())
+					Expect(resourceVersion()).NotTo(Equal(before))
+				},
+				Entry("a claim added", "gpu", "nic", "fpga"),
+				Entry("a claim removed", "gpu"),
+				Entry("a claim replaced", "gpu", "fpga"),
+			)
+		})
+
 		Context("when updating multiple fields", func() {
 			It("should update replicas, image and resources together", func() {
 				newReplicas := int32(5)
