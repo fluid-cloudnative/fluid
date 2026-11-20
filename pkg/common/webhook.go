@@ -26,6 +26,11 @@ const (
 	WebhookServiceName     = "fluid-pod-admission-webhook"
 	WebhookSchedulePodPath = "mutate-fluid-io-v1alpha1-schedulepod"
 
+	// ValidatingWebhookName is the ValidatingWebhookConfiguration the chart installs
+	// for CacheRuntime; the webhook patches its caBundle like WebhookName's.
+	ValidatingWebhookName           = "fluid-cacheruntime-validating-webhook"
+	WebhookValidateCacheRuntimePath = "validate-data-fluid-io-v1alpha1-cacheruntime"
+
 	CertSecretName = "fluid-webhook-certs"
 
 	WebhookPluginFilePath = "/etc/fluid/plugins.profile"

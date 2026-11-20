@@ -232,10 +232,12 @@ func isOwnerMatched(controllerRef *metav1.OwnerReference, c Controller) bool {
 func SetupWatcherForWebhook(mgr ctrl.Manager, certBuilder *webhook.CertificateBuilder, caCert []byte) (err error) {
 	options := controller.Options{}
 	webhookName := common.WebhookName
+	validatingWebhookName := common.ValidatingWebhookName
 	options.Reconciler = &webhookReconcile.WebhookReconciler{
-		CertBuilder: certBuilder,
-		WebhookName: webhookName,
-		CaCert:      caCert,
+		CertBuilder:           certBuilder,
+		WebhookName:           webhookName,
+		ValidatingWebhookName: validatingWebhookName,
+		CaCert:                caCert,
 	}
 	webhookController, err := controller.New("webhook-controller", mgr, options)
 	if err != nil {
@@ -252,6 +254,19 @@ func SetupWatcherForWebhook(mgr ctrl.Manager, certBuilder *webhook.CertificateBu
 		})
 	if err != nil {
 		log.Error(err, "Failed to watch mutatingWebhookConfiguration")
+		return err
+	}
+
+	validatingWebhookConfigurationEventHandler := &validatingWebhookConfigurationEventHandler{}
+	err = webhookController.Watch(source.Kind(mgr.GetCache(), &admissionregistrationv1.ValidatingWebhookConfiguration{}),
+		&handler.EnqueueRequestForObject{},
+		predicate.Funcs{
+			CreateFunc: validatingWebhookConfigurationEventHandler.onCreateFunc(validatingWebhookName),
+			UpdateFunc: validatingWebhookConfigurationEventHandler.onUpdateFunc(validatingWebhookName),
+			DeleteFunc: validatingWebhookConfigurationEventHandler.onDeleteFunc(validatingWebhookName),
+		})
+	if err != nil {
+		log.Error(err, "Failed to watch validatingWebhookConfiguration")
 		return err
 	}
 
