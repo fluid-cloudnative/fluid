@@ -85,6 +85,7 @@ runtime:
   syncRetryDuration: 15s
   # syncScheduleInfoNodeExcludeSelector is used to exclude nodes that should be skipped when syncing schedule info
   # e.g. syncScheduleInfoNodeExcludeSelector: "mynode=dev,type=virtual-kubelet"
+  # Fluid labels already on a node when it starts matching the selector stay there until the runtime is deleted
   syncScheduleInfoNodeExcludeSelector: ""
   mountRoot: /runtime-mnt
   # cacheruntime is the controller for the CacheRuntime CRD, which integrates

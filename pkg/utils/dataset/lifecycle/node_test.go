@@ -701,6 +701,134 @@ var _ = Describe("Dataset Lifecycle Node Tests", Label("pkg.utils.dataset.lifecy
 		})
 	})
 
+	Describe("Test removeScheduleInfoFromNode()", func() {
+		var nodeLabels map[string]string
+
+		BeforeEach(func() {
+			runtimeInfo.SetupWithDataset(&datav1alpha1.Dataset{
+				Spec: datav1alpha1.DatasetSpec{PlacementMode: datav1alpha1.ExclusiveMode},
+			})
+			nodeLabels = map[string]string{
+				runtimeInfo.GetRuntimeLabelName(): "true",
+				"type":                            "virtual-kubelet",
+			}
+			resources = nil
+			nodeExcludeSelector = nil
+		})
+
+		JustBeforeEach(func() {
+			Expect(client.Create(context.TODO(), &corev1.Node{
+				ObjectMeta: metav1.ObjectMeta{Name: "cache-node", Labels: nodeLabels},
+			})).To(Succeed())
+		})
+
+		AfterEach(func() {
+			nodeExcludeSelector = nil
+		})
+
+		It("should remove the runtime label from a node that isn't excluded", func() {
+			Expect(removeScheduleInfoFromNode("cache-node", runtimeInfo, client)).To(Succeed())
+
+			gotNode, err := kubeclient.GetNode(client, "cache-node")
+			Expect(err).To(BeNil())
+			Expect(gotNode.Labels).NotTo(HaveKey(runtimeInfo.GetRuntimeLabelName()))
+		})
+
+		It("should leave a node matching the exclude selector untouched", func() {
+			nodeExcludeSelector = labels.SelectorFromSet(labels.Set{"type": "virtual-kubelet"})
+
+			Expect(removeScheduleInfoFromNode("cache-node", runtimeInfo, client)).To(Succeed())
+
+			gotNode, err := kubeclient.GetNode(client, "cache-node")
+			Expect(err).To(BeNil())
+			Expect(gotNode.Labels).To(Equal(nodeLabels))
+		})
+
+		It("should remove the runtime label when the exclude selector doesn't match the node", func() {
+			nodeExcludeSelector = labels.SelectorFromSet(labels.Set{"type": "edge"})
+
+			Expect(removeScheduleInfoFromNode("cache-node", runtimeInfo, client)).To(Succeed())
+
+			gotNode, err := kubeclient.GetNode(client, "cache-node")
+			Expect(err).To(BeNil())
+			Expect(gotNode.Labels).NotTo(HaveKey(runtimeInfo.GetRuntimeLabelName()))
+		})
+
+		It("should only clean up the node that isn't excluded when the workers leave", func() {
+			nodeExcludeSelector = labels.SelectorFromSet(labels.Set{"type": "virtual-kubelet"})
+			// The worker statefulset has no pods left, so every labelled node is removed from the cache node set.
+			Expect(client.Create(context.TODO(), &appsv1.StatefulSet{
+				ObjectMeta: metav1.ObjectMeta{Namespace: "fluid", Name: "hbase-worker", UID: "test-uid"},
+				Spec: appsv1.StatefulSetSpec{
+					Selector: &metav1.LabelSelector{MatchLabels: map[string]string{"app": "hbase-worker"}},
+				},
+			})).To(Succeed())
+			Expect(client.Create(context.TODO(), &corev1.Node{
+				ObjectMeta: metav1.ObjectMeta{Name: "real-node", Labels: map[string]string{
+					runtimeInfo.GetRuntimeLabelName(): "true",
+					"type":                            "real",
+				}},
+			})).To(Succeed())
+
+			Expect(SyncScheduleInfoToCacheNodes(runtimeInfo, client)).To(Succeed())
+
+			excludedNode, err := kubeclient.GetNode(client, "cache-node")
+			Expect(err).To(BeNil())
+			Expect(excludedNode.Labels).To(Equal(nodeLabels))
+
+			realNode, err := kubeclient.GetNode(client, "real-node")
+			Expect(err).To(BeNil())
+			Expect(realNode.Labels).NotTo(HaveKey(runtimeInfo.GetRuntimeLabelName()))
+		})
+	})
+
+	Describe("Test addScheduleInfoToNode()", func() {
+		BeforeEach(func() {
+			runtimeInfo.SetupWithDataset(&datav1alpha1.Dataset{
+				Spec: datav1alpha1.DatasetSpec{PlacementMode: datav1alpha1.ExclusiveMode},
+			})
+			resources = nil
+			nodeExcludeSelector = nil
+		})
+
+		JustBeforeEach(func() {
+			for name, nodeType := range map[string]string{"excluded-node": "virtual-kubelet", "real-node": "real"} {
+				Expect(client.Create(context.TODO(), &corev1.Node{
+					ObjectMeta: metav1.ObjectMeta{Name: name, Labels: map[string]string{"type": nodeType}},
+				})).To(Succeed())
+			}
+		})
+
+		AfterEach(func() {
+			nodeExcludeSelector = nil
+		})
+
+		It("should only label the node that doesn't match the exclude selector", func() {
+			nodeExcludeSelector = labels.SelectorFromSet(labels.Set{"type": "virtual-kubelet"})
+
+			Expect(addScheduleInfoToNode("excluded-node", runtimeInfo, client)).To(Succeed())
+			Expect(addScheduleInfoToNode("real-node", runtimeInfo, client)).To(Succeed())
+
+			excludedNode, err := kubeclient.GetNode(client, "excluded-node")
+			Expect(err).To(BeNil())
+			Expect(excludedNode.Labels).To(Equal(map[string]string{"type": "virtual-kubelet"}))
+
+			realNode, err := kubeclient.GetNode(client, "real-node")
+			Expect(err).To(BeNil())
+			Expect(realNode.Labels).To(HaveKeyWithValue(runtimeInfo.GetRuntimeLabelName(), "true"))
+		})
+
+		It("should label every node without an exclude selector", func() {
+			for _, name := range []string{"excluded-node", "real-node"} {
+				Expect(addScheduleInfoToNode(name, runtimeInfo, client)).To(Succeed())
+
+				gotNode, err := kubeclient.GetNode(client, name)
+				Expect(err).To(BeNil())
+				Expect(gotNode.Labels).To(HaveKeyWithValue(runtimeInfo.GetRuntimeLabelName(), "true"))
+			}
+		})
+	})
+
 	Describe("Test calculateNodeDifferences", func() {
 		Context("when given current and previous node lists", func() {
 			It("should calculate correct differences", func() {
