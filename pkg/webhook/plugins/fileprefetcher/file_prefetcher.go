@@ -26,6 +26,7 @@ import (
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/docker"
 	"github.com/fluid-cloudnative/fluid/pkg/webhook/plugins/api"
 	"github.com/go-logr/logr"
@@ -161,8 +162,8 @@ func (p *FilePrefetcher) buildFilePrefetcherConfig(pod *corev1.Pod, runtimeInfos
 
 	fileList := defaultFn(pod.Annotations, AnnotationFilePrefetcherFileList, filePrefetcherDefaultFileList)
 	if fileList == filePrefetcherDefaultFileList {
-		pvcNames := make([]string, 0)
-		for pvcName := range runtimeInfos {
+		pvcNames := make([]string, 0, len(runtimeInfos))
+		for _, pvcName := range utils.OrderedKeys(runtimeInfos) {
 			pvcNames = append(pvcNames, fmt.Sprintf("pvc://%s", pvcName))
 		}
 		fileList = strings.Join(pvcNames, ";")
@@ -240,10 +241,10 @@ func (p *FilePrefetcher) parseGlobPathsFromFileList(fileList string, pod *corev1
 // This function assembles and returns a file prefetcher sidecar container
 func (p *FilePrefetcher) buildFilePrefetcherSidecarContainer(config filePrefetcherConfig) (corev1.Container, corev1.Volume) {
 	volumeMounts := []corev1.VolumeMount{}
-	for volumeName, mountPath := range config.VolumeMountPaths {
+	for _, volumeName := range utils.OrderedKeys(config.VolumeMountPaths) {
 		volumeMounts = append(volumeMounts, corev1.VolumeMount{
 			Name:      volumeName,
-			MountPath: mountPath,
+			MountPath: config.VolumeMountPaths[volumeName],
 		})
 	}
 
@@ -278,8 +279,8 @@ func (p *FilePrefetcher) buildFilePrefetcherSidecarContainer(config filePrefetch
 		VolumeMounts: volumeMounts,
 	}
 
-	for k, v := range config.ExtraEnvs {
-		containerSpec.Env = append(containerSpec.Env, corev1.EnvVar{Name: k, Value: v})
+	for _, k := range utils.OrderedKeys(config.ExtraEnvs) {
+		containerSpec.Env = append(containerSpec.Env, corev1.EnvVar{Name: k, Value: config.ExtraEnvs[k]})
 	}
 
 	if !config.AsyncPrefetch {

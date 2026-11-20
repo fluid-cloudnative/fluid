@@ -2,11 +2,11 @@ package datasetusageinjector
 
 import (
 	"fmt"
-	"slices"
 	"strings"
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/webhook/plugins/api"
 	corev1 "k8s.io/api/core/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -64,11 +64,7 @@ func (injector *DatasetUsageInjector) Mutate(pod *corev1.Pod, runtimeInfos map[s
 	}
 
 	// 3. Convert map to sorted slice
-	datasetsInUse := make([]string, 0, len(datasetsInUseMap))
-	for ds := range datasetsInUseMap {
-		datasetsInUse = append(datasetsInUse, ds)
-	}
-	slices.Sort(datasetsInUse)
+	datasetsInUse := utils.OrderedKeys(datasetsInUseMap)
 
 	annotationValue := strings.Join(datasetsInUse, ",")
 

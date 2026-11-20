@@ -56,7 +56,9 @@ func (p *MountPropagationInjector) Mutate(pod *corev1.Pod, runtimeInfos map[stri
 		return
 	}
 	datasetNames := make([]string, 0, len(runtimeInfos))
-	for name, runtimeInfo := range runtimeInfos {
+	// Sort keys defensively so debug log output is deterministic
+	for _, name := range utils.OrderedKeys(runtimeInfos) {
+		runtimeInfo := runtimeInfos[name]
 		if runtimeInfo == nil {
 			err = fmt.Errorf("RuntimeInfo is nil")
 			shouldStop = true
