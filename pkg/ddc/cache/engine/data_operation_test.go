@@ -19,7 +19,6 @@ package engine
 import (
 	"errors"
 	"os"
-	"strings"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	cdataload "github.com/fluid-cloudnative/fluid/pkg/dataload"
@@ -197,7 +196,7 @@ var _ = Describe("CacheEngine data operations", Label("pkg.ddc.cache.engine.data
 			Expect(err).NotTo(HaveOccurred())
 			// best effort: the generator never closes its temp file handle, which blocks removal on Windows
 			DeferCleanup(func() { _ = os.Remove(valueFile) })
-			Expect(strings.Contains(valueFile, "default-test-load-loader-values.yaml")).To(BeTrue())
+			Expect(valueFile).To(ContainSubstring("default-test-load-loader-values.yaml"))
 
 			data, err := os.ReadFile(valueFile)
 			Expect(err).NotTo(HaveOccurred())
@@ -205,11 +204,14 @@ var _ = Describe("CacheEngine data operations", Label("pkg.ddc.cache.engine.data
 			Expect(yaml.Unmarshal(data, &value)).To(Succeed())
 
 			Expect(value.Name).To(Equal("test-load"))
+			// short namespaced names are used as-is; the dataset UID only kicks in past the DNS label limit
+			Expect(value.OwnerDatasetId).To(Equal("default-test-dataset"))
 			info := value.DataLoadInfo
 			Expect(info.Image).To(Equal("dataload:v1"))
 			Expect(info.Command).To(Equal([]string{"/bin/sh", "-c", "load.sh"}))
 			Expect(info.TargetDataset).To(Equal("test-dataset"))
 			Expect(info.TargetPaths).To(Equal([]cdataload.TargetPath{{Path: "/data", Replicas: 2}}))
+			Expect(info.Envs).To(ConsistOf(cdataload.Env{Name: "FLUID_RUNTIME_CONFIG_PATH", Value: "/etc/fluid/config/runtime.json"}))
 
 			Expect(info.Volumes).To(HaveLen(1))
 			Expect(info.Volumes[0].Name).To(Equal("fluid-runtime-test-runtime-config"))
