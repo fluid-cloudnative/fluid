@@ -1296,3 +1296,19 @@ func TestGetWorkerUsedCapacity(t *testing.T) {
 		})
 	}
 }
+
+func TestDataOperationImagePullSecrets(t *testing.T) {
+	t.Setenv(common.EnvImagePullSecretsKey, "env-secret")
+
+	runtime := &datav1alpha1.AlluxioRuntime{}
+	got := dataOperationImagePullSecrets(runtime)
+	if want := []corev1.LocalObjectReference{{Name: "env-secret"}}; !reflect.DeepEqual(got, want) {
+		t.Errorf("without runtime secrets got %v, want %v", got, want)
+	}
+
+	runtime.Spec.ImagePullSecrets = []corev1.LocalObjectReference{{Name: "runtime-secret"}}
+	got = dataOperationImagePullSecrets(runtime)
+	if want := []corev1.LocalObjectReference{{Name: "runtime-secret"}}; !reflect.DeepEqual(got, want) {
+		t.Errorf("with runtime secrets got %v, want %v", got, want)
+	}
+}

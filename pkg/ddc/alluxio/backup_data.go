@@ -111,9 +111,7 @@ func (e *AlluxioEngine) generateDataBackupValueFile(ctx cruntime.ReconcileReques
 		workdir = "/tmp"
 	}
 
-	// image pull secrets
-	// if the environment variable is not set, it is still an empty slice
-	imagePullSecrets := docker.GetImagePullSecretsFromEnv(common.EnvImagePullSecretsKey)
+	imagePullSecrets := dataOperationImagePullSecrets(runtime)
 
 	dataBackup := cdatabackup.DataBackup{
 		Namespace:        databackup.Namespace,
