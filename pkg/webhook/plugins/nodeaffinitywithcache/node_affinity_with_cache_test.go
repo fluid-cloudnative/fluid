@@ -516,6 +516,66 @@ func TestTieredLocalitySkipMutateWhenPodAlreadyHasPreferred(t *testing.T) {
 	assert.Len(t, pod.Spec.Affinity.NodeAffinity.PreferredDuringSchedulingIgnoredDuringExecution, 1)
 }
 
+func TestTieredLocalitySkipMutateWhenPodNodeSelectorHasLocality(t *testing.T) {
+	alluxioRuntime := newCacheAlluxioRuntime()
+
+	cl := fake.NewFakeClientWithScheme(testScheme, alluxioRuntime)
+
+	runtimeInfo, err := base.BuildRuntimeInfo(alluxioRuntime.Name, alluxioRuntime.Namespace, "alluxio")
+	require.NoError(t, err)
+	runtimeInfo.SetFuseNodeSelector(map[string]string{})
+
+	plugin, err := NewPlugin(cl, `
+preferred:
+- name: topology.kubernetes.io/rack
+  weight: 50
+required:
+- topology.kubernetes.io/rack
+`)
+	require.NoError(t, err)
+
+	// The pod pins its own rack through nodeSelector and only has a preferred node
+	// affinity on an unrelated label, so no cache locality should be injected.
+	pod := &corev1.Pod{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test",
+			Namespace: "test",
+			Labels: map[string]string{
+				"fluid.io/dataset." + alluxioRuntime.Name + ".sched": "required",
+			},
+		},
+		Spec: corev1.PodSpec{
+			NodeSelector: map[string]string{
+				"topology.kubernetes.io/rack": "rack-b",
+			},
+			Affinity: &corev1.Affinity{
+				NodeAffinity: &corev1.NodeAffinity{
+					PreferredDuringSchedulingIgnoredDuringExecution: []corev1.PreferredSchedulingTerm{
+						{
+							Weight: 100,
+							Preference: corev1.NodeSelectorTerm{
+								MatchExpressions: []corev1.NodeSelectorRequirement{
+									{
+										Key:      "disktype",
+										Operator: corev1.NodeSelectorOpIn,
+										Values:   []string{"ssd"},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+	_, err = plugin.Mutate(pod, map[string]base.RuntimeInfoInterface{
+		alluxioRuntime.Name: runtimeInfo,
+	})
+	require.NoError(t, err)
+	assert.Nil(t, pod.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution)
+	assert.Len(t, pod.Spec.Affinity.NodeAffinity.PreferredDuringSchedulingIgnoredDuringExecution, 1)
+}
+
 func TestTieredLocalitySkipMutateWhenPluginArgEmpty(t *testing.T) {
 	alluxioRuntime := newCacheAlluxioRuntime()
 
