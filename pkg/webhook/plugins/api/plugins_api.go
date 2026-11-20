@@ -18,6 +18,7 @@ package api
 
 import (
 	"fmt"
+
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -33,13 +34,26 @@ type MutatingHandler interface {
 	GetName() string
 }
 
-// RegistryHandler record the active plugins
-// including two kinds: plugins for pod with no dataset mounted and with dataset mounted
+// RegistryHandler record the active plugins, grouped by how a pod reaches its dataset:
+// through a fuse csi volume(serverful), a fuse sidecar (serverless), or the cache
+// system's own client with no fuse at all (clientless). Each  group is further split by
+// where the pod has a dataset mounted
 type RegistryHandler interface {
 	GetPodWithoutDatasetHandler() []MutatingHandler
 	GetPodWithDatasetHandler() []MutatingHandler
 	GetServerlessPodWithDatasetHandler() []MutatingHandler
 	GetServerlessPodWithoutDatasetHandler() []MutatingHandler
+	GetClientlessPodWithDatasetHandler() []MutatingHandler
+	GetClientlessPodWithoutDatasetHandler() []MutatingHandler
+}
+
+// ReaderAwareHandler is implemented by plugins that read objects themselves and need to
+// see the same client the handler uses: the cached one first, then the API reader when
+// the handler retries after a NeedRetryWithApiReaderError.
+type ReaderAwareHandler interface {
+	MutatingHandler
+	MutateWithReader(pod *corev1.Pod, runtimeInfos map[string]base.RuntimeInfoInterface,
+		reader client.Reader) (shouldStop bool, err error)
 }
 
 // HandlerFactory is a function that builds a MutatingHandler.

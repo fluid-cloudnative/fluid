@@ -63,7 +63,7 @@ func (e *CacheEngine) getRuntimeConfigVolumeName() (targetPath string) {
 
 // getRuntimeConfigDir defines the mount directory of runtime config in the pod.
 func (e *CacheEngine) getRuntimeConfigDir() string {
-	return "/etc/fluid/config"
+	return common.RuntimeConfigDir
 }
 
 // getRuntimeConfigPath defines the mount path of runtime config in the pod.
@@ -71,13 +71,13 @@ func (e *CacheEngine) getRuntimeConfigPath() string {
 	return fmt.Sprintf("%s/%s", e.getRuntimeConfigDir(), e.getRuntimeConfigFileName())
 }
 func (e *CacheEngine) getRuntimeConfigFileName() string {
-	return "runtime.json"
+	return common.RuntimeConfigJSONFileName
 }
 
 // getRuntimeShFileName defines the file name of the shell-format runtime config, used by
 // FUSE-less clients that source it instead of parsing runtime.json.
 func (e *CacheEngine) getRuntimeShFileName() string {
-	return "runtime.sh"
+	return common.RuntimeConfigShellFileName
 }
 
 func (e *CacheEngine) getRuntimeClassExtraConfigMapVolumeName(name string) string {

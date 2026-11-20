@@ -383,6 +383,10 @@ webhook:
     # - "native-sidecar": fuse sidecar container would be a native sidecar container injected to pod.spec.initContainers[]. See https://kubernetes.io/blog/2023/08/25/native-sidecar-containers/.
     sidecarInjectionMode: "default"
   # if configmap `webhook-plugins` exists and not want to replace the content, set this to false.
+  # Even when set to true, a pluginsProfile without the clientless key (e.g. on
+  # `helm upgrade --reuse-values` from an older release) gets the chart's default clientless
+  # group, so the clientless webhook rule always has a plugin to run. To turn the group off,
+  # set it explicitly, e.g. `clientless: {withDataset: [], withoutDataset: []}`.
   forceReplacePluginsProfile: false
   pluginsProfile:
     plugins:
@@ -402,6 +406,16 @@ webhook:
           - FilePrefetcher
           - FuseSidecar
           - DatasetUsageInjector
+        withoutDataset: []
+      # webhook plugins for cache runtimes that have no fuse client, where the app
+      # talks to the cache service through its own SDK instead of a mount point.
+      # templates/webhook/plugins-profile.yaml hard-codes this group as the fallback for
+      # values that lack it ($clientless); keep the two in line.
+      clientless:
+        withDataset:
+          - RuntimeConfigInjector
+        # Nothing is registered here: without the fluid.io/datasets annotation there is
+        # no way to tell whose runtime config should be injected.
         withoutDataset: []
     pluginConfig:
       - name: NodeAffinityWithCache

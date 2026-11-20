@@ -90,6 +90,13 @@ const (
 	// i.e. fluid.io/datasets-in-use
 	LabelAnnotationDatasetsInUse = LabelAnnotationPrefix + "datasets-in-use"
 
+	// LabelAnnotationDatasets is written by the user on an app pod, declaring which
+	// datasets' runtime config should be injected into it. Comma-separated dataset
+	// names, resolved in the pod's own namespace. Compare with
+	// LabelAnnotationDatasetsInUse above, which fluid writes as its own output.
+	// i.e. fluid.io/datasets
+	LabelAnnotationDatasets = LabelAnnotationPrefix + "datasets"
+
 	// i.e. fuse.runtime.fluid.io/generation
 	LabelRuntimeFuseGeneration = "fuse.runtime." + LabelAnnotationPrefix + "generation"
 )

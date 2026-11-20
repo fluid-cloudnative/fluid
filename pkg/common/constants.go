@@ -196,6 +196,7 @@ const (
 	inject                        = ".fluid.io/inject"
 	injectSidecar                 = ".sidecar" + inject
 	InjectServerless              = "serverless" + inject             // serverless.fluid.io/inject
+	InjectClientless              = "clientless" + inject             // clientless.fluid.io/inject, for cache runtimes without a fuse client
 	InjectUnprivilegedFuseSidecar = "unprivileged" + injectSidecar    // unprivileged.sidecar.fluid.io/inject
 	InjectCacheDir                = "cachedir" + injectSidecar        // cachedir.sidecar.fluid.io/inject
 	InjectWorkerSidecar           = "worker" + injectSidecar          // worker.sidecar.fluid.io/inject
