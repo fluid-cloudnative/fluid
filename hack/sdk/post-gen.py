@@ -3,13 +3,17 @@ import argparse
 
 REPO_ROOT = os.path.realpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".."))
 
+# The only Python SDK that hack/sdk/gen-sdk.sh generates (PYTHON_SDK_OUTPUT_PATH).
+PYTHON_SDK_DIRS = (os.path.join(REPO_ROOT, "sdk", "python"),)
+
 
 def resolve_sdk_path(python_sdk_path):
-    # The SDK is generated into this repository, so refuse any path that resolves outside of it.
-    path = os.path.realpath(python_sdk_path)
-    if os.path.commonpath([REPO_ROOT, path]) != REPO_ROOT:
-        raise SystemExit("--python-sdk-path must be inside %s, got %s" % (REPO_ROOT, python_sdk_path))
-    return path
+    # Only rewrite a known SDK directory, and use the known path rather than the argument from here on.
+    requested = os.path.realpath(python_sdk_path)
+    for sdk_dir in PYTHON_SDK_DIRS:
+        if requested == os.path.realpath(sdk_dir):
+            return sdk_dir
+    raise SystemExit("--python-sdk-path must be one of %s, got %s" % (", ".join(PYTHON_SDK_DIRS), python_sdk_path))
 
 
 def handle_kubernetes_import(python_sdk_path):
