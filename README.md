@@ -33,9 +33,9 @@ English | [简体中文](./README-zh_CN.md)
 | ![notification](static/bell-outline-badge.svg) What is NEW!  |
 | ------------------------------------------------------------ |
 |**🎉 January 8, 2026**: Fluid has been promoted to **CNCF Incubating** status! The CNCF Technical Oversight Committee (TOC) officially accepted Fluid as an incubating project, a major milestone in its maturity and community adoption.|
+|v1.1.0 Release: TBD. Fluid v1.1.0 introduces **CacheRuntime**, a generic framework for onboarding cache systems declaratively. Please check the [CHANGELOG](CHANGELOG.md) for details. |
 |v1.0.8 Release: Oct. 31st, 2025. Fluid v1.0.8. Please check the [CHANGELOG](CHANGELOG.md) for details. |
 |v1.0.7 Release: Sep. 21st, 2025. Fluid v1.0.7. Please check the [CHANGELOG](CHANGELOG.md) for details. |
-|v1.0.6 Release: Jul. 12th, 2025. Fluid v1.0.6. Please check the [CHANGELOG](CHANGELOG.md) for details. |
 | Apr. 27th, 2021. Fluid accepted by **CNCF**! Fluid project was [accepted as an official CNCF Sandbox Project](https://lists.cncf.io/g/cncf-toc/message/5822) by CNCF Technical Oversight Committee (TOC) with a majority vote after the review process. New beginning for Fluid! . |
 <div align="center">
     <img src="static/architecture.png" title="architecture" height="60%" width="60%" alt="">
