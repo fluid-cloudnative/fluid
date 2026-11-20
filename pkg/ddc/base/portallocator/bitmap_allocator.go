@@ -30,7 +30,8 @@ type BitMapAllocator struct {
 	alloc *portallocator.PortAllocator
 	log   logr.Logger
 }
-
+// needResetReservedPorts reports whether the bitmap allocator needs to reset
+// its reserved port state before allocating ports.
 func (b *BitMapAllocator) needResetReservedPorts() bool {
 	return true
 }
