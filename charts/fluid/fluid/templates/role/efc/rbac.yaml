@@ -2,7 +2,7 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: efcruntime-controller
+  name: {{ include "fluid.clusterRBACName" (dict "root" . "name" "efcruntime-controller") }}
 rules:
   - apiGroups:
     - ""
@@ -146,11 +146,11 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: efcruntime-clusterrolebinding
+  name: {{ include "fluid.clusterRBACName" (dict "root" . "name" "efcruntime-clusterrolebinding") }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: efcruntime-controller
+  name: {{ include "fluid.clusterRBACName" (dict "root" . "name" "efcruntime-controller") }}
 subjects:
   - kind: ServiceAccount
     name: efcruntime-controller
