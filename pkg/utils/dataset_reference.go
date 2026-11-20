@@ -34,12 +34,14 @@ func RemoveNotFoundDatasetRef(client client.Client, dataset datav1alpha1.Dataset
 			log.Info("invalid datasetRef", "datasetRef", datasetRefName)
 			continue
 		}
-		dataset, err := GetDataset(client, namespacedName[1], namespacedName[0])
+		refDataset, err := GetDataset(client, namespacedName[1], namespacedName[0])
 		if err != nil && IgnoreNotFound(err) != nil {
 			log.Error(err, "Failed to get reference dataset", "DatasetDeleteError", datasetRefName)
+			// On a non-NotFound error, keep the existing datasetRef untouched instead of
+			// dereferencing refDataset, which is nil when GetDataset returns an error.
 			return dataset.Status.DatasetRef, err
 		}
-		if dataset != nil {
+		if refDataset != nil {
 			datasetRefToUpdate = append(datasetRefToUpdate, datasetRefName)
 		} else {
 			log.V(1).Info("dataset not found, remove it from datasetRef", "remove dataset namespacedName", namespacedName)
