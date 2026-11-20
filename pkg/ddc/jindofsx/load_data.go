@@ -110,7 +110,10 @@ func (e *JindoFSxEngine) genDataLoadValue(image string, runtime *datav1alpha1.Ji
 	if len(runtime.Spec.TieredStore.Levels) > 0 && runtime.Spec.TieredStore.Levels[0].MediumType == "MEM" {
 		loadMemorydata = true
 	}
-	imagePullSecrets := docker.GetImagePullSecretsFromEnv(common.EnvImagePullSecretsKey)
+	imagePullSecrets := runtime.Spec.ImagePullSecrets
+	if len(imagePullSecrets) == 0 {
+		imagePullSecrets = docker.GetImagePullSecretsFromEnv(common.EnvImagePullSecretsKey)
+	}
 
 	dataloadInfo := cdataload.DataLoadInfo{
 		BackoffLimit:     3,
