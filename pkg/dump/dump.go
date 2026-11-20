@@ -74,7 +74,7 @@ func InstallgoroutineDumpGenerator() {
 				timestamp := fmt.Sprint(t.Format("20060102150405"))
 				log.Info("User uses kill -3 to generate goroutine dump")
 				dumpfileMutex.RLock()
-				filename := fmt.Sprintf(dumpfile, "/tmp", "go", timestamp)
+				filename := fmt.Sprintf(dumpfile, "/tmp/go", timestamp)
 				dumpfileMutex.RUnlock()
 				coredump(filename)
 			default:

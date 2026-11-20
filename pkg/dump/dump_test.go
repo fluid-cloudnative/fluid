@@ -250,13 +250,9 @@ func formatDumpfile(prefix, timestamp string) string {
 }
 
 // Helper function to find dump files in /tmp
-// Updated to match the actual filename pattern based on the code bug
 func findDumpFile() (string, bool) {
-	// Due to the bug in the code, the actual pattern is /tmp-go.txt
-	// because fmt.Sprintf("%s-%s.txt", "/tmp", "go", timestamp) only uses first 2 args
 	patterns := []string{
-		"/tmp-go.txt",   // What the buggy code actually creates
-		"/tmp/go-*.txt", // What it should create
+		"/tmp/go-*.txt",
 	}
 
 	for _, pattern := range patterns {
@@ -276,7 +272,6 @@ func findDumpFile() (string, bool) {
 // Helper function to clean up dump files
 func cleanupDumpFiles() {
 	patterns := []string{
-		"/tmp-go.txt", // What the buggy code actually creates
 		"/tmp/go-*.txt",
 		"/tmp/test_coredump*.txt",
 		"/tmp/go-test-signal.txt",
@@ -297,10 +292,6 @@ func cleanupDumpFiles() {
 			_ = os.Remove(filepath.Join("/tmp", name))
 		}
 		if strings.HasPrefix(name, "test_coredump") {
-			_ = os.Remove(filepath.Join("/tmp", name))
-		}
-		// Also check for the buggy pattern
-		if name == "tmp-go.txt" {
 			_ = os.Remove(filepath.Join("/tmp", name))
 		}
 	}
