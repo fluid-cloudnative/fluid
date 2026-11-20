@@ -603,11 +603,13 @@ func (j JuiceFSEngine) isNodeSelectorChanged(crtNodeSelector, runtimeNodeSelecto
 
 func (j JuiceFSEngine) isCommandChanged(crtCommand, runtimeCommand string) (changed bool, newCommand string) {
 	getOption := func(command string) map[string]string {
-		commands := strings.Split(command, "-o")
-		if len(commands) == 1 {
+		// the options follow the standalone "-o" argument. Do not split on a bare "-o": the dataset name,
+		// which is part of the mount path, and option names such as "cache-partial-only" may contain it.
+		_, optionStr, found := strings.Cut(command, " -o ")
+		if !found {
 			return map[string]string{}
 		}
-		options := strings.Split(commands[1], ",")
+		options := strings.Split(optionStr, ",")
 		optionMap := make(map[string]string)
 		for _, option := range options {
 			// ignore metrics option, because it may be different when using hostNetwork
