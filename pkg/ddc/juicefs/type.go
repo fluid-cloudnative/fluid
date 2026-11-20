@@ -75,6 +75,7 @@ type Worker struct {
 	Privileged           bool                           `json:"privileged"`
 	NodeSelector         map[string]string              `json:"nodeSelector,omitempty"`
 	ImagePullPolicy      string                         `json:"imagePullPolicy,omitempty"`
+	ImagePullSecrets     []corev1.LocalObjectReference  `json:"imagePullSecrets,omitempty"`
 	Resources            common.Resources               `json:"resources,omitempty"`
 	Envs                 []corev1.EnvVar                `json:"envs,omitempty"`
 	VolumeMounts         []corev1.VolumeMount           `json:"volumeMounts,omitempty"`
@@ -92,20 +93,21 @@ type Worker struct {
 
 // Fuse struct holds the configuration of JuiceFS FUSE (File System in User Space).
 type Fuse struct {
-	Privileged      bool                 `json:"privileged"`
-	Enabled         bool                 `json:"enabled,omitempty"`
-	Image           string               `json:"image,omitempty"`
-	NodeSelector    map[string]string    `json:"nodeSelector,omitempty"`
-	Envs            []corev1.EnvVar      `json:"envs,omitempty"`
-	ImageTag        string               `json:"imageTag,omitempty"`
-	ImagePullPolicy string               `json:"imagePullPolicy,omitempty"`
-	Resources       common.Resources     `json:"resources,omitempty"`
-	CriticalPod     bool                 `json:"criticalPod,omitempty"`
-	VolumeMounts    []corev1.VolumeMount `json:"volumeMounts,omitempty"`
-	Volumes         []corev1.Volume      `json:"volumes,omitempty"`
-	HostNetwork     bool                 `json:"hostNetwork,omitempty"`
-	HostPID         bool                 `json:"hostPID,omitempty"`
-	MetricsPort     *int                 `json:"metricsPort,omitempty"`
+	Privileged       bool                          `json:"privileged"`
+	Enabled          bool                          `json:"enabled,omitempty"`
+	Image            string                        `json:"image,omitempty"`
+	NodeSelector     map[string]string             `json:"nodeSelector,omitempty"`
+	Envs             []corev1.EnvVar               `json:"envs,omitempty"`
+	ImageTag         string                        `json:"imageTag,omitempty"`
+	ImagePullPolicy  string                        `json:"imagePullPolicy,omitempty"`
+	ImagePullSecrets []corev1.LocalObjectReference `json:"imagePullSecrets,omitempty"`
+	Resources        common.Resources              `json:"resources,omitempty"`
+	CriticalPod      bool                          `json:"criticalPod,omitempty"`
+	VolumeMounts     []corev1.VolumeMount          `json:"volumeMounts,omitempty"`
+	Volumes          []corev1.Volume               `json:"volumes,omitempty"`
+	HostNetwork      bool                          `json:"hostNetwork,omitempty"`
+	HostPID          bool                          `json:"hostPID,omitempty"`
+	MetricsPort      *int                          `json:"metricsPort,omitempty"`
 
 	SubPath       string            `json:"subPath,omitempty"`
 	MountPath     string            `json:"mountPath,omitempty"`

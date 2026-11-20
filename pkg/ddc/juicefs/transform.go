@@ -130,10 +130,16 @@ func (j *JuiceFSEngine) transformWorkers(runtime *datav1alpha1.JuiceFSRuntime, d
 		return
 	}
 
-	// add ImagePullSecrets
+	// add ImagePullSecrets: the runtime's secrets take precedence over the controller default from the env
 	imagePullSecrets := docker.GetImagePullSecretsFromEnv(common.EnvImagePullSecretsKey)
+	if len(runtime.Spec.ImagePullSecrets) > 0 {
+		imagePullSecrets = runtime.Spec.ImagePullSecrets
+	}
 	if len(imagePullSecrets) > 0 {
 		value.ImagePullSecrets = imagePullSecrets
+	}
+	if len(runtime.Spec.Worker.ImagePullSecrets) > 0 {
+		value.Worker.ImagePullSecrets = runtime.Spec.Worker.ImagePullSecrets
 	}
 
 	// nodeSelector

@@ -134,6 +134,14 @@ spec:
                     type: string
                   imagePullPolicy:
                     type: string
+                  imagePullSecrets:
+                    items:
+                      properties:
+                        name:
+                          type: string
+                      type: object
+                      x-kubernetes-map-type: atomic
+                    type: array
                   imageTag:
                     type: string
                   networkMode:
@@ -213,6 +221,14 @@ spec:
                       type: object
                     type: array
                 type: object
+              imagePullSecrets:
+                items:
+                  properties:
+                    name:
+                      type: string
+                  type: object
+                  x-kubernetes-map-type: atomic
+                type: array
               initUsers:
                 properties:
                   env:
@@ -324,6 +340,14 @@ spec:
                       required:
                       - name
                       type: object
+                    type: array
+                  imagePullSecrets:
+                    items:
+                      properties:
+                        name:
+                          type: string
+                      type: object
+                      x-kubernetes-map-type: atomic
                     type: array
                   networkMode:
                     enum:
@@ -521,6 +545,14 @@ spec:
                       required:
                       - name
                       type: object
+                    type: array
+                  imagePullSecrets:
+                    items:
+                      properties:
+                        name:
+                          type: string
+                      type: object
+                      x-kubernetes-map-type: atomic
                     type: array
                   networkMode:
                     enum:
@@ -2390,6 +2422,14 @@ spec:
                       required:
                       - name
                       type: object
+                    type: array
+                  imagePullSecrets:
+                    items:
+                      properties:
+                        name:
+                          type: string
+                      type: object
+                      x-kubernetes-map-type: atomic
                     type: array
                   networkMode:
                     enum:

@@ -40,6 +40,8 @@ worker:
   image: ""
   imageTag: ""
   imagePullPolicy: ""
+  # Overrides the top-level imagePullSecrets for the worker when set
+  imagePullSecrets: []
   nodeSelector: ""
   cacheDir: ""
   envs: []
@@ -90,6 +92,8 @@ fuse:
   image: juicedata/juicefs-csi-driver
   imageTag: v0.11.0
   imagePullPolicy: IfNotPresent
+  # Overrides the top-level imagePullSecrets for fuse when set
+  imagePullSecrets: []
   envs: []
   nodeSelector: {}
   # Mount path in the host
