@@ -18,18 +18,21 @@ package dataflow
 
 import (
 	"context"
+	"errors"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/utils/ptr"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
@@ -859,5 +862,176 @@ var _ = Describe("reconcileDataMigrate and reconcileDataProcess not-found events
 			Expect(needRequeue).To(BeTrue())
 			Eventually(recorder.Events).Should(Receive(ContainSubstring(common.DataOperationNotFound)))
 		})
+	})
+})
+
+// A user may remove spec.runAfter while the operation is still waiting for the preceding one,
+// which leaves status.waitingFor.operationComplete=true without a reference to wait on.
+var _ = Describe("reconcile a data operation whose spec.runAfter was removed while waiting", func() {
+
+	const namespace = "default"
+
+	var s *runtime.Scheme
+
+	BeforeEach(func() {
+		s = runtime.NewScheme()
+		_ = datav1alpha1.AddToScheme(s)
+	})
+
+	staleWaitingStatus := func() datav1alpha1.OperationStatus {
+		return datav1alpha1.OperationStatus{
+			Phase: common.PhasePending,
+			WaitingFor: datav1alpha1.WaitingStatus{
+				OperationComplete: ptr.To(true),
+			},
+		}
+	}
+
+	DescribeTable("should release the operation without panicking",
+		func(newObj func() client.Object, reconcileFn func(reconcileRequestContext) (bool, error)) {
+			obj := newObj()
+			ctx := makeTestCtx(s, obj.GetName(), namespace, obj)
+
+			var (
+				needRequeue bool
+				err         error
+			)
+			Expect(func() { needRequeue, err = reconcileFn(ctx) }).NotTo(Panic())
+			Expect(err).NotTo(HaveOccurred())
+			Expect(needRequeue).To(BeFalse())
+
+			updated := newObj()
+			Expect(ctx.Client.Get(context.TODO(), client.ObjectKeyFromObject(obj), updated)).To(Succeed())
+			opStatus, err := utils.GetOperationStatus(updated)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(opStatus.WaitingFor.OperationComplete).To(HaveValue(BeFalse()))
+			Expect(opStatus.Phase).To(Equal(common.PhasePending))
+			Expect(ctx.Recorder.(*record.FakeRecorder).Events).To(Receive(And(
+				ContainSubstring(common.DataOperationWaitingEnded),
+				ContainSubstring("spec.runAfter was removed"))))
+		},
+		Entry("DataLoad", func() client.Object {
+			return &datav1alpha1.DataLoad{ObjectMeta: metav1.ObjectMeta{Name: loadName, Namespace: namespace}, Status: staleWaitingStatus()}
+		}, reconcileDataLoad),
+		Entry("DataBackup", func() client.Object {
+			return &datav1alpha1.DataBackup{ObjectMeta: metav1.ObjectMeta{Name: backupName, Namespace: namespace}, Status: staleWaitingStatus()}
+		}, reconcileDataBackup),
+		Entry("DataMigrate", func() client.Object {
+			return &datav1alpha1.DataMigrate{ObjectMeta: metav1.ObjectMeta{Name: migrateName, Namespace: namespace}, Status: staleWaitingStatus()}
+		}, reconcileDataMigrate),
+		Entry("DataProcess", func() client.Object {
+			return &datav1alpha1.DataProcess{ObjectMeta: metav1.ObjectMeta{Name: processName, Namespace: namespace}, Status: staleWaitingStatus()}
+		}, reconcileDataProcess),
+	)
+
+	It("should request requeue and return the error when releasing the operation fails", func() {
+		waitingLoad := &datav1alpha1.DataLoad{ObjectMeta: metav1.ObjectMeta{Name: loadName, Namespace: namespace}, Status: staleWaitingStatus()}
+		ctx := makeTestCtx(s, loadName, namespace, waitingLoad)
+		updateErr := errors.New("status update failed")
+
+		var (
+			needRequeue bool
+			err         error
+		)
+		Expect(func() {
+			needRequeue, err = reconcileOperationDataFlow(ctx, waitingLoad, nil, waitingLoad.Status, func() error { return updateErr })
+		}).NotTo(Panic())
+		Expect(err).To(MatchError(ContainSubstring(updateErr.Error())))
+		Expect(needRequeue).To(BeTrue())
+		Expect(ctx.Recorder.(*record.FakeRecorder).Events).To(BeEmpty())
+	})
+
+	// Reconcile fetches every data operation kind for the request name, so it also reaches
+	// same-name operations of other kinds that are not waiting for anything.
+	DescribeTable("should leave an operation that is not waiting untouched",
+		func(newObj func() client.Object, reconcileFn func(reconcileRequestContext) (bool, error)) {
+			obj := newObj()
+			ctx := makeTestCtx(s, obj.GetName(), namespace, obj)
+
+			before := newObj()
+			Expect(ctx.Client.Get(context.TODO(), client.ObjectKeyFromObject(obj), before)).To(Succeed())
+
+			needRequeue, err := reconcileFn(ctx)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(needRequeue).To(BeFalse())
+
+			after := newObj()
+			Expect(ctx.Client.Get(context.TODO(), client.ObjectKeyFromObject(obj), after)).To(Succeed())
+			Expect(after.GetResourceVersion()).To(Equal(before.GetResourceVersion()))
+			beforeStatus, err := utils.GetOperationStatus(before)
+			Expect(err).NotTo(HaveOccurred())
+			afterStatus, err := utils.GetOperationStatus(after)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(afterStatus).To(Equal(beforeStatus))
+			Expect(ctx.Recorder.(*record.FakeRecorder).Events).To(BeEmpty())
+		},
+		Entry("DataLoad that never waited", func() client.Object {
+			return &datav1alpha1.DataLoad{ObjectMeta: metav1.ObjectMeta{Name: loadName, Namespace: namespace},
+				Status: datav1alpha1.OperationStatus{Phase: common.PhaseComplete}}
+		}, reconcileDataLoad),
+		Entry("DataBackup that already stopped waiting", func() client.Object {
+			return &datav1alpha1.DataBackup{ObjectMeta: metav1.ObjectMeta{Name: backupName, Namespace: namespace},
+				Status: datav1alpha1.OperationStatus{Phase: common.PhaseExecuting, WaitingFor: datav1alpha1.WaitingStatus{OperationComplete: ptr.To(false)}}}
+		}, reconcileDataBackup),
+		Entry("DataMigrate that never waited", func() client.Object {
+			return &datav1alpha1.DataMigrate{ObjectMeta: metav1.ObjectMeta{Name: migrateName, Namespace: namespace},
+				Status: datav1alpha1.OperationStatus{Phase: common.PhaseExecuting}}
+		}, reconcileDataMigrate),
+		Entry("DataProcess that already stopped waiting", func() client.Object {
+			return &datav1alpha1.DataProcess{ObjectMeta: metav1.ObjectMeta{Name: processName, Namespace: namespace},
+				Status: datav1alpha1.OperationStatus{Phase: common.PhaseComplete, WaitingFor: datav1alpha1.WaitingStatus{OperationComplete: ptr.To(false)}}}
+		}, reconcileDataProcess),
+	)
+})
+
+var _ = Describe("record why a data operation stopped waiting for its preceding operation", func() {
+
+	const namespace = "default"
+
+	var s *runtime.Scheme
+
+	BeforeEach(func() {
+		s = runtime.NewScheme()
+		_ = datav1alpha1.AddToScheme(s)
+	})
+
+	newDataLoadAfterCompletedPreceding := func(operationComplete bool) []runtime.Object {
+		precedingLoad := &datav1alpha1.DataLoad{
+			ObjectMeta: metav1.ObjectMeta{Name: "preceding", Namespace: namespace},
+			Status:     datav1alpha1.OperationStatus{Phase: common.PhaseComplete},
+		}
+		load := &datav1alpha1.DataLoad{
+			ObjectMeta: metav1.ObjectMeta{Name: loadName, Namespace: namespace},
+			Spec: datav1alpha1.DataLoadSpec{
+				RunAfter: &datav1alpha1.OperationRef{
+					ObjectRef: datav1alpha1.ObjectRef{Kind: "DataLoad", Name: "preceding"},
+				},
+			},
+			Status: datav1alpha1.OperationStatus{
+				Phase:      common.PhasePending,
+				WaitingFor: datav1alpha1.WaitingStatus{OperationComplete: ptr.To(operationComplete)},
+			},
+		}
+		return []runtime.Object{precedingLoad, load}
+	}
+
+	It("should record an event when the preceding operation completed", func() {
+		ctx := makeTestCtx(s, loadName, namespace, newDataLoadAfterCompletedPreceding(true)...)
+
+		needRequeue, err := reconcileDataLoad(ctx)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(needRequeue).To(BeFalse())
+		Expect(ctx.Recorder.(*record.FakeRecorder).Events).To(Receive(And(
+			ContainSubstring(common.DataOperationWaitingEnded),
+			ContainSubstring(`DataLoad "default/preceding" completed`))))
+	})
+
+	It("should not record an event for an operation that is not waiting", func() {
+		ctx := makeTestCtx(s, loadName, namespace, newDataLoadAfterCompletedPreceding(false)...)
+
+		needRequeue, err := reconcileDataLoad(ctx)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(needRequeue).To(BeFalse())
+		Expect(ctx.Recorder.(*record.FakeRecorder).Events).To(BeEmpty())
 	})
 })

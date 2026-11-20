@@ -18,6 +18,7 @@ package dataflow
 
 import (
 	"context"
+	"fmt"
 	"reflect"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
@@ -160,6 +161,19 @@ func reconcileOperationDataFlow(ctx reconcileRequestContext,
 	opStatus datav1alpha1.OperationStatus,
 	updateStatusFn func() error) (needRequeue bool, err error) {
 
+	// spec.runAfter can be removed while the operation is still waiting for it. There is
+	// nothing left to wait for, so release the operation instead of dereferencing nil.
+	// Reconcile also fetches the same-name operations of the other kinds, which may have no
+	// runAfter and not be waiting at all; leave those untouched.
+	if runAfter == nil {
+		if !isWaitingForPrecedingOperation(opStatus) {
+			return false, nil
+		}
+		ctx.Log.Info("spec.runAfter is no longer set, stop waiting for the preceding operation")
+		return releaseWaitingOperation(ctx, object, opStatus, updateStatusFn,
+			"spec.runAfter was removed, stop waiting for the preceding operation")
+	}
+
 	opRefNamespace := ctx.Namespace
 	if len(runAfter.Namespace) != 0 {
 		opRefNamespace = runAfter.Namespace
@@ -186,11 +200,26 @@ func reconcileOperationDataFlow(ctx reconcileRequestContext,
 		return true, nil
 	}
 
-	// set opStatus.waitingFor.operationComplete back to false
-	err = retry.RetryOnConflict(retry.DefaultBackoff, updateStatusFn)
+	return releaseWaitingOperation(ctx, object, opStatus, updateStatusFn,
+		fmt.Sprintf("Preceding operation %s \"%s/%s\" completed, stop waiting", runAfter.Kind, opRefNamespace, runAfter.Name))
+}
 
-	if err != nil {
+func isWaitingForPrecedingOperation(opStatus datav1alpha1.OperationStatus) bool {
+	return opStatus.WaitingFor.OperationComplete != nil && *opStatus.WaitingFor.OperationComplete
+}
+
+// releaseWaitingOperation sets opStatus.waitingFor.operationComplete back to false so that
+// the operation's own controller moves on from Pending, and records why it stopped waiting.
+func releaseWaitingOperation(ctx reconcileRequestContext, object client.Object, opStatus datav1alpha1.OperationStatus,
+	updateStatusFn func() error, message string) (needRequeue bool, err error) {
+	if err = retry.RetryOnConflict(retry.DefaultBackoff, updateStatusFn); err != nil {
 		return true, errors.Wrapf(err, "failed to update operation status waitingFor.OperationComplete=false")
+	}
+
+	// A same-name operation of another kind can reach this point without having been waiting,
+	// so only record the event for an operation that actually stopped waiting.
+	if isWaitingForPrecedingOperation(opStatus) {
+		ctx.Recorder.Event(object, corev1.EventTypeNormal, common.DataOperationWaitingEnded, message)
 	}
 
 	return false, nil

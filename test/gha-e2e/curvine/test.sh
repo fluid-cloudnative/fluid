@@ -257,6 +257,7 @@ function dump_env_and_clean_up() {
     kubectl delete --ignore-not-found -f test/gha-e2e/curvine/read_job.yaml
     kubectl delete --ignore-not-found -f test/gha-e2e/curvine/write_job.yaml
     kubectl delete --ignore-not-found -f test/gha-e2e/curvine/dataload.yaml
+    kubectl delete --ignore-not-found -f test/gha-e2e/curvine/dataload_runafter_removed.yaml
     kubectl delete --ignore-not-found -f test/gha-e2e/curvine/ref-dataset.yaml
     # ThinRuntime will be automatically deleted when reference dataset is deleted
     kubectl delete --ignore-not-found -f test/gha-e2e/curvine/dataset.yaml
@@ -289,6 +290,107 @@ function wait_dataload_completed() {
     done
     syslog "Found succeeded dataload_name $dataload_name"
 }
+
+# dataset_controller_restarts prints "<pod>=<restartCount>" for every dataset-controller pod, so a
+# crash shows up either as a higher restart count or as a replaced pod.
+function dataset_controller_restarts() {
+    kubectl get pods -n fluid-system -l control-plane=dataset-controller \
+        -ojsonpath='{range .items[*]}{.metadata.name}={.status.containerStatuses[?(@.name=="manager")].restartCount}{" "}{end}'
+}
+
+function fail_dataload_runafter_removed() {
+    local dataload_name=$1
+    local manifest=$2
+    local err_msg=$3
+    local pod
+
+    syslog "--- DataLoad $dataload_name ---"
+    kubectl get dataload "$dataload_name" -oyaml 2>&1 || true
+    syslog "--- Events of DataLoad $dataload_name ---"
+    kubectl get events --field-selector "involvedObject.kind=DataLoad,involvedObject.name=$dataload_name" 2>&1 || true
+    syslog "--- dataset-controller pods ---"
+    kubectl get pods -n fluid-system -l control-plane=dataset-controller -owide 2>&1 || true
+    for pod in $(kubectl get pods -n fluid-system -l control-plane=dataset-controller -oname); do
+        syslog "--- previous dataset-controller container logs of $pod (if it restarted) ---"
+        kubectl logs -n fluid-system "$pod" -c manager --previous --tail=60 2>&1 || true
+    done
+    # Marking the DataLoad for deletion stops a crash-looping dataset-controller from picking it up
+    # again, since the DataFlow reconciler skips objects that are being deleted.
+    kubectl delete --ignore-not-found --wait=false -f "$manifest" || true
+    panic "$err_msg"
+}
+
+# A data operation keeps status.waitingFor.operationComplete=true while it waits for the operation
+# in spec.runAfter. Removing spec.runAfter at that point must release it like a normal DataLoad;
+# the DataFlow reconciler used to dereference the missing runAfter and crash-loop dataset-controller.
+function verify_dataload_runafter_removed() {
+    local dataload_name="curvine-dataload-runafter-removed"
+    local manifest="test/gha-e2e/curvine/dataload_runafter_removed.yaml"
+    local phase=""
+    local waiting=""
+    local not_found_event=""
+    local restarts_before=""
+    local restarts_now=""
+    local i
+
+    kubectl create -f "$manifest"
+
+    # Precondition: the DataLoad waits for its preceding operation and the DataFlow reconciler has
+    # handled it (it reports the preceding DataLoad as not found), so the check below cannot pass
+    # without exercising the DataFlow reconciler.
+    for ((i = 0; i < 24; i++)); do
+        phase=$(kubectl get dataload "$dataload_name" -ojsonpath='{.status.phase}')
+        waiting=$(kubectl get dataload "$dataload_name" -ojsonpath='{.status.waitingFor.operationComplete}')
+        not_found_event=$(kubectl get events -oname \
+            --field-selector "involvedObject.kind=DataLoad,involvedObject.name=$dataload_name,reason=DataOperationNotFound")
+        if [[ "$phase" == "Pending" && "$waiting" == "true" && -n "$not_found_event" ]]; then
+            break
+        fi
+        sleep 5
+    done
+    if [[ "$phase" != "Pending" || "$waiting" != "true" || -z "$not_found_event" ]]; then
+        fail_dataload_runafter_removed "$dataload_name" "$manifest" \
+            "DataLoad $dataload_name never waited for its preceding operation (phase: ${phase:-<empty>}, waitingFor.operationComplete: ${waiting:-<empty>}, DataOperationNotFound event: ${not_found_event:-<none>})"
+    fi
+    syslog "DataLoad $dataload_name is Pending and waiting for its preceding operation"
+
+    restarts_before=$(dataset_controller_restarts)
+    # With no dataset-controller pod to compare against, the restart checks below would pass vacuously.
+    if [[ ! "$restarts_before" =~ =[0-9]+ ]]; then
+        fail_dataload_runafter_removed "$dataload_name" "$manifest" \
+            "found no dataset-controller pod restart count to compare against (got: ${restarts_before:-<empty>})"
+    fi
+    kubectl patch dataload "$dataload_name" --type=json -p '[{"op":"remove","path":"/spec/runAfter"}]'
+    syslog "removed spec.runAfter from DataLoad $dataload_name, dataset-controller restarts: $restarts_before"
+
+    # wait at most 180 seconds for the DataLoad to complete
+    for ((i = 0; i < 36; i++)); do
+        restarts_now=$(dataset_controller_restarts)
+        if [[ "$restarts_now" != "$restarts_before" ]]; then
+            fail_dataload_runafter_removed "$dataload_name" "$manifest" \
+                "dataset-controller restarted after spec.runAfter was removed from DataLoad $dataload_name (before: $restarts_before, now: $restarts_now)"
+        fi
+        phase=$(kubectl get dataload "$dataload_name" -ojsonpath='{.status.phase}')
+        if [[ "$phase" == "Complete" ]]; then
+            break
+        fi
+        sleep 5
+    done
+    if [[ "$phase" != "Complete" ]]; then
+        waiting=$(kubectl get dataload "$dataload_name" -ojsonpath='{.status.waitingFor.operationComplete}')
+        fail_dataload_runafter_removed "$dataload_name" "$manifest" \
+            "DataLoad $dataload_name did not complete within 180s after spec.runAfter was removed (phase: ${phase:-<empty>}, waitingFor.operationComplete: ${waiting:-<empty>})"
+    fi
+
+    restarts_now=$(dataset_controller_restarts)
+    if [[ "$restarts_now" != "$restarts_before" ]]; then
+        fail_dataload_runafter_removed "$dataload_name" "$manifest" \
+            "dataset-controller restarted after spec.runAfter was removed from DataLoad $dataload_name (before: $restarts_before, now: $restarts_now)"
+    fi
+    syslog "DataLoad $dataload_name completed after spec.runAfter was removed, dataset-controller did not restart"
+    kubectl delete -f "$manifest"
+}
+
 function scale_worker_and_verify() {
     local target_replicas=$1
     local method=${2:-patch}
@@ -561,6 +663,8 @@ function main() {
     wait_job_completed $write_job_name
     create_dataload
     wait_dataload_completed "curvine-dataload"
+    # verify removing spec.runAfter from a waiting DataLoad releases it without crashing dataset-controller
+    verify_dataload_runafter_removed
     wait_cache_client_ready
     create_job test/gha-e2e/curvine/read_job.yaml $read_job_name
     wait_job_completed $read_job_name
