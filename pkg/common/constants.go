@@ -40,6 +40,8 @@ const (
 
 	FuseUmountDuplicate = "UnmountDuplicateMountpoint"
 
+	FuseTemplateUpdated = "FuseTemplateUpdated"
+
 	RuntimeDeprecated = "RuntimeDeprecated"
 
 	RuntimeWithSecretNotSupported = "RuntimeWithSecretNotSupported"
