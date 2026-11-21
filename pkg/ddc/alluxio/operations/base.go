@@ -479,13 +479,13 @@ func (a AlluxioFileUtils) MasterPodName() (masterPodName string, err error) {
 
 	redactedCommand := securityutils.FilterCommand(command)
 	str := strings.Split(stdout, "\n")
-	if len(str) < 1 {
+	if len(str) < 2 {
 		message := fmt.Sprintf("get wrong result when using command %v", redactedCommand)
 		return a.podName, errors.New(message)
 	}
 
 	data := strings.Fields(str[1])
-	if len(data) < 2 {
+	if len(data) < 3 {
 		message := fmt.Sprintf("get wrong result when using command %v", redactedCommand)
 		return a.podName, errors.New(message)
 	}
