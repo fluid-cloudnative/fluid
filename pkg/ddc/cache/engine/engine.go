@@ -32,8 +32,9 @@ import (
 )
 
 const (
-	syncRetryDurationEnv     string = "FLUID_SYNC_RETRY_DURATION"
-	defaultSyncRetryDuration        = 5 * time.Second
+	syncRetryDurationEnv              string = "FLUID_SYNC_RETRY_DURATION"
+	defaultSyncRetryDuration                 = 5 * time.Second
+	defaultTieredStoreWarningInterval        = 10 * time.Minute
 )
 
 // Use compiler to check if the struct implements all the interface
@@ -52,10 +53,12 @@ type CacheEngine struct {
 	name      string
 	namespace string
 
-	syncRetryDuration      time.Duration
-	timeOfLastSync         time.Time
-	retryShutdown          int32
-	gracefulShutdownLimits int32
+	syncRetryDuration            time.Duration
+	timeOfLastSync               time.Time
+	tieredStoreWarningInterval   time.Duration
+	timeOfLastTieredStoreWarning time.Time
+	retryShutdown                int32
+	gracefulShutdownLimits       int32
 
 	runtimeType string
 	engineImpl  string
@@ -65,6 +68,13 @@ type CacheEngine struct {
 	runtimeInfo base.RuntimeInfoInterface
 }
 
+func (e *CacheEngine) getTieredStoreWarningInterval() time.Duration {
+	if e.tieredStoreWarningInterval > 0 {
+		return e.tieredStoreWarningInterval
+	}
+	return defaultTieredStoreWarningInterval
+}
+
 // ID returns the id of the engine
 func (e *CacheEngine) ID() string {
 	return e.Id
@@ -72,16 +82,17 @@ func (e *CacheEngine) ID() string {
 
 func Build(id string, ctx cruntime.ReconcileRequestContext) (base.Engine, error) {
 	engine := &CacheEngine{
-		Client:                 ctx.Client,
-		Log:                    ctx.Log,
-		Recorder:               ctx.Recorder,
-		Id:                     id,
-		name:                   ctx.Name,
-		namespace:              ctx.Namespace,
-		retryShutdown:          0,
-		gracefulShutdownLimits: 5,
-		runtimeType:            ctx.RuntimeType,
-		engineImpl:             ctx.EngineImpl,
+		Client:                     ctx.Client,
+		Log:                        ctx.Log,
+		Recorder:                   ctx.Recorder,
+		Id:                         id,
+		name:                       ctx.Name,
+		namespace:                  ctx.Namespace,
+		retryShutdown:              0,
+		gracefulShutdownLimits:     5,
+		runtimeType:                ctx.RuntimeType,
+		engineImpl:                 ctx.EngineImpl,
+		tieredStoreWarningInterval: defaultTieredStoreWarningInterval,
 	}
 	engine.Log = ctx.Log.WithValues("cache engine", ctx.RuntimeType).WithValues("id", id)
 

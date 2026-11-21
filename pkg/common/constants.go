@@ -48,6 +48,8 @@ const (
 
 	RuntimeResourcesConflict = "RuntimeResourcesConflict"
 	RuntimeVersionIncomplete = "RuntimeVersionIncomplete"
+
+	RuntimeTieredStoreConflict = "RuntimeTieredStoreConflict"
 )
 
 // Events related to all type of Data Operations
