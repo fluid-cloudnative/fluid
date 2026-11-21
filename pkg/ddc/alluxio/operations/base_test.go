@@ -797,6 +797,22 @@ func TestAlluxioFileUtils_MasterPodName(t *testing.T) {
 	if address != "192.168.0.193" {
 		t.Errorf("check failure, want: %s, got: %s", "192.168.0.193", address)
 	}
+
+	// Output that does not have the master address on the second line must return an error, not panic.
+	for _, stdout := range []string{
+		"",
+		"Alluxio cluster summary: ",
+		"Alluxio cluster summary: \n",
+		"Alluxio cluster summary: \n    Master Address:",
+	} {
+		ExecUnexpected := func(a AlluxioFileUtils, command []string, verbose bool) (string, string, error) {
+			return stdout, "", nil
+		}
+		patches.ApplyPrivateMethod(reflect.TypeOf(AlluxioFileUtils{}), "exec", ExecUnexpected)
+		if _, err := a.MasterPodName(); err == nil {
+			t.Errorf("check failure for stdout %q, want err, got nil", stdout)
+		}
+	}
 }
 
 func TestAlluxioFileUtils_ExecMountScripts(t *testing.T) {
