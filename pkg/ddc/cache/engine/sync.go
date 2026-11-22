@@ -17,6 +17,8 @@
 package engine
 
 import (
+	"errors"
+	"fmt"
 	"os"
 	"reflect"
 	"strings"
@@ -201,7 +203,7 @@ func (e *CacheEngine) permitSync() (permit bool) {
 // restarting the container, and recreates the Pods for a resources change. The client runs as a
 // DaemonSet and is not synced after creation.
 func (e *CacheEngine) syncRuntimeSpec(ctx cruntime.ReconcileRequestContext, runtime *datav1alpha1.CacheRuntime,
-	runtimeClass *datav1alpha1.CacheRuntimeClass) error {
+	runtimeClass *datav1alpha1.CacheRuntimeClass) (syncErr error) {
 	e.Log.V(1).Info("start syncing runtime spec")
 	defer func() {
 		e.Log.V(1).Info("finished syncing runtime spec")
@@ -212,6 +214,17 @@ func (e *CacheEngine) syncRuntimeSpec(ctx cruntime.ReconcileRequestContext, runt
 	if runtimeClass.Topology == nil {
 		return nil
 	}
+	var conflictMessages []string
+	// Record conflicts already reported even if a later workload operation fails.
+	defer func() {
+		if len(conflictMessages) == 0 {
+			return
+		}
+		if err := e.updateResourcesSyncedCondition(ctx, corev1.ConditionFalse, common.RuntimeResourcesConflict,
+			strings.Join(conflictMessages, "\n")); err != nil {
+			syncErr = errors.Join(syncErr, err)
+		}
+	}()
 
 	// Sync Master component if enabled (supports in-place update via AdvancedStatefulSet)
 	if runtimeClass.Topology.Master != nil && !runtime.Spec.Master.Disabled {
@@ -227,11 +240,15 @@ func (e *CacheEngine) syncRuntimeSpec(ctx cruntime.ReconcileRequestContext, runt
 		}
 		masterTemplateImage := componentTemplateImage(runtimeClass.Topology.Master)
 		e.reportIncompleteVersion(runtime, common.ComponentTypeMaster, runtime.Spec.Master.RuntimeVersion, masterTemplateImage)
+		masterResources, conflictMessage := e.validDesiredResources(runtime, common.ComponentTypeMaster,
+			desiredComponentResources(runtime.Spec.Master.Resources, runtimeClass.Topology.Master), podSpec)
+		if conflictMessage != "" {
+			conflictMessages = append(conflictMessages, conflictMessage)
+		}
 		masterSpec := component.ComponentSpec{
-			Version: desiredComponentVersion(runtime.Spec.Master.RuntimeVersion, masterTemplateImage),
-			Resources: e.validDesiredResources(runtime, common.ComponentTypeMaster,
-				desiredComponentResources(runtime.Spec.Master.Resources, runtimeClass.Topology.Master), podSpec),
-			Replicas: &runtime.Spec.Master.Replicas,
+			Version:   desiredComponentVersion(runtime.Spec.Master.RuntimeVersion, masterTemplateImage),
+			Resources: masterResources,
+			Replicas:  &runtime.Spec.Master.Replicas,
 		}
 		if err := manager.SyncComponentSpec(ctx.Context, masterIdentity, masterSpec); err != nil {
 			e.Log.Error(err, "failed to sync master component spec", "component", masterIdentity.Name)
@@ -259,14 +276,16 @@ func (e *CacheEngine) syncRuntimeSpec(ctx cruntime.ReconcileRequestContext, runt
 			e.Log.Error(err, "failed to read the worker pod spec", "component", workerIdentity.Name)
 			return err
 		}
-		workerResources := e.validDesiredResources(runtime, common.ComponentTypeWorker,
+		workerResources, conflictMessage := e.validDesiredResources(runtime, common.ComponentTypeWorker,
 			desiredComponentResources(runtime.Spec.Worker.Resources, runtimeClass.Topology.Worker), podSpec)
+		if conflictMessage != "" {
+			conflictMessages = append(conflictMessages, conflictMessage)
+		}
 		// nil only when the merged resources conflict: leave them unsynced.
 		if workerResources != nil {
 			resources := withTieredStoreMemoryQuota(*workerResources, chargedTieredStoreMemoryQuota(podSpec))
 			workerResources = &resources
 		}
-
 		workerTemplateImage := componentTemplateImage(runtimeClass.Topology.Worker)
 		e.reportIncompleteVersion(runtime, common.ComponentTypeWorker, runtime.Spec.Worker.RuntimeVersion, workerTemplateImage)
 		workerSpec := component.ComponentSpec{
@@ -283,7 +302,31 @@ func (e *CacheEngine) syncRuntimeSpec(ctx cruntime.ReconcileRequestContext, runt
 	// Note: Client component is NOT synced here because it uses DaemonSet which does not support in-place update
 	// Client component will be recreated when spec changes
 
+	if len(conflictMessages) == 0 {
+		return e.updateResourcesSyncedCondition(ctx, corev1.ConditionTrue, datav1alpha1.RuntimeResourcesSyncedReason,
+			"Resources are in sync for all enabled master and worker components.")
+	}
 	return nil
+}
+
+// updateResourcesSyncedCondition skips the status write when the existing condition already matches.
+func (e *CacheEngine) updateResourcesSyncedCondition(ctx cruntime.ReconcileRequestContext, status corev1.ConditionStatus, reason, message string) error {
+	return retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+		latest, err := e.getRuntime()
+		if err != nil {
+			return err
+		}
+		cond := utils.NewRuntimeCondition(datav1alpha1.RuntimeResourcesSynced, reason, message, status)
+		_, old := utils.GetRuntimeCondition(latest.Status.Conditions, cond.Type)
+		if old != nil && old.Status == cond.Status {
+			if old.Reason == cond.Reason && old.Message == cond.Message {
+				return nil
+			}
+			cond.LastTransitionTime = old.LastTransitionTime
+		}
+		latest.Status.Conditions = utils.UpdateRuntimeCondition(latest.Status.Conditions, cond)
+		return e.Client.Status().Update(ctx.Context, latest)
+	})
 }
 
 // desiredComponentResources resolves the resources that should be synced to a
@@ -343,7 +386,8 @@ func (e *CacheEngine) syncDatasetCacheStates(ctx cruntime.ReconcileRequestContex
 }
 
 // validDesiredResources returns the desired resources to sync to the workload whose pod spec
-// is given. When the merged requests and limits conflict it emits a Warning event on the
+// is given, along with the exact warning message if a conflict is found.
+// When the merged requests and limits conflict it emits a Warning event on the
 // runtime naming the conflicting keys and returns nil, so the sync leaves the workload's
 // resources as they are while image and replicas still sync. Container claims the sync would
 // add without the workload's pod spec declaring them are dropped with a Warning event, and the
@@ -351,31 +395,31 @@ func (e *CacheEngine) syncDatasetCacheStates(ctx cruntime.ReconcileRequestContex
 // without DynamicResourceAllocation the API server ignores claims anyway, so they must not
 // hold back a requests or limits edit.
 func (e *CacheEngine) validDesiredResources(runtime *datav1alpha1.CacheRuntime, componentType common.ComponentType,
-	desired *corev1.ResourceRequirements, podSpec *corev1.PodSpec) *corev1.ResourceRequirements {
+	desired *corev1.ResourceRequirements, podSpec *corev1.PodSpec) (*corev1.ResourceRequirements, string) {
 	if desired == nil {
-		return nil
+		return nil, ""
 	}
 	if err := validateResourceRequirements(*desired); err != nil {
 		e.Log.Info("Skip syncing conflicting resources", "component", componentType, "conflicts", err.Error())
+		message := fmt.Sprintf("%s resources are not synced: the CacheRuntime and its CacheRuntimeClass template merge into %v",
+			componentType, err)
 		if e.Recorder != nil {
-			e.Recorder.Eventf(runtime, corev1.EventTypeWarning, common.RuntimeResourcesConflict,
-				"%s resources are not synced: the CacheRuntime and its CacheRuntimeClass template merge into %v",
-				componentType, err)
+			e.Recorder.Event(runtime, corev1.EventTypeWarning, common.RuntimeResourcesConflict, message)
 		}
-		return nil
+		return nil, message
 	}
 
 	declared, undeclared := splitDeclaredClaims(desired.Claims, podSpec)
 	if len(undeclared) == 0 {
-		return desired
+		return desired, ""
 	}
 	e.Log.Info("Skip syncing claims the workload does not declare", "component", componentType, "claims", undeclared)
+	message := fmt.Sprintf("%s resource claims %s are not synced: the workload's pod-level resourceClaims do not declare them; recreate the CacheRuntime to add them",
+		componentType, strings.Join(undeclared, ", "))
 	if e.Recorder != nil {
-		e.Recorder.Eventf(runtime, corev1.EventTypeWarning, common.RuntimeResourcesConflict,
-			"%s resource claims %s are not synced: the workload's pod-level resourceClaims do not declare them; recreate the CacheRuntime to add them",
-			componentType, strings.Join(undeclared, ", "))
+		e.Recorder.Event(runtime, corev1.EventTypeWarning, common.RuntimeResourcesConflict, message)
 	}
 	synced := desired.DeepCopy()
 	synced.Claims = declared
-	return synced
+	return synced, message
 }

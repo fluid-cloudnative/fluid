@@ -265,6 +265,7 @@ var _ = Describe("CacheRuntime resources creation/sync equivalence",
 					client := fake.NewClientBuilder().
 						WithScheme(CacheEngineTestScheme).
 						WithObjects(asts, runtimeObj, runtimeClass).
+						WithStatusSubresource(runtimeObj).
 						Build()
 					e := &CacheEngine{
 						name:      "test",

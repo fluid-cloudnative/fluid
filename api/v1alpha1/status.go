@@ -191,6 +191,8 @@ const (
 	RuntimeFusesScaledIn RuntimeConditionType = "FusesScaledIn"
 	// RuntimeFusesScaledOut means the fuses of runtime just scaled out
 	RuntimeFusesScaledOut RuntimeConditionType = "FusesScaledOut"
+	// RuntimeResourcesSynced indicates whether master and worker resources are in sync.
+	RuntimeResourcesSynced RuntimeConditionType = "ResourcesSynced"
 )
 
 const (
@@ -214,6 +216,8 @@ const (
 	RuntimeFusesScaledInReason = "Fuses scaled in"
 	// RuntimeFusesScaledInReason means the fuses of runtime just scaled out
 	RuntimeFusesScaledOutReason = "Fuses scaled out"
+	// RuntimeResourcesSyncedReason means all enabled master and worker resources are in sync.
+	RuntimeResourcesSyncedReason = "RuntimeResourcesSynced"
 )
 
 // Condition describes the state of the cache at a certain point.

@@ -350,6 +350,7 @@ var updatePath = compositionPath{
 		client := fake.NewClientBuilder().
 			WithScheme(CacheEngineTestScheme).
 			WithObjects(asts, runtimeObj, runtimeClass).
+			WithStatusSubresource(runtimeObj).
 			Build()
 
 		e := &CacheEngine{

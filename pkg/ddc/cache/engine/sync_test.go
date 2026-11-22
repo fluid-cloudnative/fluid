@@ -20,6 +20,7 @@ import (
 	"context"
 	"os"
 	"reflect"
+	"strings"
 	"time"
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
@@ -217,6 +218,11 @@ var _ = Describe("CacheEngine Sync Tests", Label("pkg.ddc.cache.engine.sync_test
 			It("should sync successfully", func() {
 				err := engine.Sync(ctx)
 				Expect(err).NotTo(HaveOccurred())
+				latest, err := engine.getRuntime()
+				Expect(err).NotTo(HaveOccurred())
+				_, cond := utils.GetRuntimeCondition(latest.Status.Conditions, datav1alpha1.RuntimeResourcesSynced)
+				Expect(cond).NotTo(BeNil())
+				Expect(cond.Status).To(Equal(corev1.ConditionTrue))
 			})
 		})
 
@@ -1383,6 +1389,75 @@ var _ = Describe("CacheEngine Sync Tests", Label("pkg.ddc.cache.engine.sync_test
 				Expect(recorder.Events).To(Receive(And(
 					ContainSubstring(common.RuntimeResourcesConflict),
 					ContainSubstring("cpu request 1 exceeds limit 500m"))))
+			})
+		})
+
+		Context("when the master reports a resource conflict", func() {
+			var recorder *record.FakeRecorder
+			BeforeEach(func() {
+				recorder = record.NewFakeRecorder(10)
+				engine.Recorder = recorder
+				runtimeObj.Spec.Master.Resources.Requests = corev1.ResourceList{corev1.ResourceMemory: resource.MustParse("4Gi")}
+			})
+
+			eventMessage := func(component string) string {
+				GinkgoHelper()
+				var event string
+				Expect(recorder.Events).To(Receive(&event))
+				prefix := corev1.EventTypeWarning + " " + common.RuntimeResourcesConflict + " "
+				Expect(event).To(HavePrefix(prefix + component + " "))
+				return strings.TrimPrefix(event, prefix)
+			}
+
+			expectCondition := func(message string) {
+				GinkgoHelper()
+				latest, err := engine.getRuntime()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(latest.Status.Conditions).To(HaveLen(1))
+				cond := latest.Status.Conditions[0]
+				Expect(cond.Type).To(Equal(datav1alpha1.RuntimeResourcesSynced))
+				Expect(cond.Status).To(Equal(corev1.ConditionFalse))
+				Expect(cond.Reason).To(Equal(common.RuntimeResourcesConflict))
+				Expect(cond.Message).To(Equal(message))
+			}
+
+			It("records both event messages in one condition when the worker also has an undeclared claim", func() {
+				runtimeObj.Spec.Worker.Resources.Claims = []corev1.ResourceClaim{{Name: "gpu"}}
+				Expect(engine.syncRuntimeSpec(ctx, runtimeObj, runtimeClass)).To(Succeed())
+				expectCondition(eventMessage("master") + "\n" + eventMessage("worker"))
+			})
+
+			It("restores ResourcesSynced after the master override is corrected", func() {
+				Expect(engine.syncRuntimeSpec(ctx, runtimeObj, runtimeClass)).To(Succeed())
+				expectCondition(eventMessage("master"))
+
+				runtimeObj.Spec.Master.Resources.Requests[corev1.ResourceMemory] = resource.MustParse("1Gi")
+				Expect(engine.syncRuntimeSpec(ctx, runtimeObj, runtimeClass)).To(Succeed())
+				Expect(recorder.Events).To(BeEmpty())
+
+				latest, err := engine.getRuntime()
+				Expect(err).NotTo(HaveOccurred())
+				_, cond := utils.GetRuntimeCondition(latest.Status.Conditions, datav1alpha1.RuntimeResourcesSynced)
+				Expect(cond).NotTo(BeNil())
+				Expect(cond.Status).To(Equal(corev1.ConditionTrue))
+				Expect(cond.Reason).To(Equal(datav1alpha1.RuntimeResourcesSyncedReason))
+
+				Expect(engine.syncRuntimeSpec(ctx, runtimeObj, runtimeClass)).To(Succeed())
+				unchanged, err := engine.getRuntime()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(unchanged.ResourceVersion).To(Equal(latest.ResourceVersion))
+			})
+
+			It("records the master event even if reading the worker fails", func() {
+				worker := &workloadv1alpha1.AdvancedStatefulSet{ObjectMeta: metav1.ObjectMeta{Name: workerSts, Namespace: engine.namespace}}
+				Expect(fakeClient.Delete(ctx.Context, worker)).To(Succeed())
+				Expect(engine.syncRuntimeSpec(ctx, runtimeObj, runtimeClass)).To(MatchError(ContainSubstring(workerSts)))
+				message := eventMessage("master")
+				expectCondition(message)
+
+				runtimeObj.Spec.Master.Resources.Requests = nil
+				Expect(engine.syncRuntimeSpec(ctx, runtimeObj, runtimeClass)).To(MatchError(ContainSubstring(workerSts)))
+				expectCondition(message)
 			})
 		})
 
