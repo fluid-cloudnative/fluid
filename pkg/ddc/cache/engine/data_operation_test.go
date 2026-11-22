@@ -17,6 +17,7 @@ limitations under the License.
 package engine
 
 import (
+	"context"
 	"errors"
 	"os"
 
@@ -190,6 +191,8 @@ var _ = Describe("CacheEngine data operations", Label("pkg.ddc.cache.engine.data
 			}
 			c := fake.NewFakeClientWithScheme(CacheEngineTestScheme, runtimeObj, runtimeClass, dataset, dataload)
 			engine.Client = c
+			_, err := engine.getBoundRuntimeClass(context.Background(), runtimeObj)
+			Expect(err).NotTo(HaveOccurred())
 
 			valueFile, err := engine.GetDataOperationValueFile(cruntime.ReconcileRequestContext{Client: c},
 				&fakeOperation{operationType: dataoperation.DataLoadType, object: dataload})
