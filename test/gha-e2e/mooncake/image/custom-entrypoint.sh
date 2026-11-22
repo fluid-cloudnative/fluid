@@ -27,7 +27,8 @@ case "$ROLE" in
 
   worker)
     # Fluid mounts runtime.sh alongside the runtime.json named by this variable.
-    source "$(dirname "${FLUID_RUNTIME_CONFIG_PATH:?missing runtime config path}")/runtime.sh"
+    : "${FLUID_RUNTIME_CONFIG_PATH:?missing runtime config path}"
+    source "$(dirname "$FLUID_RUNTIME_CONFIG_PATH")/runtime.sh"
     QUOTA="${WORKER_TIEREDSTORE_LEVEL_0_QUOTA_0:-1GiB}"
 
     # Fluid reports the quota in Kubernetes units ("1Gi"); Mooncake expects "1GB".
