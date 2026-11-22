@@ -19,7 +19,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         libnuma1 \
         liburing2 \
         curl \
-        jq \
     && rm -rf /var/lib/apt/lists/*
 
 # Install from wheels only (--only-binary) so no package build or setup script

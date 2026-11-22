@@ -222,6 +222,38 @@ function wait_job_completed() {
     kubectl logs job/"$job_name" --tail=20 2>&1 || true
 }
 
+# Inspect the admitted Pod. The Job template itself never passes through the Pod webhook.
+function check_runtime_config_injection() {
+    local pods
+    pods=$(kubectl get pods -l "job-name=$rw_job_name" --field-selector=status.phase=Succeeded -o json) ||
+        panic "could not read the completed Pod for $rw_job_name"
+    if ! jq -e --arg volume "fluid-runtime-config-$dataset_name" --arg dir "/etc/fluid/config/$dataset_name" '
+        any(.items[].spec;
+            any(.volumes[]?; .name == $volume and .configMap.name == $volume) and
+            any(.containers[]; .name == "rw" and
+                any(.volumeMounts[]?; .name == $volume and .mountPath == $dir and .readOnly == true) and
+                any(.env[]?; .name == "FLUID_RUNTIME_CONFIG_PATH_MOONCAKE_DEMO" and .value == ($dir + "/runtime.sh"))))
+    ' <<< "$pods" >/dev/null; then
+        panic "expected the rw container to receive the runtime ConfigMap, read-only mount and runtime.sh environment variable"
+    fi
+    syslog "Verified runtime config injection on the completed Mooncake app Pod"
+}
+
+function check_missing_dataset_rejected() {
+    local missing_dataset="mooncake-missing"
+    local result
+    if result=$(kubectl run mooncake-rejection-check --image=fluidcloudnative/mooncake:e2e --restart=Never \
+        --labels='clientless.fluid.io/inject=true' --annotations="fluid.io/datasets=$missing_dataset" \
+        --dry-run=server 2>&1); then
+        panic "expected admission to reject the missing dataset $missing_dataset"
+    fi
+    if [[ "$result" != *'admission webhook "clientless.fluid.io" denied the request'* ||
+          "$result" != *"\"$missing_dataset\" not found"* ]]; then
+        panic "unexpected admission error for $missing_dataset: $result"
+    fi
+    syslog "Verified the webhook rejected the missing dataset $missing_dataset"
+}
+
 # After a write, cached should reflect the actual usage. ReportSummary runs
 # periodically, so one round has to elapse first.
 function check_cached_after_write() {
@@ -380,9 +412,11 @@ function main() {
     wait_cache_worker_ready
     check_no_client_component
     check_dataset_cache_state
+    check_missing_dataset_rejected
 
     create_job $testdir/rw_job.yaml $rw_job_name
     wait_job_completed $rw_job_name
+    check_runtime_config_injection
     check_cached_after_write
 
     check_pvc_not_mountable

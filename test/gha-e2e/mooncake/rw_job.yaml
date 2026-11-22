@@ -1,7 +1,5 @@
-# Verifies the data path: read and write against the master directly through
-# Mooncake's own Python client. Note that the pod declares no volumes /
-# volumeMounts — without a client component there is no FUSE mount point, so the
-# data path goes entirely through Mooncake's own client protocol, not the PVC.
+# The webhook supplies the runtime config. The application uses it to discover
+# the master and read and write via Mooncake's Python client.
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -16,6 +14,9 @@ spec:
       name: mooncake-rw-job
       labels:
         app: mooncake-rw-job
+        clientless.fluid.io/inject: "true"
+      annotations:
+        fluid.io/datasets: mooncake-demo
     spec:
       restartPolicy: Never
       automountServiceAccountToken: false
@@ -35,16 +36,18 @@ spec:
                   fieldPath: status.podIP
           # Override the image's default entrypoint so it is not started as a
           # master or a worker
-          command: ["python3", "-c"]
+          command: ["/bin/sh", "-ec"]
           args:
             - |
+              . "${FLUID_RUNTIME_CONFIG_PATH_MOONCAKE_DEMO:?missing injected runtime config}"
+              exec python3 - <<'PY'
               import hashlib
               import os
               import sys
 
               from mooncake.store import MooncakeDistributedStore
 
-              MASTER = "mooncake-demo-master-0.svc-mooncake-demo-master"
+              MASTER = f"{os.environ['MASTER_NAME']}-0.{os.environ['MASTER_SERVICE_NAME']}"
 
               store = MooncakeDistributedStore()
               rc = store.setup(
@@ -84,3 +87,4 @@ spec:
                   sys.exit("md5 mismatch: got %s, want %s" % (have, want))
 
               print("mooncake put/get verified")
+              PY
