@@ -7,17 +7,20 @@
 #   docker build -t <your-registry>/mooncake:v3 samples/mooncake/docker
 #   docker push <your-registry>/mooncake:v3
 
-FROM python:3.12-slim
+# python:3.12.13-slim, pinned by the digest of its multi-arch index.
+FROM python:3.12.13-slim@sha256:229a2c5bfa27522db7815ea81f9bed70af17ccb9de9fc7ad142b1877b5830d36
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
       libcurl4 libibverbs1 rdma-core librdmacm1 libnuma1 liburing2 curl jq \
     && rm -rf /var/lib/apt/lists/*
 
 # Install from wheels only (--only-binary) so no package build/setup script is
-# executed at install time, and pin every resolved version explicitly.
-RUN pip install --no-cache-dir --only-binary=:all: \
-      mooncake-transfer-engine-non-cuda==0.3.12.post1 \
-      nvidia-cuda-runtime-cu12==12.8.90
+# executed at install time, and from a hash-locked requirements file so every
+# resolved version, transitive dependencies included, is pinned.
+COPY requirements.txt /tmp/requirements.txt
+RUN pip install --no-cache-dir --only-binary=:all: --require-hashes \
+      -r /tmp/requirements.txt \
+    && rm /tmp/requirements.txt
 
 ENV LD_LIBRARY_PATH=/usr/local/lib/python3.12/site-packages/nvidia/cuda_runtime/lib:$LD_LIBRARY_PATH
 

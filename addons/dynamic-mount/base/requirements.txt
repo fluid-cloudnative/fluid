@@ -1,0 +1,33 @@
+# Build tools for compiling libfuse in the builder stage of the Dockerfile,
+# pinned by hash. The Dockerfile installs them with --only-binary=:all:
+# --require-hashes, so pip never runs a package build script and rejects
+# anything that is not listed here with a matching hash. Hashes cover every
+# platform, so the image builds on both linux/amd64 and linux/arm64.
+#
+# To regenerate after a deliberate version bump, run from this directory and
+# replace everything below this header with the output:
+#
+#   printf "meson==<version>\nninja==<version>\n" | uv pip compile - --universal \
+#       --generate-hashes --python-version 3.9 --only-binary :all: --no-header
+
+meson==1.8.2 \
+    --hash=sha256:274b49dbe26e00c9a591442dd30f4ae9da8ce11ce53d0f4682cd10a45d50f6fd \
+    --hash=sha256:c105816d8158c76b72adcb9ff60297719096da7d07f6b1f000fd8c013cd387af
+ninja==1.11.1.4 \
+    --hash=sha256:055f386fb550c2c9d6157e45e20a84d29c47968876b9c5794ae2aec46f952306 \
+    --hash=sha256:096487995473320de7f65d622c3f1d16c3ad174797602218ca8c967f51ec38a0 \
+    --hash=sha256:2ab67a41c90bea5ec4b795bab084bc0b3b3bb69d3cd21ca0294fc0fc15a111eb \
+    --hash=sha256:4617b3c12ff64b611a7d93fd9e378275512bb36eff8babff7c83f5116b4f8d66 \
+    --hash=sha256:5713cf50c5be50084a8693308a63ecf9e55c3132a78a41ab1363a28b6caaaee1 \
+    --hash=sha256:6aa39f6e894e0452e5b297327db00019383ae55d5d9c57c73b04f13bf79d438a \
+    --hash=sha256:9c29bb66d2aa46a2409ab369ea804c730faec7652e8c22c1e428cc09216543e5 \
+    --hash=sha256:b33923c8da88e8da20b6053e38deb433f53656441614207e01d283ad02c5e8e7 \
+    --hash=sha256:c3b96bd875f3ef1db782470e9e41d7508905a0986571f219d20ffed238befa15 \
+    --hash=sha256:cede0af00b58e27b31f2482ba83292a8e9171cdb9acc2c867a3b6e40b3353e43 \
+    --hash=sha256:cf4453679d15babc04ba023d68d091bb613091b67101c88f85d2171c6621c6eb \
+    --hash=sha256:cf554e73f72c04deb04d0cf51f5fdb1903d9c9ca3d2344249c8ce3bd616ebc02 \
+    --hash=sha256:cfdd09776436a1ff3c4a2558d3fc50a689fb9d7f1bdbc3e6f7b8c2991341ddb3 \
+    --hash=sha256:d3090d4488fadf6047d0d7a1db0c9643a8d391f0d94729554dbb89b5bdc769d7 \
+    --hash=sha256:d4a6f159b08b0ac4aca5ee1572e3e402f969139e71d85d37c0e2872129098749 \
+    --hash=sha256:ecce44a00325a93631792974659cf253a815cc6da4ec96f89742925dfc295a0d \
+    --hash=sha256:f6186d7607bb090c3be1e10c8a56b690be238f953616626f5032238c66e56867

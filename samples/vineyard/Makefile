@@ -2,12 +2,14 @@ REGISTRY := ""
 
 define docker_build
     if [ -n "$(REGISTRY)" ]; then \
-        docker build $(1)/ -f Dockerfile \
+        docker build . -f Dockerfile \
             --build-arg APP=$(1).py \
+            --build-arg APP_DIR=$(1) \
             -t $(REGISTRY)/$(1); \
     else \
-        docker build $(1)/ -f Dockerfile \
+        docker build . -f Dockerfile \
             --build-arg APP=$(1).py \
+            --build-arg APP_DIR=$(1) \
             -t $(1); \
     fi
 endef

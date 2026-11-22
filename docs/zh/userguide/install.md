@@ -15,11 +15,6 @@
 
 ## Fluid安装步骤
 
-### 获取Fluid Chart
-
-您可以从[Fluid Releases](https://github.com/fluid-cloudnative/fluid/releases)下载最新的Fluid安装包。
-
-
 ### 使用Helm安装Fluid
 
 创建命名空间：
@@ -47,9 +42,9 @@ REVISION: 1
 TEST SUITE: None
 ```
 
-> 对于Kubernetes v1.17及以下环境，请使用`helm install --set runtime.criticalFusePod=false fluid fluid.tgz`
-
-> `helm install`命令的一般格式是`helm install <RELEASE_NAME> <SOURCE>`，在上面的命令中，第一个`fluid`指定了安装的release名字，这可以自行更改，第二个`fluid.tgz`指定了helm chart所在路径。
+> `helm install <RELEASE_NAME> <CHART>` 依次接收 Helm release 名称（`fluid`）和 chart 引用（`fluid/fluid`）。该 chart 引用使用上面添加的 `fluid` 仓库。
+>
+> 如需从本地归档安装，请从 [Fluid Releases](https://github.com/fluid-cloudnative/fluid/releases) 下载对应版本的 `.tgz` 文件，并将本地文件路径作为 `<CHART>` 参数。
 
 ### 使用Helm将Fluid更新到最新版本
 
@@ -77,8 +72,6 @@ STATUS: deployed
 REVISION: 2
 TEST SUITE: None
 ```
-
-> 对于Kubernetes v1.17及以下环境，请使用`helm upgrade --set runtime.criticalFusePod=false fluid fluid/`
 
 > 建议您从v0.7升级到最新版本。如果您安装的是更旧版本的Fluid，建议重新进行安装。
 
@@ -152,11 +145,19 @@ $ kubectl exec dataset-controller-558c5c7785-mtgfh -n fluid-system -- dataset-co
 ```shell
 kubectl get crds -o custom-columns=NAME:.metadata.name | grep data.fluid.io  | sed ':t;N;s/\n/,/;b t' | xargs kubectl get --all-namespaces
 ```
-如果确认已经删除所有资源对象，则可以安全卸载fluid：
+卸载 Helm release 前，先运行 `helm list --filter '^fluid$'`，从 `CHART` 列查看已安装的 chart 版本（例如从 `fluid-1.0.8` 取出 `1.0.8`）。从 Fluid Helm 仓库下载对应版本的 chart，获取 CRD 清单。
+
+```shell
+FLUID_CHART_VERSION=1.0.8  # 替换为已安装的 chart 版本。
+FLUID_CHART_DIR=$(mktemp -d)
+helm pull fluid/fluid --version "$FLUID_CHART_VERSION" --untar --destination "$FLUID_CHART_DIR"
+```
+
+下载成功并确认所有 Fluid 自定义资源均已删除后，卸载 Fluid：
 
 ```shell
 $ helm delete fluid
-$ kubectl delete -f fluid/crds
+$ kubectl delete -f "$FLUID_CHART_DIR/fluid/crds"
 $ kubectl delete ns fluid-system
 ```
 
@@ -167,20 +168,22 @@ $ kubectl delete ns fluid-system
 
 1. 在一些特定的云厂商实现下， 默认mount根目录`/runtime-mnt`是不可写的,因此需要修改目录位置
 
-```
-helm install fluid --set runtime.mountRoot=/var/lib/docker/runtime-mnt fluid
+```shell
+helm install fluid fluid/fluid --set runtime.mountRoot=/var/lib/docker/runtime-mnt
 ```
 
 2. 默认Fuse Recovery的功能并没有打开，如果需要开放该功能，需要按照以下配置
 
-```
-helm install fluid --set csi.featureGates='FuseRecovery=true' fluid
+```shell
+helm install fluid fluid/fluid --set csi.featureGates='FuseRecovery=true'
 ```
 
 3. 如果您的Kubernetes集群自定义配置了kubelet root directory，请在安装Fluid时配置KUBELET_ROOTDIR，您可以使用以下命令：
 ```shell
-helm install --set csi.kubelet.rootDir=<kubelet-root-dir> \
-  --set csi.kubelet.certDir=<kubelet-root-dir>/pki fluid fluid.tgz
+KUBELET_ROOTDIR=/data/kubelet  # 替换为节点上的 kubelet 根目录。
+helm install fluid fluid/fluid \
+  --set "csi.kubelet.rootDir=${KUBELET_ROOTDIR}" \
+  --set "csi.kubelet.certDir=${KUBELET_ROOTDIR}/pki"
 ```
 
 > 您可以在Kubernetes节点上执行如下命令查看--root-dir参数配置情况：
