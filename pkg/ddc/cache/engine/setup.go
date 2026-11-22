@@ -17,6 +17,8 @@
 package engine
 
 import (
+	stderrors "errors"
+
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/metrics"
@@ -46,6 +48,14 @@ func (e *CacheEngine) Setup(ctx cruntime.ReconcileRequestContext) (ready bool, e
 
 	runtimeValue, err := e.transform(dataset, runtime, runtimeClass)
 	if err != nil {
+		var conflict *componentResourcesConflictError
+		if stderrors.As(err, &conflict) {
+			cond := utils.NewRuntimeCondition(datav1alpha1.RuntimeResourcesSynced, common.RuntimeResourcesConflict, conflict.message, corev1.ConditionFalse)
+			statusErr := e.updateResourcesSyncedCondition(ctx, cond, false)
+			if statusErr != nil {
+				return false, stderrors.Join(err, statusErr)
+			}
+		}
 		return false, err
 	}
 
@@ -81,8 +91,8 @@ func (e *CacheEngine) Setup(ctx cruntime.ReconcileRequestContext) (ready bool, e
 		}
 	}
 
-	// CheckAndUpdateRuntimeStatus after components are setup
-	// Use lightweight getRuntimeStatusValue instead of full transform for status update
+	// Setup checks readiness. Only a successful master/worker spec sync can
+	// resolve a resource conflict previously reported during creation.
 	statusValue, err := e.getRuntimeStatusValue(runtime, runtimeClass)
 	if err != nil {
 		return false, err

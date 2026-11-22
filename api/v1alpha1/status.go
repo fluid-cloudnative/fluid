@@ -191,7 +191,8 @@ const (
 	RuntimeFusesScaledIn RuntimeConditionType = "FusesScaledIn"
 	// RuntimeFusesScaledOut means the fuses of runtime just scaled out
 	RuntimeFusesScaledOut RuntimeConditionType = "FusesScaledOut"
-	// RuntimeResourcesSynced indicates whether master and worker resources are in sync.
+	// RuntimeResourcesSynced reports resource conflicts during component setup and
+	// whether enabled master and worker resources are in sync after setup.
 	RuntimeResourcesSynced RuntimeConditionType = "ResourcesSynced"
 )
 

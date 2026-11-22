@@ -20,6 +20,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"strings"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -35,6 +36,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/validation/field"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/utils/ptr"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -97,7 +99,7 @@ var _ = Describe("CacheRuntimeClass snapshot", Label("pkg.ddc.cache.engine.runti
 	var (
 		engine       *CacheEngine
 		recorder     *record.FakeRecorder
-		fakeClient   client.Client
+		fakeClient   client.WithWatch
 		dataset      *datav1alpha1.Dataset
 		runtimeObj   *datav1alpha1.CacheRuntime
 		runtimeClass *datav1alpha1.CacheRuntimeClass
@@ -241,6 +243,37 @@ var _ = Describe("CacheRuntimeClass snapshot", Label("pkg.ddc.cache.engine.runti
 			Expect(stored.Topology.Master.ExecutionEntries.ReportSummary.Command).To(Equal([]string{"summary-v1"}))
 		})
 
+		It("retries binding after an oversized snapshot is rejected and the class is reduced", func() {
+			chunk := strings.Repeat("x", 600*1024)
+			editClass(func(live *datav1alpha1.CacheRuntimeClass) {
+				live.ExtraResources.ConfigMaps = []datav1alpha1.ConfigMapRuntimeExtraResource{
+					{Name: "part-a", Data: map[string]string{"chunk": chunk}},
+					{Name: "part-b", Data: map[string]string{"chunk": chunk}},
+				}
+			})
+			// The fake client does not enforce the API server's 1 MiB ConfigMap limit.
+			engine.Client = interceptor.NewClient(fakeClient, interceptor.Funcs{
+				Create: func(ctx context.Context, c client.WithWatch, obj client.Object, opts ...client.CreateOption) error {
+					if cm, ok := obj.(*corev1.ConfigMap); ok && len(cm.Data[runtimeClassSnapshotKey]) > corev1.MaxSecretSize {
+						return apierrors.NewInvalid(corev1.SchemeGroupVersion.WithKind("ConfigMap").GroupKind(), cm.Name,
+							field.ErrorList{field.TooLong(field.NewPath("data"), "", corev1.MaxSecretSize)})
+					}
+					return c.Create(ctx, obj, opts...)
+				},
+			})
+			_, err := engine.getBoundRuntimeClass(ctx.Context, runtimeObj)
+			Expect(apierrors.IsInvalid(err)).To(BeTrue())
+			Expect(engine.readRuntimeClassSnapshot(ctx.Context, runtimeObj)).To(BeNil())
+
+			editClass(func(live *datav1alpha1.CacheRuntimeClass) {
+				live.ExtraResources.ConfigMaps = live.ExtraResources.ConfigMaps[:1]
+			})
+			Expect(bind().ExtraResources.ConfigMaps).To(Equal([]datav1alpha1.ConfigMapRuntimeExtraResource{
+				{Name: "part-a", Data: map[string]string{"chunk": chunk}},
+			}))
+			Expect(getSnapshot().Immutable).To(Equal(ptr.To(true)))
+		})
+
 		It("should keep returning the bound class after the class is edited", func() {
 			bind()
 			editClass(func(live *datav1alpha1.CacheRuntimeClass) {
@@ -348,7 +381,7 @@ var _ = Describe("CacheRuntimeClass snapshot", Label("pkg.ddc.cache.engine.runti
 			stale.UID = "earlier-snapshot-uid"
 			stale.OwnerReferences[0].UID = "earlier-uid"
 			// The fake client ignores UID preconditions; enforce them like the API server.
-			guarded := interceptor.NewClient(fakeClient.(client.WithWatch), interceptor.Funcs{
+			guarded := interceptor.NewClient(fakeClient, interceptor.Funcs{
 				Delete: func(ctx context.Context, c client.WithWatch, obj client.Object, opts ...client.DeleteOption) error {
 					options := &client.DeleteOptions{}
 					options.ApplyOptions(opts)

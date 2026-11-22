@@ -75,18 +75,37 @@ func (e *CacheEngine) Sync(ctx cruntime.ReconcileRequestContext) (err error) {
 		return err
 	}
 
-	// sync runtime spec changes to Master/Worker components
-	err = e.syncRuntimeSpec(ctx, runtime, runtimeClass)
-	if err != nil {
+	conflicts, err := e.syncRuntimeSpec(ctx, runtime, runtimeClass)
+	if err != nil && len(conflicts) == 0 {
 		return err
 	}
+	status := corev1.ConditionTrue
+	reason := datav1alpha1.RuntimeResourcesSyncedReason
+	message := "Resources are in sync for all enabled master and worker components."
 
-	// sync runtime status
-	runtimeReady, err := e.CheckAndUpdateRuntimeStatus(statusValue)
-	if err != nil {
-		return err
+	if len(conflicts) > 0 {
+		status = corev1.ConditionFalse
+		reason = common.RuntimeResourcesConflict
+		message = strings.Join(conflicts, "\n")
+	}
+	cond := utils.NewRuntimeCondition(datav1alpha1.RuntimeResourcesSynced, reason, message, status)
+	// Worker is synced last. If the pass failed with only a master conflict, an
+	// enabled worker has no successful result to replace its last known conflict.
+	keepWorkerConflict := err != nil && statusValue.Worker.Enabled && len(conflicts) == 1 &&
+		strings.HasPrefix(conflicts[0], string(common.ComponentTypeMaster)+" ")
+	var runtimeReady bool
+	if err == nil {
+		runtimeReady, err = e.checkAndUpdateRuntimeStatus(ctx.Context, statusValue, &cond)
 	}
 
+	if err != nil {
+		// A workload or readiness error prevented the combined write. Keep the
+		// resource result already observed and return the reconciliation error.
+		if statusErr := e.updateResourcesSyncedCondition(ctx, cond, keepWorkerConflict); statusErr != nil {
+			return errors.Join(err, statusErr)
+		}
+		return err
+	}
 	if !runtimeReady {
 		// update dataset status when runtime not ready
 		err = e.UpdateDatasetStatus(datav1alpha1.FailedDatasetPhase, runtime, runtimeClass, permitSyncEngineStatus)
@@ -203,7 +222,7 @@ func (e *CacheEngine) permitSync() (permit bool) {
 // restarting the container, and recreates the Pods for a resources change. The client runs as a
 // DaemonSet and is not synced after creation.
 func (e *CacheEngine) syncRuntimeSpec(ctx cruntime.ReconcileRequestContext, runtime *datav1alpha1.CacheRuntime,
-	runtimeClass *datav1alpha1.CacheRuntimeClass) (syncErr error) {
+	runtimeClass *datav1alpha1.CacheRuntimeClass) ([]string, error) {
 	e.Log.V(1).Info("start syncing runtime spec")
 	defer func() {
 		e.Log.V(1).Info("finished syncing runtime spec")
@@ -212,20 +231,9 @@ func (e *CacheEngine) syncRuntimeSpec(ctx cruntime.ReconcileRequestContext, runt
 	// getRuntimeClass rejects a class without a topology, so this only guards direct callers;
 	// like the transform path, a missing topology leaves no component to sync.
 	if runtimeClass.Topology == nil {
-		return nil
+		return nil, nil
 	}
 	var conflictMessages []string
-	// Record conflicts already reported even if a later workload operation fails.
-	defer func() {
-		if len(conflictMessages) == 0 {
-			return
-		}
-		if err := e.updateResourcesSyncedCondition(ctx, corev1.ConditionFalse, common.RuntimeResourcesConflict,
-			strings.Join(conflictMessages, "\n")); err != nil {
-			syncErr = errors.Join(syncErr, err)
-		}
-	}()
-
 	// Sync Master component if enabled (supports in-place update via AdvancedStatefulSet)
 	if runtimeClass.Topology.Master != nil && !runtime.Spec.Master.Disabled {
 		masterIdentity := &common.ComponentIdentity{
@@ -236,7 +244,7 @@ func (e *CacheEngine) syncRuntimeSpec(ctx cruntime.ReconcileRequestContext, runt
 		podSpec, err := manager.GetPodSpec(ctx.Context, masterIdentity)
 		if err != nil {
 			e.Log.Error(err, "failed to read the master pod spec", "component", masterIdentity.Name)
-			return err
+			return conflictMessages, err
 		}
 		masterTemplateImage := componentTemplateImage(runtimeClass.Topology.Master)
 		e.reportIncompleteVersion(runtime, common.ComponentTypeMaster, runtime.Spec.Master.RuntimeVersion, masterTemplateImage)
@@ -252,7 +260,7 @@ func (e *CacheEngine) syncRuntimeSpec(ctx cruntime.ReconcileRequestContext, runt
 		}
 		if err := manager.SyncComponentSpec(ctx.Context, masterIdentity, masterSpec); err != nil {
 			e.Log.Error(err, "failed to sync master component spec", "component", masterIdentity.Name)
-			return err
+			return conflictMessages, err
 		}
 	}
 
@@ -274,7 +282,7 @@ func (e *CacheEngine) syncRuntimeSpec(ctx cruntime.ReconcileRequestContext, runt
 		podSpec, err := manager.GetPodSpec(ctx.Context, workerIdentity)
 		if err != nil {
 			e.Log.Error(err, "failed to read the worker pod spec", "component", workerIdentity.Name)
-			return err
+			return conflictMessages, err
 		}
 		workerResources, conflictMessage := e.validDesiredResources(runtime, common.ComponentTypeWorker,
 			desiredComponentResources(runtime.Spec.Worker.Resources, runtimeClass.Topology.Worker), podSpec)
@@ -295,36 +303,38 @@ func (e *CacheEngine) syncRuntimeSpec(ctx cruntime.ReconcileRequestContext, runt
 		}
 		if err := manager.SyncComponentSpec(ctx.Context, workerIdentity, workerSpec); err != nil {
 			e.Log.Error(err, "failed to sync worker component spec", "component", workerIdentity.Name)
-			return err
+			return conflictMessages, err
 		}
 	}
 
 	// Note: Client component is NOT synced here because it uses DaemonSet which does not support in-place update
 	// Client component will be recreated when spec changes
 
-	if len(conflictMessages) == 0 {
-		return e.updateResourcesSyncedCondition(ctx, corev1.ConditionTrue, datav1alpha1.RuntimeResourcesSyncedReason,
-			"Resources are in sync for all enabled master and worker components.")
-	}
-	return nil
+	return conflictMessages, nil
 }
 
 // updateResourcesSyncedCondition skips the status write when the existing condition already matches.
-func (e *CacheEngine) updateResourcesSyncedCondition(ctx cruntime.ReconcileRequestContext, status corev1.ConditionStatus, reason, message string) error {
+func (e *CacheEngine) updateResourcesSyncedCondition(ctx cruntime.ReconcileRequestContext, resources datav1alpha1.RuntimeCondition, keepWorkerConflict bool) error {
 	return retry.RetryOnConflict(retry.DefaultBackoff, func() error {
 		latest, err := e.getRuntime()
 		if err != nil {
 			return err
 		}
-		cond := utils.NewRuntimeCondition(datav1alpha1.RuntimeResourcesSynced, reason, message, status)
-		_, old := utils.GetRuntimeCondition(latest.Status.Conditions, cond.Type)
-		if old != nil && old.Status == cond.Status {
-			if old.Reason == cond.Reason && old.Message == cond.Message {
-				return nil
+		cond := resources
+		if keepWorkerConflict {
+			_, old := utils.GetRuntimeCondition(latest.Status.Conditions, cond.Type)
+			if old != nil && old.Status == corev1.ConditionFalse && old.Reason == common.RuntimeResourcesConflict {
+				for _, line := range strings.Split(old.Message, "\n") {
+					if strings.HasPrefix(line, string(common.ComponentTypeWorker)+" ") {
+						cond.Message += "\n" + line
+						break
+					}
+				}
 			}
-			cond.LastTransitionTime = old.LastTransitionTime
 		}
-		latest.Status.Conditions = utils.UpdateRuntimeCondition(latest.Status.Conditions, cond)
+		if !applyResourcesSyncedCondition(&latest.Status, cond) {
+			return nil
+		}
 		return e.Client.Status().Update(ctx.Context, latest)
 	})
 }

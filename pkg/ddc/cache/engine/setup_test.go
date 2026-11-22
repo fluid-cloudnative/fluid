@@ -20,14 +20,18 @@ import (
 	"context"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -176,6 +180,57 @@ var _ = Describe("CacheEngine Setup Tests", Label("pkg.ddc.cache.engine.setup_te
 		})
 
 		Context("when transform fails", func() {
+			DescribeTable("persists a creation conflict with the full Warning message", func(name string, withRecorder bool) {
+				recorder := record.NewFakeRecorder(1)
+				if withRecorder {
+					engine.Recorder = recorder
+				}
+				components := map[string]struct {
+					template *datav1alpha1.RuntimeComponentDefinition
+					override *corev1.ResourceRequirements
+				}{
+					"master": {runtimeClass.Topology.Master, &runtimeObj.Spec.Master.Resources},
+					"worker": {runtimeClass.Topology.Worker, &runtimeObj.Spec.Worker.Resources},
+					"client": {runtimeClass.Topology.Client, &runtimeObj.Spec.Client.Resources},
+				}
+				component := components[name]
+				component.template.Template.Spec.Containers[0].Resources.Requests = corev1.ResourceList{corev1.ResourceCPU: resource.MustParse("1")}
+				Expect(fakeClient.Update(ctx.Context, runtimeClass)).To(Succeed())
+				component.override.Limits = corev1.ResourceList{corev1.ResourceCPU: resource.MustParse("500m")}
+				Expect(fakeClient.Update(ctx.Context, runtimeObj)).To(Succeed())
+
+				ready, err := engine.Setup(ctx)
+				cause := "invalid " + name + " resources: cpu request 1 exceeds limit 500m"
+				Expect(ready).To(BeFalse())
+				Expect(err).To(MatchError(cause))
+				latest, err := engine.getRuntime()
+				Expect(err).NotTo(HaveOccurred())
+				_, cond := utils.GetRuntimeCondition(latest.Status.Conditions, datav1alpha1.RuntimeResourcesSynced)
+				Expect(cond).NotTo(BeNil())
+				Expect(cond.Status).To(Equal(corev1.ConditionFalse))
+				Expect(cond.Reason).To(Equal(common.RuntimeResourcesConflict))
+				Expect(cond.Message).To(Equal(name + " cannot be created: the CacheRuntime and its CacheRuntimeClass template merge into " + cause))
+				if withRecorder {
+					Expect(recorder.Events).To(Receive(Equal(corev1.EventTypeWarning + " " + common.RuntimeResourcesConflict + " " + cond.Message)))
+				}
+			},
+				Entry("for master", "master", true),
+				Entry("for worker", "worker", true),
+				Entry("for client", "client", true),
+				Entry("without a recorder", "client", false),
+			)
+
+			It("returns volume errors without marking a resource conflict", func() {
+				runtimeObj.Spec.Master.VolumeMounts = []corev1.VolumeMount{{Name: "missing", MountPath: "/data"}}
+				ready, err := engine.Setup(ctx)
+				Expect(ready).To(BeFalse())
+				Expect(err).To(MatchError(ContainSubstring("volume not found for volumeMount missing")))
+				latest, err := engine.getRuntime()
+				Expect(err).NotTo(HaveOccurred())
+				_, cond := utils.GetRuntimeCondition(latest.Status.Conditions, datav1alpha1.RuntimeResourcesSynced)
+				Expect(cond).To(BeNil())
+			})
+
 			It("should return error when runtime class topology is invalid", func() {
 				// Remove master template to cause transform failure
 				runtimeClass.Topology.Master = nil

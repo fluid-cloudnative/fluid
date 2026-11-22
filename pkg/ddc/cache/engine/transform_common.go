@@ -314,17 +314,33 @@ func validateComponentResources(componentValue *common.CacheRuntimeComponentValu
 	return nil
 }
 
+type componentResourcesConflictError struct {
+	cause   error
+	message string
+}
+
+func (e *componentResourcesConflictError) Error() string {
+	return e.cause.Error()
+}
+
+func (e *componentResourcesConflictError) Unwrap() error {
+	return e.cause
+}
+
 // checkComponentResources rejects the creation of a component whose rendered resources
 // conflict, emitting the same RuntimeResourcesConflict Warning event the sync path emits so
 // the reason is visible on the CacheRuntime and not only in the generic setup failure.
 func (e *CacheEngine) checkComponentResources(runtime *datav1alpha1.CacheRuntime, componentValue *common.CacheRuntimeComponentValue) error {
 	err := validateComponentResources(componentValue)
-	if err != nil && e.Recorder != nil {
-		e.Recorder.Eventf(runtime, corev1.EventTypeWarning, common.RuntimeResourcesConflict,
-			"%s cannot be created: the CacheRuntime and its CacheRuntimeClass template merge into %v",
-			componentValue.ComponentType, err)
+	if err == nil {
+		return nil
 	}
-	return err
+
+	message := fmt.Sprintf("%s cannot be created: the CacheRuntime and its CacheRuntimeClass template merge into %v", componentValue.ComponentType, err)
+	if e.Recorder != nil {
+		e.Recorder.Event(runtime, corev1.EventTypeWarning, common.RuntimeResourcesConflict, message)
+	}
+	return &componentResourcesConflictError{cause: err, message: message}
 }
 
 // desiredComponentVersion completes a partially specified runtime version against the image
