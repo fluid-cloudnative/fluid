@@ -320,6 +320,9 @@ func (a AlluxioFileUtils) IsMounted(alluxioPath string) (mounted bool, err error
 	for _, line := range results {
 		fields := strings.Fields(line)
 		a.log.Info("parse output of isMounted", "alluxioPath", alluxioPath, "fields", fields)
+		if len(fields) < 3 {
+			continue
+		}
 		if fields[2] == alluxioPath {
 			mounted = true
 			return mounted, nil
@@ -353,6 +356,9 @@ func (a AlluxioFileUtils) GetMountedAlluxioPaths() ([]string, error) {
 	var mountedPaths []string
 	for _, line := range results {
 		fields := strings.Fields(line)
+		if len(fields) < 3 {
+			continue
+		}
 		mountedPaths = append(mountedPaths, fields[2])
 	}
 
