@@ -716,7 +716,7 @@ var _ = Describe("CacheEngine UpdateOnUFSChange Tests", Label("pkg.ddc.cache.eng
 // runtimeClassOf reads the CacheRuntimeClass rt names, standing in for the class the runtime is
 // bound to: these tests do not exercise the snapshot.
 func runtimeClassOf(e *CacheEngine, rt *datav1alpha1.CacheRuntime) *datav1alpha1.CacheRuntimeClass {
-	runtimeClass, err := e.getRuntimeClass(rt.Spec.RuntimeClassName)
+	runtimeClass, err := e.getRuntimeClass(context.Background(), rt.Spec.RuntimeClassName)
 	ExpectWithOffset(1, err).NotTo(HaveOccurred())
 	return runtimeClass
 }

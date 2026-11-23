@@ -20,6 +20,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strconv"
 	"time"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
@@ -45,8 +46,15 @@ import (
 // another: following part of the class live would hand new commands to components still running
 // old images. Following all of it live is no better. The class is cluster-scoped and the bundled
 // AdvancedStatefulSet controller restarts the containers for an image change and recreates the
-// Pods for a resources change, so a single class edit would rebuild the cache of every
-// CacheRuntime using that class.
+// Pods for a resources change. Following a class edit could trigger those updates across
+// every namespace using the class.
+//
+// Snapshot integrity depends on namespace RBAC. The owner reference identifies the runtime
+// instance for lifecycle management. ConfigMap writers can set that reference themselves,
+// so IsControlledBy does not authenticate the snapshot's contents. CacheRuntime authors can
+// already choose images and volumes, and Pod admission policies still apply. If the API
+// later restricts those fields, store snapshots in an object that tenants cannot write
+// (for example, a ControllerRevision protected by RBAC) before relying on their contents.
 
 // runtimeClassSnapshotKey is the data key of the snapshot configmap that holds the class as JSON.
 const runtimeClassSnapshotKey = "runtimeclass.json"
@@ -151,7 +159,11 @@ func (e *CacheEngine) loadRuntimeClassSnapshot(runtime *datav1alpha1.CacheRuntim
 		// class instead, which the user decides to do.
 		err = fmt.Errorf("CacheRuntimeClass snapshot %s/%s is invalid: %w", snapshot.Namespace, snapshot.Name, err)
 		e.recordWarning(runtime, common.RuntimeClassSnapshotInvalid,
-			"%v; delete the configmap to bind the CacheRuntime to CacheRuntimeClass %q again", err, runtime.Spec.RuntimeClassName)
+			"%v. Delete the snapshot ConfigMap only as a last resort to recover from an invalid snapshot. "+
+				"Fluid rebuilds it from CacheRuntimeClass %q. Recovery can update master/worker images and resources, "+
+				"runtime config options (including client options), executionEntries and dataOperationSpecs. "+
+				"The client DaemonSet and all other master/worker PodTemplate fields (including args, env and volumes) stay unchanged. "+
+				"This can mix class versions. To adopt a newer class, recreate the CacheRuntime.", err, runtime.Spec.RuntimeClassName)
 		return nil, err
 	}
 
@@ -172,6 +184,11 @@ func decodeRuntimeClassSnapshot(snapshot *corev1.ConfigMap) (*datav1alpha1.Cache
 	if err := json.Unmarshal([]byte(raw), runtimeClass); err != nil {
 		return nil, err
 	}
+	expectedGVK := datav1alpha1.GroupVersion.WithKind("CacheRuntimeClass")
+	if runtimeClass.GroupVersionKind() != expectedGVK {
+		return nil, fmt.Errorf("unsupported snapshot type (apiVersion %q, kind %q), expected %s",
+			runtimeClass.APIVersion, runtimeClass.Kind, expectedGVK)
+	}
 	if err := validateRuntimeClassTopology(runtimeClass); err != nil {
 		return nil, err
 	}
@@ -181,7 +198,7 @@ func decodeRuntimeClassSnapshot(snapshot *corev1.ConfigMap) (*datav1alpha1.Cache
 // bindRuntimeClass binds the runtime to a snapshot of its current CacheRuntimeClass and returns
 // the snapshot configmap.
 func (e *CacheEngine) bindRuntimeClass(ctx context.Context, runtime *datav1alpha1.CacheRuntime) (*corev1.ConfigMap, error) {
-	runtimeClass, err := e.getRuntimeClass(runtime.Spec.RuntimeClassName)
+	runtimeClass, err := e.getRuntimeClass(ctx, runtime.Spec.RuntimeClassName)
 	if err != nil {
 		return nil, err
 	}
@@ -200,7 +217,9 @@ func (e *CacheEngine) bindRuntimeClass(ctx context.Context, runtime *datav1alpha
 			Namespace: runtime.Namespace,
 			Labels:    map[string]string{common.LabelCacheRuntimeName: runtime.Name},
 			Annotations: map[string]string{
-				common.AnnotationCacheRuntimeClassName: runtimeClass.Name,
+				common.AnnotationCacheRuntimeClassName:            runtimeClass.Name,
+				common.AnnotationCacheRuntimeClassGeneration:      strconv.FormatInt(runtimeClass.Generation, 10),
+				common.AnnotationCacheRuntimeClassResourceVersion: runtimeClass.ResourceVersion,
 			},
 			OwnerReferences: []metav1.OwnerReference{{
 				APIVersion:         datav1alpha1.GroupVersion.String(),

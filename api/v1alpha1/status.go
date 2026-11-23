@@ -219,6 +219,10 @@ const (
 	RuntimeFusesScaledOutReason = "Fuses scaled out"
 	// RuntimeResourcesSyncedReason means all enabled master and worker resources are in sync.
 	RuntimeResourcesSyncedReason = "RuntimeResourcesSynced"
+	// RuntimeResourceCreationConflictReason means a resource conflict prevented component creation.
+	RuntimeResourceCreationConflictReason = "RuntimeResourceCreationConflict"
+	// RuntimeWaitingForSyncReason means Setup validated the corrected resources and Sync is pending.
+	RuntimeWaitingForSyncReason = "WaitingForSync"
 )
 
 // Condition describes the state of the cache at a certain point.

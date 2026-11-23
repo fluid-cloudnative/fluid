@@ -209,7 +209,7 @@ var _ = Describe("CacheRuntimeClass snapshot", Label("pkg.ddc.cache.engine.runti
 			},
 		}
 		runtimeClass = &datav1alpha1.CacheRuntimeClass{
-			ObjectMeta:     metav1.ObjectMeta{Name: "test-class"},
+			ObjectMeta:     metav1.ObjectMeta{Name: "test-class", Generation: 3, ResourceVersion: "42"},
 			FileSystemType: "test-fs",
 			Topology: &datav1alpha1.RuntimeTopology{
 				Master: componentDefinition("master", "test-master:v1", limits("2Gi")),
@@ -235,6 +235,8 @@ var _ = Describe("CacheRuntimeClass snapshot", Label("pkg.ddc.cache.engine.runti
 			Expect(metav1.IsControlledBy(snapshot, runtimeObj)).To(BeTrue())
 			Expect(snapshot.Labels).To(HaveKeyWithValue(common.LabelCacheRuntimeName, "test-runtime"))
 			Expect(snapshot.Annotations).To(HaveKeyWithValue(common.AnnotationCacheRuntimeClassName, "test-class"))
+			Expect(snapshot.Annotations).To(HaveKeyWithValue(common.AnnotationCacheRuntimeClassGeneration, "3"))
+			Expect(snapshot.Annotations).To(HaveKeyWithValue(common.AnnotationCacheRuntimeClassResourceVersion, "42"))
 
 			stored := &datav1alpha1.CacheRuntimeClass{}
 			Expect(json.Unmarshal([]byte(snapshot.Data[runtimeClassSnapshotKey]), stored)).To(Succeed())
@@ -319,6 +321,20 @@ var _ = Describe("CacheRuntimeClass snapshot", Label("pkg.ddc.cache.engine.runti
 	})
 
 	Describe("reading a snapshot", func() {
+		DescribeTable("rejects an unsupported snapshot type", func(apiVersion, kind string) {
+			runtimeClass.TypeMeta = metav1.TypeMeta{APIVersion: apiVersion, Kind: kind}
+			raw, err := json.Marshal(runtimeClass)
+			Expect(err).NotTo(HaveOccurred())
+			snapshot := &corev1.ConfigMap{Data: map[string]string{runtimeClassSnapshotKey: string(raw)}}
+
+			_, err = decodeRuntimeClassSnapshot(snapshot)
+			Expect(err).To(MatchError(ContainSubstring("unsupported snapshot type")))
+		},
+			Entry("with a different API version", "data.fluid.io/v2", "CacheRuntimeClass"),
+			Entry("with a different kind", datav1alpha1.GroupVersion.String(), "CacheRuntime"),
+			Entry("without type metadata", "", ""),
+		)
+
 		It("should report a malformed snapshot and leave it unchanged", func() {
 			malformed := &corev1.ConfigMap{
 				ObjectMeta: metav1.ObjectMeta{

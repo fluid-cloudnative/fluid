@@ -77,6 +77,7 @@ func (e *CacheEngine) Sync(ctx cruntime.ReconcileRequestContext) (err error) {
 
 	conflicts, err := e.syncRuntimeSpec(ctx, runtime, runtimeClass)
 	if err != nil && len(conflicts) == 0 {
+		// An incomplete pass without an observed conflict cannot establish a new condition.
 		return err
 	}
 	status := corev1.ConditionTrue
@@ -89,10 +90,6 @@ func (e *CacheEngine) Sync(ctx cruntime.ReconcileRequestContext) (err error) {
 		message = strings.Join(conflicts, "\n")
 	}
 	cond := utils.NewRuntimeCondition(datav1alpha1.RuntimeResourcesSynced, reason, message, status)
-	// Worker is synced last. If the pass failed with only a master conflict, an
-	// enabled worker has no successful result to replace its last known conflict.
-	keepWorkerConflict := err != nil && statusValue.Worker.Enabled && len(conflicts) == 1 &&
-		strings.HasPrefix(conflicts[0], string(common.ComponentTypeMaster)+" ")
 	var runtimeReady bool
 	if err == nil {
 		runtimeReady, err = e.checkAndUpdateRuntimeStatus(ctx.Context, statusValue, &cond)
@@ -101,7 +98,7 @@ func (e *CacheEngine) Sync(ctx cruntime.ReconcileRequestContext) (err error) {
 	if err != nil {
 		// A workload or readiness error prevented the combined write. Keep the
 		// resource result already observed and return the reconciliation error.
-		if statusErr := e.updateResourcesSyncedCondition(ctx, cond, keepWorkerConflict); statusErr != nil {
+		if statusErr := e.updateResourcesSyncedCondition(ctx, cond); statusErr != nil {
 			return errors.Join(err, statusErr)
 		}
 		return err
@@ -314,25 +311,13 @@ func (e *CacheEngine) syncRuntimeSpec(ctx cruntime.ReconcileRequestContext, runt
 }
 
 // updateResourcesSyncedCondition skips the status write when the existing condition already matches.
-func (e *CacheEngine) updateResourcesSyncedCondition(ctx cruntime.ReconcileRequestContext, resources datav1alpha1.RuntimeCondition, keepWorkerConflict bool) error {
+func (e *CacheEngine) updateResourcesSyncedCondition(ctx cruntime.ReconcileRequestContext, resources datav1alpha1.RuntimeCondition) error {
 	return retry.RetryOnConflict(retry.DefaultBackoff, func() error {
 		latest, err := e.getRuntime()
 		if err != nil {
 			return err
 		}
-		cond := resources
-		if keepWorkerConflict {
-			_, old := utils.GetRuntimeCondition(latest.Status.Conditions, cond.Type)
-			if old != nil && old.Status == corev1.ConditionFalse && old.Reason == common.RuntimeResourcesConflict {
-				for _, line := range strings.Split(old.Message, "\n") {
-					if strings.HasPrefix(line, string(common.ComponentTypeWorker)+" ") {
-						cond.Message += "\n" + line
-						break
-					}
-				}
-			}
-		}
-		if !applyResourcesSyncedCondition(&latest.Status, cond) {
+		if !applyResourcesSyncedCondition(&latest.Status, resources) {
 			return nil
 		}
 		return e.Client.Status().Update(ctx.Context, latest)

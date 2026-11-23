@@ -180,6 +180,48 @@ var _ = Describe("CacheEngine Setup Tests", Label("pkg.ddc.cache.engine.setup_te
 		})
 
 		Context("when transform fails", func() {
+			DescribeTable("discards a creation conflict after the spec is corrected", func(duringRetry bool) {
+				runtimeObj.Generation = 1
+				runtimeObj.Spec.Client.Resources = corev1.ResourceRequirements{
+					Requests: corev1.ResourceList{corev1.ResourceCPU: resource.MustParse("1")},
+					Limits:   corev1.ResourceList{corev1.ResourceCPU: resource.MustParse("500m")},
+				}
+				Expect(fakeClient.Update(ctx.Context, runtimeObj)).To(Succeed())
+				previous := datav1alpha1.RuntimeCondition{
+					Type: datav1alpha1.RuntimeResourcesSynced, Status: corev1.ConditionTrue,
+					Reason: datav1alpha1.RuntimeResourcesSyncedReason,
+				}
+				runtimeObj.Status.Conditions = []datav1alpha1.RuntimeCondition{previous}
+				Expect(fakeClient.Status().Update(ctx.Context, runtimeObj)).To(Succeed())
+
+				corrected := runtimeObj.DeepCopy()
+				corrected.Spec.Client.Resources.Limits = nil
+				corrected.Generation++ // The fake client does not advance the generation on a spec update.
+				if duringRetry {
+					writer := &conflictOnceStatusWriter{
+						StatusWriter: fakeClient.Status(),
+						beforeConflict: func(ctx context.Context) error {
+							return fakeClient.Update(ctx, corrected)
+						},
+					}
+					engine.Client = &conflictOnceClient{Client: fakeClient, statusWriter: writer}
+				} else {
+					Expect(fakeClient.Update(ctx.Context, corrected)).To(Succeed())
+				}
+
+				ready, err := engine.Setup(ctx)
+				Expect(ready).To(BeFalse())
+				latest, getErr := engine.getRuntime()
+				Expect(getErr).NotTo(HaveOccurred())
+				Expect(latest.Generation).To(Equal(corrected.Generation))
+				Expect(latest.Status.Conditions).To(ConsistOf(previous))
+				Expect(latest.ResourceVersion).To(Equal(corrected.ResourceVersion))
+				Expect(err).NotTo(HaveOccurred())
+			},
+				Entry("before the status write", false),
+				Entry("while retrying a conflicting status write", true),
+			)
+
 			DescribeTable("persists a creation conflict with the full Warning message", func(name string, withRecorder bool) {
 				recorder := record.NewFakeRecorder(1)
 				if withRecorder {
@@ -208,7 +250,7 @@ var _ = Describe("CacheEngine Setup Tests", Label("pkg.ddc.cache.engine.setup_te
 				_, cond := utils.GetRuntimeCondition(latest.Status.Conditions, datav1alpha1.RuntimeResourcesSynced)
 				Expect(cond).NotTo(BeNil())
 				Expect(cond.Status).To(Equal(corev1.ConditionFalse))
-				Expect(cond.Reason).To(Equal(common.RuntimeResourcesConflict))
+				Expect(cond.Reason).To(Equal("RuntimeResourceCreationConflict"))
 				Expect(cond.Message).To(Equal(name + " cannot be created: the CacheRuntime and its CacheRuntimeClass template merge into " + cause))
 				if withRecorder {
 					Expect(recorder.Events).To(Receive(Equal(corev1.EventTypeWarning + " " + common.RuntimeResourcesConflict + " " + cond.Message)))

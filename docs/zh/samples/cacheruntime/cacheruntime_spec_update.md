@@ -143,6 +143,27 @@ spec:
   `claims`。更新时，若某个 claim 既未在工作负载中声明、工作负载上也还没有，控制器不同步这个 claim，`resources` 的其余部分照常同步，并在 CacheRuntime 上发出
   `RuntimeResourcesConflict` Warning event，写明该 claim。如需使用新的 claim，请重建 CacheRuntime。
 
+#### 查看资源同步状态
+
+查看 CacheRuntime 的 `.status.conditions` 中 `type` 为 `ResourcesSynced` 的条目。
+创建阶段会检查所有已启用组件的资源配置，包括 master、worker 和 client。创建完成后，
+该 Condition 只跟踪已启用的 master 和 worker 的工作负载资源。Pod 的就绪情况可通过组件的 `readyReplicas` 单独查看。
+
+| Status | Reason | 含义 |
+| --- | --- | --- |
+| `False` | `RuntimeResourceCreationConflict` | 创建阶段合并后的资源配置存在冲突，阻止组件创建。 |
+| `False` | `RuntimeResourcesConflict` | 同步时，资源冲突或工作负载未声明的资源 claim 会导致部分资源设置被跳过。 |
+| `Unknown` | `WaitingForSync` | 先前的创建冲突已修复，新的资源配置已通过校验，正在等待首次资源同步。即使 Pod 仍未就绪，也会清除旧的创建失败提示。 |
+| `True` | `RuntimeResourcesSynced` | 所有已启用的 master 和 worker 工作负载都已同步期望的资源设置。 |
+
+两种冲突的 Condition 都会在 `message` 中指明受影响的组件和具体原因。对应 Warning 事件的 Reason 均为 `RuntimeResourcesConflict`。
+
+例如，使用以下命令等待名为 `my-cache` 的 CacheRuntime 报告资源已同步。
+
+```bash
+kubectl wait --for=condition=ResourcesSynced=True cacheruntime/my-cache --timeout=5m
+```
+
 ---
 
 ### 3.3 副本数 (`replicas`)
@@ -181,6 +202,10 @@ ConfigMap `fluid-runtime-class-snapshot-<runtime 名称>`，该 ConfigMap 归属
 只从这份快照读取 class：组件模板、`options`、`executionEntries`（如 mountUFS、reportSummary 命令）、
 `dataOperationSpecs` 和 `extraResources`。
 
+新快照的 ConfigMap 注解 `cacheruntime.fluid.io/runtime-class-generation` 和
+`cacheruntime.fluid.io/runtime-class-resource-version` 分别记录 Fluid 复制的 CacheRuntimeClass 对象的
+`generation` 和 `resourceVersion`。旧快照可能没有这两个注解。
+
 固定的是整个 class，而不是其中一部分，因为这些字段是相互配套编写的：只让其中一部分实时跟随，会把新的命令或
 参数交给仍在运行旧镜像的组件。而 CacheRuntimeClass 是集群级资源，如果实时跟随，一次修改就会重启或重建所有
 命名空间中使用它的 CacheRuntime 的组件。
@@ -189,10 +214,24 @@ ConfigMap `fluid-runtime-class-snapshot-<runtime 名称>`，该 ConfigMap 归属
   继续工作。如需让已有 CacheRuntime 使用新的 class，请重建它。
 - **修改已有 CacheRuntime 的 `runtimeClassName`** 不会生效：它仍绑定原来的快照，Fluid 会发出 `RuntimeClassChanged`
   Warning event。如需使用其他 class，请重建 CacheRuntime。
-- **无法解析的快照**不会被覆盖。CacheRuntime 停止 reconcile，Fluid 发出 `RuntimeClassSnapshotInvalid` Warning
-  event。删除该 ConfigMap 后，CacheRuntime 会重新绑定到当前的 class，其 master 和 worker 随后会按该 class
-  同步；如果镜像或 resources 不同，组件会被重启或重建。在重新绑定完成之前，DataLoad 等数据操作会等待，
-  而不会读取当前的 class。
+
+### 恢复损坏的快照
+
+如果 Fluid 无法解析快照，它会保留原 ConfigMap 并发出 `RuntimeClassSnapshotInvalid` Warning 事件。
+CacheRuntime 的协调和 DataLoad 等数据操作会等待有效快照。**仅在快照损坏或无法解析时，才将删除快照 ConfigMap
+作为兜底恢复手段。** Fluid 会从 `spec.runtimeClassName` 指定的 CacheRuntimeClass 的当前版本重新生成快照。
+
+如果该 class 自首次部署以来发生过变化，恢复后各组件可能混用不同版本的配置。
+
+- 对于 **master 和 worker 工作负载**，Fluid 按新快照和 CacheRuntime 的覆盖配置同步主容器的镜像和 `resources`。
+  镜像变化会重启容器，资源变化会重建 Pod。其余所有 PodTemplate 字段（包括 `args`、`env` 和 `volumes`）均保留原值。
+- **现有 client DaemonSet** 的所有字段均保持原值，包括镜像和整个 PodTemplate。
+- Fluid 根据新快照中的 `options` 和 CacheRuntime 的覆盖配置重新生成**运行时配置**，其中也包括
+  client 的选项。控制器后续执行命令时使用新快照的 `executionEntries`，新建的 DataLoad 等数据操作作业使用其
+  `dataOperationSpecs`。因此，旧镜像可能收到新版本的命令或选项。
+
+**要让已有 CacheRuntime 采用新版 CacheRuntimeClass，请重建 CacheRuntime**，使所有组件都从同一版本的 class 创建。
+请勿通过删除快照来升级 class。
 
 ```bash
 # 查看 CacheRuntime 绑定的 class
@@ -222,6 +261,6 @@ kubectl get cm fluid-runtime-class-snapshot-my-cache -o jsonpath='{.data.runtime
 
 **关键要点**：
 1. 当前版本支持 `runtimeVersion`、`resources` 和 `replicas` 三个字段的动态更新
-2. 修改 `runtimeVersion` 会重启容器，修改 `resources` 会重建 Pod，两者都会丢失内存或 `emptyDir` 中的缓存
+2. 仅通过 `runtimeVersion` 更新镜像时，受影响的容器在原 Pod 内重启，进程内存中的缓存会丢失，`emptyDir` 中的缓存会保留。修改 `resources` 会重建 Pod，两处缓存都会丢失。
 3. 其他字段的修改不会生效，必须重新部署
 4. CacheRuntime 绑定的是其首次部署时的 CacheRuntimeClass；修改 class 只影响之后创建的 CacheRuntime

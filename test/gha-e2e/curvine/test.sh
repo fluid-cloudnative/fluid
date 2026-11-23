@@ -36,25 +36,25 @@ function create_dataset() {
         -p '{"spec":{"worker":{"resources":{"limits":{"cpu":"50m"}}}}}' -o json) || panic "cannot prepare the conflicting CacheRuntime"
     kubectl create -f - <<< "$runtime" || panic "cannot create the CacheRuntime"
 
-    wait_for_worker_cpu_conflict "worker cannot be created:"
+    wait_for_worker_cpu_conflict RuntimeResourceCreationConflict
     kubectl patch cacheruntime "$dataset_name" --type merge -p '{"spec":{"worker":{"resources":{"limits":{"cpu":null}}}}}' || panic "cannot remove the conflicting CPU limit"
 }
 
 function wait_for_worker_cpu_conflict() {
-    local expected_prefix=$1
+    local expected_reason=$1
     local target="cacheruntime/$dataset_name"
     local condition='.status.conditions[?(@.type=="ResourcesSynced")]'
     local reason message uid warnings
     kubectl wait --for=condition=ResourcesSynced=False "$target" --timeout=150s || panic "ResourcesSynced did not report a conflict"
     reason=$(kubectl get "$target" -ojsonpath="{${condition}.reason}") || panic "cannot read condition reason"
     message=$(kubectl get "$target" -ojsonpath="{${condition}.message}") || panic "cannot read condition message"
-    if [[ "$reason" != RuntimeResourcesConflict || "$message" != "$expected_prefix"*"cpu request 100m exceeds limit 50m"* ]]; then
+    if [[ "$reason" != "$expected_reason" || "$message" != *worker* || "$message" != *"cpu request 100m exceeds limit 50m"* ]]; then
         panic "unexpected worker resource conflict: $reason $message"
     fi
     uid=$(kubectl get "$target" -ojsonpath='{.metadata.uid}') || panic "cannot read CacheRuntime UID"
     local deadline=$((SECONDS + 60))
     while true; do
-        warnings=$(kubectl get events --field-selector "involvedObject.uid=$uid,type=Warning,reason=$reason" \
+        warnings=$(kubectl get events --field-selector "involvedObject.uid=$uid,type=Warning,reason=RuntimeResourcesConflict" \
             -ojsonpath='{range .items[*]}{.message}{"\n"}{end}') || panic "cannot read resource warnings"
         grep -Fxq -- "$message" <<< "$warnings" && break
         (( SECONDS < deadline )) || panic "no Warning matching the ResourcesSynced condition: $message"
@@ -383,7 +383,7 @@ function update_worker_resources_and_verify() {
 
     local cpu
     kubectl patch cacheruntime "$dataset_name" --type merge -p '{"spec":{"worker":{"resources":{"limits":{"cpu":"50m"}}}}}' || panic "cannot set the conflicting CPU override"
-    wait_for_worker_cpu_conflict "worker resources are not synced:"
+    wait_for_worker_cpu_conflict RuntimeResourcesConflict
     cpu=$(kubectl get advancedstatefulset "$worker_component_name" -ojsonpath='{.spec.template.spec.containers[0].resources.limits.cpu}')
     [[ "$cpu" == "1" ]] || panic "expected worker CPU limit to stay at 1 during the conflict, got '$cpu'"
 

@@ -141,6 +141,29 @@ afterwards does not change that value. An empty list such as
   `RuntimeResourcesConflict` Warning event on the CacheRuntime naming the claim. To use a new claim,
   recreate the CacheRuntime.
 
+#### Check resource synchronization status
+
+Look for the condition with `type: ResourcesSynced` in the CacheRuntime's `.status.conditions`.
+During setup, the controller checks the resource settings of every enabled component, including
+the master, worker, and client. After setup, the condition tracks workload resources only for
+the enabled master and worker components. To check Pod readiness separately, inspect each
+component's `readyReplicas`.
+
+| Status | Reason | Meaning |
+| --- | --- | --- |
+| `False` | `RuntimeResourceCreationConflict` | During setup, a conflict in the merged resource settings prevents component creation. |
+| `False` | `RuntimeResourcesConflict` | During sync, a resource conflict or a claim the workload does not declare causes the controller to skip the affected settings. |
+| `Unknown` | `WaitingForSync` | A previous creation conflict has been resolved. The corrected resource settings have passed validation and are awaiting the first resource sync. This clears the creation failure message even if Pods are still pending. |
+| `True` | `RuntimeResourcesSynced` | All enabled master and worker workloads have the desired resource settings. |
+
+In both conflict cases, the condition's `message` identifies the component and cause. The matching Warning event uses the reason `RuntimeResourcesConflict` in both phases.
+
+For example, the following command waits for the CacheRuntime named `my-cache` to report that its resources are in sync.
+
+```bash
+kubectl wait --for=condition=ResourcesSynced=True cacheruntime/my-cache --timeout=5m
+```
+
 ---
 
 ### 3.3 Replica Count (`replicas`)
@@ -180,6 +203,10 @@ CacheRuntime. From then on the CacheRuntime reads its class only from that snaps
 templates, `options`, `executionEntries` (such as the mountUFS and reportSummary commands),
 `dataOperationSpecs` and `extraResources`.
 
+On new snapshots, the ConfigMap annotations `cacheruntime.fluid.io/runtime-class-generation` and
+`cacheruntime.fluid.io/runtime-class-resource-version` record the generation and resource version
+of the CacheRuntimeClass that Fluid copied. Older snapshots may lack these annotations.
+
 The whole class is fixed, not just part of it, because these fields are written for one another:
 following some of them live would hand new commands or options to components still running the old
 images. And a CacheRuntimeClass is cluster-scoped, so following it live would let one edit restart
@@ -190,11 +217,30 @@ or recreate the components of every CacheRuntime using it, in every namespace.
 - **Changing `runtimeClassName`** on an existing CacheRuntime has no effect: it stays bound to its
   snapshot, and Fluid emits a `RuntimeClassChanged` Warning event. Recreate the CacheRuntime to use
   another class.
-- **A snapshot that cannot be decoded** is never overwritten. The CacheRuntime stops reconciling and
-  Fluid emits a `RuntimeClassSnapshotInvalid` Warning event. Deleting the ConfigMap binds the
-  CacheRuntime to its current class again; its master and worker are then synced to that class,
-  which restarts or recreates them if their image or resources differ. Until the CacheRuntime is
-  bound again, data operations such as DataLoad wait instead of reading the current class.
+
+### Recovering an invalid snapshot
+
+If Fluid cannot decode the snapshot, it leaves the ConfigMap intact and emits a
+`RuntimeClassSnapshotInvalid` Warning event. Reconciliation and data operations such as DataLoad
+wait for a valid snapshot. **Delete the snapshot ConfigMap only as a last resort to recover from
+a damaged or unreadable snapshot.** Fluid rebuilds it from the current version of the
+CacheRuntimeClass named by `spec.runtimeClassName`.
+
+If that class has changed since setup, recovery can leave components using different class versions.
+
+- **Master and worker workloads.** Fluid reconciles the main container's image and `resources` using
+  the replacement snapshot and the CacheRuntime's overrides. An image change restarts the container.
+  A resource change recreates the Pods. All other PodTemplate fields, including `args`, `env`, and
+  `volumes`, keep their existing values.
+- **Client workload.** Every field of the existing client DaemonSet stays as deployed, including
+  its image and PodTemplate.
+- **Configuration and operations.** Fluid regenerates the runtime configuration from the replacement
+  snapshot's `options` and the CacheRuntime's overrides, including options for the client.
+  Subsequent controller commands use its `executionEntries`, and new data operation jobs such as
+  DataLoad use its `dataOperationSpecs`. New commands or options can therefore reach an old image.
+
+**To adopt a newer CacheRuntimeClass, recreate the CacheRuntime** so that all components are created
+from the same class version. Do not use snapshot deletion as an upgrade procedure.
 
 ```bash
 # The class a CacheRuntime is bound to
@@ -224,6 +270,6 @@ kubectl get cm fluid-runtime-class-snapshot-my-cache -o jsonpath='{.data.runtime
 
 **Key Takeaways**:
 1. The current version supports dynamic updates for `runtimeVersion`, `resources` and `replicas`.
-2. A `runtimeVersion` change restarts the containers and a `resources` change recreates the Pods; either loses the cache held in memory or `emptyDir` volumes.
+2. An image-only `runtimeVersion` update restarts the affected container in the same Pod. Its in-process cache is lost, and its `emptyDir` cache survives. A `resources` change recreates the Pod, so both caches are lost.
 3. Modifications to other fields will not take effect and require redeployment.
 4. A CacheRuntime is bound to its CacheRuntimeClass as it was when the CacheRuntime was set up; editing the class only affects CacheRuntimes created afterwards.
