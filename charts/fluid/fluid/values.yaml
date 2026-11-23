@@ -363,6 +363,13 @@ webhook:
   tolerations:
     - operator: Exists
   resources: ~
+  # The validating webhook that rejects a CacheRuntime update changing a spec
+  # field the controller cannot apply in place (anything but master/worker
+  # replicas, runtimeVersion and resources). failurePolicy decides what the
+  # API server does with a CacheRuntime update while the webhook is unreachable:
+  # Fail rejects it, Ignore lets it through unchecked.
+  cacheRuntimeValidation:
+    failurePolicy: Fail
   # resources:
   #   requests:
   #     cpu: 500m

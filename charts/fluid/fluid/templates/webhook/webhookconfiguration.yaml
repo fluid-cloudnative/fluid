@@ -46,4 +46,30 @@ webhooks:
     objectSelector:
       matchLabels:
         fuse.serverful.fluid.io/inject: "true"
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  name: fluid-cacheruntime-validating-webhook
+webhooks:
+  # Rejects an update of a CacheRuntime that changes a spec field the controller
+  # cannot apply to the running components. Only the main resource is matched:
+  # status and scale writes go through their subresources and are never checked.
+  - name: update.cacheruntime.fluid.io
+    rules:
+      - apiGroups:   ["data.fluid.io"]
+        apiVersions: ["v1alpha1"]
+        operations:  ["UPDATE"]
+        resources:   ["cacheruntimes"]
+    clientConfig:
+      service:
+        namespace: {{ include "fluid.namespace" . }}
+        name: fluid-pod-admission-webhook
+        path: "/validate-data-fluid-io-v1alpha1-cacheruntime"
+        port: 9443
+      caBundle: Cg==
+    timeoutSeconds: {{ .Values.webhook.timeoutSeconds }}
+    failurePolicy: {{ .Values.webhook.cacheRuntimeValidation.failurePolicy }}
+    sideEffects: None
+    admissionReviewVersions: ["v1","v1beta1"]
 {{- end }}
