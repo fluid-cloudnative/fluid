@@ -178,9 +178,17 @@ historical names; setting a prefix opts into per-release names.
 {{- $rbac := .root.Values.rbac | default dict -}}
 {{- $prefix := default "" $rbac.clusterScopedNamePrefix -}}
 {{- if $prefix -}}
+{{- if not (regexMatch "^[a-z0-9]([-a-z0-9]*[a-z0-9])?$" $prefix) -}}
+{{- fail (printf "rbac.clusterScopedNamePrefix %q must be a DNS-1123 label (lowercase letters, digits, and hyphens; start and end with an alphanumeric character)" $prefix) -}}
+{{- end -}}
 {{- $name := printf "%s-%s" $prefix .name -}}
 {{- if gt (len $name) 253 -}}
 {{- fail (printf "rbac.clusterScopedNamePrefix is too long: combined RBAC name %q exceeds the Kubernetes 253-character DNS subdomain limit" $name) -}}
+{{- end -}}
+{{- range $label := splitList "." $name -}}
+{{- if gt (len $label) 63 -}}
+{{- fail (printf "rbac.clusterScopedNamePrefix produces a combined RBAC name %q with a DNS label longer than 63 characters" $name) -}}
+{{- end -}}
 {{- end -}}
 {{- $name -}}
 {{- else -}}

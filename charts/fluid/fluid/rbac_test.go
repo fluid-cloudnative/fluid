@@ -222,3 +222,34 @@ func TestClusterScopedRBACRejectsOverlongPrefix(t *testing.T) {
 		t.Fatalf("helm template failed without the expected length error:\n%s", output)
 	}
 }
+
+func TestClusterScopedRBACRejectsInvalidPrefix(t *testing.T) {
+	helm, err := exec.LookPath("helm")
+	if err != nil {
+		t.Skip("helm is not installed; CI runs this test in the Helm-enabled lint job")
+	}
+
+	tests := []struct {
+		name          string
+		prefix        string
+		wantErrorText string
+	}{
+		{name: "invalid characters", prefix: "tenant_a", wantErrorText: "must be a DNS-1123 label"},
+		{name: "combined label too long", prefix: strings.Repeat("p", 30), wantErrorText: "DNS label longer than 63 characters"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			args := []string{
+				"template", "fluid-test", ".", "--namespace", "fluid-system",
+				"--set", "rbac.clusterScopedNamePrefix=" + tt.prefix,
+			}
+			output, err := exec.Command(helm, args...).CombinedOutput()
+			if err == nil {
+				t.Fatalf("helm template accepted invalid prefix %q:\n%s", tt.prefix, output)
+			}
+			if !strings.Contains(string(output), tt.wantErrorText) {
+				t.Fatalf("helm template failed without the expected validation error %q:\n%s", tt.wantErrorText, output)
+			}
+		})
+	}
+}
