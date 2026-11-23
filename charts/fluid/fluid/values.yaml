@@ -386,8 +386,8 @@ webhook:
   # if configmap `webhook-plugins` exists and not want to replace the content, set this to false.
   # Even when set to true, a pluginsProfile without the clientless key (e.g. on
   # `helm upgrade --reuse-values` from an older release) gets the chart's default clientless
-  # group, so the clientless webhook rule always has a plugin to run. To turn the group off,
-  # set it explicitly, e.g. `clientless: {withDataset: [], withoutDataset: []}`.
+  # group, so the clientless webhook rule always has a plugin to run.
+  # To disable clientless plugins, set `clientless: {withDataset: [], withoutDataset: []}`.
   forceReplacePluginsProfile: false
   pluginsProfile:
     plugins:

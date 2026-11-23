@@ -141,9 +141,8 @@ func (injector *RuntimeConfigInjector) MutateWithReader(pod *corev1.Pod, runtime
 		// A missing config map or key is returned as NeedRetryWithApiReaderError: the cached
 		// client may lag behind a dataset that has just been bound, so the handler retries
 		// with the API reader, and rejects the pod if the config is still not there.
-		// The first read goes through the cache on purpose: the webhook already caches config
-		// maps for the fuse injection, so this adds no informer, and a pod creation costs no
-		// extra API server request in the common case.
+		// In clusters that use FUSE injection, the webhook already caches ConfigMaps,
+		// so the first read reuses the existing ConfigMap informer.
 		getErr := reader.Get(context.TODO(), types.NamespacedName{Namespace: pod.Namespace, Name: cmName}, cm)
 		if apierrors.IsNotFound(getErr) {
 			return true, webhookutils.NewNeedRetryWithApiReaderError(fmt.Errorf(

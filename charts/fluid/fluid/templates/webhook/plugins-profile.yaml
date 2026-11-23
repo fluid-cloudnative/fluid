@@ -12,8 +12,8 @@ data:
   reuses that release's defaults. Fall back to the chart's own group then, so pods
   matching the rule still get a plugin. Keep the fallback in line with the clientless
   group in values.yaml.
-  Only a missing key falls back: a clientless group set explicitly, even to an empty map
-  or null to turn its plugins off, is kept as it is.
+  The fallback applies when the clientless key is missing after Helm merges the values.
+  To disable clientless plugins, set `clientless: {withDataset: [], withoutDataset: []}`.
   The fallback applies with forceReplacePluginsProfile too, on purpose: forcing the values
   that lack the group would leave the always-rendered clientless rule without a plugin.
   Values that are not maps are left for the paths below to handle as before.
@@ -26,6 +26,9 @@ data:
 {{- if kindIs "map" $valuesPlugins }}
 {{- if hasKey $valuesPlugins "clientless" }}
 {{- $clientless = get $valuesPlugins "clientless" }}
+{{- if and (ne $clientless nil) (not (kindIs "map" $clientless)) }}
+{{- fail (printf "webhook.pluginsProfile.plugins.clientless must be a map or null, got %s" (kindOf $clientless)) }}
+{{- end }}
 {{- else }}
 {{- $_ := set $valuesPlugins "clientless" $clientless }}
 {{- end }}
