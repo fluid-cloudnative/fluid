@@ -93,12 +93,8 @@ func (e *CacheEngine) shouldUpdateUFS(dataset *datav1alpha1.Dataset, archApi Arc
 
 // UpdateOnUFSChange handles changes to the UFS configuration by updating mount points dynamically.
 // When dataset mount information changes, this method ensures the changes take effect without requiring a restart.
-func (e *CacheEngine) UpdateOnUFSChange(runtime *datav1alpha1.CacheRuntime) (err error) {
-	runtimeClass, err := e.getRuntimeClass(runtime.Spec.RuntimeClassName)
-	if err != nil {
-		return
-	}
-
+// runtimeClass is the class the runtime is bound to, see getBoundRuntimeClass.
+func (e *CacheEngine) UpdateOnUFSChange(runtime *datav1alpha1.CacheRuntime, runtimeClass *datav1alpha1.CacheRuntimeClass) (err error) {
 	// update only when architecture supports mount ufs.
 	archApi := resolveArchitectureApi(e.name, e.namespace, runtime, runtimeClass)
 	if !archApi.IsMountUFSSupported() {

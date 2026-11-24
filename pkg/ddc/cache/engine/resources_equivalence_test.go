@@ -265,6 +265,7 @@ var _ = Describe("CacheRuntime resources creation/sync equivalence",
 					client := fake.NewClientBuilder().
 						WithScheme(CacheEngineTestScheme).
 						WithObjects(asts, runtimeObj, runtimeClass).
+						WithStatusSubresource(runtimeObj).
 						Build()
 					e := &CacheEngine{
 						name:      "test",
@@ -277,7 +278,7 @@ var _ = Describe("CacheRuntime resources creation/sync equivalence",
 					created := &workloadv1alpha1.AdvancedStatefulSet{}
 					Expect(client.Get(context.TODO(), key, created)).To(Succeed())
 
-					Expect(e.syncRuntimeSpec(cruntime.ReconcileRequestContext{}, runtimeObj, runtimeClass)).To(Succeed())
+					Expect(e.syncRuntimeSpec(cruntime.ReconcileRequestContext{}, runtimeObj, runtimeClass)).To(BeEmpty())
 
 					synced := &workloadv1alpha1.AdvancedStatefulSet{}
 					Expect(client.Get(context.TODO(), key, synced)).To(Succeed())

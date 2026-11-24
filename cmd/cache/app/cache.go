@@ -28,6 +28,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
@@ -122,6 +123,11 @@ func handle() {
 	// the default webhook server port is 9443, no need to set
 	mgr, err := ctrl.NewManager(controllers.GetConfigOrDieWithQPSAndBurst(kubeClientQPS, kubeClientBurst), ctrl.Options{
 		Scheme: scheme,
+		// Binding pins the class in an immutable snapshot. Read it directly so an
+		// informer that lags behind a class update cannot pin the previous version.
+		Client: client.Options{Cache: &client.CacheOptions{
+			DisableFor: []client.Object{&datav1alpha1.CacheRuntimeClass{}},
+		}},
 		Metrics: metricsserver.Options{
 			BindAddress: metricsAddr,
 		},

@@ -28,22 +28,39 @@ function setup() {
 }
 
 function create_dataset() {
-    kubectl create -f test/gha-e2e/curvine/cacheruntimeclass.yaml
-    kubectl create -f test/gha-e2e/curvine/dataset.yaml
-    kubectl create -f test/gha-e2e/curvine/cacheruntime.yaml
+    kubectl create -f test/gha-e2e/curvine/cacheruntimeclass.yaml || panic "cannot create the CacheRuntimeClass"
+    kubectl create -f test/gha-e2e/curvine/dataset.yaml || panic "cannot create the Dataset"
+    # The template requests 100m CPU. Only the merge with this override is invalid.
+    local runtime
+    runtime=$(kubectl patch --local -f test/gha-e2e/curvine/cacheruntime.yaml --type merge \
+        -p '{"spec":{"worker":{"resources":{"limits":{"cpu":"50m"}}}}}' -o json) || panic "cannot prepare the conflicting CacheRuntime"
+    kubectl create -f - <<< "$runtime" || panic "cannot create the CacheRuntime"
 
-    if [[ -z "$(kubectl get dataset $dataset_name -oname)" ]]; then
-        panic "failed to create dataset $dataset_name"
+    wait_for_worker_cpu_conflict RuntimeResourceCreationConflict
+    kubectl patch cacheruntime "$dataset_name" --type merge -p '{"spec":{"worker":{"resources":{"limits":{"cpu":null}}}}}' || panic "cannot remove the conflicting CPU limit"
+}
+
+function wait_for_worker_cpu_conflict() {
+    local expected_reason=$1
+    local target="cacheruntime/$dataset_name"
+    local condition='.status.conditions[?(@.type=="ResourcesSynced")]'
+    local reason message uid warnings
+    kubectl wait --for=condition=ResourcesSynced=False "$target" --timeout=150s || panic "ResourcesSynced did not report a conflict"
+    reason=$(kubectl get "$target" -ojsonpath="{${condition}.reason}") || panic "cannot read condition reason"
+    message=$(kubectl get "$target" -ojsonpath="{${condition}.message}") || panic "cannot read condition message"
+    if [[ "$reason" != "$expected_reason" || "$message" != *worker* || "$message" != *"cpu request 100m exceeds limit 50m"* ]]; then
+        panic "unexpected worker resource conflict: $reason $message"
     fi
-
-    if [[ -z "$(kubectl get cacheruntime $dataset_name -oname)" ]]; then
-        panic "failed to create curvine cache runtime $dataset_name"
-    fi
-
-    if [[ -z "$(kubectl get cacheruntimeclass $dataset_name -oname)" ]]; then
-        panic "failed to create curvine cache runtime class $dataset_name"
-    fi
-
+    uid=$(kubectl get "$target" -ojsonpath='{.metadata.uid}') || panic "cannot read CacheRuntime UID"
+    local deadline=$((SECONDS + 60))
+    while true; do
+        warnings=$(kubectl get events --field-selector "involvedObject.uid=$uid,type=Warning,reason=RuntimeResourcesConflict" \
+            -ojsonpath='{range .items[*]}{.message}{"\n"}{end}') || panic "cannot read resource warnings"
+        grep -Fxq -- "$message" <<< "$warnings" && break
+        (( SECONDS < deadline )) || panic "no Warning matching the ResourcesSynced condition: $message"
+        sleep 2
+    done
+    syslog "Verified the ResourcesSynced condition and matching Warning: $message"
 }
 
 function wait_dataset_bound() {
@@ -364,11 +381,18 @@ function update_worker_resources_and_verify() {
     local deadline=300
     local counter=0
 
+    local cpu
+    kubectl patch cacheruntime "$dataset_name" --type merge -p '{"spec":{"worker":{"resources":{"limits":{"cpu":"50m"}}}}}' || panic "cannot set the conflicting CPU override"
+    wait_for_worker_cpu_conflict RuntimeResourcesConflict
+    cpu=$(kubectl get advancedstatefulset "$worker_component_name" -ojsonpath='{.spec.template.spec.containers[0].resources.limits.cpu}')
+    [[ "$cpu" == "1" ]] || panic "expected worker CPU limit to stay at 1 during the conflict, got '$cpu'"
+
     # The CacheRuntimeClass template declares requests {cpu 100m, memory 256Mi} and
     # limits {cpu 1, memory 2Gi}. Name only limits.memory on the CacheRuntime: the other
     # three keys must keep their template values (#6173).
     syslog "Raising worker limits.memory to 3Gi on the CacheRuntime"
-    kubectl patch cacheruntime $dataset_name --type merge -p '{"spec":{"worker":{"resources":{"limits":{"memory":"3Gi"}}}}}'
+    kubectl patch cacheruntime "$dataset_name" --type merge -p '{"spec":{"worker":{"resources":{"limits":{"cpu":null,"memory":"3Gi"}}}}}' || panic "cannot correct the worker resources"
+    kubectl wait --for=condition=ResourcesSynced=True "cacheruntime/$dataset_name" --timeout=180s || panic "ResourcesSynced did not recover after the spec update"
 
     while true; do
         local limits_memory=""
@@ -394,8 +418,8 @@ function update_worker_resources_and_verify() {
     done
     syslog "AdvancedStatefulSet resources merged: $(kubectl get advancedstatefulset "$worker_component_name" -ojsonpath="$resources_path")"
 
-    # Wait for the update to reach the pods, in place or by recreation depending on the
-    # cluster's support for InPlacePodVerticalScaling.
+    # Wait for the update to reach the pods. The bundled AdvancedStatefulSet controller only
+    # updates images in place, so a resources change recreates the pods.
     counter=0
     while true; do
         local generation="" observed="" replicas="" updated="" ready=""
@@ -425,6 +449,53 @@ function update_worker_resources_and_verify() {
 
     wait_cache_worker_ready
     syslog "Worker resources merged onto the template baseline and rolled out"
+}
+
+function verify_runtime_class_edit_not_propagated() {
+    local worker_component_name="${dataset_name}-worker"
+    local class_name="curvine-demo"
+    local snapshot_name="fluid-runtime-class-snapshot-${dataset_name}"
+    local resources_path='{.spec.template.spec.containers[0].resources}'
+    # limits.cpu is not overridden by the CacheRuntime, so with a live class it would follow the edit.
+    local class_cpu_path='/topology/worker/template/spec/containers/0/resources/limits/cpu'
+    local cpu_jsonpath='{.topology.worker.template.spec.containers[0].resources.limits.cpu}'
+
+    if ! kubectl get configmap "$snapshot_name" >/dev/null 2>&1; then
+        panic "CacheRuntimeClass snapshot configmap $snapshot_name not found"
+    fi
+
+    local resources_before replicas_before
+    resources_before=$(kubectl get advancedstatefulset "$worker_component_name" -ojsonpath="$resources_path") || panic "cannot read initial worker resources"
+    replicas_before=$(kubectl get advancedstatefulset "$worker_component_name" -ojsonpath='{.spec.replicas}') || panic "cannot read initial worker replicas"
+
+    local patched_cpu
+    syslog "Editing CacheRuntimeClass $class_name worker limits.cpu from 1 to 4"
+    patched_cpu=$(kubectl patch cacheruntimeclass "$class_name" --type json \
+        -p "[{\"op\":\"test\",\"path\":\"$class_cpu_path\",\"value\":\"1\"},
+             {\"op\":\"replace\",\"path\":\"$class_cpu_path\",\"value\":\"4\"}]" -ojsonpath="$cpu_jsonpath") || panic "failed to patch class CPU limit"
+    [[ "$patched_cpu" == "4" ]] || panic "patched class has CPU limit '$patched_cpu', expected 4"
+
+    # Edit the CacheRuntime too. Seeing the new replicas on the AdvancedStatefulSet proves a
+    # sync ran after the class edit; the class edit itself must not reach the workload.
+    local target_replicas=$((replicas_before + 1)) deadline=$((SECONDS + 120))
+    kubectl patch cacheruntime "$dataset_name" --type merge -p "{\"spec\":{\"worker\":{\"replicas\":${target_replicas}}}}" || panic "failed to trigger runtime reconciliation"
+    until [[ "$(kubectl get advancedstatefulset "$worker_component_name" -ojsonpath='{.spec.replicas}')" == "$target_replicas" ]]; do
+        (( SECONDS < deadline )) || panic "worker replicas did not reach $target_replicas after the class edit"
+        sleep 5
+    done
+
+    # The runtime config configmap is not checked: it legitimately changes with the replicas.
+    local resources_after=""
+    resources_after=$(kubectl get advancedstatefulset "$worker_component_name" -ojsonpath="$resources_path") || panic "cannot read worker resources after the sync"
+
+    kubectl patch cacheruntimeclass "$class_name" --type json \
+        -p "[{\"op\":\"replace\",\"path\":\"$class_cpu_path\",\"value\":\"1\"}]" || panic "failed to restore class CPU limit"
+    kubectl patch cacheruntime "$dataset_name" --type merge -p "{\"spec\":{\"worker\":{\"replicas\":${replicas_before}}}}" || panic "failed to restore runtime replicas"
+
+    if [[ -z "$resources_before" || "$resources_after" != "$resources_before" ]]; then
+        panic "CacheRuntimeClass edit reached worker $worker_component_name: resources $resources_before -> $resources_after"
+    fi
+    syslog "CacheRuntimeClass edit did not reach the existing CacheRuntime (worker resources: $resources_after)"
 }
 
 function delete_dataset_and_runtime() {
@@ -548,6 +619,7 @@ function main() {
     setup
     create_dataset
     wait_dataset_bound
+    kubectl wait --for=condition=ResourcesSynced=True "cacheruntime/$dataset_name" --timeout=180s || panic "ResourcesSynced did not recover after fixing the override"
     create_reference_dataset
     wait_reference_dataset_bound
     wait_cache_worker_ready
@@ -569,6 +641,9 @@ function main() {
 
     # verify a partial resources update keeps the template's other requirements
     update_worker_resources_and_verify
+
+    # verify editing the CacheRuntimeClass does not reach the existing CacheRuntime
+    verify_runtime_class_edit_not_propagated
 
     # verify scale-up and scale-down: scale up writes through the scale subresource (the same
     # path an HPA takes), scale down writes spec directly via patch. The write assertions run

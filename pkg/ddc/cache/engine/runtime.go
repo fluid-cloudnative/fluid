@@ -73,12 +73,12 @@ func (e *CacheEngine) getRuntime() (*datav1alpha1.CacheRuntime, error) {
 	return &runtime, nil
 }
 
-func (e *CacheEngine) getRuntimeClass(runtimeClassName string) (*datav1alpha1.CacheRuntimeClass, error) {
+func (e *CacheEngine) getRuntimeClass(ctx context.Context, runtimeClassName string) (*datav1alpha1.CacheRuntimeClass, error) {
 	key := types.NamespacedName{
 		Name: runtimeClassName,
 	}
 	var runtimeClass datav1alpha1.CacheRuntimeClass
-	if err := e.Get(context.TODO(), key, &runtimeClass); err != nil {
+	if err := e.Get(ctx, key, &runtimeClass); err != nil {
 		return nil, err
 	}
 	if err := validateRuntimeClassTopology(&runtimeClass); err != nil {

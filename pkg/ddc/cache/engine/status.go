@@ -93,7 +93,13 @@ func (e *CacheEngine) setClientComponentStatus(componentInfo *common.ComponentSt
 
 	return fullyReady, nil
 }
+
 func (e *CacheEngine) CheckAndUpdateRuntimeStatus(value *common.CacheRuntimeStatusValue) (bool, error) {
+	return e.checkAndUpdateRuntimeStatus(context.TODO(), value, nil)
+}
+
+func (e *CacheEngine) checkAndUpdateRuntimeStatus(ctx context.Context, value *common.CacheRuntimeStatusValue,
+	resources *fluidapi.RuntimeCondition) (bool, error) {
 	runtimeReady := false
 
 	err := retry.RetryOnConflict(retry.DefaultBackoff, func() error {
@@ -151,9 +157,11 @@ func (e *CacheEngine) CheckAndUpdateRuntimeStatus(value *common.CacheRuntimeStat
 		runtimeToUpdate.Status.Selector = selector
 
 		runtimeToUpdate.Status.ValueFile = common.GetCacheRuntimeConfigConfigMapName(e.name)
-
+		if resources != nil {
+			applyResourcesSyncedCondition(&runtimeToUpdate.Status, *resources)
+		}
 		if !reflect.DeepEqual(runtime.Status, runtimeToUpdate.Status) {
-			err = e.Client.Status().Update(context.TODO(), runtimeToUpdate)
+			err = e.Client.Status().Update(ctx, runtimeToUpdate)
 		} else {
 			e.Log.Info("Do nothing because the runtime status is not changed.")
 		}
@@ -167,4 +175,16 @@ func (e *CacheEngine) CheckAndUpdateRuntimeStatus(value *common.CacheRuntimeStat
 	}
 
 	return runtimeReady, nil
+}
+
+func applyResourcesSyncedCondition(status *fluidapi.CacheRuntimeStatus, cond fluidapi.RuntimeCondition) bool {
+	_, old := utils.GetRuntimeCondition(status.Conditions, cond.Type)
+	if old != nil && old.Status == cond.Status {
+		if old.Reason == cond.Reason && old.Message == cond.Message {
+			return false
+		}
+		cond.LastTransitionTime = old.LastTransitionTime
+	}
+	status.Conditions = utils.UpdateRuntimeCondition(status.Conditions, cond)
+	return true
 }
