@@ -65,3 +65,47 @@ func GenerateNodeAffinity(job *batchv1.Job) (*corev1.NodeAffinity, error) {
 
 	return nodeAffinity, nil
 }
+
+// GenerateNodeAffinityFromPod generates a NodeAffinity from a Pod's annotations,
+// using the same annotation-based logic as GenerateNodeAffinity for Jobs.
+// This is used by DataBackup which runs as a Pod rather than a Job.
+func GenerateNodeAffinityFromPod(pod *corev1.Pod) (*corev1.NodeAffinity, error) {
+	if pod == nil {
+		return nil, nil
+	}
+	// not inject, i.e. feature gate not enabled
+	if v := pod.Annotations[common.AnnotationDataFlowAffinityInject]; v != "true" {
+		return nil, nil
+	}
+
+	annotations := pod.Annotations
+
+	nodeAffinity := &corev1.NodeAffinity{
+		RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
+			NodeSelectorTerms: []corev1.NodeSelectorTerm{
+				{
+					MatchExpressions: nil,
+				},
+			},
+		},
+	}
+
+	hasInjectedLabels := false
+	for key, value := range annotations {
+		if strings.HasPrefix(key, common.AnnotationDataFlowCustomizedAffinityPrefix) {
+			nodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms[0].MatchExpressions =
+				append(nodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms[0].MatchExpressions,
+					corev1.NodeSelectorRequirement{
+						Key:      strings.TrimPrefix(key, common.AnnotationDataFlowCustomizedAffinityPrefix),
+						Operator: corev1.NodeSelectorOpIn,
+						Values:   []string{value},
+					})
+			hasInjectedLabels = true
+		}
+	}
+	if !hasInjectedLabels {
+		return nil, errors.New("the affinity label is not set, wait for next reconcile")
+	}
+
+	return nodeAffinity, nil
+}
