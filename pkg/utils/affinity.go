@@ -28,7 +28,10 @@ func init() {
 	log = ctrl.Log.WithName("utils")
 }
 
-// InjectNodeSelectorRequirements injects(not append) a node selector term to affinity‘s nodeAffinity.
+// InjectNodeSelectorRequirements adds matchExpressions to the required node affinity and returns the result.
+// With no existing required terms it creates one term holding matchExpressions. Otherwise it appends
+// matchExpressions to every existing term, since terms are ORed and each one must carry them.
+// A non-nil affinity is modified in place and returned; a nil affinity gets a new one.
 func InjectNodeSelectorRequirements(matchExpressions []corev1.NodeSelectorRequirement, affinity *corev1.Affinity) *corev1.Affinity {
 	result := affinity
 
