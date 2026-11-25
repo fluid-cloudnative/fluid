@@ -307,6 +307,48 @@ var _ = Describe("ThinEngine FUSE Transformation Tests", Label("pkg.ddc.thin.tra
 				Expect(options).To(Equal("ro"))
 			})
 		})
+
+		When("the dataset is read-only and the profile defines options", func() {
+			It("should keep the ro option next to the profile and runtime options", func() {
+				thinruntime.Spec.Fuse.Options = map[string]string{
+					"option3": "value3",
+				}
+
+				options, err := engine.parseFuseOptions(thinruntime, profile, dataset)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(options).To(MatchRegexp(`(^|,)ro(,|$)`))
+				Expect(options).To(ContainSubstring("option1=value1"))
+				Expect(options).To(ContainSubstring("option2=value2"))
+				Expect(options).To(ContainSubstring("option3=value3"))
+			})
+
+			It("should not write the runtime options into the profile", func() {
+				thinruntime.Spec.Fuse.Options = map[string]string{
+					"option3": "value3",
+				}
+
+				_, err := engine.parseFuseOptions(thinruntime, profile, dataset)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(profile.Spec.Fuse.Options).To(Equal(map[string]string{
+					"option1": "value1",
+					"option2": "value2",
+				}))
+			})
+		})
+
+		When("the dataset is writable and the profile defines options", func() {
+			BeforeEach(func() {
+				dataset.Spec.AccessModes = []corev1.PersistentVolumeAccessMode{corev1.ReadWriteMany}
+			})
+
+			It("should not add the ro option", func() {
+				options, err := engine.parseFuseOptions(thinruntime, profile, dataset)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(options).NotTo(MatchRegexp(`(^|,)ro(,|$)`))
+				Expect(options).To(ContainSubstring("option1=value1"))
+				Expect(options).To(ContainSubstring("option2=value2"))
+			})
+		})
 	})
 
 	Describe("Test ThinEngine.parseLifecycle", func() {
