@@ -1266,6 +1266,35 @@ func TestJuiceFSEngine_isCommandChanged(t *testing.T) {
 			wantChanged:    true,
 			wantNewCommand: "/sbin/mount.juicefs test-fluid-2 /runtime-mnt/juicefs/default/jfsdemo-ee/juicefs-fuse -o cache-dir=/dev/shm,verbose,foreground,no-update,cache-group=default-jfsdemo-ee,subdir=/demo,cache-size=1024,free-space-ratio=0.1",
 		},
+		{
+			// the dataset name contains "-o" and ends up in the mount path
+			name: "test-true-dataset-name-contains-dash-o",
+			args: args{
+				crtCommand:     "exec /bin/mount.juicefs test-fluid /runtime-mnt/juicefs/default/demo-output/juicefs-fuse -o cache-dir=/dev/shm,cache-size=1024",
+				runtimeCommand: "exec /bin/mount.juicefs test-fluid /runtime-mnt/juicefs/default/demo-output/juicefs-fuse -o cache-dir=/dev/shm,cache-size=2048",
+			},
+			wantChanged:    true,
+			wantNewCommand: "exec /bin/mount.juicefs test-fluid /runtime-mnt/juicefs/default/demo-output/juicefs-fuse -o cache-dir=/dev/shm,cache-size=2048",
+		},
+		{
+			name: "test-false-dataset-name-contains-dash-o",
+			args: args{
+				crtCommand:     "exec /bin/mount.juicefs test-fluid /runtime-mnt/juicefs/default/demo-output/juicefs-fuse -o cache-dir=/dev/shm,cache-size=1024",
+				runtimeCommand: "exec /bin/mount.juicefs test-fluid /runtime-mnt/juicefs/default/demo-output/juicefs-fuse -o cache-size=1024,cache-dir=/dev/shm",
+			},
+			wantChanged:    false,
+			wantNewCommand: "exec /bin/mount.juicefs test-fluid /runtime-mnt/juicefs/default/demo-output/juicefs-fuse -o cache-size=1024,cache-dir=/dev/shm",
+		},
+		{
+			// an option name such as "cache-partial-only" contains "-o" as well
+			name: "test-true-option-name-contains-dash-o",
+			args: args{
+				crtCommand:     "exec /bin/mount.juicefs test-fluid /runtime-mnt/juicefs/default/demo/juicefs-fuse -o cache-partial-only,cache-size=1024",
+				runtimeCommand: "exec /bin/mount.juicefs test-fluid /runtime-mnt/juicefs/default/demo/juicefs-fuse -o cache-partial-only,cache-size=2048",
+			},
+			wantChanged:    true,
+			wantNewCommand: "exec /bin/mount.juicefs test-fluid /runtime-mnt/juicefs/default/demo/juicefs-fuse -o cache-partial-only,cache-size=2048",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
