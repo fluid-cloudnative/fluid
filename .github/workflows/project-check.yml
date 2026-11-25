@@ -78,6 +78,7 @@ jobs:
 
       - name: Project lint
         run: |
+          go test ./charts/fluid/fluid -run TestClusterScopedRBAC -count=1
           test -z "$(go fmt ./... 2>/dev/null | tee /dev/stderr)" || (echo "please format Go code with 'gofmt'")
           go vet ./...
           find ./charts | grep Chart.yaml | xargs dirname | xargs helm lint
