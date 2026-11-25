@@ -17,10 +17,31 @@ limitations under the License.
 package jindo
 
 import (
+	"fmt"
 	"os"
+	"strings"
+
+	"k8s.io/apimachinery/pkg/api/resource"
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 )
+
+// SumQuotas parses a comma-separated quota list such as "10Gi,5Gi" and returns the total.
+func SumQuotas(quotas string) (total resource.Quantity, err error) {
+	for _, q := range strings.Split(quotas, ",") {
+		q = strings.TrimSpace(q)
+		// Jindo writes Mi as "m", which Kubernetes would parse as milli-bytes.
+		if strings.HasSuffix(q, "m") {
+			q = strings.TrimSuffix(q, "m") + "Mi"
+		}
+		parsed, parseErr := resource.ParseQuantity(q)
+		if parseErr != nil {
+			return total, fmt.Errorf("invalid quota %q in %q: %w", q, quotas, parseErr)
+		}
+		total.Add(parsed)
+	}
+	return total, nil
+}
 
 const (
 	engineTypeFromEnv = "JINDO_ENGINE_TYPE"
