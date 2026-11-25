@@ -28,7 +28,6 @@ import (
 	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/equality"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -191,14 +190,12 @@ func (s *AdvancedStatefulSetManager) ConstructComponentStatus(ctx context.Contex
 	return status, err
 }
 
-// SyncComponentSpec synchronizes component specification changes to the AdvancedStatefulSet
-// This supports in-place update for compatible fields (e.g., image, resources, env) without pod recreation
-// Supported in-place update fields:
-// - Container image and ImagePullPolicy
-// - Resource requests and limits (CPU, memory)
-// - Environment variables
-// - Replicas count
-// Note: Fields like volumes, volumeMounts, args, ports will trigger pod recreation
+// SyncComponentSpec patches the replicas, image and resources of the component's
+// AdvancedStatefulSet to newSpec and leaves the rest of its pod template as it was created.
+//
+// The AdvancedStatefulSet uses the InPlaceIfPossible policy, but the bundled controller only
+// applies an image change in place, restarting the container. Any other pod template change,
+// resources included, is rolled out by recreating the Pods.
 func (s *AdvancedStatefulSetManager) SyncComponentSpec(ctx context.Context, identity *common.ComponentIdentity, newSpec ComponentSpec) error {
 	logger := log.FromContext(ctx)
 	logger.Info("start syncing component spec", "component", identity.Name)
@@ -310,11 +307,9 @@ func (s *AdvancedStatefulSetManager) updateResources(asts *workloadv1alpha1.Adva
 
 	container := &asts.Spec.Template.Spec.Containers[0]
 
-	// Compare semantically rather than structurally: resource.Quantity caches the
-	// string it was parsed from, and a quantity produced by arithmetic carries an
-	// empty cache. reflect.DeepEqual would read that as a change on every reconcile
-	// even when the value is identical. nil is still a valid desired value.
-	if !equality.Semantic.DeepEqual(container.Resources, resources) {
+	// See ResourcesEqual: neither a recomputed quantity nor a reordered claim list counts as a
+	// change. nil is still a valid desired value.
+	if !ResourcesEqual(container.Resources, resources) {
 		logger.Info("resources changed, will update")
 		container.Resources = *resources.DeepCopy()
 		return true

@@ -12,10 +12,30 @@ import re
 import os
 import sys
 
+SUPPORTED_LANGS = ("en/", "zh/")
+
+
+def parse_lang(argv):
+    requested = argv[1].rstrip("/") + "/" if len(argv) == 2 else None
+    for supported in SUPPORTED_LANGS:
+        if requested == supported:
+            return supported
+    sys.exit("usage: %s {%s}" % (os.path.basename(argv[0]), "|".join(SUPPORTED_LANGS)))
+
+
+def lang_path(name):
+    # Resolve name inside the language directory and refuse anything that escapes it.
+    path = os.path.realpath(os.path.join(lang_dir, name))
+    if os.path.commonpath([lang_dir, path]) != lang_dir:
+        raise ValueError("%s resolves outside of %s" % (name, lang_dir))
+    return path
+
+
 followups = []
 in_toc = False
 contents = []
-lang = sys.argv[1]
+lang = parse_lang(sys.argv)
+lang_dir = os.path.realpath(lang)
 # pattern=[]()
 hyper_link_pattern = re.compile(r'\[(.*?)\]\((.*?)(#.*?)?\)')
 # pattern= -- []()
@@ -27,7 +47,7 @@ level_pattern = re.compile(r'(\s*[\-\+]+)\s')
 # match all headings
 heading_patthern = re.compile(r'(^#+|\n#+)\s')
 
-entry_file = lang + "TOC.md"
+entry_file = lang_path("TOC.md")
 
 # stage 1, parse toc
 with open(entry_file) as fp:
@@ -78,7 +98,7 @@ for tp, lv, f in followups:
     if tp != 'FILE':
         continue
     try:
-        for line in open(lang + f).readlines():
+        for line in open(lang_path(f)).readlines():
             if line.startswith("#"):
                 tag = line.strip()
                 break
@@ -151,7 +171,7 @@ for type_, level, name in followups:
             contents.append('# api reference\n\n')
             continue
         try:
-            with open(lang + name) as fp:
+            with open(lang_path(name)) as fp:
                 chapter = fp.read()
                 chapter = replace_link_wrap(chapter, name)
                 # chapter = image_link_pattern.sub(replace_img_link, chapter)
@@ -170,7 +190,7 @@ for type_, level, name in followups:
             print("generate file error: ignore!")
 
 # stage 4, generage final doc.md
-target_doc_file = lang + 'doc.md'
+target_doc_file = lang_path('doc.md')
 with open(target_doc_file, 'w') as fp:
     fp.write('\n'.join(contents))
     contents = []

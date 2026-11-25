@@ -13,6 +13,10 @@ multi_oss_dataset_template="test/gha-e2e/jindo/multi-oss-dataset.yaml"
 multi_oss_job_name="fluid-multi-oss-test"
 multi_oss_job_template="test/gha-e2e/jindo/multi-oss-job.yaml"
 
+# Hash-locked Python dependencies of the bucket seeding steps.
+minio_requirements_file="test/gha-e2e/jindo/requirements-minio.txt"
+oss_requirements_file="test/gha-e2e/jindo/requirements-oss.txt"
+
 multi_oss_bucket_a="${JINDO_E2E_OSS_BUCKET_A:-bucketa}"
 multi_oss_bucket_b="${JINDO_E2E_OSS_BUCKET_B:-bucketb}"
 multi_oss_endpoint_a="${JINDO_E2E_OSS_ENDPOINT_A:-oss.default.svc.cluster.local:9000}"
@@ -84,7 +88,10 @@ PY
     fi
 
     syslog "Installing python module oss2 for real OSS verification"
-    python3 -m pip install --user oss2 >/dev/null || panic "failed to install python module oss2"
+    # oss2 and crcmod are published as source distributions only, so they are
+    # exempted from --only-binary; everything is still pinned by hash.
+    python3 -m pip install --user --require-hashes --only-binary=:all: --no-binary=oss2,crcmod \
+        -r "$oss_requirements_file" >/dev/null || panic "failed to install python module oss2"
 }
 
 function ensure_python_boto3() {
@@ -99,7 +106,8 @@ PY
     fi
 
     syslog "Installing python module boto3 for MinIO verification"
-    python3 -m pip install --user boto3 >/dev/null || panic "failed to install python module boto3"
+    python3 -m pip install --user --require-hashes --only-binary=:all: \
+        -r "$minio_requirements_file" >/dev/null || panic "failed to install python module boto3"
 }
 
 function seed_real_oss_bucket() {

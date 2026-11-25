@@ -17,6 +17,10 @@
 package engine
 
 import (
+	"context"
+	stderrors "errors"
+	"strings"
+
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
 	"github.com/fluid-cloudnative/fluid/pkg/metrics"
@@ -24,7 +28,10 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/util/retry"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func (e *CacheEngine) Setup(ctx cruntime.ReconcileRequestContext) (ready bool, err error) {
@@ -36,14 +43,40 @@ func (e *CacheEngine) Setup(ctx cruntime.ReconcileRequestContext) (ready bool, e
 
 	dataset := ctx.Dataset
 	runtime := ctx.Runtime.(*datav1alpha1.CacheRuntime)
-	runtimeClass, err := e.getRuntimeClass(runtime.Spec.RuntimeClassName)
+	// Bind the runtime to a snapshot of its CacheRuntimeClass before anything is created from
+	// it: the components and configmaps are rendered from the snapshot, and so is every later
+	// sync, so editing the class does not reach this runtime.
+	runtimeClass, err := e.getBoundRuntimeClass(ctx, runtime)
 	if err != nil {
 		return false, errors.Wrapf(err, "failed to get CacheRuntimeClass %s", runtime.Spec.RuntimeClassName)
 	}
 
-	runtimeValue, err := e.transform(dataset, runtime, runtimeClass)
-	if err != nil {
-		return false, err
+	runtimeValue, transformErr := e.transform(dataset, runtime, runtimeClass)
+	var conflict *componentResourcesConflictError
+	if transformErr != nil && !stderrors.As(transformErr, &conflict) {
+		return false, transformErr
+	}
+
+	current, statusErr := e.updateSetupResourceCondition(ctx.Context, runtime, conflict)
+	if apierrors.IsConflict(statusErr) {
+		if conflict == nil {
+			return false, nil
+		}
+		// The informer may still be behind after the last rejected write. Read directly
+		// from the API server before reporting the creation error on the Dataset.
+		latest := &datav1alpha1.CacheRuntime{}
+		if err := e.SubResource("status").Get(ctx.Context, runtime, latest); err != nil {
+			return false, client.IgnoreNotFound(err)
+		}
+		current = isCurrentSetupGeneration(runtime, latest)
+	} else if statusErr != nil {
+		return false, stderrors.Join(transformErr, statusErr)
+	}
+	if !current {
+		return false, nil
+	}
+	if transformErr != nil {
+		return false, transformErr
 	}
 
 	// create runtime value configmap for runtime mount
@@ -78,8 +111,6 @@ func (e *CacheEngine) Setup(ctx cruntime.ReconcileRequestContext) (ready bool, e
 		}
 	}
 
-	// CheckAndUpdateRuntimeStatus after components are setup
-	// Use lightweight getRuntimeStatusValue instead of full transform for status update
 	statusValue, err := e.getRuntimeStatusValue(runtime, runtimeClass)
 	if err != nil {
 		return false, err
@@ -110,4 +141,62 @@ func (e *CacheEngine) Setup(ctx cruntime.ReconcileRequestContext) (ready bool, e
 	}
 
 	return true, nil
+}
+
+// updateSetupResourceCondition records or clears a creation conflict for the generation
+// that Setup transformed. A false result tells the caller to reconcile a fresh runtime.
+func (e *CacheEngine) updateSetupResourceCondition(ctx context.Context, observed *datav1alpha1.CacheRuntime,
+	conflict *componentResourcesConflictError) (bool, error) {
+	var cond datav1alpha1.RuntimeCondition
+	if conflict != nil {
+		cond = utils.NewRuntimeCondition(datav1alpha1.RuntimeResourcesSynced, datav1alpha1.RuntimeResourceCreationConflictReason,
+			conflict.message, corev1.ConditionFalse)
+	} else {
+		if !hasSetupResourceConflict(observed) {
+			return true, nil
+		}
+		cond = utils.NewRuntimeCondition(datav1alpha1.RuntimeResourcesSynced, datav1alpha1.RuntimeWaitingForSyncReason,
+			"Resource configuration is valid. Waiting for resource sync.", corev1.ConditionUnknown)
+	}
+	var current bool
+	err := retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+		latest := &datav1alpha1.CacheRuntime{}
+		if err := e.Get(ctx, client.ObjectKeyFromObject(observed), latest); err != nil {
+			return err
+		}
+		current = isCurrentSetupGeneration(observed, latest)
+		if !current || (conflict == nil && !hasSetupResourceConflict(latest)) {
+			return nil
+		}
+		if !applyResourcesSyncedCondition(&latest.Status, cond) {
+			return nil
+		}
+		return e.Client.Status().Update(ctx, latest)
+	})
+	return current, err
+}
+
+func isCurrentSetupGeneration(observed, latest *datav1alpha1.CacheRuntime) bool {
+	return latest.UID == observed.UID && latest.Generation == observed.Generation && latest.DeletionTimestamp.IsZero()
+}
+
+func hasSetupResourceConflict(runtime *datav1alpha1.CacheRuntime) bool {
+	_, cond := utils.GetRuntimeCondition(runtime.Status.Conditions, datav1alpha1.RuntimeResourcesSynced)
+	if cond == nil || cond.Status != corev1.ConditionFalse {
+		return false
+	}
+	if cond.Reason == datav1alpha1.RuntimeResourceCreationConflictReason {
+		return true
+	}
+	if cond.Reason != common.RuntimeResourcesConflict {
+		return false
+	}
+	// Older controllers used the same reason for Setup and Sync. Match only the
+	// historical creation message when recovering one of those persisted conditions.
+	for _, component := range []common.ComponentType{common.ComponentTypeMaster, common.ComponentTypeWorker, common.ComponentTypeClient} {
+		if strings.HasPrefix(cond.Message, string(component)+" cannot be created: the CacheRuntime and its CacheRuntimeClass template merge into ") {
+			return true
+		}
+	}
+	return false
 }
