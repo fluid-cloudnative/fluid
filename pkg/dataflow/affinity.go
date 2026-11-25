@@ -104,7 +104,8 @@ func injectPreferredAffinity(runAfter *datav1alpha1.OperationRef, prevOpNodeAffi
 		return currentAffinity, fmt.Errorf("no node selector terms in the preceding operation")
 	}
 
-	// currently, only has one element.
+	// The preceding operation's node affinity comes from GenerateNodeAffinity, which builds exactly one term
+	// from the node the operation ran on, so only the first term is read.
 	podNodeSelectorTerm := prevOpNodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms[0]
 
 	for _, item := range prefers {
@@ -149,7 +150,8 @@ func injectRequiredAffinity(runAfter *datav1alpha1.OperationRef, prevOpNodeAffin
 		return currentAffinity, fmt.Errorf("no node selector terms in the preceding operation")
 	}
 
-	// currently, only has one element.
+	// The preceding operation's node affinity comes from GenerateNodeAffinity, which builds exactly one term
+	// from the node the operation ran on, so only the first term is read.
 	podNodeSelectorTerm := prevOpNodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms[0]
 
 	for _, item := range requires {
