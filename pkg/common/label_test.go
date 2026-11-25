@@ -168,3 +168,17 @@ var _ = ginkgo.Describe("LabelAnnotationPodSchedRegex", func() {
 			"a.fluid.io/dataset.dsA.sched", false, ""),
 	)
 })
+
+var _ = ginkgo.Describe("IsRuntimeOnlyAnnotationKey", func() {
+	ginkgo.DescribeTable("should only match runtime-scoped annotation keys",
+		func(key string, expected bool) {
+			gomega.Expect(IsRuntimeOnlyAnnotationKey(key)).To(gomega.Equal(expected))
+		},
+		ginkgo.Entry("runtime-only", AnnotationDisableRuntimeHelmValueConfig, true),
+		ginkgo.Entry("component-scoped runtime annotation", LabelRuntimeFuseGeneration, true),
+		ginkgo.Entry("another component-scoped runtime annotation", RuntimeControllerReplicas, true),
+		ginkgo.Entry("plain fluid.io annotation", AnnotationCheckMountScriptSHA256, false),
+		ginkgo.Entry("cacheruntime prefix is not a runtime-scoped prefix", LabelCacheRuntimeName, false),
+		ginkgo.Entry("unrelated annotation that merely contains the substring without a dot/prefix boundary", "xruntime.fluid.io/foo", false),
+	)
+})

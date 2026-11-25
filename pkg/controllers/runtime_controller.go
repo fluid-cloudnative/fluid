@@ -23,6 +23,7 @@ import (
 	"strings"
 	"time"
 
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/validation"
 	"k8s.io/apimachinery/pkg/util/validation/field"
@@ -34,8 +35,7 @@ import (
 	"k8s.io/client-go/util/retry"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-
-	// "sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	"github.com/fluid-cloudnative/fluid/pkg/dump"
 	fluiderrs "github.com/fluid-cloudnative/fluid/pkg/errors"
@@ -110,14 +110,27 @@ func (r *RuntimeReconciler) ReconcileInternal(ctx cruntime.ReconcileRequestConte
 		return utils.RequeueIfError(err)
 	}
 
+	var datasetPolicy string
+	if annotations := objectMeta.GetAnnotations(); annotations != nil {
+		datasetPolicy = annotations[common.AnnotationDatasetPolicy]
+	}
+
 	// 5.Get the dataset
 	dataset, err := r.GetDataset(ctx)
 	if err != nil {
-		// r.Recorder.Eventf(ctx.Dataset, corev1.EventTypeWarning, common.ErrorProcessRuntimeReason, "Process Runtime error %v", err)
 		if utils.IgnoreNotFound(err) == nil {
-			ctx.Log.Info("The dataset is not found", "dataset", ctx.NamespacedName)
-			dataset = nil
-			// return ctrl.Result{}, nil
+			if datasetPolicy == common.DatasetPolicyAutoCreate {
+				ctx.Log.Info("The dataset is not found, auto-creating according to policy", "dataset", ctx.NamespacedName)
+				dataset, err = r.ensureDatasetForRuntime(ctx, objectMeta)
+				if err != nil {
+					ctx.Log.Error(err, "Failed to auto-create the dataset")
+					r.Recorder.Eventf(runtime, corev1.EventTypeWarning, common.ErrorCreateDataset, "Failed to auto-create dataset: %v", err)
+					return utils.RequeueAfterInterval(5 * time.Second)
+				}
+			} else {
+				ctx.Log.Info("The dataset is not found", "dataset", ctx.NamespacedName)
+				dataset = nil
+			}
 		} else {
 			ctx.Log.Error(err, "Failed to get the ddc dataset")
 			return utils.RequeueIfError(errors.Wrap(err, "Unable to get dataset"))
@@ -383,6 +396,79 @@ func (r *RuntimeReconciler) GetDataset(ctx cruntime.ReconcileRequestContext) (*d
 		return nil, err
 	}
 	return &dataset, nil
+}
+
+// ensureDatasetForRuntime auto-creates a stub Dataset (no Spec.Mounts) for the given Runtime
+// when one does not already exist. The caller is expected to populate the Dataset's spec
+// afterwards; until then, reconciliation keeps waiting on this empty Dataset.
+func (r *RuntimeReconciler) ensureDatasetForRuntime(ctx cruntime.ReconcileRequestContext, objectMeta metav1.Object) (*datav1alpha1.Dataset, error) {
+	runtime := ctx.Runtime
+	if runtime == nil {
+		return nil, fmt.Errorf("runtime is nil")
+	}
+
+	annotations := make(map[string]string)
+	for k, v := range objectMeta.GetAnnotations() {
+		// Skip runtime-specific annotations (e.g. runtime.fluid.io/disable-helm-value-config,
+		// fuse.runtime.fluid.io/generation) since they have no meaning on a Dataset.
+		if common.IsRuntimeOnlyAnnotationKey(k) {
+			continue
+		}
+		annotations[k] = v
+	}
+	annotations[common.AnnotationDatasetPolicy] = common.DatasetPolicyAutoCreate
+
+	dataset := &datav1alpha1.Dataset{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       datav1alpha1.Datasetkind,
+			APIVersion: datav1alpha1.GroupVersion.Group + "/" + datav1alpha1.GroupVersion.Version,
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:        objectMeta.GetName(),
+			Namespace:   objectMeta.GetNamespace(),
+			Annotations: annotations,
+		},
+	}
+
+	// SetControllerReference looks up the GVK from the scheme, avoiding the
+	// empty-TypeMeta problem that arises when runtime.GetObjectKind() is used
+	// on objects retrieved via controller-runtime's client.Get().
+	if err := controllerutil.SetControllerReference(runtime, dataset, r.Client.Scheme()); err != nil {
+		return nil, fmt.Errorf("failed to set controller reference on auto-created dataset: %w", err)
+	}
+
+	err := r.Create(ctx, dataset)
+	if err == nil {
+		r.Recorder.Eventf(runtime, corev1.EventTypeNormal, common.Succeed,
+			"Auto-created empty Dataset %s for Runtime; populate spec.mounts to continue", dataset.Name)
+		return dataset, nil
+	}
+	if !apierrors.IsAlreadyExists(err) {
+		return nil, err
+	}
+
+	// Create raced with a pre-existing Dataset of the same name. Only adopt it if it's
+	// already ours (owned by this runtime, or already carrying the auto-create policy);
+	// otherwise it belongs to someone else and must not be silently taken over.
+	existing := &datav1alpha1.Dataset{}
+	if err := r.Get(ctx, ctx.NamespacedName, existing); err != nil {
+		return nil, err
+	}
+
+	ownedByRuntime := false
+	for _, ref := range existing.GetOwnerReferences() {
+		if ref.UID == runtime.GetUID() {
+			ownedByRuntime = true
+			break
+		}
+	}
+	if !ownedByRuntime && existing.Annotations[common.AnnotationDatasetPolicy] != common.DatasetPolicyAutoCreate {
+		r.Recorder.Eventf(runtime, corev1.EventTypeWarning, common.ErrorCreateDataset,
+			"Dataset %s already exists and is not owned by this Runtime", existing.Name)
+		return nil, fmt.Errorf("dataset %s/%s already exists and is not owned by this runtime", existing.Namespace, existing.Name)
+	}
+
+	return existing, nil
 }
 
 func (r *RuntimeReconciler) CheckIfReferenceDatasetIsSupported(ctx cruntime.ReconcileRequestContext) (bool, error) {
