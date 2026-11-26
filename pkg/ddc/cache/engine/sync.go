@@ -154,7 +154,12 @@ func (e *CacheEngine) syncRuntimeValueConfigMap(ctx cruntime.ReconcileRequestCon
 	if err != nil {
 		return err
 	}
-	data, err := e.generateRuntimeConfigData(ctx, runtime, runtimeClass)
+	config, err := e.buildRuntimeConfig(ctx, runtime, runtimeClass)
+	if err != nil {
+		return err
+	}
+	e.preserveTieredStoreLevels(config, configMap)
+	data, err := e.renderRuntimeConfigData(config)
 	if err != nil {
 		return err
 	}

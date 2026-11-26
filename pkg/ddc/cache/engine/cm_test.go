@@ -850,3 +850,118 @@ func TestRuntimeShExportsEveryComponentAlike(t *testing.T) {
 			"master: %v\nworker: %v\nCheck writeComponentSh in cm.go.", master, worker)
 	}
 }
+
+func TestPreserveTieredStoreLevels(t *testing.T) {
+	engine := &CacheEngine{name: "demo", namespace: "default"}
+	createdWorkerLevels := []common.TieredStoreLevelConfig{
+		{
+			MediumType: common.Memory,
+			MountPaths: []string{GetMemoryTieredStoreMountPath(0)},
+			Quotas:     []string{"8Gi"},
+			High:       "0.8",
+			Low:        "0.5",
+		},
+		{
+			MediumType: common.HDD,
+			MountPaths: []string{GetHostPathTieredStoreMountPath(1, 0)},
+			Quotas:     []string{"100Gi"},
+			High:       "0.9",
+			Low:        "0.6",
+		},
+	}
+	createdClientLevels := []common.TieredStoreLevelConfig{
+		{
+			MediumType: common.HDD,
+			MountPaths: []string{GetEmptyDirTieredStoreMountPath(0)},
+			Quotas:     []string{"4Gi"},
+		},
+	}
+	createdJSON, err := json.Marshal(common.CacheRuntimeConfig{
+		Worker: &common.CacheRuntimeComponentConfig{TieredStoreLevels: createdWorkerLevels},
+		Client: &common.CacheRuntimeComponentConfig{TieredStoreLevels: createdClientLevels},
+	})
+	if err != nil {
+		t.Fatalf("marshal existing config: %v", err)
+	}
+
+	editedConfig := func() *common.CacheRuntimeConfig {
+		return &common.CacheRuntimeConfig{
+			Worker: &common.CacheRuntimeComponentConfig{
+				Replicas: 3,
+				TieredStoreLevels: []common.TieredStoreLevelConfig{
+					{
+						MediumType: common.Memory,
+						MountPaths: []string{GetMemoryTieredStoreMountPath(0)},
+						Quotas:     []string{"16Gi"},
+						High:       "0.95",
+						Low:        "0.75",
+					},
+				},
+			},
+			Client: &common.CacheRuntimeComponentConfig{
+				TieredStoreLevels: []common.TieredStoreLevelConfig{
+					{
+						MediumType: common.HDD,
+						MountPaths: []string{GetEmptyDirTieredStoreMountPath(0)},
+						Quotas:     []string{"12Gi"},
+					},
+				},
+			},
+		}
+	}
+
+	t.Run("preserves creation-time worker and client levels", func(t *testing.T) {
+		cfg := editedConfig()
+		cm := &corev1.ConfigMap{
+			Data: map[string]string{engine.getRuntimeConfigFileName(): string(createdJSON)},
+		}
+		engine.preserveTieredStoreLevels(cfg, cm)
+
+		if !reflect.DeepEqual(cfg.Worker.TieredStoreLevels, createdWorkerLevels) {
+			t.Fatalf("worker tieredStoreLevels: got %+v, want %+v", cfg.Worker.TieredStoreLevels, createdWorkerLevels)
+		}
+		if !reflect.DeepEqual(cfg.Client.TieredStoreLevels, createdClientLevels) {
+			t.Fatalf("client tieredStoreLevels: got %+v, want %+v", cfg.Client.TieredStoreLevels, createdClientLevels)
+		}
+		if cfg.Worker.Replicas != 3 {
+			t.Fatalf("mutable worker fields should not be overwritten: got Replicas=%d, want 3", cfg.Worker.Replicas)
+		}
+	})
+
+	t.Run("preserves empty tieredStore when creation had none", func(t *testing.T) {
+		emptyCreatedJSON, err := json.Marshal(common.CacheRuntimeConfig{
+			Worker: &common.CacheRuntimeComponentConfig{},
+			Client: &common.CacheRuntimeComponentConfig{},
+		})
+		if err != nil {
+			t.Fatalf("marshal empty config: %v", err)
+		}
+		cfg := editedConfig()
+		cm := &corev1.ConfigMap{
+			Data: map[string]string{engine.getRuntimeConfigFileName(): string(emptyCreatedJSON)},
+		}
+		engine.preserveTieredStoreLevels(cfg, cm)
+
+		if len(cfg.Worker.TieredStoreLevels) != 0 || len(cfg.Client.TieredStoreLevels) != 0 {
+			t.Fatalf("expected empty tieredStoreLevels to stay empty, got worker=%+v client=%+v",
+				cfg.Worker.TieredStoreLevels, cfg.Client.TieredStoreLevels)
+		}
+	})
+
+	t.Run("falls back gracefully on missing or malformed configmap data", func(t *testing.T) {
+		for _, cm := range []*corev1.ConfigMap{
+			nil,
+			{},
+			{Data: map[string]string{engine.getRuntimeConfigFileName(): ""}},
+			{Data: map[string]string{engine.getRuntimeConfigFileName(): "{not-json"}},
+		} {
+			cfg := editedConfig()
+			wantWorker := append([]common.TieredStoreLevelConfig(nil), cfg.Worker.TieredStoreLevels...)
+			wantClient := append([]common.TieredStoreLevelConfig(nil), cfg.Client.TieredStoreLevels...)
+			engine.preserveTieredStoreLevels(cfg, cm)
+			if !reflect.DeepEqual(cfg.Worker.TieredStoreLevels, wantWorker) || !reflect.DeepEqual(cfg.Client.TieredStoreLevels, wantClient) {
+				t.Fatalf("expected spec levels to be kept on fallback for cm=%+v", cm)
+			}
+		}
+	})
+}

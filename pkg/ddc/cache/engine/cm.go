@@ -106,6 +106,15 @@ func (e *CacheEngine) createRuntimeValueConfigMap(ctx context.Context, runtime *
 // the class the runtime is bound to, see getBoundRuntimeClass.
 func (e *CacheEngine) generateRuntimeConfigData(ctx context.Context, runtime *datav1alpha1.CacheRuntime,
 	runtimeClass *datav1alpha1.CacheRuntimeClass) (map[string]string, error) {
+	config, err := e.buildRuntimeConfig(ctx, runtime, runtimeClass)
+	if err != nil {
+		return nil, err
+	}
+	return e.renderRuntimeConfigData(config)
+}
+
+func (e *CacheEngine) buildRuntimeConfig(ctx context.Context, runtime *datav1alpha1.CacheRuntime,
+	runtimeClass *datav1alpha1.CacheRuntimeClass) (*common.CacheRuntimeConfig, error) {
 	if err := validateRuntimeClassTopology(runtimeClass); err != nil {
 		return nil, err
 	}
@@ -133,7 +142,7 @@ func (e *CacheEngine) generateRuntimeConfigData(ctx context.Context, runtime *da
 		mounts = append(mounts, mountCg)
 	}
 
-	config := common.CacheRuntimeConfig{
+	config := &common.CacheRuntimeConfig{
 		Mounts:      mounts,
 		AccessModes: dataset.Spec.AccessModes,
 		TargetPath:  e.getFuseMountPoint(),
@@ -189,8 +198,48 @@ func (e *CacheEngine) generateRuntimeConfigData(ctx context.Context, runtime *da
 		config.Client.TieredStoreLevels = e.extractTieredStoreLevels(&runtime.Spec.Client.TieredStore)
 	}
 
-	b, _ := json.Marshal(config)
-	sh, err := e.generateRuntimeSh(&config)
+	return config, nil
+}
+
+// preserveTieredStoreLevels keeps the creation-time worker and client
+// TieredStoreLevels recorded in existingConfigMap rather than letting
+// syncRuntimeValueConfigMap overwrite them after an unsupported tieredStore
+// spec edit.
+//
+// Preserving from the existing ConfigMap rather than reconstructing levels from
+// workload PodSpecs keeps ConfigMap-only fields intact: workload pods carry
+// tmpfs/emptyDir sizeLimits and container memory limits, whereas
+// hostPath.quotas, high, and low exist only in runtime.json (and client
+// DaemonSet pods are never synced in place). When existingConfigMap has no
+// parseable runtime.json entry, config retains the levels computed from the
+// spec.
+func (e *CacheEngine) preserveTieredStoreLevels(config *common.CacheRuntimeConfig, existingConfigMap *corev1.ConfigMap) {
+	if config == nil || existingConfigMap == nil || len(existingConfigMap.Data) == 0 {
+		return
+	}
+	raw, ok := existingConfigMap.Data[e.getRuntimeConfigFileName()]
+	if !ok || raw == "" {
+		return
+	}
+	var existingConfig common.CacheRuntimeConfig
+	if err := json.Unmarshal([]byte(raw), &existingConfig); err != nil {
+		e.Log.Error(err, "failed to unmarshal existing runtime config while preserving tieredStoreLevels; using spec values")
+		return
+	}
+	if config.Worker != nil && existingConfig.Worker != nil {
+		config.Worker.TieredStoreLevels = existingConfig.Worker.TieredStoreLevels
+	}
+	if config.Client != nil && existingConfig.Client != nil {
+		config.Client.TieredStoreLevels = existingConfig.Client.TieredStoreLevels
+	}
+}
+
+func (e *CacheEngine) renderRuntimeConfigData(config *common.CacheRuntimeConfig) (map[string]string, error) {
+	b, err := json.Marshal(config)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to marshal runtime config")
+	}
+	sh, err := e.generateRuntimeSh(config)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to generate runtime.sh")
 	}
