@@ -465,6 +465,71 @@ func TestAlluxioFileUtils_IsMounted(t *testing.T) {
 	}
 }
 
+// TestAlluxioFileUtils_MountOutputWithShortLines verifies that IsMounted and
+// GetMountedAlluxioPaths skip the lines of the `alluxio fs mount` output that
+// have no Alluxio path field, such as an empty output or a blank line.
+func TestAlluxioFileUtils_MountOutputWithShortLines(t *testing.T) {
+	const hbaseEntry = "https://mirrors.bit.edu.cn/apache/hbase/stable  on  /hbase (web, capacity=-1B, used=-1B, read-only, not shared, properties={})"
+	const rootEntry = "/underFSStorage  on  /  (local, capacity=0B, used=0B, not read-only, not shared, properties={})"
+
+	var testCases = []struct {
+		name          string
+		stdout        string
+		alluxioPath   string
+		expectMounted bool
+		expectPaths   []string
+	}{
+		{
+			name:          "empty output",
+			stdout:        "",
+			alluxioPath:   "/hbase",
+			expectMounted: false,
+			expectPaths:   nil,
+		},
+		{
+			name:          "blank line between entries",
+			stdout:        hbaseEntry + "\n\n" + rootEntry,
+			alluxioPath:   "/",
+			expectMounted: true,
+			expectPaths:   []string{"/hbase", "/"},
+		},
+		{
+			name:          "line with fewer than three fields",
+			stdout:        "unexpected line\n" + rootEntry + "\n",
+			alluxioPath:   "/hbase",
+			expectMounted: false,
+			expectPaths:   []string{"/"},
+		},
+	}
+
+	a := &AlluxioFileUtils{log: fake.NullLogger()}
+	for _, test := range testCases {
+		stdout := test.stdout
+		patches := gomonkey.ApplyPrivateMethod(reflect.TypeOf(AlluxioFileUtils{}), "exec",
+			func(a AlluxioFileUtils, command []string, verbose bool) (string, string, error) {
+				return stdout, "", nil
+			})
+
+		mounted, err := a.IsMounted(test.alluxioPath)
+		if err != nil {
+			t.Errorf("%s: IsMounted want nil, got err: %v", test.name, err)
+		}
+		if mounted != test.expectMounted {
+			t.Errorf("%s: IsMounted want: %t, got: %t", test.name, test.expectMounted, mounted)
+		}
+
+		paths, err := a.GetMountedAlluxioPaths()
+		if err != nil {
+			t.Errorf("%s: GetMountedAlluxioPaths want nil, got err: %v", test.name, err)
+		}
+		if !reflect.DeepEqual(paths, test.expectPaths) {
+			t.Errorf("%s: GetMountedAlluxioPaths want: %v, got: %v", test.name, test.expectPaths, paths)
+		}
+
+		patches.Reset()
+	}
+}
+
 // TestAlluxioFileUtils_FindUnmountedAlluxioPaths tests the FindUnmountedAlluxioPaths method
 // of AlluxioFileUtils. It mocks the internal exec command to simulate the output of
 // `alluxio fs mount` and verifies that paths not currently mounted are correctly
