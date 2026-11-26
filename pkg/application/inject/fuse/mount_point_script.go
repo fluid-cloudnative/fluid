@@ -213,9 +213,9 @@ func assembleMountInfos(path2RuntimeTypeMap map[string]string) (mountPathStr, mo
 		mountTypes []string
 	)
 
-	for k, v := range path2RuntimeTypeMap {
+	for _, k := range utils.OrderedKeys(path2RuntimeTypeMap) {
 		mountPaths = append(mountPaths, k)
-		mountTypes = append(mountTypes, v)
+		mountTypes = append(mountTypes, path2RuntimeTypeMap[k])
 	}
 
 	mountPathStr = strings.Join(mountPaths, ":")

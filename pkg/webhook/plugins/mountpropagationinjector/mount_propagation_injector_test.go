@@ -72,6 +72,7 @@ var _ = Describe("MountPropagationInjector Plugin", func() {
 		It("should return error when runtimeInfo is nil", func() {
 			shouldStop, err := plugin.Mutate(pod, map[string]base.RuntimeInfoInterface{"test": nil})
 			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring(`"test"`))
 			Expect(shouldStop).To(BeTrue())
 		})
 	})

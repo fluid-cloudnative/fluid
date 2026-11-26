@@ -437,8 +437,7 @@ var _ = Describe("Mutate", func() {
 				}
 			}
 			Expect(fileListEnv).NotTo(BeNil())
-			Expect(fileListEnv.Value).To(ContainSubstring("/data/pvc1-vol/**"))
-			Expect(fileListEnv.Value).To(ContainSubstring("/data/pvc2-vol/**"))
+			Expect(fileListEnv.Value).To(Equal("/data/pvc1-vol/**;/data/pvc2-vol/**"))
 		})
 	})
 })
@@ -519,7 +518,27 @@ var _ = Describe("buildFilePrefetcherSidecarContainer with multiple volumes", fu
 			for _, vm := range containerSpec.VolumeMounts {
 				volumeNames = append(volumeNames, vm.Name)
 			}
-			Expect(volumeNames).To(ContainElements("vol1", "vol2", "vol3", filePrefetcherStatusVolumeName))
+			Expect(volumeNames).To(Equal([]string{"vol1", "vol2", "vol3", filePrefetcherStatusVolumeName}))
+		})
+
+		It("should append extraEnvs in deterministic key-sorted order", func() {
+			config := filePrefetcherConfig{
+				Image:            "test-image",
+				AsyncPrefetch:    true,
+				VolumeMountPaths: map[string]string{},
+				ExtraEnvs: map[string]string{
+					"ENV_Z": "val_z",
+					"ENV_A": "val_a",
+					"ENV_M": "val_m",
+				},
+			}
+			containerSpec, _ := prefetcher.buildFilePrefetcherSidecarContainer(config)
+			Expect(containerSpec.Env).To(HaveLen(6))
+			Expect(containerSpec.Env[3:]).To(Equal([]corev1.EnvVar{
+				{Name: "ENV_A", Value: "val_a"},
+				{Name: "ENV_M", Value: "val_m"},
+				{Name: "ENV_Z", Value: "val_z"},
+			}))
 		})
 	})
 })
