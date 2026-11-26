@@ -32,6 +32,7 @@ import (
 	"github.com/fluid-cloudnative/fluid/pkg/utils/dataset/lifecycle"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/kubeclient"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/equality"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/retry"
@@ -75,30 +76,37 @@ func (e *CacheEngine) Sync(ctx cruntime.ReconcileRequestContext) (err error) {
 		return err
 	}
 
-	conflicts, err := e.syncRuntimeSpec(ctx, runtime, runtimeClass)
-	if err != nil && len(conflicts) == 0 {
-		// An incomplete pass without an observed conflict cannot establish a new condition.
+	conflicts, tieredStoreCond, err := e.syncRuntimeSpecWithConditions(ctx, runtime, runtimeClass)
+	if err != nil && len(conflicts) == 0 && tieredStoreCond == nil {
+		// An incomplete pass without an observed condition cannot establish a new state.
 		return err
 	}
-	status := corev1.ConditionTrue
-	reason := datav1alpha1.RuntimeResourcesSyncedReason
-	message := "Resources are in sync for all enabled master and worker components."
-
-	if len(conflicts) > 0 {
-		status = corev1.ConditionFalse
-		reason = common.RuntimeResourcesConflict
-		message = strings.Join(conflicts, "\n")
+	var conds []*datav1alpha1.RuntimeCondition
+	if err == nil || len(conflicts) > 0 {
+		status := corev1.ConditionTrue
+		reason := datav1alpha1.RuntimeResourcesSyncedReason
+		message := "Resources are in sync for all enabled master and worker components."
+		if len(conflicts) > 0 {
+			status = corev1.ConditionFalse
+			reason = common.RuntimeResourcesConflict
+			message = strings.Join(conflicts, "\n")
+		}
+		resCond := utils.NewRuntimeCondition(datav1alpha1.RuntimeResourcesSynced, reason, message, status)
+		conds = append(conds, &resCond)
 	}
-	cond := utils.NewRuntimeCondition(datav1alpha1.RuntimeResourcesSynced, reason, message, status)
+	if tieredStoreCond != nil {
+		conds = append(conds, tieredStoreCond)
+	}
+
 	var runtimeReady bool
 	if err == nil {
-		runtimeReady, err = e.checkAndUpdateRuntimeStatus(ctx.Context, statusValue, &cond)
+		runtimeReady, err = e.checkAndUpdateRuntimeStatus(ctx.Context, statusValue, conds...)
 	}
 
 	if err != nil {
 		// A workload or readiness error prevented the combined write. Keep the
-		// resource result already observed and return the reconciliation error.
-		if statusErr := e.updateResourcesSyncedCondition(ctx, cond); statusErr != nil {
+		// condition results already observed and return the reconciliation error.
+		if statusErr := e.updateRuntimeConditions(ctx, conds...); statusErr != nil {
 			return errors.Join(err, statusErr)
 		}
 		return err
@@ -220,6 +228,12 @@ func (e *CacheEngine) permitSync() (permit bool) {
 // DaemonSet and is not synced after creation.
 func (e *CacheEngine) syncRuntimeSpec(ctx cruntime.ReconcileRequestContext, runtime *datav1alpha1.CacheRuntime,
 	runtimeClass *datav1alpha1.CacheRuntimeClass) ([]string, error) {
+	conflicts, _, err := e.syncRuntimeSpecWithConditions(ctx, runtime, runtimeClass)
+	return conflicts, err
+}
+
+func (e *CacheEngine) syncRuntimeSpecWithConditions(ctx cruntime.ReconcileRequestContext, runtime *datav1alpha1.CacheRuntime,
+	runtimeClass *datav1alpha1.CacheRuntimeClass) ([]string, *datav1alpha1.RuntimeCondition, error) {
 	e.Log.V(1).Info("start syncing runtime spec")
 	defer func() {
 		e.Log.V(1).Info("finished syncing runtime spec")
@@ -228,9 +242,10 @@ func (e *CacheEngine) syncRuntimeSpec(ctx cruntime.ReconcileRequestContext, runt
 	// getRuntimeClass rejects a class without a topology, so this only guards direct callers;
 	// like the transform path, a missing topology leaves no component to sync.
 	if runtimeClass.Topology == nil {
-		return nil, nil
+		return nil, nil, nil
 	}
 	var conflictMessages []string
+	var tieredStoreCond *datav1alpha1.RuntimeCondition
 	// Sync Master component if enabled (supports in-place update via AdvancedStatefulSet)
 	if runtimeClass.Topology.Master != nil && !runtime.Spec.Master.Disabled {
 		masterIdentity := &common.ComponentIdentity{
@@ -241,7 +256,7 @@ func (e *CacheEngine) syncRuntimeSpec(ctx cruntime.ReconcileRequestContext, runt
 		podSpec, err := manager.GetPodSpec(ctx.Context, masterIdentity)
 		if err != nil {
 			e.Log.Error(err, "failed to read the master pod spec", "component", masterIdentity.Name)
-			return conflictMessages, err
+			return conflictMessages, nil, err
 		}
 		masterTemplateImage := componentTemplateImage(runtimeClass.Topology.Master)
 		e.reportIncompleteVersion(runtime, common.ComponentTypeMaster, runtime.Spec.Master.RuntimeVersion, masterTemplateImage)
@@ -257,7 +272,7 @@ func (e *CacheEngine) syncRuntimeSpec(ctx cruntime.ReconcileRequestContext, runt
 		}
 		if err := manager.SyncComponentSpec(ctx.Context, masterIdentity, masterSpec); err != nil {
 			e.Log.Error(err, "failed to sync master component spec", "component", masterIdentity.Name)
-			return conflictMessages, err
+			return conflictMessages, nil, err
 		}
 	}
 
@@ -279,7 +294,7 @@ func (e *CacheEngine) syncRuntimeSpec(ctx cruntime.ReconcileRequestContext, runt
 		podSpec, err := manager.GetPodSpec(ctx.Context, workerIdentity)
 		if err != nil {
 			e.Log.Error(err, "failed to read the worker pod spec", "component", workerIdentity.Name)
-			return conflictMessages, err
+			return conflictMessages, nil, err
 		}
 		workerResources, conflictMessage := e.validDesiredResources(runtime, common.ComponentTypeWorker,
 			desiredComponentResources(runtime.Spec.Worker.Resources, runtimeClass.Topology.Worker), podSpec)
@@ -293,6 +308,9 @@ func (e *CacheEngine) syncRuntimeSpec(ctx cruntime.ReconcileRequestContext, runt
 		}
 		workerTemplateImage := componentTemplateImage(runtimeClass.Topology.Worker)
 		e.reportIncompleteVersion(runtime, common.ComponentTypeWorker, runtime.Spec.Worker.RuntimeVersion, workerTemplateImage)
+
+		tieredStoreCond = e.checkWorkerTieredStoreDrift(runtime, podSpec)
+
 		workerSpec := component.ComponentSpec{
 			Version:   desiredComponentVersion(runtime.Spec.Worker.RuntimeVersion, workerTemplateImage),
 			Resources: workerResources,
@@ -300,28 +318,123 @@ func (e *CacheEngine) syncRuntimeSpec(ctx cruntime.ReconcileRequestContext, runt
 		}
 		if err := manager.SyncComponentSpec(ctx.Context, workerIdentity, workerSpec); err != nil {
 			e.Log.Error(err, "failed to sync worker component spec", "component", workerIdentity.Name)
-			return conflictMessages, err
+			return conflictMessages, tieredStoreCond, err
 		}
 	}
 
 	// Note: Client component is NOT synced here because it uses DaemonSet which does not support in-place update
 	// Client component will be recreated when spec changes
 
-	return conflictMessages, nil
+	return conflictMessages, tieredStoreCond, nil
 }
 
-// updateResourcesSyncedCondition skips the status write when the existing condition already matches.
-func (e *CacheEngine) updateResourcesSyncedCondition(ctx cruntime.ReconcileRequestContext, resources datav1alpha1.RuntimeCondition) error {
-	return retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+// updateRuntimeConditions persists non-nil status conditions when checkAndUpdateRuntimeStatus
+// cannot run or fails, skipping the status write if nothing changed.
+func (e *CacheEngine) updateRuntimeConditions(ctx cruntime.ReconcileRequestContext, conditions ...*datav1alpha1.RuntimeCondition) error {
+	var latestRuntime *datav1alpha1.CacheRuntime
+	var pendingEvents []datav1alpha1.RuntimeCondition
+
+	err := retry.RetryOnConflict(retry.DefaultBackoff, func() error {
+		latestRuntime = nil
+		pendingEvents = nil
 		latest, err := e.getRuntime()
 		if err != nil {
 			return err
 		}
-		if !applyResourcesSyncedCondition(&latest.Status, resources) {
+		before := latest.Status.DeepCopy()
+		pendingEvents = applyRuntimeConditions(&latest.Status, conditions...)
+		if reflect.DeepEqual(*before, latest.Status) {
 			return nil
 		}
-		return e.Client.Status().Update(ctx.Context, latest)
+		if err := e.Client.Status().Update(ctx.Context, latest); err != nil {
+			return err
+		}
+		latestRuntime = latest
+		return nil
 	})
+	if err == nil {
+		e.recordConditionEvents(latestRuntime, pendingEvents)
+	}
+	return err
+}
+
+// checkWorkerTieredStoreDrift renders expected volumes via TransformRuntimeTieredStore and compares
+// them against generated tiered store volumes on the worker pod spec. Because tieredStore volumes
+// cannot be updated in-place after creation, invalid specs and pod-level drift are surfaced via
+// the TieredStoreSynced condition (and transition Warning events).
+//
+// TODO(#6192, #6299): syncRuntimeValueConfigMap still recomputes worker.tieredStoreLevels from the
+// edited spec before this check runs; follow up in #6299 to keep ConfigMap levels aligned with the workload.
+func (e *CacheEngine) checkWorkerTieredStoreDrift(runtime *datav1alpha1.CacheRuntime, podSpec *corev1.PodSpec) *datav1alpha1.RuntimeCondition {
+	if podSpec == nil {
+		return nil
+	}
+
+	expectedPod := &corev1.PodSpec{Containers: []corev1.Container{{}}}
+	if err := e.TransformRuntimeTieredStore(&runtime.Spec.Worker.TieredStore, expectedPod); err != nil {
+		msg := fmt.Sprintf("Worker tieredStore is invalid: %v. Fix spec.worker.tieredStore.", err)
+		e.Log.Info("worker tieredStore spec is invalid", "reason", err.Error())
+		cond := utils.NewRuntimeCondition(datav1alpha1.RuntimeTieredStoreSynced, common.RuntimeTieredStoreInvalid, msg, corev1.ConditionFalse)
+		return &cond
+	}
+
+	want := tieredStoreVolumesMap(expectedPod.Volumes, false)
+	got := tieredStoreVolumesMap(podSpec.Volumes, true)
+	if len(want) == 0 && len(got) == 0 {
+		if _, existing := utils.GetRuntimeCondition(runtime.Status.Conditions, datav1alpha1.RuntimeTieredStoreSynced); existing == nil {
+			return nil
+		}
+	}
+
+	var driftMsgs []string
+	for _, name := range utils.OrderedKeys(want) {
+		gotVol, exists := got[name]
+		if !exists {
+			driftMsgs = append(driftMsgs, fmt.Sprintf("volume %s expected by spec tieredStore not found in worker pod", name))
+		} else if !tieredStoreVolumeEqual(want[name], gotVol) {
+			driftMsgs = append(driftMsgs, fmt.Sprintf("worker pod volume %s differs from spec tieredStore", name))
+		}
+	}
+	for _, name := range utils.OrderedKeys(got) {
+		if _, expected := want[name]; !expected {
+			driftMsgs = append(driftMsgs, fmt.Sprintf("worker pod volume %s is not declared in spec tieredStore", name))
+		}
+	}
+
+	if len(driftMsgs) == 0 {
+		cond := utils.NewRuntimeCondition(datav1alpha1.RuntimeTieredStoreSynced, datav1alpha1.RuntimeTieredStoreSyncedReason, "Worker tieredStore matches pod volumes.", corev1.ConditionTrue)
+		return &cond
+	}
+
+	msg := fmt.Sprintf("Worker tieredStore cannot be updated in-place after creation: %s. Delete and recreate the CacheRuntime to apply changes.", strings.Join(driftMsgs, "; "))
+	e.Log.Info("worker tieredStore drift detected", "reasons", driftMsgs)
+	cond := utils.NewRuntimeCondition(datav1alpha1.RuntimeTieredStoreSynced, common.RuntimeTieredStoreConflict, msg, corev1.ConditionFalse)
+	return &cond
+}
+
+func tieredStoreVolumesMap(volumes []corev1.Volume, filterGenerated bool) map[string]corev1.Volume {
+	result := make(map[string]corev1.Volume)
+	for _, vol := range volumes {
+		if filterGenerated && !isGeneratedTieredStoreVolumeName(vol.Name) {
+			continue
+		}
+		result[vol.Name] = vol
+	}
+	return result
+}
+
+func tieredStoreVolumeEqual(want, got corev1.Volume) bool {
+	return equality.Semantic.DeepEqual(normalizeTieredStoreVolume(want), normalizeTieredStoreVolume(got))
+}
+
+// normalizeTieredStoreVolume treats nil HostPath.Type and *HostPathUnset equivalently
+// because the Kubernetes API server may default nil HostPath.Type to HostPathUnset.
+func normalizeTieredStoreVolume(vol corev1.Volume) corev1.Volume {
+	out := *vol.DeepCopy()
+	if out.HostPath != nil && out.HostPath.Type != nil && *out.HostPath.Type == corev1.HostPathUnset {
+		out.HostPath.Type = nil
+	}
+	return out
 }
 
 // desiredComponentResources resolves the resources that should be synced to a

@@ -52,6 +52,10 @@ const (
 	RuntimeClassSnapshotInvalid = "RuntimeClassSnapshotInvalid"
 
 	RuntimeClassChanged = "RuntimeClassChanged"
+
+	RuntimeTieredStoreConflict = "RuntimeTieredStoreConflict"
+
+	RuntimeTieredStoreInvalid = "RuntimeTieredStoreInvalid"
 )
 
 // Events related to all type of Data Operations

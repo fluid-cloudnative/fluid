@@ -246,7 +246,21 @@ kubectl get cm fluid-runtime-class-snapshot-my-cache -o jsonpath='{.data.runtime
 
 **说明**：
 - 这类字段修改后，需要重新部署 CacheRuntime 才能生效
-- 系统不会自动检测或同步这类变更
+- 系统不会自动检测或同步这类变更（下文 `spec.worker.tieredStore` 的 Pod Volume 漂移检测除外）
+
+### 5.1 Worker 分层存储 (`spec.worker.tieredStore`)
+
+**字段路径**: `spec.worker.tieredStore`
+
+- **为什么不支持原地更新**：分层存储的 Volume 定义（`emptyDir.sizeLimit`、`emptyDir.medium`、内存 tmpfs `/dev/shm`、hostPath 挂载路径及类型等）以及容器内存计算在 Worker 初次创建时（`Setup`）完成生成。在 Kubernetes 中，运行中 Pod 的 Volume 定义无法动态修改。
+- **漂移与校验告警行为**：Controller 会在调谐循环中通过 `TransformRuntimeTieredStore` 对比 `spec.worker.tieredStore` 与运行中 Worker Pod 的 Volume：
+  - **Volume 漂移**（修改 `processMemory.quota`、`emptyDir.quota` / `medium`、`hostPath.paths` / `type` 或增减层级）：将 `TieredStoreSynced` 条件置为 `False`（`Reason: RuntimeTieredStoreConflict`），并在状态切换或变更时发出 `RuntimeTieredStoreConflict` Warning 事件：
+    ```bash
+    kubectl get events -n <namespace> --field-selector type=Warning,reason=RuntimeTieredStoreConflict
+    ```
+  - **无效配置**（如同一层级配置多种介质、多个 `processMemory` 层级等）：将 `TieredStoreSynced` 置为 `False`（`Reason: RuntimeTieredStoreInvalid`），并发出 `RuntimeTieredStoreInvalid` Warning 事件提示修正 `spec.worker.tieredStore`。
+  - **仅影响 ConfigMap 的字段**：修改 `hostPath.quotas`、`high` 和 `low` 不会改变 Pod Volume 定义，因此会更新运行时 ConfigMap，不会触发 Pod Volume 漂移告警。
+- **如何使修改生效**：如需调整涉及 Pod Volume 的 `spec.worker.tieredStore` 配置，需要删除并重新创建 CacheRuntime。
 
 ---
 
@@ -257,10 +271,12 @@ kubectl get cm fluid-runtime-class-snapshot-my-cache -o jsonpath='{.data.runtime
 | `runtimeVersion` | ✅ 支持 | 自动同步到 AdvancedStatefulSet（重启容器） |
 | `resources` | ✅ 支持 | 自动同步到 AdvancedStatefulSet（重建 Pod） |
 | `replicas` | ✅ 支持 | 自动同步到 AdvancedStatefulSet（缩容会丢失该 Worker 上的缓存） |
+| `spec.worker.tieredStore` | ❌ 不支持 | 发生漂移或配置无效时置 `TieredStoreSynced=False` 并发出对应告警事件；涉及 Volume 的修改需删除并重新创建 CacheRuntime |
 | 其他所有字段 | ❌ 不支持 | 不会同步，需重新部署 |
 
 **关键要点**：
 1. 当前版本支持 `runtimeVersion`、`resources` 和 `replicas` 三个字段的动态更新
 2. 仅通过 `runtimeVersion` 更新镜像时，受影响的容器在原 Pod 内重启，进程内存中的缓存会丢失，`emptyDir` 中的缓存会保留。修改 `resources` 会重建 Pod，两处缓存都会丢失。
-3. 其他字段的修改不会生效，必须重新部署
-4. CacheRuntime 绑定的是其首次部署时的 CacheRuntimeClass；修改 class 只影响之后创建的 CacheRuntime
+3. `spec.worker.tieredStore` 中涉及 Pod Volume 的字段不支持原地更新；修改后会将 `TieredStoreSynced` 置为 `False` 并触发 `RuntimeTieredStoreConflict` 告警事件，需删除并重新创建 CacheRuntime 生效
+4. 其他字段的修改不会生效，必须重新部署
+5. CacheRuntime 绑定的是其首次部署时的 CacheRuntimeClass；修改 class 只影响之后创建的 CacheRuntime

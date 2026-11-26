@@ -168,7 +168,7 @@ func (e *CacheEngine) updateSetupResourceCondition(ctx context.Context, observed
 		if !current || (conflict == nil && !hasSetupResourceConflict(latest)) {
 			return nil
 		}
-		if !applyResourcesSyncedCondition(&latest.Status, cond) {
+		if !applyRuntimeCondition(&latest.Status, cond) {
 			return nil
 		}
 		return e.Client.Status().Update(ctx, latest)

@@ -220,3 +220,24 @@ var _ = Describe("getTieredStoreVolumeName Tests", Label("pkg.ddc.cache.engine.u
 		Expect(validation.IsDNS1035Label(getMemoryTieredStoreVolumeName(9))).To(BeEmpty())
 	})
 })
+
+var _ = Describe("isGeneratedTieredStoreVolumeName Tests", Label("pkg.ddc.cache.engine.util_test.go"), func() {
+	It("should match engine-generated tiered store volume names", func() {
+		Expect(isGeneratedTieredStoreVolumeName("tiered-store-level-0-index-0")).To(BeTrue())
+		Expect(isGeneratedTieredStoreVolumeName("tiered-store-level-1-index-2")).To(BeTrue())
+		Expect(isGeneratedTieredStoreVolumeName("tiered-store-level-10-index-5")).To(BeTrue())
+		Expect(isGeneratedTieredStoreVolumeName("tiered-store-level-0-memory")).To(BeTrue())
+		Expect(isGeneratedTieredStoreVolumeName("tiered-store-level-2-memory")).To(BeTrue())
+	})
+
+	It("should not match user-supplied volume names that share the prefix", func() {
+		Expect(isGeneratedTieredStoreVolumeName("tiered-store-level-config")).To(BeFalse())
+		Expect(isGeneratedTieredStoreVolumeName("tiered-store-level-data")).To(BeFalse())
+		Expect(isGeneratedTieredStoreVolumeName("tiered-store-level-")).To(BeFalse())
+		Expect(isGeneratedTieredStoreVolumeName("tiered-store-level-0")).To(BeFalse())
+		Expect(isGeneratedTieredStoreVolumeName("tiered-store-level-memory")).To(BeFalse())
+		Expect(isGeneratedTieredStoreVolumeName("tiered-store-level-0-index")).To(BeFalse())
+		Expect(isGeneratedTieredStoreVolumeName("tiered-store-level-a-memory")).To(BeFalse())
+		Expect(isGeneratedTieredStoreVolumeName("my-custom-volume")).To(BeFalse())
+	})
+})

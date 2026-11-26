@@ -194,6 +194,9 @@ const (
 	// RuntimeResourcesSynced reports resource conflicts during component setup and
 	// whether enabled master and worker resources are in sync after setup.
 	RuntimeResourcesSynced RuntimeConditionType = "ResourcesSynced"
+	// RuntimeTieredStoreSynced reports whether spec.worker.tieredStore is valid and
+	// matches the worker workload's generated tiered store volumes.
+	RuntimeTieredStoreSynced RuntimeConditionType = "TieredStoreSynced"
 )
 
 const (
@@ -219,6 +222,8 @@ const (
 	RuntimeFusesScaledOutReason = "Fuses scaled out"
 	// RuntimeResourcesSyncedReason means all enabled master and worker resources are in sync.
 	RuntimeResourcesSyncedReason = "RuntimeResourcesSynced"
+	// RuntimeTieredStoreSyncedReason means worker tieredStore volumes match the spec.
+	RuntimeTieredStoreSyncedReason = "RuntimeTieredStoreSynced"
 	// RuntimeResourceCreationConflictReason means a resource conflict prevented component creation.
 	RuntimeResourceCreationConflictReason = "RuntimeResourceCreationConflict"
 	// RuntimeWaitingForSyncReason means Setup validated the corrected resources and Sync is pending.
