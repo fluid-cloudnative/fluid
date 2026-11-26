@@ -118,7 +118,7 @@ spec:
 
 创建Pod
 ```
-$ kubctl create -f pod.yaml
+$ kubectl create -f pod.yaml
 ```
     
 4. 查看文件预取优化效果
