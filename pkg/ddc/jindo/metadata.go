@@ -161,7 +161,6 @@ func (e *JindoEngine) syncMetadataInternal() (err error) {
 				e.Log.Error(err, "LoadMetadata failed when syncing metadata", "name", e.name, "namespace", e.namespace)
 				result.Err = err
 				result.Done = false
-				resultChan <- result
 				return
 			}*/
 			result.Done = true

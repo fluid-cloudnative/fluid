@@ -175,7 +175,6 @@ func (e *JindoFSxEngine) syncMetadataInternal() (err error) {
 			if closed := base.SafeSend(resultChan, result); closed {
 				e.Log.Info("Recover from sending result to a closed channel", "result", result)
 			}
-			resultChan <- result
 		}(e.MetadataSyncDoneCh)
 	}
 	return
