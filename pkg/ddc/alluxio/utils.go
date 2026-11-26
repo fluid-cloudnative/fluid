@@ -51,6 +51,16 @@ func (e *AlluxioEngine) getDataSetFileNum() (string, error) {
 	return strconv.FormatInt(fileCount, 10), err
 }
 
+// dataOperationImagePullSecrets returns the image pull secrets for data operation pods such as
+// DataLoad and DataBackup: the runtime's imagePullSecrets when set, otherwise the controller
+// default from the environment (an empty slice when that isn't set either).
+func dataOperationImagePullSecrets(runtime *datav1alpha1.AlluxioRuntime) []v1.LocalObjectReference {
+	if len(runtime.Spec.ImagePullSecrets) > 0 {
+		return runtime.Spec.ImagePullSecrets
+	}
+	return docker.GetImagePullSecretsFromEnv(common.EnvImagePullSecretsKey)
+}
+
 // getRuntime gets the alluxio runtime
 func (e *AlluxioEngine) getRuntime() (*datav1alpha1.AlluxioRuntime, error) {
 	key := types.NamespacedName{
