@@ -30,6 +30,8 @@
     - [Encrypted options for Dataset](samples/use_encryptoptions.md)
     - [Using Fluid to access non-root user's data](samples/nonroot_access.md)
     - [Set Access Mode](samples/data_accessmodes.md)
+  + Advanced Configuration
+    - [Configure the Metadata Sync Policy](samples/metadata_sync.md)
 + Storage
     - [Accelerate HostPath with Fluid](samples/hostpath.md)
     - [Accelerate PVC with Fluid](samples/accelerate_pvc.md)
