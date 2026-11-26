@@ -19,6 +19,7 @@ package dataflow
 import (
 	"errors"
 	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	"strings"
@@ -47,7 +48,8 @@ func GenerateNodeAffinity(job *batchv1.Job) (*corev1.NodeAffinity, error) {
 
 	// affinity labels with specific prefix.
 	hasInjectedLabels := false
-	for key, value := range annotations {
+	for _, key := range utils.OrderedKeys(annotations) {
+		value := annotations[key]
 		if strings.HasPrefix(key, common.AnnotationDataFlowCustomizedAffinityPrefix) {
 			nodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms[0].MatchExpressions =
 				append(nodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms[0].MatchExpressions,
