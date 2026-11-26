@@ -17,6 +17,7 @@
     - [Accelerate Data Accessing(via POSIX)](samples/accelerate_data_accessing.md)
     - [Accelerate Data Accessing(via HDFS interface)](samples/accelerate_data_accessing_by_hdfs.md)
     - [Cache Co-locality](samples/data_co_locality.md)
+    - [Dataset Toleration of Node Taints](samples/data_toleration.md)
     - [Share data across namespace (CSI mode)](samples/dataset_across_namespace_with_csi.md)
     - [Share data across namespace (Sidecar mode)](samples/dataset_across_namespace_with_sidecar.md)
   + Operation

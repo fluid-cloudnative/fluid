@@ -26,8 +26,6 @@ NAME                       STATUS   ROLES    AGE    VERSION
 cn-beijing.192.168.1.146   Ready    <none>   200d   v1.16.9-aliyun.1
 ```
 
-kubectl taint nodes node1 key=value:NoSchedule
-
 **为节点配置污点（taint）**
 
 ```shell
@@ -117,7 +115,7 @@ hbase   1               1                 Ready          1               1      
 
 ```shell
 $ cat<<EOF >app.yaml
-apiVersion: apps/v1beta1
+apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: nginx
