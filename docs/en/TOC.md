@@ -19,6 +19,7 @@
     - [Cache Co-locality](samples/data_co_locality.md)
     - [Share data across namespace (CSI mode)](samples/dataset_across_namespace_with_csi.md)
     - [Share data across namespace (Sidecar mode)](samples/dataset_across_namespace_with_sidecar.md)
+    - [Mount a Subpath of Another Dataset](samples/dataset_mount_dataset_subpath.md)
   + Operation
     - [Data Preloading](samples/data_warmup.md)
     - [CacheRuntime Data Operations](samples/cacheruntime/cacheruntime_data_operations.md)

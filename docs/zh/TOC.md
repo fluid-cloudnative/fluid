@@ -24,6 +24,7 @@
     - [数据容忍污点调度](samples/data_toleration.md)
     - [跨namespace共享数据(CSI模式)](samples/dataset_across_namespace_with_csi.md)
     - [跨namespace共享数据(sidecar模式)](samples/dataset_across_namespace_with_sidecar.md)
+    - [Dataset 挂载其它 Dataset 的子路径](samples/dataset_mount_dataset_subpath.md)
   + 操作
     - [数据预加载](samples/data_warmup.md)
     - [CacheRuntime 数据操作](samples/cacheruntime/cacheruntime_data_operations.md)

@@ -1,7 +1,7 @@
 # 示例 - Dataset 挂载其它 Dataset的子路径
 本示例用来演示如何将Dataset挂载其它Dataset的子路径：
 - Namespace default 创建 Dataset phy 和 AlluxioRuntime phy；
-- Namespace ref 创建 Dataset subpath，其中demo-ref  mount的路径为`dataset://ns-a/demo`
+- Namespace ref 创建 Dataset refdemo，其 mount 的路径为`dataset://default/phy/spark`
 
 本示例通过Sidecar机制实现，如果要采用CSI机制，可以结合参考[CSI机制挂载Dataset实现缓存共享](./dataset_across_namespace_with_csi.md)。
 ## 前提条件
@@ -79,7 +79,7 @@ $ kubectl create -f ds-ref.yaml -n ref
 ### 创建Pod并查看数据
 
 在 ref 命名空间下，创建Pod：
-需要开启sererless注入，设置pod标签`serverless.fluid.io/inject=true`
+需要开启serverless注入，设置pod标签`serverless.fluid.io/inject=true`
 ```shell
 $ cat<<EOF >app-ref.yaml
 apiVersion: v1
