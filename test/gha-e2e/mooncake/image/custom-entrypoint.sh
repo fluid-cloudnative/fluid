@@ -26,25 +26,18 @@ case "$ROLE" in
     ;;
 
   worker)
-    # Read the runtime config JSON that Fluid mounts into the component pod.
-    if [[ -z "$FLUID_RUNTIME_CONFIG_PATH" ]] || [[ ! -f "$FLUID_RUNTIME_CONFIG_PATH" ]]; then
-      echo "Error: FLUID_RUNTIME_CONFIG_PATH not set or file not found"
-      exit 1
-    fi
-
-    CONFIG=$(cat "$FLUID_RUNTIME_CONFIG_PATH")
-
-    MASTER_SVC=$(echo "$CONFIG" | jq -r '.master.service.name')
-    WORKER_SVC=$(echo "$CONFIG" | jq -r '.worker.service.name')
-    QUOTA=$(echo "$CONFIG" | jq -r '.worker.tieredStoreLevels[0].quotas[0] // "1GiB"')
+    # Fluid mounts runtime.sh alongside the runtime.json named by this variable.
+    : "${FLUID_RUNTIME_CONFIG_PATH:?missing runtime config path}"
+    source "$(dirname "$FLUID_RUNTIME_CONFIG_PATH")/runtime.sh"
+    QUOTA="${WORKER_TIEREDSTORE_LEVEL_0_QUOTA_0:-1GiB}"
 
     # Fluid reports the quota in Kubernetes units ("1Gi"); Mooncake expects "1GB".
     SEGMENT_SIZE=$(echo "$QUOTA" | sed 's/Gi$/GB/; s/Mi$/MB/')
 
     NAMESPACE="${FLUID_DATASET_NAMESPACE:-default}"
-    MASTER_ADDR="${MASTER_SVC}.${NAMESPACE}.svc.cluster.local:50051"
-    METADATA_ADDR="http://${MASTER_SVC}.${NAMESPACE}.svc.cluster.local:8080/metadata"
-    WORKER_HOST="${POD_NAME}.${WORKER_SVC}.${NAMESPACE}.svc.cluster.local"
+    MASTER_ADDR="${MASTER_SERVICE_NAME}.${NAMESPACE}.svc.cluster.local:50051"
+    METADATA_ADDR="http://${MASTER_SERVICE_NAME}.${NAMESPACE}.svc.cluster.local:8080/metadata"
+    WORKER_HOST="${POD_NAME}.${WORKER_SERVICE_NAME}.${NAMESPACE}.svc.cluster.local"
 
     echo "Starting worker: master=$MASTER_ADDR, segment_size=$SEGMENT_SIZE, host=$WORKER_HOST"
 
