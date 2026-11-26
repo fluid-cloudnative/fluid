@@ -62,13 +62,12 @@ func (t *TieredLocality) hasRepeatedLocality(pod *corev1.Pod) bool {
 			}
 		}
 
-		if pod.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution == nil {
-			return false
-		}
-		for _, terms := range pod.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms {
-			for _, expression := range terms.MatchExpressions {
-				if _, ok := localityKeys[expression.Key]; ok {
-					return true
+		if pod.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution != nil {
+			for _, terms := range pod.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms {
+				for _, expression := range terms.MatchExpressions {
+					if _, ok := localityKeys[expression.Key]; ok {
+						return true
+					}
 				}
 			}
 		}

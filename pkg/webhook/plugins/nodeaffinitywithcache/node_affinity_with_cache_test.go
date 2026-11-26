@@ -612,3 +612,72 @@ func TestTieredLocalityDeterministicOrdering(t *testing.T) {
 		assert.Equal(t, firstRequired, required)
 	}
 }
+
+func TestTieredLocalitySkipMutateWhenPodHasNodeAffinityAndLocalityNodeSelector(t *testing.T) {
+	alluxioRuntime := newCacheAlluxioRuntime()
+	cl := fake.NewFakeClientWithScheme(testScheme, alluxioRuntime)
+
+	runtimeInfo, err := base.BuildRuntimeInfo(alluxioRuntime.Name, alluxioRuntime.Namespace, "alluxio")
+	require.NoError(t, err)
+	runtimeInfo.SetFuseNodeSelector(map[string]string{})
+
+	plugin, err := NewPlugin(cl, customizedTieredLocality)
+	require.NoError(t, err)
+
+	tests := []struct {
+		name               string
+		nodeAffinity       *corev1.NodeAffinity
+		wantPreferredTerms int
+	}{
+		{
+			name: "preferred affinity without required plus locality nodeSelector",
+			nodeAffinity: &corev1.NodeAffinity{
+				PreferredDuringSchedulingIgnoredDuringExecution: []corev1.PreferredSchedulingTerm{
+					{
+						Weight: 100,
+						Preference: corev1.NodeSelectorTerm{
+							MatchExpressions: []corev1.NodeSelectorRequirement{
+								{
+									Key:      "custom.topology/zone",
+									Operator: corev1.NodeSelectorOpIn,
+									Values:   []string{"zone-a"},
+								},
+							},
+						},
+					},
+				},
+			},
+			wantPreferredTerms: 1,
+		},
+		{
+			name:               "empty nodeAffinity plus locality nodeSelector",
+			nodeAffinity:       &corev1.NodeAffinity{},
+			wantPreferredTerms: 0,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			pod := &corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "test",
+					Namespace: "test",
+				},
+				Spec: corev1.PodSpec{
+					Affinity: &corev1.Affinity{
+						NodeAffinity: tc.nodeAffinity,
+					},
+					NodeSelector: map[string]string{
+						"fluid.io/node": "true",
+					},
+				},
+			}
+			_, err := plugin.Mutate(pod, map[string]base.RuntimeInfoInterface{
+				alluxioRuntime.Name: runtimeInfo,
+			})
+			require.NoError(t, err)
+			assert.Nil(t, pod.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution)
+			assert.Len(t, pod.Spec.Affinity.NodeAffinity.PreferredDuringSchedulingIgnoredDuringExecution, tc.wantPreferredTerms)
+		})
+	}
+}

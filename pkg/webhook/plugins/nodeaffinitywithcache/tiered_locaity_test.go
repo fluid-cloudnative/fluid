@@ -110,6 +110,78 @@ func TestHasRepeatedLocality(t *testing.T) {
 			},
 			want: false,
 		},
+		{
+			name: "preferred affinity without required selector and node selector with same label",
+			pod: &corev1.Pod{
+				Spec: corev1.PodSpec{
+					Affinity: &corev1.Affinity{
+						NodeAffinity: &corev1.NodeAffinity{
+							PreferredDuringSchedulingIgnoredDuringExecution: []corev1.PreferredSchedulingTerm{
+								{
+									Weight: 10,
+									Preference: corev1.NodeSelectorTerm{
+										MatchExpressions: []corev1.NodeSelectorRequirement{
+											{
+												Key:      "label.c",
+												Operator: corev1.NodeSelectorOpIn,
+												Values:   []string{"c.value"},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+					NodeSelector: map[string]string{
+						testLabelA: "a-value",
+					},
+				},
+			},
+			want: true,
+		},
+		{
+			name: "empty nodeAffinity and node selector with same label",
+			pod: &corev1.Pod{
+				Spec: corev1.PodSpec{
+					Affinity: &corev1.Affinity{
+						NodeAffinity: &corev1.NodeAffinity{},
+					},
+					NodeSelector: map[string]string{
+						testLabelB: "b-value",
+					},
+				},
+			},
+			want: true,
+		},
+		{
+			name: "preferred affinity without required selector and node selector without same label",
+			pod: &corev1.Pod{
+				Spec: corev1.PodSpec{
+					Affinity: &corev1.Affinity{
+						NodeAffinity: &corev1.NodeAffinity{
+							PreferredDuringSchedulingIgnoredDuringExecution: []corev1.PreferredSchedulingTerm{
+								{
+									Weight: 10,
+									Preference: corev1.NodeSelectorTerm{
+										MatchExpressions: []corev1.NodeSelectorRequirement{
+											{
+												Key:      "label.c",
+												Operator: corev1.NodeSelectorOpIn,
+												Values:   []string{"c.value"},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+					NodeSelector: map[string]string{
+						"label.d": "d-value",
+					},
+				},
+			},
+			want: false,
+		},
 	}
 
 	for _, tc := range tests {
