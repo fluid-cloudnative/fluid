@@ -76,7 +76,7 @@ spec:
   nodeAffinity:
     required:
       nodeSelectorTerms:
-      	- matchExpressions:
+        - matchExpressions:
           - key: topology.kubernetes.io/zone
             operator: In
             values: 

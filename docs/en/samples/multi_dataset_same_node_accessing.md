@@ -45,7 +45,7 @@ spec:
               operator: In
               values:
                 - "multi-dataset"
-  placement: "Shared" // set Exclusive or empty means dataset exclusive
+  placement: "Shared" # set Exclusive or empty means dataset exclusive
 EOF
 
 $ cat<<EOF >dataset1.yaml
