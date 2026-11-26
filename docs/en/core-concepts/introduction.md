@@ -52,8 +52,8 @@ There are demos to show how to improve the AI model traning speed in Cloud by us
 You can refer to the following documents to insall and use Fluid.
 
 
-- [English](docs/en/TOC.md)
-- [简体中文](docs/zh/TOC.md)
+- [English](../../en/TOC.md)
+- [简体中文](../../zh/TOC.md)
 
 
 ## Roadmap：

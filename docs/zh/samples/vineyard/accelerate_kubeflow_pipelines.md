@@ -8,7 +8,7 @@ Vineyard相比现有方法如本地文件或S3服务, 可以通过利用共享�
 
 ### pipline概述
 
-目前我们使用的pipeline是一个简单的pipeline，它是在虚拟的波士顿房价数据集上训练一个线性回归模型。它包含三个步骤：[数据预处理](../../../../samples/vineyard/preprocess-data/preprocess-data.y), [模型训练](../../../../samples/vineyard/train-data/train-data.py), 和 [模型测试](../../../../samples/vineyard/test-data/test-data.py).
+目前我们使用的pipeline是一个简单的pipeline，它是在虚拟的波士顿房价数据集上训练一个线性回归模型。它包含三个步骤：[数据预处理](../../../../samples/vineyard/preprocess-data/preprocess-data.py), [模型训练](../../../../samples/vineyard/train-data/train-data.py), 和 [模型测试](../../../../samples/vineyard/test-data/test-data.py).
 
 
 ### 准备环境
@@ -51,7 +51,7 @@ $ make push-images REGISTRY="test-registry"(Replace with your custom registry)
 
 ### 安装fluid平台和kubeflow组件
 
-- 参考[安装文档](../../../userguide/install.md)完成安装。
+- 参考[安装文档](../../userguide/install.md)完成安装。
 
 - 安装argo workflow控制器，它可以作为kubeflow pipeline的后端。您可以使用以下命令安装argo workflow控制器：
 

@@ -26,7 +26,7 @@ juicefsruntime-controller-65d54bb48f-vnzpj   1/1     Running   0          99s
 
 **创建 dataset 和 runtime**
 
-针对不同类型的 runtime 创建相应的 Runtime 资源，以及同名的 Dataset。这里以 JuiceFSRuntime 为例，具体可参考 [文档](juicefs_runtime.md)，如下：
+针对不同类型的 runtime 创建相应的 Runtime 资源，以及同名的 Dataset。这里以 JuiceFSRuntime 为例，具体可参考 [文档](juicefs/juicefs_runtime.md)，如下：
 
 ```shell
 $ kubectl get juicefsruntime
