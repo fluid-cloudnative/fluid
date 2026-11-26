@@ -11,8 +11,7 @@ kubectl create secret generic fluid-secret --from-literal=username=test --from-l
 
 
 ```
-kubectl get secret fluid-secret -oy
-aml
+kubectl get secret fluid-secret -oyaml
 apiVersion: v1
 data:
   password: dGVzdA==
@@ -54,7 +53,7 @@ spec:
         high: "0.95"
         low: "0.7"
   master:
-  	volumeMounts:
+    volumeMounts:
       - name: secret-volume
         readOnly: true
         mountPath: "/etc/secret-volume"
