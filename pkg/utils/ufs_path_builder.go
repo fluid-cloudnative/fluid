@@ -18,7 +18,7 @@ package utils
 
 import (
 	"fmt"
-	"path/filepath"
+	"path"
 	"strings"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
@@ -37,7 +37,7 @@ type UFSPathBuilder struct{}
 func (u UFSPathBuilder) GenUFSPathInUnifiedNamespace(mount datav1alpha1.Mount) string {
 
 	// if the user defines mount.path, use it
-	if filepath.IsAbs(mount.Path) {
+	if path.IsAbs(mount.Path) {
 		return mount.Path
 	}
 
@@ -80,9 +80,9 @@ func (u UFSPathBuilder) GetLocalStorageRootDir() string {
 // generate local storage path by mount info
 func (u UFSPathBuilder) GenLocalStoragePath(curMount datav1alpha1.Mount) string {
 
-	if filepath.IsAbs(curMount.Path) {
-		return filepath.Join(common.LocalStorageRootPath, curMount.Path)
+	if path.IsAbs(curMount.Path) {
+		return path.Join(common.LocalStorageRootPath, curMount.Path)
 	}
 
-	return filepath.Join(common.LocalStorageRootPath, curMount.Name)
+	return path.Join(common.LocalStorageRootPath, curMount.Name)
 }

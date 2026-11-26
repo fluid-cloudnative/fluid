@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path"
 	"path/filepath"
 	"strings"
 
@@ -50,7 +51,7 @@ func GetMountRoot() (string, error) {
 // carrying it already exist and must keep working. Traversal that still escapes after cleaning is
 // returned as an error instead of being clamped, so the caller can surface it.
 func NormalizeSubPath(subPath string) (string, error) {
-	cleaned := filepath.Clean(strings.TrimLeft(subPath, "/"))
+	cleaned := path.Clean(strings.TrimLeft(subPath, "/"))
 	if cleaned == "." {
 		return "", nil
 	}

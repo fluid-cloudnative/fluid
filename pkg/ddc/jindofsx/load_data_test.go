@@ -557,6 +557,53 @@ func Test_genDataLoadValue(t *testing.T) {
 	}
 }
 
+func TestDataLoadImagePullSecrets(t *testing.T) {
+	t.Setenv(common.EnvImagePullSecretsKey, "env-secret")
+
+	targetDataset := &datav1alpha1.Dataset{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test-dataset",
+			Namespace: "fluid",
+		},
+	}
+	dataload := &datav1alpha1.DataLoad{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "test-dataload",
+			Namespace: "fluid",
+		},
+		Spec: datav1alpha1.DataLoadSpec{
+			Dataset: datav1alpha1.TargetDataset{
+				Name:      "test-dataset",
+				Namespace: "fluid",
+			},
+		},
+	}
+	engine := JindoFSxEngine{
+		Client:    fake.NewFakeClientWithScheme(testScheme),
+		namespace: "fluid",
+		name:      "test-dataset",
+		Log:       fake.NullLogger(),
+	}
+	jindoRuntime := &datav1alpha1.JindoRuntime{}
+
+	value, err := engine.genDataLoadValue("fluid:v0.0.1", jindoRuntime, targetDataset, dataload)
+	if err != nil {
+		t.Fatalf("failed to generate DataLoad value with env imagePullSecrets: %v", err)
+	}
+	if want := []corev1.LocalObjectReference{{Name: "env-secret"}}; !reflect.DeepEqual(value.DataLoadInfo.ImagePullSecrets, want) {
+		t.Errorf("without runtime secrets got %v, want %v", value.DataLoadInfo.ImagePullSecrets, want)
+	}
+
+	jindoRuntime.Spec.ImagePullSecrets = []corev1.LocalObjectReference{{Name: "runtime-secret"}}
+	value, err = engine.genDataLoadValue("fluid:v0.0.1", jindoRuntime, targetDataset, dataload)
+	if err != nil {
+		t.Fatalf("failed to generate DataLoad value with runtime imagePullSecrets: %v", err)
+	}
+	if want := []corev1.LocalObjectReference{{Name: "runtime-secret"}}; !reflect.DeepEqual(value.DataLoadInfo.ImagePullSecrets, want) {
+		t.Errorf("with runtime secrets got %v, want %v", value.DataLoadInfo.ImagePullSecrets, want)
+	}
+}
+
 func TestGenerateDataLoadValueFileWithRuntimeHDD(t *testing.T) {
 	datasetInputs := []datav1alpha1.Dataset{
 		{

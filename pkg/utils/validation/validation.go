@@ -18,7 +18,7 @@ package validation
 
 import (
 	"fmt"
-	"path/filepath"
+	pathpkg "path"
 	"strings"
 
 	"k8s.io/apimachinery/pkg/util/validation"
@@ -30,12 +30,12 @@ func IsValidMountRoot(path string) error {
 	if len(path) == 0 {
 		return fmt.Errorf(invalidMountRootErrMsgFmt, path, "the mount root path is empty")
 	}
-	if !filepath.IsAbs(path) {
+	if !pathpkg.IsAbs(path) {
 		return fmt.Errorf(invalidMountRootErrMsgFmt, path, "the mount root path must be an absolute path")
 	}
 	// Normalize the path and split it into components
 	// The path is an absolute path and to avoid an empty part, we omit the first '/'
-	parts := strings.Split(filepath.Clean(path)[1:], string(filepath.Separator))
+	parts := strings.Split(pathpkg.Clean(path)[1:], "/")
 
 	for _, part := range parts {
 		// Convert characters to lowercase and replace underscores with hyphens
