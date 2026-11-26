@@ -51,5 +51,5 @@ We provide demo to show how to improve the AI model traning speed in Cloud by us
 Fluid needs to run on Kubernetes v1.14 or above version, also needs to support CSI storage. The deployment and management of Fluid Operator is through Helm v3 which is the package mangement tool on Kubernetes platform. Please make sure the Helm is correctly installed in the Kubernetes cluster before running Fluid.
 
 You can refer to the following documents to insall and use Fluid.
-- [English](docs/en/TOC.md)
-- [简体中文](docs/zh/TOC.md)
+- [English](../../en/TOC.md)
+- [简体中文](../../zh/TOC.md)

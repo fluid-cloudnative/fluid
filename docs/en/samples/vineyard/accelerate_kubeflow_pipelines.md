@@ -9,7 +9,7 @@ Vineyard can accelerate data sharing by utilizing shared memory compared to exis
 
 ### Overview of the pipeline
 
-The pipeline we use is a simple pipeline that trains a linear regression model on the dummy Boston Housing Dataset. It contains three steps: [preprocess](../../../../samples/vineyard/preprocess-data/preprocess-data.y), [train](../../../../samples/vineyard/train-data/train-data.py), and [test](../../../../samples/vineyard/test-data/test-data.py).
+The pipeline we use is a simple pipeline that trains a linear regression model on the dummy Boston Housing Dataset. It contains three steps: [preprocess](../../../../samples/vineyard/preprocess-data/preprocess-data.py), [train](../../../../samples/vineyard/train-data/train-data.py), and [test](../../../../samples/vineyard/test-data/test-data.py).
 
 
 ### Prepare the environment
@@ -52,7 +52,7 @@ $ make push-images REGISTRY="test-registry"(Replace with your custom registry)
 
 ### Install the fluid platform and kubeflow components
 
-- Refer to the [Installation Documentation](../../../userguide/install.md) to complete the installation.
+- Refer to the [Installation Documentation](../../userguide/install.md) to complete the installation.
 
 - Install the argo workflow controller, which can be used as the backend of kubeflow pipeline. You can use the following command to install the argo workflow controller:
 
