@@ -51,6 +51,9 @@ func (j *JuiceFSEngine) transformFuse(runtime *datav1alpha1.JuiceFSRuntime, data
 	if err != nil {
 		return
 	}
+	if len(runtime.Spec.Fuse.ImagePullSecrets) > 0 {
+		value.Fuse.ImagePullSecrets = runtime.Spec.Fuse.ImagePullSecrets
+	}
 
 	// transform envs
 	value.Fuse.Envs = runtime.Spec.Fuse.Env

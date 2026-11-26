@@ -83,3 +83,26 @@ spec:
 
 ```
 In conclusion, image pull secrets setting successfully
+
+
+## Setting image pull secrets in JuiceFSRuntime
+
+JuiceFSRuntime can also set image pull secrets in its spec, so different runtimes can pull from different private registries without changing the controller. `spec.imagePullSecrets` applies to the worker and fuse, and `spec.worker.imagePullSecrets` or `spec.fuse.imagePullSecrets` override it for that component. When none of them is set, the `IMAGE_PULL_SECRETS` value of the controller is used as before.
+
+```yaml
+apiVersion: data.fluid.io/v1alpha1
+kind: JuiceFSRuntime
+metadata:
+  name: jfsdemo
+spec:
+  imagePullSecrets:
+  - name: test-1
+  worker:
+    imagePullSecrets:
+    - name: worker-registry
+  fuse:
+    imagePullSecrets:
+    - name: fuse-registry
+```
+
+`spec.master.imagePullSecrets` and `spec.jobWorker.imagePullSecrets` have no effect for now. Changing the imagePullSecrets fields above on an existing runtime updates the worker StatefulSet and fuse DaemonSet templates on the next sync, but it doesn't restart running pods. Worker pods pick up the new secrets as they are replaced. The fuse DaemonSet uses `OnDelete`, so with the default `OnRuntimeDeleted` clean policy running fuse pods keep the old secrets until they are deleted. The same goes for the controller's `IMAGE_PULL_SECRETS` on runtimes that don't set their own. The controller owns these secrets on the worker and fuse, so edits made directly on the StatefulSet or DaemonSet are reverted.

@@ -79,3 +79,26 @@ spec:
 ```
 
 综上, 镜像拉取密钥设置成功
+
+
+## 在 JuiceFSRuntime 中设置镜像拉取密钥
+
+JuiceFSRuntime 也可以在 spec 中设置镜像拉取密钥，这样不同的 runtime 可以从不同的私有镜像仓库拉取镜像，而不需要修改 controller。`spec.imagePullSecrets` 作用于 worker 和 fuse，`spec.worker.imagePullSecrets` 和 `spec.fuse.imagePullSecrets` 可以为对应组件单独覆盖。如果都没有设置，则和之前一样使用 controller 的 `IMAGE_PULL_SECRETS`。
+
+```yaml
+apiVersion: data.fluid.io/v1alpha1
+kind: JuiceFSRuntime
+metadata:
+  name: jfsdemo
+spec:
+  imagePullSecrets:
+  - name: test-1
+  worker:
+    imagePullSecrets:
+    - name: worker-registry
+  fuse:
+    imagePullSecrets:
+    - name: fuse-registry
+```
+
+`spec.master.imagePullSecrets` 和 `spec.jobWorker.imagePullSecrets` 目前不生效。修改已有 runtime 的上述 imagePullSecrets 字段会在下一次同步时更新 worker StatefulSet 和 fuse DaemonSet 的模板，但不会重启正在运行的 pod。worker pod 在被替换时使用新的密钥。fuse DaemonSet 使用 `OnDelete` 更新策略，所以在默认的 `OnRuntimeDeleted` 清理策略下，正在运行的 fuse pod 会继续使用旧的密钥，直到被删除。对于没有设置自己密钥的 runtime，修改 controller 的 `IMAGE_PULL_SECRETS` 也一样。worker 和 fuse 上的密钥由 controller 管理，直接在 StatefulSet 或 DaemonSet 上修改的密钥会被还原。

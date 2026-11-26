@@ -53,7 +53,7 @@ spec:
         {{- end }}
         {{- end }}
     spec:
-      {{- with .Values.imagePullSecrets }}
+      {{- with (.Values.fuse.imagePullSecrets | default .Values.imagePullSecrets) }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}
