@@ -50,6 +50,8 @@
   - [如何开启 FUSE 自动恢复能力](samples/fuse_recover.md)
   - [面向 ARM 架构的使用](samples/arm64.md)
   - [设置 FUSE 清理策略](samples/fuse_clean_policy.md)
+
+  - [使用文件预取优化应用文件读取](samples/file_prefetcher.md)
   - [镜像拉取密钥](samples/image_pull_secrets.md)
   + 无服务器场景
     - [如何在Knative环境运行](samples/knative.md)

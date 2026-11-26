@@ -43,6 +43,8 @@
   - [Pod Scheduling Optimization](operation/pod_schedule_optimization.md)
   - [Pod Scheduling Base on Runtime Tiered Locality](operation/tiered_locality_schedule.md)
   - [Set FUSE clean policy](samples/fuse_clean_policy.md)
+
+  - [Speed up file reads with file prefetching](samples/file_prefetcher.md)
   + Serverless
     - [How to run in Knative environment](samples/knative.md)
     - [How to ensure the completion of serverless tasks](samples/application_controller.md)
