@@ -97,14 +97,25 @@ func syncCapacityInfoOnNodes(nodeNames []string, runtimeInfo base.RuntimeInfoInt
 	}
 }
 
+// isNodeExcluded reports whether the node matches FLUID_SCHEDULE_INFO_EXCLUDE_NODE_SELECTOR.
+// The add, capacity refresh and removal paths all skip such nodes. Helper.TearDownWorkers
+// in pkg/ctrl intentionally doesn't, so labels left on a node before it was excluded are
+// still cleaned up when the runtime is deleted.
+func isNodeExcluded(nodeLabels map[string]string, nodeName, caller string) bool {
+	if nodeExcludeSelector == nil || !nodeExcludeSelector.Matches(labels.Set(nodeLabels)) {
+		return false
+	}
+	rootLog.V(1).Info("Skip "+caller+" to node that matches nodeExcludeSelector", "nodeExcludeSelector", nodeExcludeSelector.String(), "node", nodeName)
+	return true
+}
+
 func syncCapacityInfoOnNode(nodeName string, runtimeInfo base.RuntimeInfoInterface, cli client.Client) error {
 	node := corev1.Node{}
 	if err := cli.Get(context.TODO(), types.NamespacedName{Name: nodeName}, &node); err != nil {
 		return err
 	}
 
-	if nodeExcludeSelector != nil && nodeExcludeSelector.Matches(labels.Set(node.Labels)) {
-		rootLog.V(1).Info("Skip syncCapacityInfoOnNode to node that matches nodeExcludeSelector", "nodeExcludeSelector", nodeExcludeSelector.String(), "node", node.Name)
+	if isNodeExcluded(node.Labels, node.Name, "syncCapacityInfoOnNode") {
 		return nil
 	}
 
@@ -217,8 +228,7 @@ func addScheduleInfoToNode(nodeName string, runtimeInfo base.RuntimeInfoInterfac
 		return err
 	}
 
-	if nodeExcludeSelector != nil && nodeExcludeSelector.Matches(labels.Set(node.Labels)) {
-		rootLog.V(1).Info("Skip addScheduleInfoToNode to node that matches nodeExcludeSelector", "nodeExcludeSelector", nodeExcludeSelector.String(), "node", node.Name)
+	if isNodeExcluded(node.Labels, node.Name, "addScheduleInfoToNode") {
 		return nil
 	}
 
@@ -242,6 +252,10 @@ func removeScheduleInfoFromNode(nodeName string, runtimeInfo base.RuntimeInfoInt
 	}, &node)
 	if err != nil {
 		return err
+	}
+
+	if isNodeExcluded(node.Labels, node.Name, "removeScheduleInfoFromNode") {
+		return nil
 	}
 
 	if !hasRuntimeLabel(node, runtimeInfo) {

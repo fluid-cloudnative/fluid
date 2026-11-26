@@ -175,6 +175,9 @@ func (e *Helper) CheckAndSyncWorkerStatus(getRuntimeFn func(client.Client) (base
 // TearDownWorkers tears down workers according to the given runtimeInfo.
 // Note that TearDownWorkers does NOT delete the worker StatefulSet or worker pods; it only cleans labels on nodes.
 // Worker StatefulSet is installed and managed by Helm. It will be deleted when the helm release is uninstalled in Engine.destroyMaster().
+// It intentionally ignores FLUID_SCHEDULE_INFO_EXCLUDE_NODE_SELECTOR. Schedule info sync skips
+// excluded nodes, so a node that already had Fluid labels when it was excluded only gets them
+// cleaned here, when the runtime is deleted. Checking the selector here would leave them forever.
 func (e *Helper) TearDownWorkers(runtimeInfo base.RuntimeInfoInterface) (err error) {
 	var (
 		nodeList           = &corev1.NodeList{}
