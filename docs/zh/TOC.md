@@ -28,6 +28,7 @@
     - [数据预加载](samples/data_warmup.md)
     - [CacheRuntime 数据操作](samples/cacheruntime/cacheruntime_data_operations.md)
     - [使用 Curvine 作为 CacheRuntime 进行数据缓存](samples/cacheruntime/curvine_cache_runtime.md)
+    - [使用 CacheRuntime（Curvine）缓存模型权重并运行 vLLM 推理服务](samples/cacheruntime/vllm_with_curvine.md)
     - [使用 CacheRuntime 部署 Mooncake](samples/cacheruntime/mooncake_cache_runtime.md)
     - [Cache Runtime手动扩缩容](samples/dataset_scaling.md)
     - [数据操作自动清理](samples/automatic_clean_up_data_operation.md)
