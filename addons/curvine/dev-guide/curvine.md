@@ -8,32 +8,27 @@
 
 ## Prepare Curvine FUSE Client Image
 
-This guide uses the Curvine ThinRuntime build assets.
+The ThinRuntime uses the regular Curvine runtime image, which also contains the Fluid integration scripts. Curvine publishes it as `ghcr.io/curvineio/curvine`.
 
-1) Build Curvine binaries
-
-```bash
-# In Curvine repo root
-make all
-# Expected output includes build/dist/lib/curvine-fuse
-```
-
-2) Build ThinRuntime image
+1) Use the published image, or build it from source
 
 ```bash
-# In curvine repo
-cd curvine-docker/fluid/thin-runtime
-./build-image.sh
+# In Curvine repo root: compile Curvine and package it into the runtime image
+make docker-build
 ```
 
-The resulting image should be something like:
+`make docker-build` produces a local image named `curvine:latest`. To use it instead of the published image, tag and push it to a registry your cluster can pull from (or load it into the nodes, for example with `kind load docker-image`), and set `spec.fuse.image` and `spec.fuse.imageTag` in the ThinRuntimeProfile below to that image:
 
-- fluid-cloudnative/curvine-thinruntime:v1.0.0
+```bash
+docker tag curvine:latest <your-registry>/curvine:<tag>
+docker push <your-registry>/curvine:<tag>
+```
 
-3) How the image works
+2) How the image works
 
+- Started with `/entrypoint.sh fluid-thin-runtime` (or when Fluid mounts its config), it hands over to `/fluid-entrypoint.sh`
 - Reads Fluid-generated config from /etc/fluid/config/config.json
-- Parses Dataset/ThinRuntime/ThinRuntimeProfile into Curvine config via fluid-config-parse.py
+- Parses Dataset/ThinRuntime/ThinRuntimeProfile into Curvine config via `/app/curvine/config-parse.py`
 - Launches curvine-fuse and keeps the process running
 
 ## Create ThinRuntimeProfile
@@ -46,9 +41,13 @@ metadata:
 spec:
   fileSystemType: fuse
   fuse:
-    image: fluid-cloudnative/curvine-thinruntime
-    imageTag: v1.0.0
+    image: ghcr.io/curvineio/curvine
+    imageTag: latest
     imagePullPolicy: IfNotPresent
+    command:
+    - /entrypoint.sh
+    args:
+    - fluid-thin-runtime
 ```
 
 ## Create Dataset and ThinRuntime
@@ -99,4 +98,4 @@ spec:
 
 - master-endpoints should be reachable from the FUSE Pod
 - Ensure the Curvine FUSE binary exists in the image and glibc versions match
-- For more details, see Curvine ThinRuntime README in Curvine repo
+- For a complete example, see `curvine-docker/fluid/thin-runtime/curvine-thinruntime.yaml` in the Curvine repo

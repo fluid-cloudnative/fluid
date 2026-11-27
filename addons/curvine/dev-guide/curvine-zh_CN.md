@@ -8,31 +8,27 @@
 
 ## 准备 Curvine FUSE 客户端镜像
 
-本指南使用 Curvine 提供的 ThinRuntime 构建脚本。
+ThinRuntime 使用 Curvine 的常规运行时镜像，镜像中已包含 Fluid 集成脚本。Curvine 将其发布为 `ghcr.io/curvineio/curvine`。
 
-1）编译 Curvine
-
-```bash
-# 在 Curvine 仓库根目录
-make all
-# 期望产物包含 build/dist/lib/curvine-fuse
-```
-
-2）构建 ThinRuntime 镜像
+1）使用已发布的镜像，或从源码构建
 
 ```bash
-# 在 Curvine 仓库
-cd curvine-docker/fluid/thin-runtime
-./build-image.sh
+# 在 Curvine 仓库根目录：编译 Curvine 并打包为运行时镜像
+make docker-build
 ```
 
-镜像示例：
-- fluid-cloudnative/curvine-thinruntime:v1.0.0
+`make docker-build` 会生成名为 `curvine:latest` 的本地镜像。如需使用该镜像而不是已发布的镜像，请将其打标签并推送到集群可以拉取的镜像仓库（或加载到节点上，例如使用 `kind load docker-image`），并将下文 ThinRuntimeProfile 中的 `spec.fuse.image` 和 `spec.fuse.imageTag` 设置为该镜像：
 
-3）镜像工作机制
+```bash
+docker tag curvine:latest <your-registry>/curvine:<tag>
+docker push <your-registry>/curvine:<tag>
+```
 
+2）镜像工作机制
+
+- 以 `/entrypoint.sh fluid-thin-runtime` 启动（或检测到 Fluid 挂载的配置）时，转交给 `/fluid-entrypoint.sh`
 - 从 /etc/fluid/config/config.json 读取 Fluid 注入的配置
-- 通过 fluid-config-parse.py 解析 Dataset/ThinRuntime/ThinRuntimeProfile
+- 通过 `/app/curvine/config-parse.py` 解析 Dataset/ThinRuntime/ThinRuntimeProfile
 - 启动 curvine-fuse 并保持前台运行
 
 ## 创建 ThinRuntimeProfile
@@ -45,9 +41,13 @@ metadata:
 spec:
   fileSystemType: fuse
   fuse:
-    image: fluid-cloudnative/curvine-thinruntime
-    imageTag: v1.0.0
+    image: ghcr.io/curvineio/curvine
+    imageTag: latest
     imagePullPolicy: IfNotPresent
+    command:
+    - /entrypoint.sh
+    args:
+    - fluid-thin-runtime
 ```
 
 ## 创建 Dataset 与 ThinRuntime
@@ -98,4 +98,4 @@ spec:
 
 - 确保 master-endpoints 可从 FUSE Pod 访问
 - 确保镜像中存在 curvine-fuse，且 glibc 版本兼容
-- 更多细节参考 Curvine 仓库中 ThinRuntime 的 README
+- 完整示例参见 Curvine 仓库中的 `curvine-docker/fluid/thin-runtime/curvine-thinruntime.yaml`

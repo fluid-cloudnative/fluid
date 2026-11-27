@@ -27,9 +27,13 @@ metadata:
 spec:
   fileSystemType: fuse
   fuse:
-    image: fluid-cloudnative/curvine-thinruntime
-    imageTag: v1.0.0
+    image: ghcr.io/curvineio/curvine
+    imageTag: latest
     imagePullPolicy: IfNotPresent
+    command:
+    - /entrypoint.sh
+    args:
+    - fluid-thin-runtime
 EOF
 
 $ kubectl apply -f runtime-profile.yaml
