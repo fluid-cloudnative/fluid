@@ -24,6 +24,7 @@ import (
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/testutil"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -346,5 +347,19 @@ func TestSyncMetadataInternal(t *testing.T) {
 		if dataset.Status.UfsTotal != test.expectedUfsTotal {
 			t.Errorf("expected UfsTotal %s, get UfsTotal %s", test.expectedUfsTotal, dataset.Status.UfsTotal)
 		}
+	}
+}
+
+func TestSyncMetadataInternalChannelLifecycle(t *testing.T) {
+	client := fake.NewFakeClientWithScheme(testScheme, &datav1alpha1.Dataset{
+		ObjectMeta: metav1.ObjectMeta{Name: "spark", Namespace: "fluid"},
+	})
+	engine := &JindoCacheEngine{
+		name: "spark", namespace: "fluid", Client: client, Log: fake.NullLogger(), runtime: &datav1alpha1.JindoRuntime{},
+	}
+	if err := testutil.VerifyMetadataSyncChannelClosedOnce(engine.syncMetadataInternal, func() <-chan base.MetadataSyncResult {
+		return engine.MetadataSyncDoneCh
+	}); err != nil {
+		t.Fatal(err)
 	}
 }
