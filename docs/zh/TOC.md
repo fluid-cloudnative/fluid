@@ -55,6 +55,8 @@
     - [如何在Knative环境运行](samples/knative.md)
     - [如何保障 Serverless 任务顺利完成](samples/application_controller.md)
   + [DataFlow中配置数据操作的亲和性](./samples/dataflow_affinity.md)
+  - [在 Runtime Pod 中挂载其他卷](samples/other_volumes.md)
+  - [Fluid访问HDFS所需的特殊配置](samples/hdfs_configuration.md)
 + 工作负载
   - [机器学习](samples/machinelearning.md)
 + 更多Runtime实现

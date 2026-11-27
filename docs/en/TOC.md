@@ -50,6 +50,8 @@
   - [Using Fluid on ARM64 platform](samples/arm64.md)
   - [Support Image Pull Secrets](samples/image_pull_secrets.md)
   - [Configuring affinity for data operations in DataFlow](./samples/dataflow_affinity.md)
+  - [Mount Other Volumes into the Runtime Pods](samples/other_volumes.md)
+  - [Special Configuration for Fluid to Access HDFS](samples/hdfs_configuration.md)
 + Dashboard
   -   - [Dashboard Visualization](dashboard/overview.md)
 + Operation Guide
