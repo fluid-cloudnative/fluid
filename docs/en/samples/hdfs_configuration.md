@@ -1,6 +1,6 @@
 ## DEMO - Special Configuration for Fluid to Access HDFS
 
-If HDFS is the under storage system of Alluxio and the HDFS cluster has a special configuration, Alluxio needs the same extra configuration to access the mounted HDFS cluster.
+If HDFS is the underlying storage system of Alluxio and the HDFS cluster has a special configuration, Alluxio needs the same extra configuration to access the mounted HDFS cluster.
 
 This document shows how to give Alluxio that configuration declaratively in Fluid. For more information, see [Configuring Alluxio with HDFS](https://docs.alluxio.io/os/user/stable/en/ufs/HDFS.html).
 
