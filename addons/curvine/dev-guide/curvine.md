@@ -17,6 +17,13 @@ The ThinRuntime uses the regular Curvine runtime image, which also contains the 
 make docker-build
 ```
 
+`make docker-build` produces a local image named `curvine:latest`. To use it instead of the published image, tag and push it to a registry your cluster can pull from (or load it into the nodes, for example with `kind load docker-image`), and set `spec.fuse.image` and `spec.fuse.imageTag` in the ThinRuntimeProfile below to that image:
+
+```bash
+docker tag curvine:latest <your-registry>/curvine:<tag>
+docker push <your-registry>/curvine:<tag>
+```
+
 2) How the image works
 
 - Started with `/entrypoint.sh fluid-thin-runtime` (or when Fluid mounts its config), it hands over to `/fluid-entrypoint.sh`

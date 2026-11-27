@@ -17,6 +17,13 @@ ThinRuntime 使用 Curvine 的常规运行时镜像，镜像中已包含 Fluid �
 make docker-build
 ```
 
+`make docker-build` 会生成名为 `curvine:latest` 的本地镜像。如需使用该镜像而不是已发布的镜像，请将其打标签并推送到集群可以拉取的镜像仓库（或加载到节点上，例如使用 `kind load docker-image`），并将下文 ThinRuntimeProfile 中的 `spec.fuse.image` 和 `spec.fuse.imageTag` 设置为该镜像：
+
+```bash
+docker tag curvine:latest <your-registry>/curvine:<tag>
+docker push <your-registry>/curvine:<tag>
+```
+
 2）镜像工作机制
 
 - 以 `/entrypoint.sh fluid-thin-runtime` 启动（或检测到 Fluid 挂载的配置）时，转交给 `/fluid-entrypoint.sh`
