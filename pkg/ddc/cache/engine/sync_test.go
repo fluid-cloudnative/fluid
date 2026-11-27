@@ -18,6 +18,7 @@ package engine
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"os"
 	"reflect"
@@ -1099,6 +1100,80 @@ var _ = Describe("CacheEngine Sync Tests", Label("pkg.ddc.cache.engine.sync_test
 				Expect(err).NotTo(HaveOccurred())
 			})
 		})
+
+		It("should preserve creation-time worker hostPath and client tieredStore levels while updating mutable options", func() {
+			localClass := runtimeClass.DeepCopy()
+			localClass.Topology.Client = &datav1alpha1.RuntimeComponentDefinition{
+				Options: map[string]string{"client-base": "1"},
+			}
+			localRuntime := runtimeObj.DeepCopy()
+			localRuntime.Spec.Worker.TieredStore = datav1alpha1.RuntimeTieredStore{
+				Levels: []datav1alpha1.RuntimeTieredStoreLevel{{
+					HostPath: &datav1alpha1.HostPathMediumSource{
+						Paths:  []string{"/mnt/nvme0"},
+						Quotas: []resource.Quantity{resource.MustParse("50Gi")},
+					},
+					High: "0.9",
+					Low:  "0.6",
+				}},
+			}
+			localRuntime.Spec.Client.TieredStore = datav1alpha1.RuntimeTieredStore{
+				Levels: []datav1alpha1.RuntimeTieredStoreLevel{{
+					EmptyDir: &datav1alpha1.EmptyDirMediumSource{
+						Quota: resource.MustParse("4Gi"),
+					},
+					High: "0.85",
+					Low:  "0.55",
+				}},
+			}
+			Expect(fakeClient.Update(ctx.Context, localRuntime)).To(Succeed())
+
+			// Initial sync creates ConfigMap from creation-time spec.
+			Expect(engine.syncRuntimeValueConfigMap(ctx, localRuntime, localClass)).To(Succeed())
+
+			// Mutate both unsupported tieredStore fields and mutable runtime options.
+			edited, err := engine.getRuntime()
+			Expect(err).NotTo(HaveOccurred())
+			edited.Spec.Options = map[string]string{"dynamic-opt": "new-val"}
+			edited.Spec.Worker.TieredStore.Levels[0].HostPath.Quotas[0] = resource.MustParse("200Gi")
+			edited.Spec.Worker.TieredStore.Levels[0].High = "0.99"
+			edited.Spec.Worker.TieredStore.Levels[0].Low = "0.88"
+			edited.Spec.Client.TieredStore.Levels[0].EmptyDir.Quota = resource.MustParse("12Gi")
+			Expect(fakeClient.Update(ctx.Context, edited)).To(Succeed())
+
+			Expect(engine.syncRuntimeValueConfigMap(ctx, edited, localClass)).To(Succeed())
+
+			cm := &corev1.ConfigMap{}
+			Expect(engine.Client.Get(ctx.Context, types.NamespacedName{
+				Name:      common.GetCacheRuntimeConfigConfigMapName(engine.name),
+				Namespace: engine.namespace,
+			}, cm)).To(Succeed())
+
+			var persisted common.CacheRuntimeConfig
+			Expect(json.Unmarshal([]byte(cm.Data[engine.getRuntimeConfigFileName()]), &persisted)).To(Succeed())
+			Expect(persisted.Worker.Options["dynamic-opt"]).To(Equal("new-val"))
+			Expect(persisted.Client.Options["dynamic-opt"]).To(Equal("new-val"))
+			Expect(persisted.Worker.TieredStoreLevels).To(Equal([]common.TieredStoreLevelConfig{{
+				MediumType: common.HDD,
+				MountPaths: []string{GetHostPathTieredStoreMountPath(0, 0)},
+				Quotas:     []string{"50Gi"},
+				High:       "0.9",
+				Low:        "0.6",
+			}}))
+			Expect(persisted.Client.TieredStoreLevels).To(Equal([]common.TieredStoreLevelConfig{{
+				MediumType: common.HDD,
+				MountPaths: []string{GetEmptyDirTieredStoreMountPath(0)},
+				Quotas:     []string{"4Gi"},
+				High:       "0.85",
+				Low:        "0.55",
+			}}))
+
+			sh := cm.Data[engine.getRuntimeShFileName()]
+			Expect(sh).To(ContainSubstring("export WORKER_TIEREDSTORE_LEVEL_0_QUOTA_0='50Gi'"))
+			Expect(sh).To(ContainSubstring("export WORKER_TIEREDSTORE_LEVEL_0_HIGH='0.9'"))
+			Expect(sh).To(ContainSubstring("export WORKER_TIEREDSTORE_LEVEL_0_LOW='0.6'"))
+			Expect(sh).To(ContainSubstring("export CLIENT_TIEREDSTORE_LEVEL_0_QUOTA_0='4Gi'"))
+		})
 	})
 
 	Describe("getSyncRetryDuration", func() {
@@ -2049,6 +2124,40 @@ var _ = Describe("CacheEngine Sync Tests", Label("pkg.ddc.cache.engine.sync_test
 
 				Expect(memLimitOf(workerSts)).To(Equal(desired))
 				Expect(tmpfsSizeOf(workerSts)).To(Equal("8Gi"))
+			})
+
+			It("should keep creation-time tieredStoreLevels in the runtime ConfigMap aligned with worker volumes when spec is edited", func() {
+				desired := createWorker()
+				Expect(tmpfsSizeOf(workerSts)).To(Equal("8Gi"))
+
+				createRuntime, err := engine.getRuntime()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(engine.syncRuntimeValueConfigMap(ctx, createRuntime, runtimeClass)).To(Succeed())
+
+				edited, err := engine.getRuntime()
+				Expect(err).NotTo(HaveOccurred())
+				edited.Spec.Worker.TieredStore.Levels[0].ProcessMemory.Quota = resource.MustParse("16Gi")
+				edited.Spec.Options = map[string]string{"sync-opt": "kept"}
+				Expect(fakeClient.Update(ctx.Context, edited)).To(Succeed())
+
+				Expect(engine.syncRuntimeValueConfigMap(ctx, edited, runtimeClass)).To(Succeed())
+				syncOnce()
+
+				Expect(memLimitOf(workerSts)).To(Equal(desired))
+				Expect(tmpfsSizeOf(workerSts)).To(Equal("8Gi"))
+
+				cm := &corev1.ConfigMap{}
+				Expect(fakeClient.Get(ctx.Context, types.NamespacedName{
+					Name:      common.GetCacheRuntimeConfigConfigMapName(engine.name),
+					Namespace: engine.namespace,
+				}, cm)).To(Succeed())
+
+				var persisted common.CacheRuntimeConfig
+				Expect(json.Unmarshal([]byte(cm.Data[engine.getRuntimeConfigFileName()]), &persisted)).To(Succeed())
+				Expect(persisted.Worker.Options["sync-opt"]).To(Equal("kept"))
+				Expect(persisted.Worker.TieredStoreLevels).To(HaveLen(1))
+				Expect(persisted.Worker.TieredStoreLevels[0].Quotas).To(Equal([]string{"8Gi"}))
+				Expect(cm.Data[engine.getRuntimeShFileName()]).To(ContainSubstring("export WORKER_TIEREDSTORE_LEVEL_0_QUOTA_0='8Gi'"))
 			})
 
 			It("should recharge a quota that an earlier release stripped", func() {

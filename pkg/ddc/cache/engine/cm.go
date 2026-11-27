@@ -106,6 +106,15 @@ func (e *CacheEngine) createRuntimeValueConfigMap(ctx context.Context, runtime *
 // the class the runtime is bound to, see getBoundRuntimeClass.
 func (e *CacheEngine) generateRuntimeConfigData(ctx context.Context, runtime *datav1alpha1.CacheRuntime,
 	runtimeClass *datav1alpha1.CacheRuntimeClass) (map[string]string, error) {
+	config, err := e.buildRuntimeConfig(ctx, runtime, runtimeClass)
+	if err != nil {
+		return nil, err
+	}
+	return e.renderRuntimeConfigData(config)
+}
+
+func (e *CacheEngine) buildRuntimeConfig(ctx context.Context, runtime *datav1alpha1.CacheRuntime,
+	runtimeClass *datav1alpha1.CacheRuntimeClass) (*common.CacheRuntimeConfig, error) {
 	if err := validateRuntimeClassTopology(runtimeClass); err != nil {
 		return nil, err
 	}
@@ -113,84 +122,138 @@ func (e *CacheEngine) generateRuntimeConfigData(ctx context.Context, runtime *da
 	if err != nil {
 		return nil, err
 	}
+	mounts, err := e.buildMountConfigs(dataset)
+	if err != nil {
+		return nil, err
+	}
+
+	accessModes := dataset.Spec.AccessModes
+	if len(accessModes) == 0 {
+		accessModes = []corev1.PersistentVolumeAccessMode{corev1.ReadOnlyMany}
+	}
+
+	config := &common.CacheRuntimeConfig{
+		Mounts:      mounts,
+		AccessModes: accessModes,
+		TargetPath:  e.getFuseMountPoint(),
+		Master: e.buildComponentConfig(
+			common.ComponentTypeMaster,
+			runtimeClass.Topology.Master,
+			runtime.Spec.Master.RuntimeComponentCommonSpec,
+			runtime.Spec.Master.Replicas,
+			runtime.Spec.Options,
+			nil,
+		),
+		Worker: e.buildComponentConfig(
+			common.ComponentTypeWorker,
+			runtimeClass.Topology.Worker,
+			runtime.Spec.Worker.RuntimeComponentCommonSpec,
+			runtime.Spec.Worker.Replicas,
+			runtime.Spec.Options,
+			&runtime.Spec.Worker.TieredStore,
+		),
+		Client: e.buildComponentConfig(
+			common.ComponentTypeClient,
+			runtimeClass.Topology.Client,
+			runtime.Spec.Client.RuntimeComponentCommonSpec,
+			0,
+			runtime.Spec.Options,
+			&runtime.Spec.Client.TieredStore,
+		),
+	}
+
+	return config, nil
+}
+
+func (e *CacheEngine) buildMountConfigs(dataset *datav1alpha1.Dataset) ([]common.MountConfig, error) {
 	var mounts []common.MountConfig
 	for _, m := range dataset.Spec.Mounts {
-		mountCg := common.MountConfig{
+		options, encryptOptions, err := e.generateDatasetMountOptions(&m, dataset.Spec.SharedEncryptOptions, dataset.Spec.SharedOptions)
+		if err != nil {
+			return nil, err
+		}
+		mounts = append(mounts, common.MountConfig{
 			Name:       m.Name,
 			MountPoint: m.MountPoint,
 			ReadOnly:   m.ReadOnly,
 			Shared:     m.Shared,
 			// m.Path may be empty.
-			Path: utils.UFSPathBuilder{}.GenUFSPathInUnifiedNamespace(m),
-		}
-		options, encryptOptions, err := e.generateDatasetMountOptions(&m, dataset.Spec.SharedEncryptOptions, dataset.Spec.SharedOptions)
-		if err != nil {
-			return nil, err
-		}
-		mountCg.Options = options
-		mountCg.EncryptOptions = encryptOptions
+			Path:           utils.UFSPathBuilder{}.GenUFSPathInUnifiedNamespace(m),
+			Options:        options,
+			EncryptOptions: encryptOptions,
+		})
+	}
+	return mounts, nil
+}
 
-		mounts = append(mounts, mountCg)
+func (e *CacheEngine) buildComponentConfig(
+	componentType common.ComponentType,
+	topology *datav1alpha1.RuntimeComponentDefinition,
+	spec datav1alpha1.RuntimeComponentCommonSpec,
+	replicas int32,
+	globalOptions map[string]string,
+	tieredStore *datav1alpha1.RuntimeTieredStore,
+) *common.CacheRuntimeComponentConfig {
+	if topology == nil || spec.Disabled {
+		return nil
 	}
+	componentConfig := &common.CacheRuntimeComponentConfig{
+		Enabled:  true,
+		Name:     common.GetCacheComponentName(e.name, componentType),
+		Replicas: replicas,
+		Options: utils.UnionMapsWithOverride(
+			utils.UnionMapsWithOverride(topology.Options, globalOptions), spec.Options),
+	}
+	if topology.Service.Headless != nil {
+		componentConfig.Service = common.CacheRuntimeComponentServiceConfig{
+			Name: GetComponentServiceName(e.name, componentType),
+		}
+	}
+	if tieredStore != nil {
+		componentConfig.TieredStoreLevels = e.extractTieredStoreLevels(tieredStore)
+	}
+	return componentConfig
+}
 
-	config := common.CacheRuntimeConfig{
-		Mounts:      mounts,
-		AccessModes: dataset.Spec.AccessModes,
-		TargetPath:  e.getFuseMountPoint(),
+// preserveTieredStoreLevels keeps the creation-time worker and client
+// TieredStoreLevels recorded in existingConfigMap rather than letting
+// syncRuntimeValueConfigMap overwrite them after an unsupported tieredStore
+// spec edit.
+//
+// Preserving from the existing ConfigMap rather than reconstructing levels from
+// workload PodSpecs keeps ConfigMap-only fields intact: workload pods carry
+// tmpfs/emptyDir sizeLimits and container memory limits, whereas
+// hostPath.quotas, high, and low exist only in runtime.json (and client
+// DaemonSet pods are never synced in place). When existingConfigMap has no
+// parseable runtime.json entry, config retains the levels computed from the
+// spec.
+func (e *CacheEngine) preserveTieredStoreLevels(config *common.CacheRuntimeConfig, existingConfigMap *corev1.ConfigMap) {
+	if config == nil || existingConfigMap == nil || len(existingConfigMap.Data) == 0 {
+		return
 	}
-	if len(config.AccessModes) == 0 {
-		config.AccessModes = []corev1.PersistentVolumeAccessMode{corev1.ReadOnlyMany}
+	raw, ok := existingConfigMap.Data[e.getRuntimeConfigFileName()]
+	if !ok || raw == "" {
+		return
 	}
+	var existingConfig common.CacheRuntimeConfig
+	if err := json.Unmarshal([]byte(raw), &existingConfig); err != nil {
+		e.Log.Error(err, "failed to unmarshal existing runtime config while preserving tieredStoreLevels; using spec values")
+		return
+	}
+	if config.Worker != nil && existingConfig.Worker != nil {
+		config.Worker.TieredStoreLevels = existingConfig.Worker.TieredStoreLevels
+	}
+	if config.Client != nil && existingConfig.Client != nil {
+		config.Client.TieredStoreLevels = existingConfig.Client.TieredStoreLevels
+	}
+}
 
-	if runtimeClass.Topology.Master != nil && !runtime.Spec.Master.Disabled {
-		config.Master = &common.CacheRuntimeComponentConfig{
-			Enabled:  true,
-			Name:     common.GetCacheComponentName(e.name, common.ComponentTypeMaster),
-			Replicas: runtime.Spec.Master.Replicas,
-			Options: utils.UnionMapsWithOverride(
-				utils.UnionMapsWithOverride(runtimeClass.Topology.Master.Options, runtime.Spec.Options), runtime.Spec.Master.Options),
-		}
-		if runtimeClass.Topology.Master.Service.Headless != nil {
-			config.Master.Service = common.CacheRuntimeComponentServiceConfig{
-				Name: GetComponentServiceName(e.name, common.ComponentTypeMaster),
-			}
-		}
+func (e *CacheEngine) renderRuntimeConfigData(config *common.CacheRuntimeConfig) (map[string]string, error) {
+	b, err := json.Marshal(config)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to marshal runtime config")
 	}
-	if runtimeClass.Topology.Worker != nil && !runtime.Spec.Worker.Disabled {
-		config.Worker = &common.CacheRuntimeComponentConfig{
-			Enabled:  true,
-			Name:     common.GetCacheComponentName(e.name, common.ComponentTypeWorker),
-			Replicas: runtime.Spec.Worker.Replicas,
-			Options: utils.UnionMapsWithOverride(
-				utils.UnionMapsWithOverride(runtimeClass.Topology.Worker.Options, runtime.Spec.Options), runtime.Spec.Worker.Options),
-		}
-		if runtimeClass.Topology.Worker.Service.Headless != nil {
-			config.Worker.Service = common.CacheRuntimeComponentServiceConfig{
-				Name: GetComponentServiceName(e.name, common.ComponentTypeWorker),
-			}
-		}
-		// Extract tiered store configuration for worker
-		config.Worker.TieredStoreLevels = e.extractTieredStoreLevels(&runtime.Spec.Worker.TieredStore)
-	}
-	if runtimeClass.Topology.Client != nil && !runtime.Spec.Client.Disabled {
-		config.Client = &common.CacheRuntimeComponentConfig{
-			Enabled: true,
-			Name:    common.GetCacheComponentName(e.name, common.ComponentTypeClient),
-			// Replicas: 1,
-			Options: utils.UnionMapsWithOverride(
-				utils.UnionMapsWithOverride(runtimeClass.Topology.Client.Options, runtime.Spec.Options), runtime.Spec.Client.Options),
-		}
-		if runtimeClass.Topology.Client.Service.Headless != nil {
-			config.Client.Service = common.CacheRuntimeComponentServiceConfig{
-				Name: GetComponentServiceName(e.name, common.ComponentTypeClient),
-			}
-		}
-		// Extract tiered store configuration for client
-		config.Client.TieredStoreLevels = e.extractTieredStoreLevels(&runtime.Spec.Client.TieredStore)
-	}
-
-	b, _ := json.Marshal(config)
-	sh, err := e.generateRuntimeSh(&config)
+	sh, err := e.generateRuntimeSh(config)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to generate runtime.sh")
 	}
