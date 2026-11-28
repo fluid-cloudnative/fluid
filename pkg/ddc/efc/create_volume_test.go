@@ -18,6 +18,7 @@ package efc
 
 import (
 	"context"
+	"reflect"
 	"strconv"
 	"testing"
 
@@ -174,6 +175,78 @@ func TestEFCEngine_createFusePersistentVolume(t *testing.T) {
 	}
 	if len(pvs.Items) != 1 {
 		t.Errorf("fail to create the pv")
+	}
+}
+
+func TestEFCEngine_createFusePersistentVolumeWithNodeSelector(t *testing.T) {
+	t.Setenv(utils.MountRoot, "/runtime-mnt")
+	runtimeInput := &datav1alpha1.EFCRuntime{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "hbase",
+			Namespace: "fluid",
+		},
+	}
+	datasetInput := &datav1alpha1.Dataset{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "hbase",
+			Namespace: "fluid",
+		},
+	}
+
+	client := fake.NewFakeClientWithScheme(testScheme, runtimeInput, datasetInput)
+	engine := &EFCEngine{
+		Client:    client,
+		Log:       fake.NullLogger(),
+		namespace: "fluid",
+		name:      "hbase",
+	}
+
+	runtimeInfo, err := base.BuildRuntimeInfo("hbase", "fluid", common.EFCRuntime)
+	if err != nil {
+		t.Fatalf("fail to create runtimeInfo: %v", err)
+	}
+	runtimeInfo.SetFuseNodeSelector(map[string]string{
+		"zone":   "us-east-1a",
+		"arch":   "amd64",
+		"region": "us-east-1",
+	})
+	engine.runtimeInfo = runtimeInfo
+
+	err = engine.createFusePersistentVolume(context.Background())
+	if err != nil {
+		t.Fatalf("fail to exec createFusePersistentVolume: %v", err)
+	}
+
+	var pvs v1.PersistentVolumeList
+	if err = client.List(context.TODO(), &pvs); err != nil {
+		t.Fatalf("fail to list pvs: %v", err)
+	}
+	if len(pvs.Items) != 1 {
+		t.Fatalf("expected 1 pv, got %d", len(pvs.Items))
+	}
+	pv := pvs.Items[0]
+	if pv.Spec.NodeAffinity == nil || pv.Spec.NodeAffinity.Required == nil || len(pv.Spec.NodeAffinity.Required.NodeSelectorTerms) != 1 {
+		t.Fatalf("expected 1 node selector term, got %v", pv.Spec.NodeAffinity)
+	}
+	expectedExpressions := []v1.NodeSelectorRequirement{
+		{
+			Key:      "arch",
+			Operator: v1.NodeSelectorOpIn,
+			Values:   []string{"amd64"},
+		},
+		{
+			Key:      "region",
+			Operator: v1.NodeSelectorOpIn,
+			Values:   []string{"us-east-1"},
+		},
+		{
+			Key:      "zone",
+			Operator: v1.NodeSelectorOpIn,
+			Values:   []string{"us-east-1a"},
+		},
+	}
+	if !reflect.DeepEqual(pv.Spec.NodeAffinity.Required.NodeSelectorTerms[0].MatchExpressions, expectedExpressions) {
+		t.Errorf("expected MatchExpressions %v, got %v", expectedExpressions, pv.Spec.NodeAffinity.Required.NodeSelectorTerms[0].MatchExpressions)
 	}
 }
 

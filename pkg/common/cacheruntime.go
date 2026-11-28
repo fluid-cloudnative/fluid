@@ -156,6 +156,12 @@ const (
 	EnvRuntimeConfigPathPrefix = EnvRuntimeConfigPath + "_"
 )
 
+// GetCacheRuntimeClassSnapshotConfigMapName returns the name of the configmap that holds the
+// snapshot of the CacheRuntimeClass the CacheRuntime named name is bound to.
+func GetCacheRuntimeClassSnapshotConfigMapName(name string) string {
+	return fmt.Sprintf("fluid-runtime-class-snapshot-%s", name)
+}
+
 // TieredStoreLevelConfig defines the configuration for a single tier in the tiered storage.
 // This config will be mounted into the worker container via ConfigMap.
 type TieredStoreLevelConfig struct {

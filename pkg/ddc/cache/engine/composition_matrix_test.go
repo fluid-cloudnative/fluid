@@ -136,15 +136,14 @@ func compositionTable() []layerCase {
 					Limits: corev1.ResourceList{corev1.ResourceMemory: resource.MustParse("8Gi")},
 				}
 			},
-			// CURRENT: the whole struct is replaced, so the three keys L3 did not restate
-			// are lost and the container ends up with no CPU request or limit at all.
-			// AFTER #6173: requests {cpu 1, memory 2Gi}, limits {cpu 2, memory 8Gi}.
-			knownBug: "#6173",
+			// L3 is overlaid on L1 key by key: only limits.memory moves, and the three keys
+			// L3 did not restate keep their template values.
 			want: func(g Gomega, t corev1.PodTemplateSpec) {
 				r := t.Spec.Containers[0].Resources
+				g.Expect(r.Requests).To(HaveKeyWithValue(corev1.ResourceCPU, resource.MustParse("1")))
+				g.Expect(r.Requests).To(HaveKeyWithValue(corev1.ResourceMemory, resource.MustParse("2Gi")))
+				g.Expect(r.Limits).To(HaveKeyWithValue(corev1.ResourceCPU, resource.MustParse("2")))
 				g.Expect(r.Limits).To(HaveKeyWithValue(corev1.ResourceMemory, resource.MustParse("8Gi")))
-				g.Expect(r.Limits).NotTo(HaveKey(corev1.ResourceCPU))
-				g.Expect(r.Requests).To(BeEmpty())
 			},
 		},
 
@@ -158,9 +157,39 @@ func compositionTable() []layerCase {
 			l3: func(w *datav1alpha1.CacheRuntimeWorkerSpec) {
 				w.RuntimeVersion = datav1alpha1.VersionSpec{ImageTag: "v2"}
 			},
-			// CURRENT: the guard wants both image and imageTag, so the tag is dropped.
-			// AFTER #6178: fluid/cache:v2.
-			knownBug: "#6178",
+			// The missing image is completed from L1, so only the tag moves.
+			want: func(g Gomega, t corev1.PodTemplateSpec) {
+				g.Expect(t.Spec.Containers[0].Image).To(Equal("fluid/cache:v2"))
+			},
+		},
+
+		{
+			field: "runtimeVersion",
+			desc:  "L3 sets image only, over an L1 whose registry carries a port",
+			l1: func(t *corev1.PodTemplateSpec) {
+				t.Spec.Containers[0].Image = "registry:5000/fluid/cache:v1"
+			},
+			l3: func(w *datav1alpha1.CacheRuntimeWorkerSpec) {
+				w.RuntimeVersion = datav1alpha1.VersionSpec{Image: "other/cache"}
+			},
+			// The missing tag is completed from L1; the registry port is not mistaken for it.
+			want: func(g Gomega, t corev1.PodTemplateSpec) {
+				g.Expect(t.Spec.Containers[0].Image).To(Equal("other/cache:v1"))
+			},
+		},
+		{
+			field: "runtimeVersion",
+			desc:  "L3 sets a digest-pinned image only, over an L1 that names a tag",
+			l1: func(t *corev1.PodTemplateSpec) {
+				t.Spec.Containers[0].Image = "fluid/cache:v1"
+			},
+			l3: func(w *datav1alpha1.CacheRuntimeWorkerSpec) {
+				w.RuntimeVersion = datav1alpha1.VersionSpec{
+					Image: "fluid/cache@sha256:067614b70d25b496e3edc3480747d558ee8a364ef47a67f669f5d96ca5098552",
+				}
+			},
+			// A digest takes no tag, so the version stays incomplete and L1 is kept
+			// rather than rendering "fluid/cache@sha256:...:v1".
 			want: func(g Gomega, t corev1.PodTemplateSpec) {
 				g.Expect(t.Spec.Containers[0].Image).To(Equal("fluid/cache:v1"))
 			},
@@ -321,6 +350,7 @@ var updatePath = compositionPath{
 		client := fake.NewClientBuilder().
 			WithScheme(CacheEngineTestScheme).
 			WithObjects(asts, runtimeObj, runtimeClass).
+			WithStatusSubresource(runtimeObj).
 			Build()
 
 		e := &CacheEngine{
@@ -330,7 +360,7 @@ var updatePath = compositionPath{
 			Log:       ctrl.Log.WithName("composition-matrix"),
 		}
 
-		g.Expect(e.syncRuntimeSpec(cruntime.ReconcileRequestContext{}, runtimeObj, runtimeClass)).To(Succeed())
+		g.Expect(e.syncRuntimeSpec(cruntime.ReconcileRequestContext{}, runtimeObj, runtimeClass)).To(BeEmpty())
 
 		got := &workloadv1alpha1.AdvancedStatefulSet{}
 		g.Expect(client.Get(context.TODO(), types.NamespacedName{Name: name, Namespace: "default"}, got)).To(Succeed())

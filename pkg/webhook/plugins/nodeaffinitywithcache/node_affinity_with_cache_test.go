@@ -541,3 +541,74 @@ func TestTieredLocalitySkipMutateWhenPluginArgEmpty(t *testing.T) {
 	require.NoError(t, err)
 	assert.Nil(t, pod.Spec.Affinity)
 }
+
+func TestTieredLocalityDeterministicOrdering(t *testing.T) {
+	runtimeA := &datav1alpha1.AlluxioRuntime{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "runtime-a",
+			Namespace: "fluid-test",
+		},
+	}
+	runtimeB := &datav1alpha1.AlluxioRuntime{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "runtime-b",
+			Namespace: "fluid-test",
+		},
+	}
+	runtimeC := &datav1alpha1.AlluxioRuntime{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "runtime-c",
+			Namespace: "fluid-test",
+		},
+	}
+
+	cl := fake.NewFakeClientWithScheme(testScheme, runtimeA, runtimeB, runtimeC)
+	plugin, err := NewPlugin(cl, simpleTieredLocality)
+	require.NoError(t, err)
+
+	nodeAffinityPlugin := plugin.(*NodeAffinityWithCache)
+
+	infoA, err := base.BuildRuntimeInfo("runtime-a", "fluid-test", "alluxio")
+	require.NoError(t, err)
+	infoB, err := base.BuildRuntimeInfo("runtime-b", "fluid-test", "alluxio")
+	require.NoError(t, err)
+	infoC, err := base.BuildRuntimeInfo("runtime-c", "fluid-test", "alluxio")
+	require.NoError(t, err)
+
+	runtimeMap := map[string]base.RuntimeInfoInterface{
+		"runtime-c": infoC,
+		"runtime-a": infoA,
+		"runtime-b": infoB,
+	}
+
+	preferredLocality := map[string]int32{"fluid.io/node": 100}
+	requiredLocality := []string{"fluid.io/node"}
+
+	// 1. Verify getTieredLocalityPreferredSchedulingTerms order is deterministic
+	firstPreferred, err := nodeAffinityPlugin.getTieredLocalityPreferredSchedulingTerms(runtimeMap, preferredLocality)
+	require.NoError(t, err)
+	assert.Len(t, firstPreferred, 3)
+	assert.Equal(t, infoA.GetCommonLabelName(), firstPreferred[0].Preference.MatchExpressions[0].Key)
+	assert.Equal(t, infoB.GetCommonLabelName(), firstPreferred[1].Preference.MatchExpressions[0].Key)
+	assert.Equal(t, infoC.GetCommonLabelName(), firstPreferred[2].Preference.MatchExpressions[0].Key)
+
+	for i := 0; i < 50; i++ {
+		preferred, err := nodeAffinityPlugin.getTieredLocalityPreferredSchedulingTerms(runtimeMap, preferredLocality)
+		require.NoError(t, err)
+		assert.Equal(t, firstPreferred, preferred)
+	}
+
+	// 2. Verify getTieredLocalityNodeSelectorTerms order is deterministic
+	firstRequired, err := nodeAffinityPlugin.getTieredLocalityNodeSelectorTerms(runtimeMap, requiredLocality)
+	require.NoError(t, err)
+	assert.Len(t, firstRequired, 3)
+	assert.Equal(t, infoA.GetCommonLabelName(), firstRequired[0].MatchExpressions[0].Key)
+	assert.Equal(t, infoB.GetCommonLabelName(), firstRequired[1].MatchExpressions[0].Key)
+	assert.Equal(t, infoC.GetCommonLabelName(), firstRequired[2].MatchExpressions[0].Key)
+
+	for i := 0; i < 50; i++ {
+		required, err := nodeAffinityPlugin.getTieredLocalityNodeSelectorTerms(runtimeMap, requiredLocality)
+		require.NoError(t, err)
+		assert.Equal(t, firstRequired, required)
+	}
+}

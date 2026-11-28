@@ -28,22 +28,39 @@ function setup() {
 }
 
 function create_dataset() {
-    kubectl create -f test/gha-e2e/curvine/cacheruntimeclass.yaml
-    kubectl create -f test/gha-e2e/curvine/dataset.yaml
-    kubectl create -f test/gha-e2e/curvine/cacheruntime.yaml
+    kubectl create -f test/gha-e2e/curvine/cacheruntimeclass.yaml || panic "cannot create the CacheRuntimeClass"
+    kubectl create -f test/gha-e2e/curvine/dataset.yaml || panic "cannot create the Dataset"
+    # The template requests 100m CPU. Only the merge with this override is invalid.
+    local runtime
+    runtime=$(kubectl patch --local -f test/gha-e2e/curvine/cacheruntime.yaml --type merge \
+        -p '{"spec":{"worker":{"resources":{"limits":{"cpu":"50m"}}}}}' -o json) || panic "cannot prepare the conflicting CacheRuntime"
+    kubectl create -f - <<< "$runtime" || panic "cannot create the CacheRuntime"
 
-    if [[ -z "$(kubectl get dataset $dataset_name -oname)" ]]; then
-        panic "failed to create dataset $dataset_name"
+    wait_for_worker_cpu_conflict RuntimeResourceCreationConflict
+    kubectl patch cacheruntime "$dataset_name" --type merge -p '{"spec":{"worker":{"resources":{"limits":{"cpu":null}}}}}' || panic "cannot remove the conflicting CPU limit"
+}
+
+function wait_for_worker_cpu_conflict() {
+    local expected_reason=$1
+    local target="cacheruntime/$dataset_name"
+    local condition='.status.conditions[?(@.type=="ResourcesSynced")]'
+    local reason message uid warnings
+    kubectl wait --for=condition=ResourcesSynced=False "$target" --timeout=150s || panic "ResourcesSynced did not report a conflict"
+    reason=$(kubectl get "$target" -ojsonpath="{${condition}.reason}") || panic "cannot read condition reason"
+    message=$(kubectl get "$target" -ojsonpath="{${condition}.message}") || panic "cannot read condition message"
+    if [[ "$reason" != "$expected_reason" || "$message" != *worker* || "$message" != *"cpu request 100m exceeds limit 50m"* ]]; then
+        panic "unexpected worker resource conflict: $reason $message"
     fi
-
-    if [[ -z "$(kubectl get cacheruntime $dataset_name -oname)" ]]; then
-        panic "failed to create curvine cache runtime $dataset_name"
-    fi
-
-    if [[ -z "$(kubectl get cacheruntimeclass $dataset_name -oname)" ]]; then
-        panic "failed to create curvine cache runtime class $dataset_name"
-    fi
-
+    uid=$(kubectl get "$target" -ojsonpath='{.metadata.uid}') || panic "cannot read CacheRuntime UID"
+    local deadline=$((SECONDS + 60))
+    while true; do
+        warnings=$(kubectl get events --field-selector "involvedObject.uid=$uid,type=Warning,reason=RuntimeResourcesConflict" \
+            -ojsonpath='{range .items[*]}{.message}{"\n"}{end}') || panic "cannot read resource warnings"
+        grep -Fxq -- "$message" <<< "$warnings" && break
+        (( SECONDS < deadline )) || panic "no Warning matching the ResourcesSynced condition: $message"
+        sleep 2
+    done
+    syslog "Verified the ResourcesSynced condition and matching Warning: $message"
 }
 
 function wait_dataset_bound() {
@@ -257,6 +274,7 @@ function dump_env_and_clean_up() {
     kubectl delete --ignore-not-found -f test/gha-e2e/curvine/read_job.yaml
     kubectl delete --ignore-not-found -f test/gha-e2e/curvine/write_job.yaml
     kubectl delete --ignore-not-found -f test/gha-e2e/curvine/dataload.yaml
+    kubectl delete --ignore-not-found -f test/gha-e2e/curvine/dataload_runafter_removed.yaml
     kubectl delete --ignore-not-found -f test/gha-e2e/curvine/ref-dataset.yaml
     # ThinRuntime will be automatically deleted when reference dataset is deleted
     kubectl delete --ignore-not-found -f test/gha-e2e/curvine/dataset.yaml
@@ -289,14 +307,141 @@ function wait_dataload_completed() {
     done
     syslog "Found succeeded dataload_name $dataload_name"
 }
+
+# dataset_controller_restarts prints "<pod>=<restartCount>" for every dataset-controller pod, so a
+# crash shows up either as a higher restart count or as a replaced pod.
+function dataset_controller_restarts() {
+    kubectl get pods -n fluid-system -l control-plane=dataset-controller \
+        -ojsonpath='{range .items[*]}{.metadata.name}={.status.containerStatuses[?(@.name=="manager")].restartCount}{" "}{end}'
+}
+
+function fail_dataload_runafter_removed() {
+    local dataload_name=$1
+    local manifest=$2
+    local err_msg=$3
+    local pod
+
+    syslog "--- DataLoad $dataload_name ---"
+    kubectl get dataload "$dataload_name" -oyaml 2>&1 || true
+    syslog "--- Events of DataLoad $dataload_name ---"
+    kubectl get events --field-selector "involvedObject.kind=DataLoad,involvedObject.name=$dataload_name" 2>&1 || true
+    syslog "--- dataset-controller pods ---"
+    kubectl get pods -n fluid-system -l control-plane=dataset-controller -owide 2>&1 || true
+    for pod in $(kubectl get pods -n fluid-system -l control-plane=dataset-controller -oname); do
+        syslog "--- previous dataset-controller container logs of $pod (if it restarted) ---"
+        kubectl logs -n fluid-system "$pod" -c manager --previous --tail=60 2>&1 || true
+    done
+    # Marking the DataLoad for deletion stops a crash-looping dataset-controller from picking it up
+    # again, since the DataFlow reconciler skips objects that are being deleted.
+    kubectl delete --ignore-not-found --wait=false -f "$manifest" || true
+    panic "$err_msg"
+}
+
+# A data operation keeps status.waitingFor.operationComplete=true while it waits for the operation
+# in spec.runAfter. Removing spec.runAfter at that point must release it like a normal DataLoad;
+# the DataFlow reconciler used to dereference the missing runAfter and crash-loop dataset-controller.
+function verify_dataload_runafter_removed() {
+    local dataload_name="curvine-dataload-runafter-removed"
+    local manifest="test/gha-e2e/curvine/dataload_runafter_removed.yaml"
+    local phase=""
+    local waiting=""
+    local not_found_event=""
+    local restarts_before=""
+    local restarts_now=""
+    local i
+
+    kubectl create -f "$manifest"
+
+    # Precondition: the DataLoad waits for its preceding operation and the DataFlow reconciler has
+    # handled it (it reports the preceding DataLoad as not found), so the check below cannot pass
+    # without exercising the DataFlow reconciler.
+    for ((i = 0; i < 24; i++)); do
+        phase=$(kubectl get dataload "$dataload_name" -ojsonpath='{.status.phase}')
+        waiting=$(kubectl get dataload "$dataload_name" -ojsonpath='{.status.waitingFor.operationComplete}')
+        not_found_event=$(kubectl get events -oname \
+            --field-selector "involvedObject.kind=DataLoad,involvedObject.name=$dataload_name,reason=DataOperationNotFound")
+        if [[ "$phase" == "Pending" && "$waiting" == "true" && -n "$not_found_event" ]]; then
+            break
+        fi
+        sleep 5
+    done
+    if [[ "$phase" != "Pending" || "$waiting" != "true" || -z "$not_found_event" ]]; then
+        fail_dataload_runafter_removed "$dataload_name" "$manifest" \
+            "DataLoad $dataload_name never waited for its preceding operation (phase: ${phase:-<empty>}, waitingFor.operationComplete: ${waiting:-<empty>}, DataOperationNotFound event: ${not_found_event:-<none>})"
+    fi
+    syslog "DataLoad $dataload_name is Pending and waiting for its preceding operation"
+
+    restarts_before=$(dataset_controller_restarts)
+    # With no dataset-controller pod to compare against, the restart checks below would pass vacuously.
+    if [[ ! "$restarts_before" =~ =[0-9]+ ]]; then
+        fail_dataload_runafter_removed "$dataload_name" "$manifest" \
+            "found no dataset-controller pod restart count to compare against (got: ${restarts_before:-<empty>})"
+    fi
+    kubectl patch dataload "$dataload_name" --type=json -p '[{"op":"remove","path":"/spec/runAfter"}]'
+    syslog "removed spec.runAfter from DataLoad $dataload_name, dataset-controller restarts: $restarts_before"
+
+    # wait at most 180 seconds for the DataLoad to complete
+    for ((i = 0; i < 36; i++)); do
+        restarts_now=$(dataset_controller_restarts)
+        if [[ "$restarts_now" != "$restarts_before" ]]; then
+            fail_dataload_runafter_removed "$dataload_name" "$manifest" \
+                "dataset-controller restarted after spec.runAfter was removed from DataLoad $dataload_name (before: $restarts_before, now: $restarts_now)"
+        fi
+        phase=$(kubectl get dataload "$dataload_name" -ojsonpath='{.status.phase}')
+        if [[ "$phase" == "Complete" ]]; then
+            break
+        fi
+        sleep 5
+    done
+    if [[ "$phase" != "Complete" ]]; then
+        waiting=$(kubectl get dataload "$dataload_name" -ojsonpath='{.status.waitingFor.operationComplete}')
+        fail_dataload_runafter_removed "$dataload_name" "$manifest" \
+            "DataLoad $dataload_name did not complete within 180s after spec.runAfter was removed (phase: ${phase:-<empty>}, waitingFor.operationComplete: ${waiting:-<empty>})"
+    fi
+
+    restarts_now=$(dataset_controller_restarts)
+    if [[ "$restarts_now" != "$restarts_before" ]]; then
+        fail_dataload_runafter_removed "$dataload_name" "$manifest" \
+            "dataset-controller restarted after spec.runAfter was removed from DataLoad $dataload_name (before: $restarts_before, now: $restarts_now)"
+    fi
+    syslog "DataLoad $dataload_name completed after spec.runAfter was removed, dataset-controller did not restart"
+    kubectl delete -f "$manifest"
+}
+
 function scale_worker_and_verify() {
     local target_replicas=$1
+    local method=${2:-patch}
+    local verify_pods=${3:-true}
     local worker_component_name="${dataset_name}-worker"
     local deadline=180
     local counter=0
 
-    syslog "Scaling worker to $target_replicas replicas"
-    kubectl patch cacheruntime $dataset_name --type merge -p "{\"spec\":{\"worker\":{\"replicas\":$target_replicas}}}"
+    syslog "Scaling worker to $target_replicas replicas (method=$method, verify_pods=$verify_pods)"
+    if [[ "$method" == "scale" ]]; then
+        # write through the scale subresource, the same path an HPA takes
+        kubectl scale cacheruntime/${dataset_name} --replicas=$target_replicas
+    else
+        kubectl patch cacheruntime $dataset_name --type merge -p "{\"spec\":{\"worker\":{\"replicas\":$target_replicas}}}"
+    fi
+
+    # the write lands on the CR synchronously and needs no schedulable node, so the
+    # write-path assertions run even on single-node clusters
+    local spec_replicas=""
+    spec_replicas=$(kubectl get cacheruntime $dataset_name -ojsonpath='{@.spec.worker.replicas}' 2>/dev/null)
+    if [[ "$spec_replicas" != "$target_replicas" ]]; then
+        panic "cacheruntime spec.worker.replicas mismatch: expected $target_replicas, got ${spec_replicas:-<empty>}"
+    fi
+
+    local scale_spec_replicas=""
+    scale_spec_replicas=$(kubectl get --raw "/apis/data.fluid.io/v1alpha1/namespaces/default/cacheruntimes/${dataset_name}/scale" 2>/dev/null | grep -o '"spec":{"replicas":[0-9]*' | grep -o '[0-9]*$')
+    if [[ "$scale_spec_replicas" != "$target_replicas" ]]; then
+        panic "scale subresource spec.replicas mismatch: expected $target_replicas, got ${scale_spec_replicas:-<empty>}"
+    fi
+
+    if [[ "$verify_pods" != "true" ]]; then
+        syslog "Worker scale write to $target_replicas verified on the CR (pod-count checks skipped: no spare node to schedule extra workers)"
+        return 0
+    fi
 
     while true; do
         local ready_replicas=""
@@ -331,6 +476,130 @@ function scale_worker_and_verify() {
     syslog "Worker scaled to $target_replicas replicas successfully (asts replicas=$asts_replicas, ready=$asts_ready)"
 }
 
+function update_worker_resources_and_verify() {
+    local worker_component_name="${dataset_name}-worker"
+    local worker_selector="cacheruntime.fluid.io/component-name=${worker_component_name}"
+    local resources_path="{.spec.template.spec.containers[0].resources}"
+    local deadline=300
+    local counter=0
+
+    local cpu
+    kubectl patch cacheruntime "$dataset_name" --type merge -p '{"spec":{"worker":{"resources":{"limits":{"cpu":"50m"}}}}}' || panic "cannot set the conflicting CPU override"
+    wait_for_worker_cpu_conflict RuntimeResourcesConflict
+    cpu=$(kubectl get advancedstatefulset "$worker_component_name" -ojsonpath='{.spec.template.spec.containers[0].resources.limits.cpu}')
+    [[ "$cpu" == "1" ]] || panic "expected worker CPU limit to stay at 1 during the conflict, got '$cpu'"
+
+    # The CacheRuntimeClass template declares requests {cpu 100m, memory 256Mi} and
+    # limits {cpu 1, memory 2Gi}. Name only limits.memory on the CacheRuntime: the other
+    # three keys must keep their template values (#6173).
+    syslog "Raising worker limits.memory to 3Gi on the CacheRuntime"
+    kubectl patch cacheruntime "$dataset_name" --type merge -p '{"spec":{"worker":{"resources":{"limits":{"cpu":null,"memory":"3Gi"}}}}}' || panic "cannot correct the worker resources"
+    kubectl wait --for=condition=ResourcesSynced=True "cacheruntime/$dataset_name" --timeout=180s || panic "ResourcesSynced did not recover after the spec update"
+
+    while true; do
+        local limits_memory=""
+        limits_memory=$(kubectl get advancedstatefulset "$worker_component_name" -ojsonpath='{.spec.template.spec.containers[0].resources.limits.memory}' 2>/dev/null)
+        if [[ "$limits_memory" == "3Gi" ]]; then
+            break
+        fi
+
+        counter=$((counter + 1))
+        if [[ $((counter * 5)) -ge $deadline ]]; then
+            panic "timeout ${deadline}s waiting for worker limits.memory to sync to 3Gi (got: ${limits_memory:-<empty>}, resources: $(kubectl get advancedstatefulset "$worker_component_name" -ojsonpath="$resources_path" 2>/dev/null))"
+        fi
+        sleep 5
+    done
+
+    local key want got
+    for key in "limits.cpu=1" "requests.cpu=100m" "requests.memory=256Mi"; do
+        want=${key#*=}
+        got=$(kubectl get advancedstatefulset "$worker_component_name" -ojsonpath="{.spec.template.spec.containers[0].resources.${key%%=*}}" 2>/dev/null)
+        if [[ "$got" != "$want" ]]; then
+            panic "worker ${key%%=*} lost the template value: expected $want, got ${got:-<empty>} (resources: $(kubectl get advancedstatefulset "$worker_component_name" -ojsonpath="$resources_path" 2>/dev/null))"
+        fi
+    done
+    syslog "AdvancedStatefulSet resources merged: $(kubectl get advancedstatefulset "$worker_component_name" -ojsonpath="$resources_path")"
+
+    # Wait for the update to reach the pods. The bundled AdvancedStatefulSet controller only
+    # updates images in place, so a resources change recreates the pods.
+    counter=0
+    while true; do
+        local generation="" observed="" replicas="" updated="" ready=""
+        generation=$(kubectl get advancedstatefulset "$worker_component_name" -ojsonpath='{.metadata.generation}' 2>/dev/null)
+        observed=$(kubectl get advancedstatefulset "$worker_component_name" -ojsonpath='{.status.observedGeneration}' 2>/dev/null)
+        replicas=$(kubectl get advancedstatefulset "$worker_component_name" -ojsonpath='{.spec.replicas}' 2>/dev/null)
+        updated=$(kubectl get advancedstatefulset "$worker_component_name" -ojsonpath='{.status.updatedReplicas}' 2>/dev/null)
+        ready=$(kubectl get advancedstatefulset "$worker_component_name" -ojsonpath='{.status.readyReplicas}' 2>/dev/null)
+        if [[ -n "$generation" ]] && [[ "$observed" == "$generation" ]] && \
+            [[ "$updated" == "$replicas" ]] && [[ "$ready" == "$replicas" ]]; then
+            break
+        fi
+
+        counter=$((counter + 1))
+        if [[ $((counter * 5)) -ge $deadline ]]; then
+            panic "timeout ${deadline}s waiting for worker resources update to roll out (generation: $generation, observed: ${observed:-<empty>}, replicas: $replicas, updated: ${updated:-<empty>}, ready: ${ready:-<empty>})"
+        fi
+        sleep 5
+    done
+
+    local pod_limits_memory="" pod_requests_cpu=""
+    pod_limits_memory=$(kubectl get pod -l "$worker_selector" -ojsonpath='{.items[0].spec.containers[0].resources.limits.memory}')
+    pod_requests_cpu=$(kubectl get pod -l "$worker_selector" -ojsonpath='{.items[0].spec.containers[0].resources.requests.cpu}')
+    if [[ "$pod_limits_memory" != "3Gi" ]] || [[ "$pod_requests_cpu" != "100m" ]]; then
+        panic "worker pod resources not updated: limits.memory=${pod_limits_memory:-<empty>}, requests.cpu=${pod_requests_cpu:-<empty>}"
+    fi
+
+    wait_cache_worker_ready
+    syslog "Worker resources merged onto the template baseline and rolled out"
+}
+
+function verify_runtime_class_edit_not_propagated() {
+    local worker_component_name="${dataset_name}-worker"
+    local class_name="curvine-demo"
+    local snapshot_name="fluid-runtime-class-snapshot-${dataset_name}"
+    local resources_path='{.spec.template.spec.containers[0].resources}'
+    # limits.cpu is not overridden by the CacheRuntime, so with a live class it would follow the edit.
+    local class_cpu_path='/topology/worker/template/spec/containers/0/resources/limits/cpu'
+    local cpu_jsonpath='{.topology.worker.template.spec.containers[0].resources.limits.cpu}'
+
+    if ! kubectl get configmap "$snapshot_name" >/dev/null 2>&1; then
+        panic "CacheRuntimeClass snapshot configmap $snapshot_name not found"
+    fi
+
+    local resources_before replicas_before
+    resources_before=$(kubectl get advancedstatefulset "$worker_component_name" -ojsonpath="$resources_path") || panic "cannot read initial worker resources"
+    replicas_before=$(kubectl get advancedstatefulset "$worker_component_name" -ojsonpath='{.spec.replicas}') || panic "cannot read initial worker replicas"
+
+    local patched_cpu
+    syslog "Editing CacheRuntimeClass $class_name worker limits.cpu from 1 to 4"
+    patched_cpu=$(kubectl patch cacheruntimeclass "$class_name" --type json \
+        -p "[{\"op\":\"test\",\"path\":\"$class_cpu_path\",\"value\":\"1\"},
+             {\"op\":\"replace\",\"path\":\"$class_cpu_path\",\"value\":\"4\"}]" -ojsonpath="$cpu_jsonpath") || panic "failed to patch class CPU limit"
+    [[ "$patched_cpu" == "4" ]] || panic "patched class has CPU limit '$patched_cpu', expected 4"
+
+    # Edit the CacheRuntime too. Seeing the new replicas on the AdvancedStatefulSet proves a
+    # sync ran after the class edit; the class edit itself must not reach the workload.
+    local target_replicas=$((replicas_before + 1)) deadline=$((SECONDS + 120))
+    kubectl patch cacheruntime "$dataset_name" --type merge -p "{\"spec\":{\"worker\":{\"replicas\":${target_replicas}}}}" || panic "failed to trigger runtime reconciliation"
+    until [[ "$(kubectl get advancedstatefulset "$worker_component_name" -ojsonpath='{.spec.replicas}')" == "$target_replicas" ]]; do
+        (( SECONDS < deadline )) || panic "worker replicas did not reach $target_replicas after the class edit"
+        sleep 5
+    done
+
+    # The runtime config configmap is not checked: it legitimately changes with the replicas.
+    local resources_after=""
+    resources_after=$(kubectl get advancedstatefulset "$worker_component_name" -ojsonpath="$resources_path") || panic "cannot read worker resources after the sync"
+
+    kubectl patch cacheruntimeclass "$class_name" --type json \
+        -p "[{\"op\":\"replace\",\"path\":\"$class_cpu_path\",\"value\":\"1\"}]" || panic "failed to restore class CPU limit"
+    kubectl patch cacheruntime "$dataset_name" --type merge -p "{\"spec\":{\"worker\":{\"replicas\":${replicas_before}}}}" || panic "failed to restore runtime replicas"
+
+    if [[ -z "$resources_before" || "$resources_after" != "$resources_before" ]]; then
+        panic "CacheRuntimeClass edit reached worker $worker_component_name: resources $resources_before -> $resources_after"
+    fi
+    syslog "CacheRuntimeClass edit did not reach the existing CacheRuntime (worker resources: $resources_after)"
+}
+
 function delete_dataset_and_runtime() {
     kubectl delete --ignore-not-found -f test/gha-e2e/curvine/dataload.yaml
     kubectl delete --ignore-not-found -f test/gha-e2e/curvine/ref-dataset.yaml
@@ -343,7 +612,7 @@ function wait_runtime_deleted() {
     local counter=0
     while true; do
         local remaining=""
-        remaining=$(kubectl get advancedstatefulset,daemonset,svc -l fluid.io/managed-by=fluid -n default -oname 2>/dev/null)
+        remaining=$(kubectl get advancedstatefulset,daemonset,svc -l "cacheruntime.fluid.io/name=${dataset_name}" -n default -oname 2>/dev/null)
         if [[ -z "$remaining" ]]; then
             break
         fi
@@ -382,15 +651,83 @@ function check_dataset_cache_state() {
     fi
 }
 
+function verify_status_selector() {
+    local expected_selector="cacheruntime.fluid.io/component-name=${dataset_name}-worker,cacheruntime.fluid.io/name=${dataset_name}"
+    local selector=""
+    selector=$(kubectl get cacheruntime $dataset_name -ojsonpath='{@.status.selector}' 2>/dev/null)
+    if [[ -z "$selector" ]]; then
+        panic "cacheruntime $dataset_name status.selector is empty, expected \"$expected_selector\""
+    fi
+    if [[ "$selector" != "$expected_selector" ]]; then
+        panic "cacheruntime $dataset_name status.selector mismatch: expected \"$expected_selector\", got \"$selector\""
+    fi
+
+    # the selector must actually discover the worker pods, which is what HPA relies on
+    local matched_pods=""
+    matched_pods=$(kubectl get pod -l "$selector" -oname 2>/dev/null)
+    if [[ -z "$matched_pods" ]]; then
+        panic "no pod matched cacheruntime $dataset_name status.selector \"$selector\""
+    fi
+    syslog "Verified cacheruntime $dataset_name status.selector=\"$selector\" (matches worker pods: $(echo $matched_pods | tr '\n' ' '))"
+}
+
+function verify_scale_subresource() {
+    # Verify the scale subresource contract an HPA relies on, without running a real HPA:
+    # a GET on .../scale must report the worker selector and replicas derived from the CR.
+    local scale_path="/apis/data.fluid.io/v1alpha1/namespaces/default/cacheruntimes/${dataset_name}/scale"
+    local scale_json=""
+    scale_json=$(kubectl get --raw "$scale_path" 2>/dev/null)
+    if [[ -z "$scale_json" ]]; then
+        panic "failed to read scale subresource of cacheruntime $dataset_name"
+    fi
+
+    local expected_selector=""
+    expected_selector=$(kubectl get cacheruntime $dataset_name -ojsonpath='{@.status.selector}')
+    # autoscaling/v1 ScaleStatus has a single string field "selector": the API server
+    # fills it verbatim from the CRD's labelSelectorPath (here .status.selector) and
+    # the HPA reads that string to discover the target pods
+    if ! grep -Fq "\"selector\":\"${expected_selector}\"" <<< "$scale_json"; then
+        panic "scale subresource selector mismatch: expected \"${expected_selector}\", got scale: $scale_json"
+    fi
+
+    local spec_replicas=""
+    spec_replicas=$(kubectl get cacheruntime $dataset_name -ojsonpath='{@.spec.worker.replicas}')
+    if ! grep -q "\"spec\":{\"replicas\":${spec_replicas}}" <<< "$scale_json"; then
+        panic "scale subresource spec.replicas mismatch: expected ${spec_replicas}, got scale: $scale_json"
+    fi
+
+    # the CR field feeds statusReplicasPath, so comparing the scale response against
+    # it would only prove the plumbing; compare both against the pods the selector
+    # actually matches - the observed-pod count the HPA relies on
+    local current_replicas=""
+    current_replicas=$(kubectl get cacheruntime $dataset_name -ojsonpath='{@.status.worker.currentReplicas}')
+    local pod_count=""
+    pod_count=$(kubectl get pod -l "$expected_selector" --no-headers 2>/dev/null | wc -l | tr -d ' ')
+    if [[ -z "$pod_count" ]]; then
+        pod_count=0
+    fi
+    if [[ "$current_replicas" != "$pod_count" ]]; then
+        panic "cacheruntime status.worker.currentReplicas ($current_replicas) != selector-matched pod count ($pod_count)"
+    fi
+    if ! grep -q "\"status\":{\"replicas\":${pod_count}," <<< "$scale_json"; then
+        panic "scale subresource status.replicas != selector-matched pod count ${pod_count}, got scale: $scale_json"
+    fi
+    syslog "Verified scale subresource of cacheruntime $dataset_name (spec.replicas=${spec_replicas}, status.replicas=${pod_count} selector-matched pods, selector=${expected_selector})"
+}
+
 function main() {
     syslog "[TESTCASE $testname STARTS AT $(date)]"
     trap dump_env_and_clean_up EXIT
     setup
     create_dataset
     wait_dataset_bound
+    kubectl wait --for=condition=ResourcesSynced=True "cacheruntime/$dataset_name" --timeout=180s || panic "ResourcesSynced did not recover after fixing the override"
     create_reference_dataset
     wait_reference_dataset_bound
     wait_cache_worker_ready
+
+    verify_status_selector
+    verify_scale_subresource
 
     check_dataset_cache_state
 
@@ -398,21 +735,34 @@ function main() {
     wait_job_completed $write_job_name
     create_dataload
     wait_dataload_completed "curvine-dataload"
+    # verify removing spec.runAfter from a waiting DataLoad releases it without crashing dataset-controller
+    verify_dataload_runafter_removed
     wait_cache_client_ready
     create_job test/gha-e2e/curvine/read_job.yaml $read_job_name
     wait_job_completed $read_job_name
     create_job test/gha-e2e/curvine/read_ref_job.yaml $read_ref_job_name
     wait_job_completed $read_ref_job_name
 
-    # verify scale-up and scale-down (exercises patch on advancedstatefulsets and delete on pods)
-    # skip on single-node clusters where anti-affinity prevents scheduling the second pod
+    # verify a partial resources update keeps the template's other requirements
+    update_worker_resources_and_verify
+
+    # verify editing the CacheRuntimeClass does not reach the existing CacheRuntime
+    verify_runtime_class_edit_not_propagated
+
+    # verify scale-up and scale-down: scale up writes through the scale subresource (the same
+    # path an HPA takes), scale down writes spec directly via patch. The write assertions run
+    # unconditionally - landing the write needs no spare node - while the pod-count checks are
+    # skipped on single-node clusters where anti-affinity prevents scheduling the second pod
+
     local node_count=""
     node_count=$(kubectl get nodes --no-headers 2>/dev/null | wc -l | tr -d ' ')
     if [[ "$node_count" -ge 2 ]]; then
-        scale_worker_and_verify 2
-        scale_worker_and_verify 1
+        scale_worker_and_verify 2 scale true
+        scale_worker_and_verify 1 patch true
     else
-        syslog "Skipping scale test: single-node cluster ($node_count node)"
+        syslog "single-node cluster ($node_count node): verifying scale writes only, pod-count checks skipped"
+        scale_worker_and_verify 2 scale false
+        scale_worker_and_verify 1 patch false
     fi
 
     # verify deletion and cleanup

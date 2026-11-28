@@ -45,6 +45,13 @@ const (
 	RuntimeWithSecretNotSupported = "RuntimeWithSecretNotSupported"
 
 	RuntimeMountUfsFailed = "RuntimeMountUfsFailed"
+
+	RuntimeResourcesConflict = "RuntimeResourcesConflict"
+	RuntimeVersionIncomplete = "RuntimeVersionIncomplete"
+
+	RuntimeClassSnapshotInvalid = "RuntimeClassSnapshotInvalid"
+
+	RuntimeClassChanged = "RuntimeClassChanged"
 )
 
 // Events related to all type of Data Operations
@@ -75,6 +82,8 @@ const (
 	DataOperationNotFound = "DataOperationNotFound"
 
 	DataOperationWaiting = "DataOperationWaiting"
+
+	DataOperationWaitingEnded = "DataOperationWaitingEnded"
 )
 
 // Events related to DataLoad

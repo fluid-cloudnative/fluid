@@ -77,7 +77,10 @@ type DataMigrateSpec struct {
 	// SchedulerName sets the scheduler to be used for DataMigrate pod
 	SchedulerName string `json:"schedulerName,omitempty"`
 
-	// Specifies that the preceding operation in a workflow
+	// Specifies that the preceding operation in a workflow.
+	// The operation waits for the preceding operation only if runAfter is set when the operation is created.
+	// Removing runAfter while the operation is waiting ends the wait.
+	// Adding runAfter later does not make the operation wait.
 	// +optional
 	RunAfter *OperationRef `json:"runAfter,omitempty"`
 

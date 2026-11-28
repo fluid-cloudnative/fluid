@@ -33,7 +33,9 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/utils/ptr"
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
+	fakeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
+	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -41,7 +43,7 @@ import (
 
 var _ = Describe("Dataset Lifecycle Node Tests", Label("pkg.utils.dataset.lifecycle.node_test.go"), func() {
 	var (
-		client      client.Client
+		client      ctrlclient.Client
 		runtimeInfo base.RuntimeInfoInterface
 		testScheme  *runtime.Scheme
 		resources   []runtime.Object
@@ -501,6 +503,201 @@ var _ = Describe("Dataset Lifecycle Node Tests", Label("pkg.utils.dataset.lifecy
 				Expect(err).To(BeNil())
 				Expect(gotNode.Labels).To(BeEmpty())
 			})
+		})
+	})
+
+	Describe("Test syncCapacityInfoOnNode()", func() {
+		var nodeLabels map[string]string
+
+		BeforeEach(func() {
+			// the runtime now has 1GiB in memory and 2GiB on SSD
+			tieredStore := datav1alpha1.TieredStore{
+				Levels: []datav1alpha1.Level{
+					{
+						MediumType: common.Memory,
+						Quota:      resource.NewQuantity(1<<30, resource.BinarySI),
+					},
+					{
+						MediumType: common.SSD,
+						Quota:      resource.NewQuantity(2<<30, resource.BinarySI),
+					},
+				},
+			}
+
+			var err error
+			runtimeInfo, err = base.BuildRuntimeInfo("spark", "fluid", "alluxio", base.WithTieredStore(tieredStore))
+			Expect(err).To(BeNil())
+		})
+
+		JustBeforeEach(func() {
+			Expect(client.Create(context.TODO(), &corev1.Node{
+				ObjectMeta: metav1.ObjectMeta{Name: "cache-node", Labels: nodeLabels},
+			})).To(Succeed())
+		})
+
+		When("the node was labelled with an empty tiered store", func() {
+			BeforeEach(func() {
+				resources = nil
+				nodeLabels = map[string]string{
+					"fluid.io/s-alluxio-fluid-spark":     "true",
+					"fluid.io/s-h-alluxio-t-fluid-spark": "0B",
+					"other-label":                        "keep",
+				}
+			})
+
+			It("should write the current capacity labels", func() {
+				Expect(syncCapacityInfoOnNode("cache-node", runtimeInfo, client)).To(Succeed())
+
+				gotNode, err := kubeclient.GetNode(client, "cache-node")
+				Expect(err).To(BeNil())
+				Expect(gotNode.Labels).To(HaveKeyWithValue("fluid.io/s-h-alluxio-m-fluid-spark", "1GiB"))
+				Expect(gotNode.Labels).To(HaveKeyWithValue("fluid.io/s-h-alluxio-d-fluid-spark", "2GiB"))
+				Expect(gotNode.Labels).To(HaveKeyWithValue("fluid.io/s-h-alluxio-t-fluid-spark", "3GiB"))
+				Expect(gotNode.Labels).To(HaveKeyWithValue("other-label", "keep"))
+			})
+		})
+
+		When("the node has a label for a tier the runtime no longer has", func() {
+			BeforeEach(func() {
+				tieredStore := datav1alpha1.TieredStore{
+					Levels: []datav1alpha1.Level{{
+						MediumType: common.SSD,
+						Quota:      resource.NewQuantity(2<<30, resource.BinarySI),
+					}},
+				}
+
+				var err error
+				runtimeInfo, err = base.BuildRuntimeInfo("spark", "fluid", "alluxio", base.WithTieredStore(tieredStore))
+				Expect(err).To(BeNil())
+
+				resources = nil
+				nodeLabels = map[string]string{
+					"fluid.io/s-alluxio-fluid-spark":     "true",
+					"fluid.io/s-h-alluxio-m-fluid-spark": "1GiB",
+					"fluid.io/s-h-alluxio-d-fluid-spark": "2GiB",
+					"fluid.io/s-h-alluxio-t-fluid-spark": "3GiB",
+				}
+			})
+
+			It("should remove the stale tier label", func() {
+				Expect(syncCapacityInfoOnNode("cache-node", runtimeInfo, client)).To(Succeed())
+
+				gotNode, err := kubeclient.GetNode(client, "cache-node")
+				Expect(err).To(BeNil())
+				Expect(gotNode.Labels).NotTo(HaveKey("fluid.io/s-h-alluxio-m-fluid-spark"))
+				Expect(gotNode.Labels).To(HaveKeyWithValue("fluid.io/s-h-alluxio-d-fluid-spark", "2GiB"))
+				Expect(gotNode.Labels).To(HaveKeyWithValue("fluid.io/s-h-alluxio-t-fluid-spark", "2GiB"))
+			})
+		})
+
+		When("the node doesn't have the runtime label", func() {
+			BeforeEach(func() {
+				resources = nil
+				nodeLabels = map[string]string{"other-label": "keep"}
+			})
+
+			It("should leave the node alone", func() {
+				Expect(syncCapacityInfoOnNode("cache-node", runtimeInfo, client)).To(Succeed())
+
+				gotNode, err := kubeclient.GetNode(client, "cache-node")
+				Expect(err).To(BeNil())
+				Expect(gotNode.Labels).To(Equal(map[string]string{"other-label": "keep"}))
+			})
+		})
+	})
+
+	Describe("Test SyncScheduleInfoToCacheNodes refreshing capacity labels", func() {
+		var (
+			patchCalls int
+			nodeLabels map[string]string
+		)
+
+		BeforeEach(func() {
+			tieredStore := datav1alpha1.TieredStore{
+				Levels: []datav1alpha1.Level{{
+					MediumType: common.Memory,
+					Quota:      resource.NewQuantity(1<<30, resource.BinarySI),
+				}},
+			}
+
+			var err error
+			runtimeInfo, err = base.BuildRuntimeInfo("hbase", "fluid", common.AlluxioRuntime, base.WithTieredStore(tieredStore))
+			Expect(err).To(BeNil())
+			runtimeInfo.SetupWithDataset(&datav1alpha1.Dataset{
+				Spec: datav1alpha1.DatasetSpec{PlacementMode: datav1alpha1.ExclusiveMode},
+			})
+
+			// node-0 was labelled before the tiered store was known, so its capacity labels are 0B
+			nodeLabels = map[string]string{
+				runtimeInfo.GetRuntimeLabelName():  "true",
+				runtimeInfo.GetLabelNameForTotal(): "0B",
+				"type":                             "real-node",
+			}
+		})
+
+		JustBeforeEach(func() {
+			sts := &appsv1.StatefulSet{
+				TypeMeta:   metav1.TypeMeta{APIVersion: "apps/v1", Kind: "StatefulSet"},
+				ObjectMeta: metav1.ObjectMeta{Namespace: "fluid", Name: "hbase-worker", UID: "test-uid"},
+				Spec: appsv1.StatefulSetSpec{
+					Selector: &metav1.LabelSelector{MatchLabels: map[string]string{"app": "hbase-worker"}},
+				},
+			}
+			pod := &corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      "hbase-worker-0",
+					Namespace: "fluid",
+					Labels:    map[string]string{"app": "hbase-worker"},
+					OwnerReferences: []metav1.OwnerReference{{
+						APIVersion: "apps/v1",
+						Kind:       "StatefulSet",
+						Name:       "hbase-worker",
+						UID:        "test-uid",
+						Controller: ptr.To(true),
+					}},
+				},
+				Spec: corev1.PodSpec{NodeName: "node-0"},
+			}
+			node := &corev1.Node{ObjectMeta: metav1.ObjectMeta{Name: "node-0", Labels: nodeLabels}}
+
+			patchCalls = 0
+			fakeBase := fakeclient.NewClientBuilder().WithScheme(testScheme).WithObjects(sts, pod, node).Build()
+			client = interceptor.NewClient(fakeBase, interceptor.Funcs{
+				Patch: func(ctx context.Context, c ctrlclient.WithWatch, obj ctrlclient.Object, patch ctrlclient.Patch, opts ...ctrlclient.PatchOption) error {
+					patchCalls++
+					return c.Patch(ctx, obj, patch, opts...)
+				},
+			})
+		})
+
+		AfterEach(func() {
+			nodeExcludeSelector = nil
+		})
+
+		It("should repair outdated capacity labels and not patch again once they match", func() {
+			Expect(SyncScheduleInfoToCacheNodes(runtimeInfo, client)).To(Succeed())
+
+			gotNode, err := kubeclient.GetNode(client, "node-0")
+			Expect(err).To(BeNil())
+			Expect(gotNode.Labels).To(HaveKeyWithValue(runtimeInfo.GetLabelNameForMemory(), "1GiB"))
+			Expect(gotNode.Labels).To(HaveKeyWithValue(runtimeInfo.GetLabelNameForTotal(), "1GiB"))
+			Expect(patchCalls).To(Equal(1))
+
+			patchCalls = 0
+			Expect(SyncScheduleInfoToCacheNodes(runtimeInfo, client)).To(Succeed())
+			Expect(patchCalls).To(BeZero())
+		})
+
+		It("should leave nodes matching the exclude selector untouched", func() {
+			nodeExcludeSelector = labels.SelectorFromSet(labels.Set{"type": "real-node"})
+
+			Expect(SyncScheduleInfoToCacheNodes(runtimeInfo, client)).To(Succeed())
+
+			gotNode, err := kubeclient.GetNode(client, "node-0")
+			Expect(err).To(BeNil())
+			Expect(gotNode.Labels).To(HaveKeyWithValue(runtimeInfo.GetLabelNameForTotal(), "0B"))
+			Expect(gotNode.Labels).NotTo(HaveKey(runtimeInfo.GetLabelNameForMemory()))
+			Expect(patchCalls).To(BeZero())
 		})
 	})
 

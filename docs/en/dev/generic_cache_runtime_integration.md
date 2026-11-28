@@ -233,6 +233,10 @@ Some things to keep in mind:
 
 For a complete configuration example, see [Deploy Mooncake with CacheRuntime](../samples/cacheruntime/mooncake_cache_runtime.md).
 
+#### Releasing a New Version of the RuntimeClass
+
+A CacheRuntime is bound to a snapshot of its CacheRuntimeClass taken when it is first set up, so editing a CacheRuntimeClass only affects CacheRuntimes created afterwards. Images, `options`, `executionEntries` and `dataOperationSpecs` of one class version can therefore change together. To roll out a new version alongside running CacheRuntimes, publish it as a new CacheRuntimeClass (for example with the version in its name) and have new CacheRuntimes reference it. See [CacheRuntime Spec Field Update Capabilities](../samples/cacheruntime/cacheruntime_spec_update.md#4-cacheruntimeclass-snapshot).
+
 ### Step 2.5 User Creates Runtime
 
 ```yaml

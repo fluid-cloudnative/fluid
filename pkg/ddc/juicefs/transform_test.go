@@ -447,6 +447,73 @@ var _ = Describe("JuiceFSEngine Transform", func() {
 		)
 	})
 
+	// genEdition itself is covered below, but its arguments are supplied by transform.
+	// These cases go through transform so that the dataset-wide SharedEncryptOptions really
+	// reach it: declaring metaurl there means community edition just as much as declaring it
+	// on the mount does.
+	Describe("edition derived by transform", func() {
+		metaurlOption := []datav1alpha1.EncryptOption{{
+			Name: JuiceMetaUrl,
+			ValueFrom: datav1alpha1.EncryptOptionSource{
+				SecretKeyRef: datav1alpha1.SecretKeySelector{Name: "test", Key: "metaurl"},
+			},
+		}}
+
+		BeforeEach(func() {
+			pr := net.ParsePortRangeOrDie("14000-15999")
+			Expect(portallocator.SetupRuntimePortAllocator(nil, pr, "bitmap", dummy)).To(Succeed())
+		})
+
+		DescribeTable("should read metaurl from the whole dataset",
+			func(sharedEnc, mountEnc []datav1alpha1.EncryptOption, wantEdition string) {
+				secret := &corev1.Secret{
+					ObjectMeta: metav1.ObjectMeta{Name: "test", Namespace: "fluid"},
+					Data:       map[string][]byte{"metaurl": []byte("redis://127.0.0.1:6379/0")},
+				}
+				dataset := &datav1alpha1.Dataset{
+					ObjectMeta: metav1.ObjectMeta{Name: "test", Namespace: "fluid"},
+					Spec: datav1alpha1.DatasetSpec{
+						SharedEncryptOptions: sharedEnc,
+						Mounts: []datav1alpha1.Mount{{
+							MountPoint:     "juicefs:///mnt/test",
+							Name:           "test",
+							EncryptOptions: mountEnc,
+						}},
+					},
+				}
+				fakeClient := fake.NewFakeClientWithScheme(testScheme, secret.DeepCopy(), dataset.DeepCopy())
+
+				runtimeInfo, err := base.BuildRuntimeInfo("test", "fluid", "juicefs")
+				Expect(err).NotTo(HaveOccurred())
+
+				jfsRuntime := &datav1alpha1.JuiceFSRuntime{
+					ObjectMeta: metav1.ObjectMeta{Name: "test", Namespace: "fluid"},
+					Spec: datav1alpha1.JuiceFSRuntimeSpec{
+						Fuse:   datav1alpha1.JuiceFSFuseSpec{},
+						Worker: datav1alpha1.JuiceFSCompTemplateSpec{Replicas: 1},
+					},
+				}
+
+				engine := JuiceFSEngine{
+					name:        "test",
+					namespace:   "fluid",
+					Client:      fakeClient,
+					Log:         fake.NullLogger(),
+					runtime:     jfsRuntime,
+					runtimeInfo: runtimeInfo,
+				}
+
+				value, err := engine.transform(jfsRuntime)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(value.Edition).To(Equal(wantEdition))
+			},
+			Entry("metaurl on the mount", nil, metaurlOption, CommunityEdition),
+			Entry("metaurl in SharedEncryptOptions", metaurlOption, nil, CommunityEdition),
+			Entry("metaurl in both", metaurlOption, metaurlOption, CommunityEdition),
+			Entry("metaurl nowhere", nil, nil, EnterpriseEdition),
+		)
+	})
+
 	Describe("genEdition", func() {
 		type testArgs struct {
 			mount                datav1alpha1.Mount

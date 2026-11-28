@@ -30,8 +30,8 @@ type ComponentManager interface {
 	Reconciler(ctx context.Context, component *common.CacheRuntimeComponentValue) error
 	// ConstructComponentStatus constructs the component status, used for updating component status
 	ConstructComponentStatus(todo context.Context, identity *common.ComponentIdentity) (datav1alpha1.RuntimeComponentStatus, error)
-	// GetNodeAffinity gets the node affinity for the component, for app pod cache affinity
-	GetNodeAffinity(identity *common.ComponentIdentity) (*corev1.NodeAffinity, error)
+	// ConstructComponentStatusAndAffinity constructs the component status and derives node affinity in a single read
+	ConstructComponentStatusAndAffinity(todo context.Context, identity *common.ComponentIdentity) (datav1alpha1.RuntimeComponentStatus, *corev1.NodeAffinity, error)
 	// SyncComponentSpec synchronizes component specification changes to the workload
 	SyncComponentSpec(ctx context.Context, identity *common.ComponentIdentity, newSpec ComponentSpec) error
 	// GetPodSpec returns a copy of the pod template spec of the component's workload,
@@ -66,11 +66,17 @@ func NewComponentHelper(componentType common.ComponentType, client client.Client
 
 // getCommonLabelsFromComponent returns the common labels for component used for stateful
 func getCommonLabelsFromComponent(component *common.CacheRuntimeComponentValue) map[string]string {
-	// These labels are used as sts.spec.selector which cannot be updated.
-	// If changed, may cause all exist runtime failed.
+	return GetComponentMatchLabels(component.Owner.Name, component.Name)
+}
+
+// GetComponentMatchLabels returns the match labels of a cache runtime component. They are set
+// as the component workload's spec.selector (which cannot be updated once created; if changed,
+// may cause all existing runtimes failed) and on the component pods, so they also serve as the
+// selector to discover the component's pods (e.g. worker pods for auto-scaling).
+func GetComponentMatchLabels(runtimeName string, componentName string) map[string]string {
 	return map[string]string{
-		common.LabelCacheRuntimeName: component.Owner.Name,
+		common.LabelCacheRuntimeName: runtimeName,
 		// format: runtimeName-componentType
-		common.LabelCacheRuntimeComponentName: component.Name,
+		common.LabelCacheRuntimeComponentName: componentName,
 	}
 }

@@ -94,6 +94,41 @@ var _ = Describe("Create Volume Tests", Label("pkg.utils.dataset.volume.create_t
 			})
 		})
 
+		When("runtime info has multi-label node affinity on it", func() {
+			BeforeEach(func() {
+				runtimeInfo.SetFuseNodeSelector(map[string]string{
+					"zone":   "us-east-1a",
+					"arch":   "amd64",
+					"region": "us-east-1",
+				})
+			})
+			It("should create PV with sorted node affinity match expressions", func() {
+				Expect(CreatePersistentVolumeForRuntime(context.Background(), client, runtimeInfo, "/mnt", "alluxio", log)).To(Succeed())
+				var list v1.PersistentVolumeList
+				Expect(client.List(context.TODO(), &list)).To(Succeed())
+				Expect(list.Items).To(HaveLen(1))
+				pv := list.Items[0]
+				Expect(pv.Spec.NodeAffinity.Required.NodeSelectorTerms).To(HaveLen(1))
+				Expect(pv.Spec.NodeAffinity.Required.NodeSelectorTerms[0].MatchExpressions).To(Equal([]v1.NodeSelectorRequirement{
+					{
+						Key:      "arch",
+						Operator: v1.NodeSelectorOpIn,
+						Values:   []string{"amd64"},
+					},
+					{
+						Key:      "region",
+						Operator: v1.NodeSelectorOpIn,
+						Values:   []string{"us-east-1"},
+					},
+					{
+						Key:      "zone",
+						Operator: v1.NodeSelectorOpIn,
+						Values:   []string{"us-east-1a"},
+					},
+				}))
+			})
+		})
+
 		When("PV with fluid annotations is already exists", func() {
 			BeforeEach(func() {
 				// Pre-create PV with expected annotations

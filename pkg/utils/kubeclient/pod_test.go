@@ -413,6 +413,142 @@ var _ = Describe("Pod Utilities", func() {
 					},
 				},
 			}),
+			Entry("multi-label node selector sorted deterministically", testCase{
+				nodeSelector: map[string]string{
+					"zone": "us-east-1a",
+					"arch": "amd64",
+					"beta": "true",
+					"app":  "fluid",
+				},
+				podAffinity: nil,
+				want: &corev1.NodeAffinity{
+					RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
+						NodeSelectorTerms: []corev1.NodeSelectorTerm{
+							{
+								MatchExpressions: []corev1.NodeSelectorRequirement{
+									{Key: "app", Operator: corev1.NodeSelectorOpIn, Values: []string{"fluid"}},
+									{Key: "arch", Operator: corev1.NodeSelectorOpIn, Values: []string{"amd64"}},
+									{Key: "beta", Operator: corev1.NodeSelectorOpIn, Values: []string{"true"}},
+									{Key: "zone", Operator: corev1.NodeSelectorOpIn, Values: []string{"us-east-1a"}},
+								},
+							},
+						},
+					},
+				},
+			}),
+			Entry("multi-label node selector appended to existing node affinity terms sorted deterministically", testCase{
+				nodeSelector: map[string]string{
+					"zone": "us-east-1a",
+					"arch": "amd64",
+					"app":  "fluid",
+				},
+				podAffinity: &corev1.Affinity{
+					NodeAffinity: &corev1.NodeAffinity{
+						RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
+							NodeSelectorTerms: []corev1.NodeSelectorTerm{
+								{
+									MatchExpressions: []corev1.NodeSelectorRequirement{
+										{Key: "c", Operator: corev1.NodeSelectorOpIn, Values: []string{"d"}},
+									},
+								},
+								{
+									MatchExpressions: []corev1.NodeSelectorRequirement{
+										{Key: "e", Operator: corev1.NodeSelectorOpIn, Values: []string{"f"}},
+									},
+								},
+							},
+						},
+					},
+				},
+				want: &corev1.NodeAffinity{
+					RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
+						NodeSelectorTerms: []corev1.NodeSelectorTerm{
+							{
+								MatchExpressions: []corev1.NodeSelectorRequirement{
+									{Key: "c", Operator: corev1.NodeSelectorOpIn, Values: []string{"d"}},
+									{Key: "app", Operator: corev1.NodeSelectorOpIn, Values: []string{"fluid"}},
+									{Key: "arch", Operator: corev1.NodeSelectorOpIn, Values: []string{"amd64"}},
+									{Key: "zone", Operator: corev1.NodeSelectorOpIn, Values: []string{"us-east-1a"}},
+								},
+							},
+							{
+								MatchExpressions: []corev1.NodeSelectorRequirement{
+									{Key: "e", Operator: corev1.NodeSelectorOpIn, Values: []string{"f"}},
+									{Key: "app", Operator: corev1.NodeSelectorOpIn, Values: []string{"fluid"}},
+									{Key: "arch", Operator: corev1.NodeSelectorOpIn, Values: []string{"amd64"}},
+									{Key: "zone", Operator: corev1.NodeSelectorOpIn, Values: []string{"us-east-1a"}},
+								},
+							},
+						},
+					},
+				},
+			}),
 		)
+
+		It("should produce byte-identical and order-identical match expressions across repeated calls", func() {
+			selector := map[string]string{
+				"kubernetes.io/hostname":           "node-1",
+				"topology.kubernetes.io/zone":      "zone-a",
+				"fluid.io/dataset":                 "my-dataset",
+				"node.kubernetes.io/instance-type": "m5.large",
+				"beta.kubernetes.io/arch":          "amd64",
+				"app.kubernetes.io/name":           "worker",
+			}
+
+			first := MergeNodeSelectorAndNodeAffinity(selector, nil)
+			Expect(first).NotTo(BeNil())
+			terms := first.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms
+			Expect(terms).To(HaveLen(1))
+			expectedExpressions := terms[0].MatchExpressions
+
+			// Verify sorted order
+			for i := 1; i < len(expectedExpressions); i++ {
+				Expect(expectedExpressions[i-1].Key < expectedExpressions[i].Key).To(BeTrue(), "keys should be in strictly ascending order")
+			}
+
+			// Verify determinism across 100 repeated calls
+			for i := 0; i < 100; i++ {
+				current := MergeNodeSelectorAndNodeAffinity(selector, nil)
+				currentExpressions := current.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms[0].MatchExpressions
+				Expect(currentExpressions).To(Equal(expectedExpressions))
+			}
+		})
+
+		It("should produce byte-identical and order-identical match expressions when appending to existing terms across repeated calls", func() {
+			selector := map[string]string{
+				"kubernetes.io/hostname":           "node-1",
+				"topology.kubernetes.io/zone":      "zone-a",
+				"fluid.io/dataset":                 "my-dataset",
+				"node.kubernetes.io/instance-type": "m5.large",
+				"beta.kubernetes.io/arch":          "amd64",
+				"app.kubernetes.io/name":           "worker",
+			}
+			existingAffinity := &corev1.Affinity{
+				NodeAffinity: &corev1.NodeAffinity{
+					RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
+						NodeSelectorTerms: []corev1.NodeSelectorTerm{
+							{
+								MatchExpressions: []corev1.NodeSelectorRequirement{
+									{Key: "hardware", Operator: corev1.NodeSelectorOpIn, Values: []string{"gpu"}},
+								},
+							},
+						},
+					},
+				},
+			}
+
+			first := MergeNodeSelectorAndNodeAffinity(selector, existingAffinity)
+			Expect(first).NotTo(BeNil())
+			terms := first.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms
+			Expect(terms).To(HaveLen(1))
+			expectedExpressions := terms[0].MatchExpressions
+			Expect(expectedExpressions[0].Key).To(Equal("hardware"))
+
+			for i := 0; i < 100; i++ {
+				current := MergeNodeSelectorAndNodeAffinity(selector, existingAffinity)
+				currentExpressions := current.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms[0].MatchExpressions
+				Expect(currentExpressions).To(Equal(expectedExpressions))
+			}
+		})
 	})
 })

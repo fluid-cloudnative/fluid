@@ -18,10 +18,14 @@ package engine
 
 import (
 	"context"
+	"errors"
 	"os"
+	"reflect"
+	"strings"
 	"time"
 
 	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/utils"
 
 	"github.com/agiledragon/gomonkey/v2"
 	"github.com/go-logr/logr"
@@ -33,13 +37,17 @@ import (
 	cruntime "github.com/fluid-cloudnative/fluid/pkg/runtime"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/equality"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/tools/record"
 	ctrl "sigs.k8s.io/controller-runtime"
 	cclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+	"sigs.k8s.io/controller-runtime/pkg/client/interceptor"
 )
 
 var _ = Describe("CacheEngine Sync Tests", Label("pkg.ddc.cache.engine.sync_test.go"), func() {
@@ -49,7 +57,7 @@ var _ = Describe("CacheEngine Sync Tests", Label("pkg.ddc.cache.engine.sync_test
 		runtimeClass *datav1alpha1.CacheRuntimeClass
 		dataset      *datav1alpha1.Dataset
 		ctx          cruntime.ReconcileRequestContext
-		fakeClient   cclient.Client
+		fakeClient   cclient.WithWatch
 	)
 
 	BeforeEach(func() {
@@ -208,11 +216,205 @@ var _ = Describe("CacheEngine Sync Tests", Label("pkg.ddc.cache.engine.sync_test
 		}
 	})
 
+	Describe("Setup creation conflict recovery during concurrent updates", func() {
+		var writer *conflictOnceStatusWriter
+		var concurrent *datav1alpha1.CacheRuntime
+
+		BeforeEach(func() {
+			runtimeObj.Spec.Client.Resources = corev1.ResourceRequirements{
+				Requests: corev1.ResourceList{corev1.ResourceCPU: resource.MustParse("1")},
+				Limits:   corev1.ResourceList{corev1.ResourceCPU: resource.MustParse("500m")},
+			}
+			Expect(fakeClient.Update(ctx.Context, runtimeObj)).To(Succeed())
+			ctx.Dataset, ctx.Runtime = dataset, runtimeObj
+			_, err := engine.Setup(ctx)
+			Expect(err).To(MatchError(ContainSubstring("cpu request 1 exceeds limit 500m")))
+
+			latest, err := engine.getRuntime()
+			Expect(err).NotTo(HaveOccurred())
+			latest.Spec.Client.Resources.Limits = nil
+			Expect(fakeClient.Update(ctx.Context, latest)).To(Succeed())
+			latest.Status.Master.Phase = datav1alpha1.RuntimePhaseReady
+			latest.Status.Worker.Phase = datav1alpha1.RuntimePhaseReady
+			latest.Status.Client.Phase = datav1alpha1.RuntimePhaseNotReady
+			Expect(fakeClient.Status().Update(ctx.Context, latest)).To(Succeed())
+			ctx.Runtime = latest
+			concurrent = latest.DeepCopy()
+			writer = &conflictOnceStatusWriter{StatusWriter: fakeClient.Status()}
+			engine.Client = &conflictOnceClient{Client: fakeClient, statusWriter: writer}
+		})
+
+		It("preserves unrelated conditions and recovers in the same Setup call", func() {
+			other := datav1alpha1.RuntimeCondition{Type: datav1alpha1.RuntimeWorkersInitialized, Status: corev1.ConditionTrue}
+			writer.beforeConflict = func(ctx context.Context) error {
+				concurrent.Status.Conditions = append(concurrent.Status.Conditions, other)
+				return fakeClient.Status().Update(ctx, concurrent)
+			}
+			_, err := engine.Setup(ctx)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(writer.conflicted).To(BeTrue())
+			latest, err := engine.getRuntime()
+			Expect(err).NotTo(HaveOccurred())
+			Expect(latest.Status.Conditions).To(ContainElement(other))
+			_, cond := utils.GetRuntimeCondition(latest.Status.Conditions, datav1alpha1.RuntimeResourcesSynced)
+			Expect(cond).To(HaveField("Status", corev1.ConditionUnknown))
+		})
+
+		It("preserves a newer sync result when retrying the recovery write", func() {
+			synced := datav1alpha1.RuntimeCondition{
+				Type: datav1alpha1.RuntimeResourcesSynced, Status: corev1.ConditionFalse,
+				Reason: common.RuntimeResourcesConflict, Message: "worker resources are not synced",
+			}
+			writer.beforeConflict = func(ctx context.Context) error {
+				concurrent.Status.Conditions = utils.UpdateRuntimeCondition(concurrent.Status.Conditions, synced)
+				return fakeClient.Status().Update(ctx, concurrent)
+			}
+			_, err := engine.Setup(ctx)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(writer.conflicted).To(BeTrue())
+			latest, err := engine.getRuntime()
+			Expect(err).NotTo(HaveOccurred())
+			Expect(latest.Status.Conditions).To(ContainElement(synced))
+		})
+
+		It("waits for the new spec to be validated when the generation changes", func() {
+			writer.beforeConflict = func(ctx context.Context) error {
+				concurrent.Spec.Client.Resources.Limits = corev1.ResourceList{corev1.ResourceCPU: resource.MustParse("100m")}
+				concurrent.Generation++ // The fake client does not advance the generation for spec updates.
+				return fakeClient.Update(ctx, concurrent)
+			}
+			ready, err := engine.Setup(ctx)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(ready).To(BeFalse())
+			Expect(writer.conflicted).To(BeTrue())
+			latest, err := engine.getRuntime()
+			Expect(err).NotTo(HaveOccurred())
+			_, cond := utils.GetRuntimeCondition(latest.Status.Conditions, datav1alpha1.RuntimeResourcesSynced)
+			Expect(cond).To(HaveField("Status", corev1.ConditionFalse))
+			key := types.NamespacedName{Namespace: engine.namespace, Name: common.GetCacheRuntimeConfigConfigMapName(engine.name)}
+			Expect(apierrors.IsNotFound(fakeClient.Get(ctx.Context, key, &corev1.ConfigMap{}))).To(BeTrue())
+		})
+
+		It("requeues without a Setup error if every recovery write conflicts", func() {
+			attempts := 0
+			engine.Client = interceptor.NewClient(fakeClient, interceptor.Funcs{
+				SubResourceUpdate: func(_ context.Context, _ cclient.Client, _ string, obj cclient.Object, _ ...cclient.SubResourceUpdateOption) error {
+					attempts++
+					return apierrors.NewConflict(datav1alpha1.GroupVersion.WithResource("cacheruntimes").GroupResource(),
+						obj.GetName(), errors.New("stale resource version"))
+				},
+			})
+			ready, err := engine.Setup(ctx)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(ready).To(BeFalse())
+			Expect(attempts).To(BeNumerically(">", 1))
+		})
+	})
+
 	Describe("Sync", func() {
 		Context("when runtime exists", func() {
-			It("should sync successfully", func() {
-				err := engine.Sync(ctx)
+			DescribeTable("clears the creation conflict before readiness and confirms resources on the first clean sync", func(legacy bool) {
+				runtimeClass.Topology.Client.Template.Spec.Containers[0].Resources.Requests = corev1.ResourceList{corev1.ResourceCPU: resource.MustParse("1")}
+				Expect(fakeClient.Update(ctx.Context, runtimeClass)).To(Succeed())
+				runtimeObj.Spec.Client.Resources.Limits = corev1.ResourceList{corev1.ResourceCPU: resource.MustParse("500m")}
+				Expect(fakeClient.Update(ctx.Context, runtimeObj)).To(Succeed())
+				ctx.Dataset, ctx.Runtime = dataset, runtimeObj
+				ready, err := engine.Setup(ctx)
+				Expect(ready).To(BeFalse())
+				Expect(err).To(MatchError("invalid client resources: cpu request 1 exceeds limit 500m"))
+
+				// The workloads already exist, but the master pod is still starting.
+				master := &workloadv1alpha1.AdvancedStatefulSet{}
+				key := types.NamespacedName{Name: "test-runtime-master", Namespace: engine.namespace}
+				Expect(fakeClient.Get(ctx.Context, key, master)).To(Succeed())
+				master.Status.ReadyReplicas = 0
+				Expect(fakeClient.Update(ctx.Context, master)).To(Succeed())
+				latest, err := engine.getRuntime()
 				Expect(err).NotTo(HaveOccurred())
+				_, cond := utils.GetRuntimeCondition(latest.Status.Conditions, datav1alpha1.RuntimeResourcesSynced)
+				Expect(cond).NotTo(BeNil())
+				if legacy {
+					cond.Reason = common.RuntimeResourcesConflict
+					cond.Message = "client cannot be created: the CacheRuntime and its CacheRuntimeClass template merge into invalid client resources: cpu request 1 exceeds limit 500m"
+				} else {
+					cond.Message = "Invalid client CPU request."
+				}
+				latest.Status.Master.Phase = datav1alpha1.RuntimePhaseNotReady
+				latest.Status.Worker.Phase = datav1alpha1.RuntimePhaseReady
+				latest.Status.Client.Phase = datav1alpha1.RuntimePhaseNotReady
+				Expect(fakeClient.Status().Update(ctx.Context, latest)).To(Succeed())
+				latest.Spec.Client.Resources.Limits = nil
+				Expect(fakeClient.Update(ctx.Context, latest)).To(Succeed())
+				ctx.Runtime = latest
+				ready, err = engine.Setup(ctx)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(ready).To(BeFalse())
+				latest, err = engine.getRuntime()
+				Expect(err).NotTo(HaveOccurred())
+				_, cond = utils.GetRuntimeCondition(latest.Status.Conditions, datav1alpha1.RuntimeResourcesSynced)
+				Expect(cond).NotTo(BeNil())
+				Expect(cond.Status).To(Equal(corev1.ConditionUnknown))
+				Expect(cond.Reason).To(Equal("WaitingForSync"))
+				Expect(cond.Message).NotTo(ContainSubstring("cannot be created"))
+
+				Expect(fakeClient.Get(ctx.Context, key, master)).To(Succeed())
+				master.Status.ReadyReplicas = 1
+				Expect(fakeClient.Update(ctx.Context, master)).To(Succeed())
+				ctx.Runtime = latest
+				ready, err = engine.Setup(ctx)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(ready).To(BeTrue())
+				Expect(engine.Sync(ctx)).To(Succeed())
+				latest, err = engine.getRuntime()
+				Expect(err).NotTo(HaveOccurred())
+				_, cond = utils.GetRuntimeCondition(latest.Status.Conditions, datav1alpha1.RuntimeResourcesSynced)
+				Expect(cond).NotTo(BeNil())
+				Expect(cond.Status).To(Equal(corev1.ConditionTrue))
+			},
+				Entry("with a creation reason and different message wording", false),
+				Entry("with a creation conflict recorded by an older controller", true),
+			)
+
+			It("writes component status and ResourcesSynced in one update", func() {
+				runtimeWrites := 0
+				engine.Client = interceptor.NewClient(fakeClient, interceptor.Funcs{
+					SubResourceUpdate: func(ctx context.Context, c cclient.Client, name string, obj cclient.Object, opts ...cclient.SubResourceUpdateOption) error {
+						if _, ok := obj.(*datav1alpha1.CacheRuntime); ok && name == "status" {
+							runtimeWrites++
+						}
+						return c.SubResource(name).Update(ctx, obj, opts...)
+					},
+				})
+
+				Expect(engine.Sync(ctx)).To(Succeed())
+				Expect(runtimeWrites).To(Equal(1))
+				latest, err := engine.getRuntime()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(latest.Status.Worker.Phase).To(Equal(datav1alpha1.RuntimePhaseReady))
+				_, cond := utils.GetRuntimeCondition(latest.Status.Conditions, datav1alpha1.RuntimeResourcesSynced)
+				Expect(cond).NotTo(BeNil())
+				Expect(cond.Status).To(Equal(corev1.ConditionTrue))
+
+				Expect(engine.Sync(ctx)).To(Succeed())
+				Expect(runtimeWrites).To(Equal(1))
+			})
+
+			It("preserves a concurrent condition when retrying the combined status update", func() {
+				other := datav1alpha1.RuntimeCondition{Type: datav1alpha1.RuntimeWorkersInitialized, Status: corev1.ConditionTrue}
+				writer := &conflictOnceStatusWriter{StatusWriter: fakeClient.Status(), beforeConflict: func(ctx context.Context) error {
+					latest, err := engine.getRuntime()
+					if err != nil {
+						return err
+					}
+					latest.Status.Conditions = append(latest.Status.Conditions, other)
+					return fakeClient.Status().Update(ctx, latest)
+				}}
+				engine.Client = &conflictOnceClient{Client: fakeClient, statusWriter: writer}
+				Expect(engine.Sync(ctx)).To(Succeed())
+				Expect(writer.conflicted).To(BeTrue())
+				latest, err := engine.getRuntime()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(latest.Status.Conditions).To(ContainElements(other, HaveField("Type", datav1alpha1.RuntimeResourcesSynced)))
 			})
 		})
 
@@ -296,7 +498,7 @@ var _ = Describe("CacheEngine Sync Tests", Label("pkg.ddc.cache.engine.sync_test
 				engine.Client = fake.NewClientBuilder().
 					WithScheme(scheme).
 					WithObjects(dataset, runtimeObj, runtimeClass, configMap, masterSts, workerSts, clientDs).
-					WithStatusSubresource(runtimeObj).
+					WithStatusSubresource(dataset, runtimeObj).
 					Build()
 			})
 
@@ -336,6 +538,121 @@ var _ = Describe("CacheEngine Sync Tests", Label("pkg.ddc.cache.engine.sync_test
 			It("should attempt to sync dataset cache states", func() {
 				err := engine.Sync(ctx)
 				Expect(err).NotTo(HaveOccurred())
+			})
+		})
+
+		Context("when runtime is ready but dataset was left Failed by a previous outage", func() {
+			BeforeEach(func() {
+				dataset.Status.Phase = datav1alpha1.FailedDatasetPhase
+				dataset.Status.Conditions = []datav1alpha1.DatasetCondition{
+					{
+						Type:   datav1alpha1.DatasetReady,
+						Status: corev1.ConditionFalse,
+					},
+				}
+
+				masterReplicas := int32(1)
+				masterSts := &workloadv1alpha1.AdvancedStatefulSet{
+					ObjectMeta: metav1.ObjectMeta{Name: "test-runtime-master", Namespace: "default"},
+					Spec: workloadv1alpha1.AdvancedStatefulSetSpec{
+						Replicas: &masterReplicas,
+						Template: corev1.PodTemplateSpec{
+							Spec: corev1.PodSpec{
+								Containers: []corev1.Container{{Name: "master", Image: "test-master:latest"}},
+							},
+						},
+					},
+					Status: workloadv1alpha1.AdvancedStatefulSetStatus{ReadyReplicas: 1, CurrentReplicas: 1, AvailableReplicas: 1},
+				}
+
+				workerReplicas := int32(2)
+				workerSts := &workloadv1alpha1.AdvancedStatefulSet{
+					ObjectMeta: metav1.ObjectMeta{Name: "test-runtime-worker", Namespace: "default"},
+					Spec: workloadv1alpha1.AdvancedStatefulSetSpec{
+						Replicas: &workerReplicas,
+						Template: corev1.PodTemplateSpec{
+							Spec: corev1.PodSpec{
+								Containers: []corev1.Container{{Name: "worker", Image: "test-worker:latest"}},
+							},
+						},
+					},
+					Status: workloadv1alpha1.AdvancedStatefulSetStatus{ReadyReplicas: 2, CurrentReplicas: 2, AvailableReplicas: 2},
+				}
+
+				clientDs := &appsv1.DaemonSet{
+					ObjectMeta: metav1.ObjectMeta{Name: "test-runtime-client", Namespace: "default"},
+					Spec: appsv1.DaemonSetSpec{
+						Template: corev1.PodTemplateSpec{
+							Spec: corev1.PodSpec{
+								Containers: []corev1.Container{{Name: "client", Image: "test-client:latest"}},
+							},
+						},
+					},
+					Status: appsv1.DaemonSetStatus{NumberReady: 0, DesiredNumberScheduled: 0},
+				}
+
+				engine.Client = fake.NewClientBuilder().
+					WithScheme(CacheEngineTestScheme).
+					WithObjects(dataset, runtimeObj, runtimeClass, masterSts, workerSts, clientDs).
+					WithStatusSubresource(dataset, runtimeObj).
+					Build()
+			})
+
+			It("should restore the dataset phase to Bound", func() {
+				err := engine.Sync(ctx)
+				Expect(err).NotTo(HaveOccurred())
+
+				updatedDataset := &datav1alpha1.Dataset{}
+				err = engine.Client.Get(context.Background(), types.NamespacedName{
+					Name:      "test-runtime",
+					Namespace: "default",
+				}, updatedDataset)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(updatedDataset.Status.Phase).To(Equal(datav1alpha1.BoundDatasetPhase))
+
+				idx, cond := utils.GetDatasetCondition(updatedDataset.Status.Conditions, datav1alpha1.DatasetReady)
+				Expect(idx).NotTo(Equal(-1))
+				Expect(cond.Status).To(Equal(corev1.ConditionTrue))
+			})
+
+			Context("and the sync limiter is closed", func() {
+				var patches *gomonkey.Patches
+				var getCacheStatesCalled bool
+
+				BeforeEach(func() {
+					engine.syncRetryDuration = defaultSyncRetryDuration
+					engine.timeOfLastSync = time.Now()
+
+					getCacheStatesCalled = false
+					// Patched at the GetCacheStates level, not NewCacheFileUtil: this Context has no
+					// ReportSummary execution entries configured, so a real call would fail before ever
+					// reaching the exec layer. The point here is only whether GetCacheStates is invoked at all.
+					patches = gomonkey.ApplyMethod(reflect.TypeOf(engine), "GetCacheStates",
+						func(_ *CacheEngine, _ *datav1alpha1.CacheRuntime, _ *datav1alpha1.CacheRuntimeClass) (common.CacheStateList, error) {
+							getCacheStatesCalled = true
+							return common.CacheStateList{}, nil
+						})
+				})
+
+				AfterEach(func() {
+					if patches != nil {
+						patches.Reset()
+					}
+				})
+
+				It("should still restore the dataset phase to Bound without fetching cache states", func() {
+					err := engine.Sync(ctx)
+					Expect(err).NotTo(HaveOccurred())
+
+					updatedDataset := &datav1alpha1.Dataset{}
+					err = engine.Client.Get(context.Background(), types.NamespacedName{
+						Name:      "test-runtime",
+						Namespace: "default",
+					}, updatedDataset)
+					Expect(err).NotTo(HaveOccurred())
+					Expect(updatedDataset.Status.Phase).To(Equal(datav1alpha1.BoundDatasetPhase))
+					Expect(getCacheStatesCalled).To(BeFalse(), "GetCacheStates should be skipped while the sync limiter is closed")
+				})
 			})
 		})
 
@@ -566,7 +883,7 @@ var _ = Describe("CacheEngine Sync Tests", Label("pkg.ddc.cache.engine.sync_test
 	Describe("syncRuntimeValueConfigMap", func() {
 		Context("when configmap does not exist", func() {
 			It("should create new configmap", func() {
-				err := engine.syncRuntimeValueConfigMap(ctx, runtimeObj)
+				err := engine.syncRuntimeValueConfigMap(ctx, runtimeObj, runtimeClass)
 				Expect(err).NotTo(HaveOccurred())
 
 				// Verify configmap was created
@@ -637,7 +954,7 @@ var _ = Describe("CacheEngine Sync Tests", Label("pkg.ddc.cache.engine.sync_test
 			})
 
 			It("should update existing configmap", func() {
-				err := engine.syncRuntimeValueConfigMap(ctx, runtimeObj)
+				err := engine.syncRuntimeValueConfigMap(ctx, runtimeObj, runtimeClass)
 				Expect(err).NotTo(HaveOccurred())
 
 				// Verify configmap was updated
@@ -654,7 +971,7 @@ var _ = Describe("CacheEngine Sync Tests", Label("pkg.ddc.cache.engine.sync_test
 		Context("when configmap data is unchanged", func() {
 			BeforeEach(func() {
 				// First sync to create configmap
-				err := engine.syncRuntimeValueConfigMap(ctx, runtimeObj)
+				err := engine.syncRuntimeValueConfigMap(ctx, runtimeObj, runtimeClass)
 				Expect(err).NotTo(HaveOccurred())
 
 				// Get the created configmap
@@ -711,7 +1028,7 @@ var _ = Describe("CacheEngine Sync Tests", Label("pkg.ddc.cache.engine.sync_test
 
 			It("should not update configmap when data is same", func() {
 				// Second sync with same data
-				err := engine.syncRuntimeValueConfigMap(ctx, runtimeObj)
+				err := engine.syncRuntimeValueConfigMap(ctx, runtimeObj, runtimeClass)
 				Expect(err).NotTo(HaveOccurred())
 
 				// Verify configmap still exists
@@ -778,7 +1095,7 @@ var _ = Describe("CacheEngine Sync Tests", Label("pkg.ddc.cache.engine.sync_test
 					WithStatusSubresource(minimalRuntime).
 					Build()
 
-				err := engine.syncRuntimeValueConfigMap(ctx, minimalRuntime)
+				err := engine.syncRuntimeValueConfigMap(ctx, minimalRuntime, runtimeClass)
 				Expect(err).NotTo(HaveOccurred())
 			})
 		})
@@ -860,7 +1177,7 @@ var _ = Describe("CacheEngine Sync Tests", Label("pkg.ddc.cache.engine.sync_test
 		})
 	})
 
-	Describe("syncRuntimeSpec", func() {
+	Describe("master and worker spec synchronization", func() {
 		const masterSts, workerSts = "test-runtime-master", "test-runtime-worker"
 
 		// templateResources mirrors the value the creation path derives from the
@@ -909,6 +1226,58 @@ var _ = Describe("CacheEngine Sync Tests", Label("pkg.ddc.cache.engine.sync_test
 			seedTemplateResources(workerSts, &runtimeClass.Topology.Worker.Template)
 		})
 
+		Context("when the CacheRuntime drops a runtimeVersion it had set", func() {
+			imageOfWorker := func() string {
+				sts := &workloadv1alpha1.AdvancedStatefulSet{}
+				key := types.NamespacedName{Name: workerSts, Namespace: "default"}
+				Expect(fakeClient.Get(ctx.Context, key, sts)).To(Succeed())
+				return sts.Spec.Template.Spec.Containers[0].Image
+			}
+
+			syncWorkerVersion := func(version datav1alpha1.VersionSpec) {
+				edited, err := engine.getRuntime()
+				Expect(err).NotTo(HaveOccurred())
+				edited.Spec.Worker.RuntimeVersion = version
+				Expect(fakeClient.Update(ctx.Context, edited)).To(Succeed())
+
+				syncRuntime, err := engine.getRuntime()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(engine.syncRuntimeSpec(ctx, syncRuntime, runtimeClass)).To(BeEmpty())
+			}
+
+			It("should roll the worker back to the template image", func() {
+				syncWorkerVersion(datav1alpha1.VersionSpec{ImageTag: "v2"})
+				Expect(imageOfWorker()).To(Equal("test-worker:v2"))
+
+				syncWorkerVersion(datav1alpha1.VersionSpec{})
+				Expect(imageOfWorker()).To(Equal("test-worker:latest"))
+			})
+
+			It("should keep the image and emit a Warning event when the template cannot complete the version", func() {
+				recorder := record.NewFakeRecorder(10)
+				engine.Recorder = recorder
+				runtimeClass.Topology.Worker.Template.Spec.Containers[0].Image =
+					"test-worker@sha256:067614b70d25b496e3edc3480747d558ee8a364ef47a67f669f5d96ca5098552"
+				before := imageOfWorker()
+
+				syncWorkerVersion(datav1alpha1.VersionSpec{ImageTag: "v2"})
+
+				Expect(imageOfWorker()).To(Equal(before))
+				Expect(recorder.Events).To(Receive(And(
+					HavePrefix(corev1.EventTypeWarning+" "+common.RuntimeVersionIncomplete+" "),
+					ContainSubstring(`imageTag "v2"`))))
+				Expect(recorder.Events).To(BeEmpty())
+			})
+
+			It("should keep the template tag when only the image is set", func() {
+				syncWorkerVersion(datav1alpha1.VersionSpec{Image: "other-worker"})
+				Expect(imageOfWorker()).To(Equal("other-worker:latest"))
+
+				syncWorkerVersion(datav1alpha1.VersionSpec{})
+				Expect(imageOfWorker()).To(Equal("test-worker:latest"))
+			})
+		})
+
 		// The client component runs on a DaemonSet. Neither reconcile path carries a
 		// client spec edit to that workload: syncRuntimeSpec skips the client outright,
 		// and reconcileDaemonSet returns early once the DaemonSet exists. The edit is
@@ -949,7 +1318,7 @@ var _ = Describe("CacheEngine Sync Tests", Label("pkg.ddc.cache.engine.sync_test
 
 				syncRuntime, err := engine.getRuntime()
 				Expect(err).NotTo(HaveOccurred())
-				Expect(engine.syncRuntimeSpec(ctx, syncRuntime, runtimeClass)).To(Succeed())
+				Expect(engine.syncRuntimeSpec(ctx, syncRuntime, runtimeClass)).To(BeEmpty())
 
 				// Control: the master's workload picks the new image up.
 				Expect(imageOfSts(masterSts)).To(Equal("test-master:v2"))
@@ -994,7 +1363,21 @@ var _ = Describe("CacheEngine Sync Tests", Label("pkg.ddc.cache.engine.sync_test
 				Expect(runtimeObj.Spec.Worker.Resources.Limits).To(BeNil())
 				Expect(runtimeObj.Spec.Worker.Resources.Requests).To(BeNil())
 
-				Expect(engine.syncRuntimeSpec(ctx, runtimeObj, runtimeClass)).To(Succeed())
+				Expect(engine.syncRuntimeSpec(ctx, runtimeObj, runtimeClass)).To(BeEmpty())
+
+				Expect(memLimitOf(masterSts)).To(Equal("2Gi"))
+				Expect(memLimitOf(workerSts)).To(Equal("2Gi"))
+			})
+		})
+
+		Context("when the CacheRuntimeClass has no topology", func() {
+			It("should sync nothing instead of panicking", func() {
+				runtimeObj.Spec.Worker.Resources = corev1.ResourceRequirements{
+					Limits: corev1.ResourceList{corev1.ResourceMemory: resource.MustParse("4Gi")},
+				}
+				runtimeClass.Topology = nil
+
+				Expect(engine.syncRuntimeSpec(ctx, runtimeObj, runtimeClass)).To(BeEmpty())
 
 				Expect(memLimitOf(masterSts)).To(Equal("2Gi"))
 				Expect(memLimitOf(workerSts)).To(Equal("2Gi"))
@@ -1007,7 +1390,7 @@ var _ = Describe("CacheEngine Sync Tests", Label("pkg.ddc.cache.engine.sync_test
 					Limits: corev1.ResourceList{corev1.ResourceMemory: resource.MustParse("4Gi")},
 				}
 
-				Expect(engine.syncRuntimeSpec(ctx, runtimeObj, runtimeClass)).To(Succeed())
+				Expect(engine.syncRuntimeSpec(ctx, runtimeObj, runtimeClass)).To(BeEmpty())
 
 				Expect(memLimitOf(masterSts)).To(Equal("4Gi"))
 				Expect(memLimitOf(workerSts)).To(Equal("2Gi"))
@@ -1018,10 +1401,104 @@ var _ = Describe("CacheEngine Sync Tests", Label("pkg.ddc.cache.engine.sync_test
 					Limits: corev1.ResourceList{corev1.ResourceMemory: resource.MustParse("4Gi")},
 				}
 
-				Expect(engine.syncRuntimeSpec(ctx, runtimeObj, runtimeClass)).To(Succeed())
+				Expect(engine.syncRuntimeSpec(ctx, runtimeObj, runtimeClass)).To(BeEmpty())
 
 				Expect(memLimitOf(workerSts)).To(Equal("4Gi"))
 				Expect(memLimitOf(masterSts)).To(Equal("2Gi"))
+			})
+		})
+
+		// Issue #6173: a CacheRuntime that names one key used to replace the container's
+		// whole ResourceRequirements, so raising the memory limit alone left the container
+		// with no CPU request and no CPU limit at all.
+		Context("when the CacheRuntime only names part of the template's resources", func() {
+			fullTemplateResources := corev1.ResourceRequirements{
+				Requests: corev1.ResourceList{
+					corev1.ResourceCPU:    resource.MustParse("1"),
+					corev1.ResourceMemory: resource.MustParse("2Gi"),
+				},
+				Limits: corev1.ResourceList{
+					corev1.ResourceCPU:    resource.MustParse("2"),
+					corev1.ResourceMemory: resource.MustParse("4Gi"),
+				},
+			}
+
+			workloadOf := func(stsName string) *workloadv1alpha1.AdvancedStatefulSet {
+				sts := &workloadv1alpha1.AdvancedStatefulSet{}
+				key := types.NamespacedName{Name: stsName, Namespace: "default"}
+				Expect(fakeClient.Get(ctx.Context, key, sts)).To(Succeed())
+				return sts
+			}
+
+			// The CacheRuntime raises the memory limit and names nothing else.
+			BeforeEach(func() {
+				runtimeObj.Spec.Worker.Resources = corev1.ResourceRequirements{
+					Limits: corev1.ResourceList{corev1.ResourceMemory: resource.MustParse("8Gi")},
+				}
+			})
+
+			Context("and the template declares a full set of requirements", func() {
+				// Re-seed over the limits-only template the outer BeforeEach installs, so
+				// the spec has requirements left to lose.
+				BeforeEach(func() {
+					runtimeClass.Topology.Worker.Template.Spec.Containers[0].Resources = *fullTemplateResources.DeepCopy()
+
+					sts := workloadOf(workerSts)
+					sts.Spec.Template.Spec.Containers[0].Resources = *fullTemplateResources.DeepCopy()
+					Expect(fakeClient.Update(ctx.Context, sts)).To(Succeed())
+				})
+
+				It("should move the key it names and keep the template's other requirements", func() {
+					Expect(engine.syncRuntimeSpec(ctx, runtimeObj, runtimeClass)).To(BeEmpty())
+
+					synced := workloadOf(workerSts).Spec.Template.Spec.Containers[0].Resources
+					Expect(synced.Limits.Memory().String()).To(Equal("8Gi"))
+					Expect(synced.Limits.Cpu().String()).To(Equal("2"))
+					Expect(synced.Requests.Cpu().String()).To(Equal("1"))
+					Expect(synced.Requests.Memory().String()).To(Equal("2Gi"))
+				})
+			})
+
+			// The master resolves its resources through the same desiredComponentResources
+			// as the worker, without the tiered store quota on top.
+			Context("and the component is the master", func() {
+				BeforeEach(func() {
+					runtimeObj.Spec.Master.Resources = corev1.ResourceRequirements{
+						Limits: corev1.ResourceList{corev1.ResourceMemory: resource.MustParse("8Gi")},
+					}
+					runtimeClass.Topology.Master.Template.Spec.Containers[0].Resources = *fullTemplateResources.DeepCopy()
+
+					sts := workloadOf(masterSts)
+					sts.Spec.Template.Spec.Containers[0].Resources = *fullTemplateResources.DeepCopy()
+					Expect(fakeClient.Update(ctx.Context, sts)).To(Succeed())
+				})
+
+				It("should move the key it names and keep the template's other requirements", func() {
+					Expect(engine.syncRuntimeSpec(ctx, runtimeObj, runtimeClass)).To(BeEmpty())
+
+					synced := workloadOf(masterSts).Spec.Template.Spec.Containers[0].Resources
+					Expect(synced.Limits.Memory().String()).To(Equal("8Gi"))
+					Expect(synced.Limits.Cpu().String()).To(Equal("2"))
+					Expect(synced.Requests.Cpu().String()).To(Equal("1"))
+					Expect(synced.Requests.Memory().String()).To(Equal("2Gi"))
+				})
+			})
+
+			Context("and neither side declares requests", func() {
+				// The template the outer BeforeEach installs is limits-only, so the merge has
+				// no requests to carry over. The sync must leave them unset and converge:
+				// a second pass finds nothing to change and does not patch again.
+				It("should leave requests unset and stop patching once converged", func() {
+					Expect(engine.syncRuntimeSpec(ctx, runtimeObj, runtimeClass)).To(BeEmpty())
+
+					synced := workloadOf(workerSts).Spec.Template.Spec.Containers[0].Resources
+					Expect(synced.Limits.Memory().String()).To(Equal("8Gi"))
+					Expect(synced.Requests).To(BeNil())
+
+					converged := workloadOf(workerSts).ResourceVersion
+					Expect(engine.syncRuntimeSpec(ctx, runtimeObj, runtimeClass)).To(BeEmpty())
+					Expect(workloadOf(workerSts).ResourceVersion).To(Equal(converged))
+				})
 			})
 		})
 
@@ -1043,7 +1520,7 @@ var _ = Describe("CacheEngine Sync Tests", Label("pkg.ddc.cache.engine.sync_test
 				Expect(runtimeObj.Spec.Worker.Resources.Limits).To(BeNil())
 				Expect(runtimeObj.Spec.Worker.Resources.Requests).To(BeNil())
 
-				Expect(engine.syncRuntimeSpec(ctx, runtimeObj, runtimeClass)).To(Succeed())
+				Expect(engine.syncRuntimeSpec(ctx, runtimeObj, runtimeClass)).To(BeEmpty())
 
 				Expect(memLimitOf(workerSts)).To(Equal("2Gi"))
 			})
@@ -1054,14 +1531,14 @@ var _ = Describe("CacheEngine Sync Tests", Label("pkg.ddc.cache.engine.sync_test
 					Limits: corev1.ResourceList{corev1.ResourceMemory: resource.MustParse("4Gi")},
 				}
 
-				Expect(engine.syncRuntimeSpec(ctx, runtimeObj, runtimeClass)).To(Succeed())
+				Expect(engine.syncRuntimeSpec(ctx, runtimeObj, runtimeClass)).To(BeEmpty())
 
 				Expect(memLimitOf(workerSts)).To(Equal("4Gi"))
 			})
 		})
 
 		Context("when neither the CacheRuntime nor the template specifies resources", func() {
-			It("should leave the workload's resources untouched", func() {
+			It("should clear the workload's resources", func() {
 				runtimeClass.Topology.Worker.Template.Spec.Containers[0].Resources = corev1.ResourceRequirements{}
 
 				sts := &workloadv1alpha1.AdvancedStatefulSet{}
@@ -1072,10 +1549,366 @@ var _ = Describe("CacheEngine Sync Tests", Label("pkg.ddc.cache.engine.sync_test
 				}
 				Expect(fakeClient.Update(ctx.Context, sts)).To(Succeed())
 
-				Expect(engine.syncRuntimeSpec(ctx, runtimeObj, runtimeClass)).To(Succeed())
+				Expect(engine.syncRuntimeSpec(ctx, runtimeObj, runtimeClass)).To(BeEmpty())
 
-				Expect(memLimitOf(workerSts)).To(Equal("8Gi"))
+				Expect(fakeClient.Get(ctx.Context, key, sts)).To(Succeed())
+				Expect(sts.Spec.Template.Spec.Containers[0].Resources.Limits).To(BeEmpty())
 			})
+		})
+
+		Context("when the merged resources put a request above its limit", func() {
+			It("should leave the workload's resources alone and emit a Warning event", func() {
+				recorder := record.NewFakeRecorder(10)
+				engine.Recorder = recorder
+
+				runtimeClass.Topology.Worker.Template.Spec.Containers[0].Resources = corev1.ResourceRequirements{
+					Requests: corev1.ResourceList{corev1.ResourceCPU: resource.MustParse("1")},
+					Limits:   corev1.ResourceList{corev1.ResourceCPU: resource.MustParse("2")},
+				}
+				runtimeObj.Spec.Worker.Resources = corev1.ResourceRequirements{
+					Limits: corev1.ResourceList{corev1.ResourceCPU: resource.MustParse("500m")},
+				}
+
+				sts := &workloadv1alpha1.AdvancedStatefulSet{}
+				key := types.NamespacedName{Name: workerSts, Namespace: "default"}
+				Expect(fakeClient.Get(ctx.Context, key, sts)).To(Succeed())
+				before := sts.Spec.Template.Spec.Containers[0].Resources.DeepCopy()
+
+				Expect(engine.syncRuntimeSpec(ctx, runtimeObj, runtimeClass)).To(ConsistOf(ContainSubstring("cpu request 1 exceeds limit 500m")))
+
+				Expect(fakeClient.Get(ctx.Context, key, sts)).To(Succeed())
+				Expect(equality.Semantic.DeepEqual(sts.Spec.Template.Spec.Containers[0].Resources, *before)).To(BeTrue())
+				Expect(recorder.Events).To(Receive(And(
+					ContainSubstring(common.RuntimeResourcesConflict),
+					ContainSubstring("cpu request 1 exceeds limit 500m"))))
+			})
+		})
+
+		Context("when the master reports a resource conflict", func() {
+			var recorder *record.FakeRecorder
+			BeforeEach(func() {
+				recorder = record.NewFakeRecorder(10)
+				engine.Recorder = recorder
+				runtimeObj.Spec.Master.Resources.Requests = corev1.ResourceList{corev1.ResourceMemory: resource.MustParse("4Gi")}
+				Expect(fakeClient.Update(ctx.Context, runtimeClass)).To(Succeed())
+			})
+
+			updateRuntimeSpec := func() {
+				GinkgoHelper()
+				latest, err := engine.getRuntime()
+				Expect(err).NotTo(HaveOccurred())
+				latest.Spec = runtimeObj.Spec
+				Expect(fakeClient.Update(ctx.Context, latest)).To(Succeed())
+			}
+
+			eventMessage := func(component string) string {
+				GinkgoHelper()
+				var event string
+				Expect(recorder.Events).To(Receive(&event))
+				prefix := corev1.EventTypeWarning + " " + common.RuntimeResourcesConflict + " "
+				Expect(event).To(HavePrefix(prefix + component + " "))
+				return strings.TrimPrefix(event, prefix)
+			}
+
+			expectCondition := func(message string) datav1alpha1.RuntimeCondition {
+				GinkgoHelper()
+				latest, err := engine.getRuntime()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(latest.Status.Conditions).To(HaveLen(1))
+				cond := latest.Status.Conditions[0]
+				Expect(cond.Type).To(Equal(datav1alpha1.RuntimeResourcesSynced))
+				Expect(cond.Status).To(Equal(corev1.ConditionFalse))
+				Expect(cond.Reason).To(Equal(common.RuntimeResourcesConflict))
+				Expect(cond.Message).To(Equal(message))
+				return cond
+			}
+
+			It("records both event messages in one condition when the worker also has an undeclared claim", func() {
+				runtimeObj.Spec.Worker.Resources.Claims = []corev1.ResourceClaim{{Name: "gpu"}}
+				updateRuntimeSpec()
+				Expect(engine.Sync(ctx)).To(Succeed())
+				expectCondition(eventMessage("master") + "\n" + eventMessage("worker"))
+			})
+
+			DescribeTable("reports a creation conflict after exhausting status retries only for the current generation", func(specCorrected bool) {
+				updateRuntimeSpec()
+				observed, err := engine.getRuntime()
+				Expect(err).NotTo(HaveOccurred())
+				ctx.Dataset, ctx.Runtime = dataset, observed
+				if specCorrected {
+					corrected := observed.DeepCopy()
+					corrected.Spec.Master.Resources.Requests = nil
+					corrected.Generation++
+					Expect(fakeClient.Update(ctx.Context, corrected)).To(Succeed())
+				}
+
+				attempts := 0
+				engine.Client = interceptor.NewClient(fakeClient, interceptor.Funcs{
+					Get: func(ctx context.Context, c cclient.WithWatch, key cclient.ObjectKey, obj cclient.Object, opts ...cclient.GetOption) error {
+						if rt, ok := obj.(*datav1alpha1.CacheRuntime); ok {
+							observed.DeepCopyInto(rt) // The informer still sees the original generation.
+							return nil
+						}
+						return c.Get(ctx, key, obj, opts...)
+					},
+					SubResourceUpdate: func(_ context.Context, _ cclient.Client, _ string, obj cclient.Object, _ ...cclient.SubResourceUpdateOption) error {
+						attempts++
+						return apierrors.NewConflict(datav1alpha1.GroupVersion.WithResource("cacheruntimes").GroupResource(),
+							obj.GetName(), errors.New("stale resource version"))
+					},
+					// The fake client does not implement GET on the status subresource.
+					SubResourceGet: func(ctx context.Context, c cclient.Client, name string, obj, result cclient.Object, _ ...cclient.SubResourceGetOption) error {
+						Expect(name).To(Equal("status"))
+						return c.Get(ctx, cclient.ObjectKeyFromObject(obj), result)
+					},
+				})
+
+				ready, err := engine.Setup(ctx)
+				Expect(ready).To(BeFalse())
+				Expect(attempts).To(BeNumerically(">", 1))
+				message := eventMessage("master")
+				if specCorrected {
+					Expect(err).NotTo(HaveOccurred())
+				} else {
+					var conflict *componentResourcesConflictError
+					Expect(errors.As(err, &conflict)).To(BeTrue())
+					Expect(conflict.message).To(Equal(message))
+				}
+				latest := &datav1alpha1.CacheRuntime{}
+				Expect(fakeClient.Get(ctx.Context, cclient.ObjectKeyFromObject(observed), latest)).To(Succeed())
+				_, cond := utils.GetRuntimeCondition(latest.Status.Conditions, datav1alpha1.RuntimeResourcesSynced)
+				Expect(cond).To(BeNil())
+			},
+				Entry("when the configuration still conflicts", false),
+				Entry("when the API server has the corrected configuration", true),
+			)
+
+			Context("when the resource condition cannot be persisted", func() {
+				statusErr := errors.New("runtime status update denied")
+				BeforeEach(func() {
+					updateRuntimeSpec()
+					engine.Client = interceptor.NewClient(fakeClient, interceptor.Funcs{
+						SubResourceUpdate: func(ctx context.Context, c cclient.Client, name string, obj cclient.Object, opts ...cclient.SubResourceUpdateOption) error {
+							if _, ok := obj.(*datav1alpha1.CacheRuntime); ok && name == "status" {
+								return statusErr
+							}
+							return c.SubResource(name).Update(ctx, obj, opts...)
+						},
+					})
+				})
+
+				It("returns both the creation conflict and the status error from Setup", func() {
+					ctx.Dataset, ctx.Runtime = dataset, runtimeObj
+					ready, err := engine.Setup(ctx)
+					Expect(ready).To(BeFalse())
+					Expect(errors.Is(err, statusErr)).To(BeTrue())
+					var conflict *componentResourcesConflictError
+					Expect(errors.As(err, &conflict)).To(BeTrue())
+					Expect(conflict.message).To(Equal(eventMessage("master")))
+				})
+
+				It("returns both the missing worker and the status error from Sync", func() {
+					worker := &workloadv1alpha1.AdvancedStatefulSet{ObjectMeta: metav1.ObjectMeta{Name: workerSts, Namespace: engine.namespace}}
+					Expect(fakeClient.Delete(ctx.Context, worker)).To(Succeed())
+					err := engine.Sync(ctx)
+					Expect(errors.Is(err, statusErr)).To(BeTrue())
+					Expect(apierrors.IsNotFound(err)).To(BeTrue())
+					Expect(err.Error()).To(ContainSubstring(workerSts))
+				})
+			})
+
+			It("preserves the master sync conflict through Setup until the corrected override is synced", func() {
+				updateRuntimeSpec()
+				Expect(engine.Sync(ctx)).To(Succeed())
+				message := eventMessage("master")
+				expectCondition(message)
+
+				runtimeObj.Spec.Master.Resources.Requests[corev1.ResourceMemory] = resource.MustParse("1Gi")
+				updateRuntimeSpec()
+				latest, err := engine.getRuntime()
+				Expect(err).NotTo(HaveOccurred())
+				ctx.Dataset, ctx.Runtime = dataset, latest
+				ready, err := engine.Setup(ctx)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(ready).To(BeTrue())
+				expectCondition(message)
+
+				Expect(engine.Sync(ctx)).To(Succeed())
+				Expect(recorder.Events).To(BeEmpty())
+
+				latest, err = engine.getRuntime()
+				Expect(err).NotTo(HaveOccurred())
+				_, cond := utils.GetRuntimeCondition(latest.Status.Conditions, datav1alpha1.RuntimeResourcesSynced)
+				Expect(cond).NotTo(BeNil())
+				Expect(cond.Status).To(Equal(corev1.ConditionTrue))
+				Expect(cond.Reason).To(Equal(datav1alpha1.RuntimeResourcesSyncedReason))
+
+				Expect(engine.Sync(ctx)).To(Succeed())
+				unchanged, err := engine.getRuntime()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(unchanged.ResourceVersion).To(Equal(latest.ResourceVersion))
+			})
+
+			It("records the master event even if reading the worker fails", func() {
+				worker := &workloadv1alpha1.AdvancedStatefulSet{ObjectMeta: metav1.ObjectMeta{Name: workerSts, Namespace: engine.namespace}}
+				Expect(fakeClient.Delete(ctx.Context, worker)).To(Succeed())
+				updateRuntimeSpec()
+				Expect(engine.Sync(ctx)).To(MatchError(ContainSubstring(workerSts)))
+				message := eventMessage("master")
+				expectCondition(message)
+
+				runtimeObj.Spec.Master.Resources.Requests = nil
+				updateRuntimeSpec()
+				Expect(engine.Sync(ctx)).To(MatchError(ContainSubstring(workerSts)))
+				expectCondition(message)
+			})
+
+			It("reports only the observed master conflict when the worker cannot be read", func() {
+				runtimeObj.Spec.Master.Resources.Requests = nil
+				runtimeObj.Spec.Worker.Resources.Claims = []corev1.ResourceClaim{{Name: "gpu"}}
+				updateRuntimeSpec()
+				Expect(engine.Sync(ctx)).To(Succeed())
+				expectCondition(eventMessage("worker"))
+				latest, err := engine.getRuntime()
+				Expect(err).NotTo(HaveOccurred())
+				_, old := utils.GetRuntimeCondition(latest.Status.Conditions, datav1alpha1.RuntimeResourcesSynced)
+				old.LastTransitionTime = metav1.Unix(1, 0)
+				Expect(fakeClient.Status().Update(ctx.Context, latest)).To(Succeed())
+
+				worker := &workloadv1alpha1.AdvancedStatefulSet{ObjectMeta: metav1.ObjectMeta{Name: workerSts, Namespace: engine.namespace}}
+				Expect(fakeClient.Delete(ctx.Context, worker)).To(Succeed())
+				runtimeObj.Spec.Master.Resources.Requests = corev1.ResourceList{corev1.ResourceMemory: resource.MustParse("4Gi")}
+				updateRuntimeSpec()
+				Expect(engine.Sync(ctx)).To(MatchError(ContainSubstring(workerSts)))
+				current := expectCondition(eventMessage("master"))
+				Expect(current.LastTransitionTime.Equal(&old.LastTransitionTime)).To(BeTrue())
+				Expect(recorder.Events).To(BeEmpty())
+			})
+
+			It("records conflicts and their recovery when client readiness cannot be read", func() {
+				ds := &appsv1.DaemonSet{ObjectMeta: metav1.ObjectMeta{Name: "test-runtime-client", Namespace: engine.namespace}}
+				Expect(fakeClient.Delete(ctx.Context, ds)).To(Succeed())
+				updateRuntimeSpec()
+				Expect(engine.Sync(ctx)).To(MatchError(ContainSubstring(ds.Name)))
+				expectCondition(eventMessage("master"))
+
+				runtimeObj.Spec.Master.Resources.Requests = nil
+				updateRuntimeSpec()
+				Expect(engine.Sync(ctx)).To(MatchError(ContainSubstring(ds.Name)))
+				latest, err := engine.getRuntime()
+				Expect(err).NotTo(HaveOccurred())
+				_, cond := utils.GetRuntimeCondition(latest.Status.Conditions, datav1alpha1.RuntimeResourcesSynced)
+				Expect(cond).NotTo(BeNil())
+				Expect(cond.Status).To(Equal(corev1.ConditionTrue))
+			})
+		})
+
+		Context("when the merged resources make an extended resource request differ from its limit", func() {
+			It("should leave the workload's resources alone and emit a Warning event", func() {
+				recorder := record.NewFakeRecorder(10)
+				engine.Recorder = recorder
+
+				const gpu corev1.ResourceName = "nvidia.com/gpu"
+				runtimeClass.Topology.Worker.Template.Spec.Containers[0].Resources = corev1.ResourceRequirements{
+					Requests: corev1.ResourceList{gpu: resource.MustParse("1")},
+					Limits:   corev1.ResourceList{gpu: resource.MustParse("1")},
+				}
+				runtimeObj.Spec.Worker.Resources = corev1.ResourceRequirements{
+					Limits: corev1.ResourceList{gpu: resource.MustParse("2")},
+				}
+
+				sts := &workloadv1alpha1.AdvancedStatefulSet{}
+				key := types.NamespacedName{Name: workerSts, Namespace: "default"}
+				Expect(fakeClient.Get(ctx.Context, key, sts)).To(Succeed())
+				before := sts.Spec.Template.Spec.Containers[0].Resources.DeepCopy()
+
+				Expect(engine.syncRuntimeSpec(ctx, runtimeObj, runtimeClass)).To(ConsistOf(ContainSubstring("nvidia.com/gpu request 1 must equal limit 2")))
+
+				Expect(fakeClient.Get(ctx.Context, key, sts)).To(Succeed())
+				Expect(equality.Semantic.DeepEqual(sts.Spec.Template.Spec.Containers[0].Resources, *before)).To(BeTrue())
+				Expect(recorder.Events).To(Receive(And(
+					ContainSubstring(common.RuntimeResourcesConflict),
+					ContainSubstring("nvidia.com/gpu request 1 must equal limit 2"))))
+			})
+		})
+
+		Context("when the template adds a DRA claim after the workload was created", func() {
+			// The class edit declares the claim at both levels, but the sync only patches
+			// container resources: a container claim the workload's pod spec does not
+			// declare would make the API server reject every replacement Pod.
+			BeforeEach(func() {
+				runtimeClass.Topology.Worker.Template.Spec.ResourceClaims = []corev1.PodResourceClaim{{Name: "gpu"}}
+				runtimeClass.Topology.Worker.Template.Spec.Containers[0].Resources.Claims = []corev1.ResourceClaim{{Name: "gpu"}}
+			})
+
+			It("should sync the resources without the claim and emit a Warning event", func() {
+				recorder := record.NewFakeRecorder(10)
+				engine.Recorder = recorder
+				runtimeObj.Spec.Worker.Resources = corev1.ResourceRequirements{
+					Limits: corev1.ResourceList{corev1.ResourceMemory: resource.MustParse("4Gi")},
+				}
+
+				Expect(engine.syncRuntimeSpec(ctx, runtimeObj, runtimeClass)).To(ConsistOf(ContainSubstring("resource claims gpu")))
+
+				sts := &workloadv1alpha1.AdvancedStatefulSet{}
+				key := types.NamespacedName{Name: workerSts, Namespace: "default"}
+				Expect(fakeClient.Get(ctx.Context, key, sts)).To(Succeed())
+				Expect(memLimitOf(workerSts)).To(Equal("4Gi"))
+				Expect(sts.Spec.Template.Spec.Containers[0].Resources.Claims).To(BeEmpty())
+				Expect(recorder.Events).To(HaveLen(1))
+				Expect(<-recorder.Events).To(And(
+					HavePrefix(corev1.EventTypeWarning+" "+common.RuntimeResourcesConflict+" "),
+					ContainSubstring("worker resource claims gpu are not synced")))
+			})
+
+			It("should sync the claim once the workload declares it", func() {
+				recorder := record.NewFakeRecorder(10)
+				engine.Recorder = recorder
+
+				sts := &workloadv1alpha1.AdvancedStatefulSet{}
+				key := types.NamespacedName{Name: workerSts, Namespace: "default"}
+				Expect(fakeClient.Get(ctx.Context, key, sts)).To(Succeed())
+				sts.Spec.Template.Spec.ResourceClaims = []corev1.PodResourceClaim{{Name: "gpu"}}
+				Expect(fakeClient.Update(ctx.Context, sts)).To(Succeed())
+
+				Expect(engine.syncRuntimeSpec(ctx, runtimeObj, runtimeClass)).To(BeEmpty())
+
+				Expect(fakeClient.Get(ctx.Context, key, sts)).To(Succeed())
+				Expect(sts.Spec.Template.Spec.Containers[0].Resources.Claims).To(Equal([]corev1.ResourceClaim{{Name: "gpu"}}))
+				Expect(recorder.Events).To(BeEmpty())
+			})
+		})
+
+		// Without DynamicResourceAllocation the API server ignores claims, so a claim the
+		// workload does not declare must not hold back the rest of a resources edit.
+		Context("when the CacheRuntime names an undeclared claim along with a memory limit", func() {
+			DescribeTable("should still sync the memory limit and drop only the claim",
+				func(componentType common.ComponentType, stsName string, setResources func(corev1.ResourceRequirements)) {
+					recorder := record.NewFakeRecorder(10)
+					engine.Recorder = recorder
+					setResources(corev1.ResourceRequirements{
+						Limits: corev1.ResourceList{corev1.ResourceMemory: resource.MustParse("4Gi")},
+						Claims: []corev1.ResourceClaim{{Name: "unused"}},
+					})
+
+					Expect(engine.syncRuntimeSpec(ctx, runtimeObj, runtimeClass)).To(ConsistOf(ContainSubstring("resource claims unused")))
+
+					sts := &workloadv1alpha1.AdvancedStatefulSet{}
+					Expect(fakeClient.Get(ctx.Context, types.NamespacedName{Name: stsName, Namespace: "default"}, sts)).To(Succeed())
+					Expect(memLimitOf(stsName)).To(Equal("4Gi"))
+					Expect(sts.Spec.Template.Spec.Containers[0].Resources.Claims).To(BeEmpty())
+					Expect(recorder.Events).To(HaveLen(1))
+					Expect(<-recorder.Events).To(And(
+						HavePrefix(corev1.EventTypeWarning+" "+common.RuntimeResourcesConflict+" "),
+						ContainSubstring(string(componentType)+" resource claims unused are not synced")))
+				},
+				Entry("for the master", common.ComponentTypeMaster, masterSts, func(r corev1.ResourceRequirements) {
+					runtimeObj.Spec.Master.Resources = r
+				}),
+				Entry("for the worker", common.ComponentTypeWorker, workerSts, func(r corev1.ResourceRequirements) {
+					runtimeObj.Spec.Worker.Resources = r
+				}),
+			)
 		})
 
 		Context("when the tiered store baseline comes from the template", func() {
@@ -1117,7 +1950,7 @@ var _ = Describe("CacheEngine Sync Tests", Label("pkg.ddc.cache.engine.sync_test
 
 				syncRuntime, err := engine.getRuntime()
 				Expect(err).NotTo(HaveOccurred())
-				Expect(engine.syncRuntimeSpec(ctx, syncRuntime, runtimeClass)).To(Succeed())
+				Expect(engine.syncRuntimeSpec(ctx, syncRuntime, runtimeClass)).To(BeEmpty())
 
 				// template 2Gi + quota 8Gi, not the bare template value.
 				Expect(memLimitOf(workerSts)).To(Equal("10Gi"))
@@ -1170,7 +2003,7 @@ var _ = Describe("CacheEngine Sync Tests", Label("pkg.ddc.cache.engine.sync_test
 				// so the sync can only rely on what is persisted in the spec.
 				syncRuntime, err := engine.getRuntime()
 				Expect(err).NotTo(HaveOccurred())
-				Expect(engine.syncRuntimeSpec(ctx, syncRuntime, runtimeClass)).To(Succeed())
+				Expect(engine.syncRuntimeSpec(ctx, syncRuntime, runtimeClass)).To(BeEmpty())
 
 				Expect(memLimitOf(workerSts)).To(Equal(desired.String()))
 			})
@@ -1196,7 +2029,7 @@ var _ = Describe("CacheEngine Sync Tests", Label("pkg.ddc.cache.engine.sync_test
 			syncOnce := func() {
 				syncRuntime, err := engine.getRuntime()
 				Expect(err).NotTo(HaveOccurred())
-				Expect(engine.syncRuntimeSpec(ctx, syncRuntime, runtimeClass)).To(Succeed())
+				Expect(engine.syncRuntimeSpec(ctx, syncRuntime, runtimeClass)).To(BeEmpty())
 			}
 
 			It("should not let an edited tiered store quota half-apply", func() {

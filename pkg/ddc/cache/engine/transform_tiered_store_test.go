@@ -23,8 +23,14 @@ import (
 	. "github.com/onsi/gomega"
 
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
+	"github.com/fluid-cloudnative/fluid/pkg/common"
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
+	"github.com/fluid-cloudnative/fluid/pkg/utils/tieredstore"
+	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 var _ = Describe("CacheEngine TransformRuntimeTieredStore Tests", Label("pkg.ddc.cache.engine.transform_tiered_store_test.go"), func() {
@@ -532,5 +538,185 @@ var _ = Describe("CacheEngine TransformRuntimeTieredStore Tests", Label("pkg.ddc
 			quota := chargedTieredStoreMemoryQuota(podSpec)
 			Expect(quota.String()).To(Equal("8Gi"))
 		})
+	})
+})
+
+var _ = Describe("CacheEngine convertToLegacyTieredStore Tests", Label("pkg.ddc.cache.engine.transform_tiered_store_test.go"), func() {
+	Describe("convertToLegacyTieredStore", func() {
+		It("should return no levels for an unset tiered store", func() {
+			Expect(convertToLegacyTieredStore(datav1alpha1.RuntimeTieredStore{}, logr.Discard()).Levels).To(BeEmpty())
+		})
+
+		It("should map process memory to the MEM medium", func() {
+			legacy := convertToLegacyTieredStore(datav1alpha1.RuntimeTieredStore{
+				Levels: []datav1alpha1.RuntimeTieredStoreLevel{
+					{
+						ProcessMemory: &datav1alpha1.ProcessMemoryMediumSource{
+							Quota: resource.MustParse("4Gi"),
+						},
+						High: "0.8",
+						Low:  "0.5",
+					},
+				},
+			}, logr.Discard())
+
+			Expect(legacy.Levels).To(HaveLen(1))
+			Expect(legacy.Levels[0].MediumType).To(Equal(common.Memory))
+			Expect(legacy.Levels[0].Path).To(Equal(GetMemoryTieredStoreMountPath(0)))
+			Expect(legacy.Levels[0].Quota.String()).To(Equal("4Gi"))
+			Expect(legacy.Levels[0].High).To(Equal("0.8"))
+			Expect(legacy.Levels[0].Low).To(Equal("0.5"))
+		})
+
+		It("should map a memory backed emptyDir to the MEM medium", func() {
+			legacy := convertToLegacyTieredStore(datav1alpha1.RuntimeTieredStore{
+				Levels: []datav1alpha1.RuntimeTieredStoreLevel{
+					{
+						EmptyDir: &datav1alpha1.EmptyDirMediumSource{
+							Quota:  resource.MustParse("2Gi"),
+							Medium: corev1.StorageMediumMemory,
+						},
+					},
+				},
+			}, logr.Discard())
+
+			Expect(legacy.Levels).To(HaveLen(1))
+			Expect(legacy.Levels[0].MediumType).To(Equal(common.Memory))
+			Expect(legacy.Levels[0].Quota.String()).To(Equal("2Gi"))
+		})
+
+		It("should map a default emptyDir to a disk medium", func() {
+			legacy := convertToLegacyTieredStore(datav1alpha1.RuntimeTieredStore{
+				Levels: []datav1alpha1.RuntimeTieredStoreLevel{
+					{
+						EmptyDir: &datav1alpha1.EmptyDirMediumSource{
+							Quota: resource.MustParse("1Gi"),
+						},
+					},
+				},
+			}, logr.Discard())
+
+			Expect(legacy.Levels).To(HaveLen(1))
+			Expect(legacy.Levels[0].MediumType).To(Equal(common.HDD))
+			Expect(legacy.Levels[0].Path).To(Equal(GetEmptyDirTieredStoreMountPath(0)))
+			Expect(legacy.Levels[0].Quota.String()).To(Equal("1Gi"))
+		})
+
+		It("should keep host path quotas per path instead of collapsing them into one", func() {
+			legacy := convertToLegacyTieredStore(datav1alpha1.RuntimeTieredStore{
+				Levels: []datav1alpha1.RuntimeTieredStoreLevel{
+					{
+						HostPath: &datav1alpha1.HostPathMediumSource{
+							Paths:  []string{"/mnt/cache1", "/mnt/cache2"},
+							Quotas: []resource.Quantity{resource.MustParse("1Gi"), resource.MustParse("3Gi")},
+						},
+					},
+				},
+			}, logr.Discard())
+
+			Expect(legacy.Levels).To(HaveLen(1))
+			Expect(legacy.Levels[0].MediumType).To(Equal(common.HDD))
+			Expect(legacy.Levels[0].Path).To(Equal(
+				GetHostPathTieredStoreMountPath(0, 0) + "," + GetHostPathTieredStoreMountPath(0, 1)))
+			Expect(legacy.Levels[0].QuotaList).To(Equal("1Gi,3Gi"))
+			Expect(legacy.Levels[0].Quota).To(BeNil())
+		})
+
+		It("should skip a host path level whose paths and quotas disagree in length", func() {
+			legacy := convertToLegacyTieredStore(datav1alpha1.RuntimeTieredStore{
+				Levels: []datav1alpha1.RuntimeTieredStoreLevel{
+					{
+						HostPath: &datav1alpha1.HostPathMediumSource{
+							Paths:  []string{"/mnt/cache1", "/mnt/cache2"},
+							Quotas: []resource.Quantity{resource.MustParse("1Gi")},
+						},
+					},
+				},
+			}, logr.Discard())
+
+			Expect(legacy.Levels).To(BeEmpty())
+		})
+
+		It("should skip a level that names no medium", func() {
+			legacy := convertToLegacyTieredStore(datav1alpha1.RuntimeTieredStore{
+				Levels: []datav1alpha1.RuntimeTieredStoreLevel{
+					{High: "0.9"},
+					{EmptyDir: &datav1alpha1.EmptyDirMediumSource{Quota: resource.MustParse("1Gi")}},
+				},
+			}, logr.Discard())
+
+			Expect(legacy.Levels).To(HaveLen(1))
+			Expect(legacy.Levels[0].Quota.String()).To(Equal("1Gi"))
+		})
+
+		It("should keep the declared order and index paths per level", func() {
+			legacy := convertToLegacyTieredStore(datav1alpha1.RuntimeTieredStore{
+				Levels: []datav1alpha1.RuntimeTieredStoreLevel{
+					{ProcessMemory: &datav1alpha1.ProcessMemoryMediumSource{Quota: resource.MustParse("4Gi")}},
+					{EmptyDir: &datav1alpha1.EmptyDirMediumSource{Quota: resource.MustParse("1Gi")}},
+				},
+			}, logr.Discard())
+
+			Expect(legacy.Levels).To(HaveLen(2))
+			Expect(legacy.Levels[0].MediumType).To(Equal(common.Memory))
+			Expect(legacy.Levels[1].MediumType).To(Equal(common.HDD))
+			Expect(legacy.Levels[1].Path).To(Equal(GetEmptyDirTieredStoreMountPath(1)))
+		})
+	})
+
+	Describe("the result feeding base.BuildRuntimeInfo", func() {
+		It("should produce levels that convertToTieredstoreInfo accepts and sums correctly", func() {
+			legacy := convertToLegacyTieredStore(datav1alpha1.RuntimeTieredStore{
+				Levels: []datav1alpha1.RuntimeTieredStoreLevel{
+					{ProcessMemory: &datav1alpha1.ProcessMemoryMediumSource{Quota: resource.MustParse("4Gi")}},
+					{HostPath: &datav1alpha1.HostPathMediumSource{
+						Paths:  []string{"/mnt/cache1", "/mnt/cache2"},
+						Quotas: []resource.Quantity{resource.MustParse("1Gi"), resource.MustParse("3Gi")},
+					}},
+				},
+			}, logr.Discard())
+
+			runtimeInfo, err := base.BuildRuntimeInfo("test", "default", common.CacheRuntime,
+				base.WithTieredStore(legacy))
+			Expect(err).NotTo(HaveOccurred())
+
+			storage := tieredstore.GetLevelStorageMap(runtimeInfo)
+			Expect(storage[common.MemoryCacheStore].String()).To(Equal("4Gi"))
+			// 1Gi and 3Gi must survive as 4Gi rather than being averaged to 2Gi each
+			Expect(storage[common.DiskCacheStore].String()).To(Equal("4Gi"))
+		})
+	})
+})
+
+var _ = Describe("CacheEngine getRuntimeInfo tiered store Tests", Label("pkg.ddc.cache.engine.transform_tiered_store_test.go"), func() {
+	It("should build the runtime info storage map from the worker tiered store", func() {
+		runtime := &datav1alpha1.CacheRuntime{
+			ObjectMeta: metav1.ObjectMeta{Name: "demo", Namespace: "default"},
+			Spec: datav1alpha1.CacheRuntimeSpec{
+				Worker: datav1alpha1.CacheRuntimeWorkerSpec{
+					TieredStore: datav1alpha1.RuntimeTieredStore{
+						Levels: []datav1alpha1.RuntimeTieredStoreLevel{
+							{ProcessMemory: &datav1alpha1.ProcessMemoryMediumSource{Quota: resource.MustParse("4Gi")}},
+							{EmptyDir: &datav1alpha1.EmptyDirMediumSource{Quota: resource.MustParse("1Gi")}},
+						},
+					},
+				},
+			},
+		}
+		engine := &CacheEngine{
+			Client:      fake.NewFakeClientWithScheme(CacheEngineTestScheme, runtime),
+			Log:         logr.Discard(),
+			name:        "demo",
+			namespace:   "default",
+			runtimeType: common.CacheRuntime,
+		}
+
+		runtimeInfo, err := engine.getRuntimeInfo()
+		Expect(err).NotTo(HaveOccurred())
+
+		// An empty TieredStore here left every node capacity label at 0B (#6174)
+		storage := tieredstore.GetLevelStorageMap(runtimeInfo)
+		Expect(storage[common.MemoryCacheStore].String()).To(Equal("4Gi"))
+		Expect(storage[common.DiskCacheStore].String()).To(Equal("1Gi"))
 	})
 })

@@ -28,7 +28,6 @@ import (
 	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/equality"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -50,17 +49,6 @@ func (s *AdvancedStatefulSetManager) Reconciler(ctx context.Context, component *
 	}
 
 	return reconcileService(ctx, s.client, component)
-}
-
-func (s *AdvancedStatefulSetManager) GetNodeAffinity(identity *common.ComponentIdentity) (*corev1.NodeAffinity, error) {
-	asts := &workloadv1alpha1.AdvancedStatefulSet{}
-	err := s.client.Get(context.TODO(), types.NamespacedName{Name: identity.Name, Namespace: identity.Namespace}, asts)
-	if err != nil {
-		return nil, err
-	}
-
-	affinity := kubeclient.MergeNodeSelectorAndNodeAffinity(asts.Spec.Template.Spec.NodeSelector, asts.Spec.Template.Spec.Affinity)
-	return affinity, nil
 }
 
 func (s *AdvancedStatefulSetManager) GetPodSpec(ctx context.Context, identity *common.ComponentIdentity) (*corev1.PodSpec, error) {
@@ -146,17 +134,7 @@ func (s *AdvancedStatefulSetManager) constructAdvancedStatefulSet(component *com
 	return asts
 }
 
-func (s *AdvancedStatefulSetManager) ConstructComponentStatus(ctx context.Context, identity *common.ComponentIdentity) (datav1alpha1.RuntimeComponentStatus, error) {
-	logger := log.FromContext(ctx)
-	logger.Info("start to ConstructComponentStatus")
-
-	asts := &workloadv1alpha1.AdvancedStatefulSet{}
-	err := s.client.Get(ctx, types.NamespacedName{Name: identity.Name, Namespace: identity.Namespace}, asts)
-	if err != nil {
-		logger.Error(err, fmt.Sprintf("failed to get component: %s/%s", identity.Namespace, identity.Name))
-		return datav1alpha1.RuntimeComponentStatus{}, err
-	}
-
+func (s *AdvancedStatefulSetManager) constructStatus(asts *workloadv1alpha1.AdvancedStatefulSet) datav1alpha1.RuntimeComponentStatus {
 	desiredReplicas := int32(0)
 	if asts.Spec.Replicas != nil {
 		desiredReplicas = *asts.Spec.Replicas
@@ -168,8 +146,14 @@ func (s *AdvancedStatefulSetManager) ConstructComponentStatus(ctx context.Contex
 		runtimePhase = datav1alpha1.RuntimePhaseReady
 	}
 
-	// AvailableReplicas can be greater than CurrentReplicas (Kubernetes API allows this)
-	unavailableReplicas := asts.Status.CurrentReplicas - asts.Status.AvailableReplicas
+	// asts.Status.CurrentReplicas counts only pods on the current revision, so during
+	// a rolling update it undercounts; expose Status.Replicas (all observed pods).
+	// This field feeds the scale subresource's statusReplicasPath, and the HPA
+	// expects observed instances - the same population as CurrentWorkerNumberScheduled
+	// for the existing runtimes (pkg/ctrl/worker.go).
+	observedReplicas := asts.Status.Replicas
+
+	unavailableReplicas := observedReplicas - asts.Status.AvailableReplicas
 	if unavailableReplicas < 0 {
 		unavailableReplicas = 0
 	}
@@ -177,21 +161,41 @@ func (s *AdvancedStatefulSetManager) ConstructComponentStatus(ctx context.Contex
 	return datav1alpha1.RuntimeComponentStatus{
 		Phase:               runtimePhase,
 		DesiredReplicas:     desiredReplicas,
-		CurrentReplicas:     asts.Status.CurrentReplicas,
+		CurrentReplicas:     observedReplicas,
 		AvailableReplicas:   asts.Status.AvailableReplicas,
 		UnavailableReplicas: unavailableReplicas,
 		ReadyReplicas:       readyReplicas,
-	}, nil
+	}
 }
 
-// SyncComponentSpec synchronizes component specification changes to the AdvancedStatefulSet
-// This supports in-place update for compatible fields (e.g., image, resources, env) without pod recreation
-// Supported in-place update fields:
-// - Container image and ImagePullPolicy
-// - Resource requests and limits (CPU, memory)
-// - Environment variables
-// - Replicas count
-// Note: Fields like volumes, volumeMounts, args, ports will trigger pod recreation
+func (s *AdvancedStatefulSetManager) ConstructComponentStatusAndAffinity(ctx context.Context, identity *common.ComponentIdentity) (datav1alpha1.RuntimeComponentStatus, *corev1.NodeAffinity, error) {
+	logger := log.FromContext(ctx)
+	logger.Info("start to ConstructComponentStatusAndAffinity")
+
+	asts := &workloadv1alpha1.AdvancedStatefulSet{}
+	err := s.client.Get(ctx, types.NamespacedName{Name: identity.Name, Namespace: identity.Namespace}, asts)
+	if err != nil {
+		logger.Error(err, fmt.Sprintf("failed to get component: %s/%s", identity.Namespace, identity.Name))
+		return datav1alpha1.RuntimeComponentStatus{}, nil, err
+	}
+
+	status := s.constructStatus(asts)
+	affinity := kubeclient.MergeNodeSelectorAndNodeAffinity(asts.Spec.Template.Spec.NodeSelector, asts.Spec.Template.Spec.Affinity)
+
+	return status, affinity, nil
+}
+
+func (s *AdvancedStatefulSetManager) ConstructComponentStatus(ctx context.Context, identity *common.ComponentIdentity) (datav1alpha1.RuntimeComponentStatus, error) {
+	status, _, err := s.ConstructComponentStatusAndAffinity(ctx, identity)
+	return status, err
+}
+
+// SyncComponentSpec patches the replicas, image and resources of the component's
+// AdvancedStatefulSet to newSpec and leaves the rest of its pod template as it was created.
+//
+// The AdvancedStatefulSet uses the InPlaceIfPossible policy, but the bundled controller only
+// applies an image change in place, restarting the container. Any other pod template change,
+// resources included, is rolled out by recreating the Pods.
 func (s *AdvancedStatefulSetManager) SyncComponentSpec(ctx context.Context, identity *common.ComponentIdentity, newSpec ComponentSpec) error {
 	logger := log.FromContext(ctx)
 	logger.Info("start syncing component spec", "component", identity.Name)
@@ -303,11 +307,9 @@ func (s *AdvancedStatefulSetManager) updateResources(asts *workloadv1alpha1.Adva
 
 	container := &asts.Spec.Template.Spec.Containers[0]
 
-	// Compare semantically rather than structurally: resource.Quantity caches the
-	// string it was parsed from, and a quantity produced by arithmetic carries an
-	// empty cache. reflect.DeepEqual would read that as a change on every reconcile
-	// even when the value is identical. nil is still a valid desired value.
-	if !equality.Semantic.DeepEqual(container.Resources, resources) {
+	// See ResourcesEqual: neither a recomputed quantity nor a reordered claim list counts as a
+	// change. nil is still a valid desired value.
+	if !ResourcesEqual(container.Resources, resources) {
 		logger.Info("resources changed, will update")
 		container.Resources = *resources.DeepCopy()
 		return true

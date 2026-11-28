@@ -53,7 +53,9 @@ func (e *CacheEngine) generateDataLoadValueFile(ctx cruntime.ReconcileRequestCon
 		return "", err
 	}
 
-	runtimeClass, err := e.getRuntimeClass(runtime.Spec.RuntimeClassName)
+	// Data operations run in the dataset controller, which only reads the snapshot the runtime
+	// controller binds the runtime to.
+	runtimeClass, err := e.getBoundRuntimeClassReadOnly(ctx, runtime)
 	if err != nil {
 		return "", err
 	}

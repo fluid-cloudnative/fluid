@@ -232,6 +232,9 @@ exec "$@"
 
 完整配置示例参见 [使用 CacheRuntime 部署 Mooncake](../samples/cacheruntime/mooncake_cache_runtime.md)。
 
+#### 发布 RuntimeClass 新版本
+
+CacheRuntime 绑定的是其首次部署时 CacheRuntimeClass 的快照，因此修改 CacheRuntimeClass 只影响之后创建的 CacheRuntime。同一版本 class 中的镜像、`options`、`executionEntries` 和 `dataOperationSpecs` 可以一起修改。如需在已有 CacheRuntime 继续运行的同时发布新版本，请将其发布为新的 CacheRuntimeClass（例如在名称中带上版本号），并让新的 CacheRuntime 引用它。详见 [CacheRuntime Spec 字段更新能力说明](../samples/cacheruntime/cacheruntime_spec_update.md#4-cacheruntimeclass-快照)。
 
 ### 步骤2.5 用户创建Runtime
 

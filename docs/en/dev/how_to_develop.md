@@ -3,12 +3,14 @@
 ## Requirements
 
 - Git
-- Golang (version >= 1.13)
+- Golang (version >= 1.26)
 - Docker (version >= 19.03)
 - Kubernetes (version >= 1.14)
 - GNU Make
 
 For installation of Golang, please refer to [Install Golang](https://golang.org/dl/)
+
+> **NOTE**: The Go toolchain used by CI and the image builds is pinned by the `toolchain` directive in `go.mod`. With the default `GOTOOLCHAIN=auto`, an older local Go downloads that toolchain automatically, but a newer local Go is used as-is, so keep it on its latest patch release (for example, Go 1.27.0–1.27.3 are affected by [GO-2026-6859](https://pkg.go.dev/vuln/GO-2026-6859), which is fixed in Go 1.27.4). To build with exactly the pinned toolchain, set it explicitly, e.g. `export GOTOOLCHAIN=go1.26.11`.
 
 `make` is usually in a `build-essential` package in your distribution's package manager of choice. Make sure you have `make` on your machine.
 

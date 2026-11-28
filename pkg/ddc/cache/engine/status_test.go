@@ -24,6 +24,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -156,6 +157,55 @@ var _ = Describe("CheckAndUpdateRuntimeStatus", func() {
 		})
 	})
 
+	Describe("Worker selector population", func() {
+		It("should populate Status.Selector with the worker label selector for pod discovery", func() {
+			engine, client = newStatusTestEngineWithClient(
+				fake.NewFakeClientWithScheme(
+					CacheEngineTestScheme,
+					newStatusTestRuntime(),
+					newAdvancedStatefulSetComponent(testStatusMaster, testStatusNamespace, 1, 1),
+					newAdvancedStatefulSetComponent(testStatusWorker, testStatusNamespace, 1, 1),
+				),
+			)
+
+			ready, err := engine.CheckAndUpdateRuntimeStatus(newStatusTestRuntimeValue(false))
+			Expect(err).NotTo(HaveOccurred())
+			Expect(ready).To(BeTrue())
+
+			updatedRuntime := getUpdatedRuntime(client)
+			Expect(updatedRuntime.Status.Selector).To(Equal(
+				"cacheruntime.fluid.io/component-name=curvine-demo-worker,cacheruntime.fluid.io/name=curvine-demo"))
+		})
+
+		It("should keep Status.Selector stable across status cycles", func() {
+			engine, client = newStatusTestEngineWithClient(
+				fake.NewFakeClientWithScheme(
+					CacheEngineTestScheme,
+					newStatusTestRuntime(),
+					newAdvancedStatefulSetComponent(testStatusMaster, testStatusNamespace, 1, 1),
+					newAdvancedStatefulSetComponent(testStatusWorker, testStatusNamespace, 1, 1),
+				),
+			)
+
+			_, err := engine.CheckAndUpdateRuntimeStatus(newStatusTestRuntimeValue(false))
+			Expect(err).NotTo(HaveOccurred())
+			first := getUpdatedRuntime(client)
+
+			// Second cycle: worker becomes partially ready, status changes but selector must stay
+			worker := &workloadv1alpha1.AdvancedStatefulSet{}
+			Expect(client.Get(context.TODO(), types.NamespacedName{Name: testStatusWorker, Namespace: testStatusNamespace}, worker)).To(Succeed())
+			worker.Status.ReadyReplicas = 0
+			worker.Status.AvailableReplicas = 0
+			Expect(client.Status().Update(context.TODO(), worker)).To(Succeed())
+
+			_, err = engine.CheckAndUpdateRuntimeStatus(newStatusTestRuntimeValue(false))
+			Expect(err).NotTo(HaveOccurred())
+
+			second := getUpdatedRuntime(client)
+			Expect(second.Status.Selector).To(Equal(first.Status.Selector))
+		})
+	})
+
 	Describe("Runtime status recomputation on retry", func() {
 		Context("when conflict occurs during status update", func() {
 			It("should recompute runtime ready status after retry", func() {
@@ -193,6 +243,109 @@ var _ = Describe("CheckAndUpdateRuntimeStatus", func() {
 				Expect(updatedRuntime.Status.SetupDuration).To(BeEmpty(),
 					"expected setup duration to stay empty when final runtime status is not ready")
 			})
+		})
+	})
+
+	Describe("Worker node affinity derivation without duplicate Get", func() {
+		It("should derive worker node affinity in a single Get per status cycle", func() {
+			baseClient := fake.NewFakeClientWithScheme(
+				CacheEngineTestScheme,
+				newStatusTestRuntime(),
+				newAdvancedStatefulSetComponent(testStatusMaster, testStatusNamespace, 1, 1),
+				newAdvancedStatefulSetComponent(testStatusWorker, testStatusNamespace, 1, 1),
+			)
+			countingClient := &getCallCountingClient{Client: baseClient}
+			engine, client = newStatusTestEngineWithClient(countingClient)
+
+			Expect(countingClient.workerGetCount).To(Equal(0))
+
+			// First cycle: should construct status and affinity in a single worker Get
+			ready, err := engine.CheckAndUpdateRuntimeStatus(newStatusTestRuntimeValue(false))
+			Expect(err).NotTo(HaveOccurred())
+			Expect(ready).To(BeTrue())
+			Expect(countingClient.workerGetCount).To(Equal(1), "expected exactly 1 Get for worker component")
+
+			updatedRuntime := getUpdatedRuntime(client)
+			Expect(updatedRuntime.Status.CacheAffinity).NotTo(BeNil())
+
+			// Second cycle: should also perform exactly 1 Get for worker component
+			ready, err = engine.CheckAndUpdateRuntimeStatus(newStatusTestRuntimeValue(false))
+			Expect(err).NotTo(HaveOccurred())
+			Expect(ready).To(BeTrue())
+			Expect(countingClient.workerGetCount).To(Equal(2), "expected exactly 1 Get per status cycle (total 2)")
+		})
+
+		It("should immediately reflect out-of-band nodeSelector updates on subsequent status cycle with zero staleness", func() {
+			initialNodeSelector := map[string]string{
+				"disktype": "ssd",
+			}
+
+			baseClient := fake.NewFakeClientWithScheme(
+				CacheEngineTestScheme,
+				newStatusTestRuntime(),
+				newAdvancedStatefulSetComponent(testStatusMaster, testStatusNamespace, 1, 1),
+				newAdvancedStatefulSetComponentWithNodeSelector(testStatusWorker, testStatusNamespace, 1, 1, initialNodeSelector),
+			)
+			countingClient := &getCallCountingClient{Client: baseClient}
+			engine, client = newStatusTestEngineWithClient(countingClient)
+
+			// First cycle: derives initial affinity
+			ready, err := engine.CheckAndUpdateRuntimeStatus(newStatusTestRuntimeValue(false))
+			Expect(err).NotTo(HaveOccurred())
+			Expect(ready).To(BeTrue())
+			Expect(countingClient.workerGetCount).To(Equal(1))
+
+			updatedRuntime := getUpdatedRuntime(client)
+			Expect(updatedRuntime.Status.CacheAffinity).NotTo(BeNil())
+			terms := updatedRuntime.Status.CacheAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms
+			Expect(terms).To(HaveLen(1))
+			Expect(terms[0].MatchExpressions).To(ContainElement(corev1.NodeSelectorRequirement{
+				Key:      "disktype",
+				Operator: corev1.NodeSelectorOpIn,
+				Values:   []string{"ssd"},
+			}))
+
+			// Simulate out-of-band update to worker StatefulSet nodeSelector
+			workerSTS := &workloadv1alpha1.AdvancedStatefulSet{}
+			Expect(baseClient.Get(context.TODO(), types.NamespacedName{Name: testStatusWorker, Namespace: testStatusNamespace}, workerSTS)).To(Succeed())
+			workerSTS.Spec.Template.Spec.NodeSelector = map[string]string{
+				"disktype": "nvme",
+			}
+			Expect(baseClient.Update(context.TODO(), workerSTS)).To(Succeed())
+
+			// Second cycle: should immediately self-heal and reflect updated nodeSelector (zero staleness)
+			ready, err = engine.CheckAndUpdateRuntimeStatus(newStatusTestRuntimeValue(false))
+			Expect(err).NotTo(HaveOccurred())
+			Expect(ready).To(BeTrue())
+			Expect(countingClient.workerGetCount).To(Equal(2), "expected exactly 1 worker Get per cycle (total 2)")
+
+			updatedRuntime2 := getUpdatedRuntime(client)
+			terms2 := updatedRuntime2.Status.CacheAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms
+			Expect(terms2).To(HaveLen(1))
+			Expect(terms2[0].MatchExpressions).To(ContainElement(corev1.NodeSelectorRequirement{
+				Key:      "disktype",
+				Operator: corev1.NodeSelectorOpIn,
+				Values:   []string{"nvme"},
+			}))
+			Expect(terms2[0].MatchExpressions).NotTo(ContainElement(corev1.NodeSelectorRequirement{
+				Key:      "disktype",
+				Operator: corev1.NodeSelectorOpIn,
+				Values:   []string{"ssd"},
+			}))
+		})
+
+		It("should return error when worker component cannot be found", func() {
+			baseClient := fake.NewFakeClientWithScheme(
+				CacheEngineTestScheme,
+				newStatusTestRuntime(),
+				newAdvancedStatefulSetComponent(testStatusMaster, testStatusNamespace, 1, 1),
+				// worker not created
+			)
+			engine, _ := newStatusTestEngineWithClient(baseClient)
+
+			ready, err := engine.CheckAndUpdateRuntimeStatus(newStatusTestRuntimeValue(false))
+			Expect(err).To(HaveOccurred())
+			Expect(ready).To(BeFalse())
 		})
 	})
 })
@@ -254,6 +407,7 @@ func newAdvancedStatefulSetComponent(name, namespace string, desiredReplicas, re
 			Replicas: &replicas,
 		},
 		Status: workloadv1alpha1.AdvancedStatefulSetStatus{
+			Replicas:          desiredReplicas,
 			CurrentReplicas:   desiredReplicas,
 			AvailableReplicas: readyReplicas,
 			ReadyReplicas:     readyReplicas,
@@ -309,4 +463,22 @@ func (w *conflictOnceStatusWriter) Update(ctx context.Context, obj ctrlclient.Ob
 	}
 
 	return w.StatusWriter.Update(ctx, obj, opts...)
+}
+
+func newAdvancedStatefulSetComponentWithNodeSelector(name, namespace string, desiredReplicas, readyReplicas int32, nodeSelector map[string]string) *workloadv1alpha1.AdvancedStatefulSet {
+	sts := newAdvancedStatefulSetComponent(name, namespace, desiredReplicas, readyReplicas)
+	sts.Spec.Template.Spec.NodeSelector = nodeSelector
+	return sts
+}
+
+type getCallCountingClient struct {
+	ctrlclient.Client
+	workerGetCount int
+}
+
+func (c *getCallCountingClient) Get(ctx context.Context, key types.NamespacedName, obj ctrlclient.Object, opts ...ctrlclient.GetOption) error {
+	if _, ok := obj.(*workloadv1alpha1.AdvancedStatefulSet); ok && key.Name == testStatusWorker {
+		c.workerGetCount++
+	}
+	return c.Client.Get(ctx, key, obj, opts...)
 }

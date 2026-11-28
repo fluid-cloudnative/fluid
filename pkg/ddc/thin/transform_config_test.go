@@ -17,7 +17,10 @@
 package thin
 
 import (
+	"context"
 	"encoding/json"
+	"errors"
+
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/fake"
 	. "github.com/onsi/ginkgo/v2"
@@ -94,6 +97,49 @@ var _ = Describe("ThinEngine extractVolumeInfo", func() {
 		Expect(gotCsiInfo).To(Equal(wantCsiInfo))
 		Expect(gotMountOptions).To(Equal(wantMountOptions))
 	})
+
+	It("should return ErrPVCNotBound when pvc is not yet bound", func() {
+		pendingPVC := &corev1.PersistentVolumeClaim{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "pending-pvc",
+				Namespace: "fluid",
+			},
+			Spec: corev1.PersistentVolumeClaimSpec{},
+			Status: corev1.PersistentVolumeClaimStatus{
+				Phase: corev1.ClaimPending,
+			},
+		}
+		Expect(engine.Client.Create(context.TODO(), pendingPVC)).To(Succeed())
+
+		_, _, err := engine.extractVolumeInfo("pending-pvc")
+		Expect(err).To(HaveOccurred())
+		Expect(errors.Is(err, ErrPVCNotBound)).To(BeTrue())
+	})
+
+	DescribeTable("should not return ErrPVCNotBound for terminal or unexpected pvc phases",
+		func(pvcName string, volumeName string, phase corev1.PersistentVolumeClaimPhase) {
+			pvc := &corev1.PersistentVolumeClaim{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      pvcName,
+					Namespace: "fluid",
+				},
+				Spec: corev1.PersistentVolumeClaimSpec{
+					VolumeName: volumeName,
+				},
+				Status: corev1.PersistentVolumeClaimStatus{
+					Phase: phase,
+				},
+			}
+			Expect(engine.Client.Create(context.TODO(), pvc)).To(Succeed())
+
+			_, _, err := engine.extractVolumeInfo(pvcName)
+			Expect(err).To(HaveOccurred())
+			Expect(errors.Is(err, ErrPVCNotBound)).To(BeFalse())
+		},
+		Entry("ClaimLost without VolumeName", "lost-pvc-no-vol", "", corev1.ClaimLost),
+		Entry("ClaimLost with VolumeName", "lost-pvc-with-vol", "test-pv", corev1.ClaimLost),
+		Entry("unexpected phase with VolumeName", "unexpected-pvc", "test-pv", corev1.PersistentVolumeClaimPhase("Unknown")),
+	)
 })
 
 var _ = Describe("ThinEngine extractVolumeMountOptions", func() {
@@ -191,7 +237,8 @@ var _ = Describe("ThinEngine transformFuseConfig", func() {
 		err := engine.transformFuseConfig(runtime, dataset, value)
 
 		Expect(err).To(MatchError(ContainSubstring("failed to extract volume info from PersistentVolumeClaim \"pending-pvc\"")))
-		Expect(err).To(MatchError(ContainSubstring("persistent volume claim pending-pvc not bounded yet")))
+		Expect(err).To(MatchError(ContainSubstring("persistent volume claim pending-pvc not bounded yet: pvc not bound")))
+		Expect(errors.Is(err, ErrPVCNotBound)).To(BeTrue())
 	})
 
 	It("serializes secret-backed mount options when fuse config storage is secret", func() {
