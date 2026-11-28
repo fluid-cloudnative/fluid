@@ -20,6 +20,8 @@ import (
 	"context"
 	"reflect"
 	"strings"
+	"sync"
+	"time"
 	_ "unsafe"
 
 	. "github.com/agiledragon/gomonkey/v2"
@@ -260,6 +262,51 @@ var _ = Describe("JindoCacheEngine shutdown orchestration", func() {
 
 		Expect(err).To(MatchError(context.Canceled))
 		Expect(releasePortsCalled).To(BeFalse())
+	})
+
+	It("should close MetadataSyncDoneCh on shutdown and unblock parked senders", func() {
+		ch := make(chan base.MetadataSyncResult)
+		engine := &JindoCacheEngine{
+			Log:                    fake.NullLogger(),
+			retryShutdown:          1,
+			gracefulShutdownLimits: 1,
+			MetadataSyncDoneCh:     ch,
+		}
+
+		p1 := ApplyPrivateMethod(engine, "destroyWorkers", func() error { return nil })
+		defer p1.Reset()
+		p2 := ApplyPrivateMethod(engine, "releasePorts", func() error { return nil })
+		defer p2.Reset()
+		p3 := ApplyPrivateMethod(engine, "destroyMaster", func() error { return nil })
+		defer p3.Reset()
+		p4 := ApplyPrivateMethod(engine, "cleanAll", func() error { return nil })
+		defer p4.Reset()
+
+		started := make(chan struct{})
+		senderClosed := make(chan bool, 1)
+		var wg sync.WaitGroup
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			close(started)
+			senderClosed <- base.SafeSend(ch, base.MetadataSyncResult{Done: true})
+		}()
+		<-started
+
+		Expect(engine.Shutdown()).To(Succeed())
+
+		select {
+		case wasClosed := <-senderClosed:
+			Expect(wasClosed).To(BeTrue())
+		case <-time.After(2 * time.Second):
+			Fail("timed out waiting for SafeSend goroutine to unblock after Shutdown")
+		}
+		wg.Wait()
+
+		// Repeated Shutdown and nil MetadataSyncDoneCh must both remain safe.
+		Expect(engine.Shutdown()).To(Succeed())
+		engine.MetadataSyncDoneCh = nil
+		Expect(engine.Shutdown()).To(Succeed())
 	})
 
 	It("should release ports from the runtime configmap", func() {

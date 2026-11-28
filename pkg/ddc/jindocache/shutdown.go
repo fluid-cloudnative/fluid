@@ -17,6 +17,7 @@ limitations under the License.
 package jindocache
 
 import (
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base/portallocator"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/dataset/lifecycle"
 	"github.com/pkg/errors"
@@ -37,6 +38,10 @@ func (e *JindoCacheEngine) Shutdown() (err error) {
 				"retry times", e.retryShutdown)
 			return
 		}
+	}
+
+	if e.MetadataSyncDoneCh != nil {
+		base.SafeClose(e.MetadataSyncDoneCh)
 	}
 
 	err = e.destroyWorkers()
