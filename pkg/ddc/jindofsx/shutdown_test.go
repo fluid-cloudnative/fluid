@@ -18,7 +18,9 @@ package jindofsx
 
 import (
 	"reflect"
+	"sync"
 	"testing"
+	"time"
 
 	. "github.com/agiledragon/gomonkey/v2"
 	datav1alpha1 "github.com/fluid-cloudnative/fluid/api/v1alpha1"
@@ -335,4 +337,56 @@ func TestCleanAll(t *testing.T) {
 		t.Errorf("failed to cleanAll due to %v", err)
 	}
 
+}
+
+func TestShutdownClosesMetadataSyncDoneCh(t *testing.T) {
+	ch := make(chan base.MetadataSyncResult)
+	engine := &JindoFSxEngine{
+		Log:                    fake.NullLogger(),
+		retryShutdown:          1,
+		gracefulShutdownLimits: 1,
+		MetadataSyncDoneCh:     ch,
+	}
+
+	p1 := ApplyPrivateMethod(engine, "destroyWorkers", func() error { return nil })
+	defer p1.Reset()
+	p2 := ApplyPrivateMethod(engine, "releasePorts", func() error { return nil })
+	defer p2.Reset()
+	p3 := ApplyPrivateMethod(engine, "destroyMaster", func() error { return nil })
+	defer p3.Reset()
+	p4 := ApplyPrivateMethod(engine, "cleanAll", func() error { return nil })
+	defer p4.Reset()
+
+	started := make(chan struct{})
+	senderClosed := make(chan bool, 1)
+	var wg sync.WaitGroup
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		close(started)
+		senderClosed <- base.SafeSend(ch, base.MetadataSyncResult{Done: true})
+	}()
+	<-started
+
+	if err := engine.Shutdown(); err != nil {
+		t.Fatalf("Shutdown() unexpected error: %v", err)
+	}
+
+	select {
+	case wasClosed := <-senderClosed:
+		if !wasClosed {
+			t.Fatalf("expected SafeSend to report closed channel after Shutdown")
+		}
+	case <-time.After(2 * time.Second):
+		t.Fatal("timed out waiting for SafeSend goroutine to unblock after Shutdown")
+	}
+	wg.Wait()
+
+	if err := engine.Shutdown(); err != nil {
+		t.Fatalf("repeated Shutdown() unexpected error: %v", err)
+	}
+	engine.MetadataSyncDoneCh = nil
+	if err := engine.Shutdown(); err != nil {
+		t.Fatalf("Shutdown() with nil MetadataSyncDoneCh unexpected error: %v", err)
+	}
 }

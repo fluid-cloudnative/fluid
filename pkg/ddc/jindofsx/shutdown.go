@@ -17,6 +17,7 @@ limitations under the License.
 package jindofsx
 
 import (
+	"github.com/fluid-cloudnative/fluid/pkg/ddc/base"
 	"github.com/fluid-cloudnative/fluid/pkg/ddc/base/portallocator"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/dataset/lifecycle"
 	"github.com/fluid-cloudnative/fluid/pkg/utils/helm"
@@ -36,6 +37,10 @@ func (e *JindoFSxEngine) Shutdown() (err error) {
 				"retry times", e.retryShutdown)
 			return
 		}
+	}
+
+	if e.MetadataSyncDoneCh != nil {
+		base.SafeClose(e.MetadataSyncDoneCh)
 	}
 
 	err = e.destroyWorkers()
